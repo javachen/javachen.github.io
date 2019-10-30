@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>安装和部署Presto - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录 Presto 的安装部署过程，并使用 hive-cdh5 连接器进行简单测试。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/01/26/install-and-deploy-presto/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="安装和部署Presto" />
+<meta property="og:description" content="本文主要记录 Presto 的安装部署过程，并使用 hive-cdh5 连接器进行简单测试。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/01/26/install-and-deploy-presto/" />
+<meta property="article:published_time" content="2015-01-26T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-01-26T08:00:00+08:00" />
+<meta itemprop="name" content="安装和部署Presto">
+<meta itemprop="description" content="本文主要记录 Presto 的安装部署过程，并使用 hive-cdh5 连接器进行简单测试。">
+
+
+<meta itemprop="datePublished" content="2015-01-26T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-01-26T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1919">
+
+
+
+<meta itemprop="keywords" content="hadoop,presto," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="安装和部署Presto"/>
+<meta name="twitter:description" content="本文主要记录 Presto 的安装部署过程，并使用 hive-cdh5 连接器进行简单测试。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">安装和部署Presto</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-01-26 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 1919 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-安装环境">1. 安装环境</a></li>
+<li><a href="#2-安装-presto">2. 安装 Presto</a></li>
+<li><a href="#3-配置-presto">3. 配置 Presto</a></li>
+<li><a href="#4-运行-presto">4. 运行 Presto</a></li>
+<li><a href="#5-测试-presto-cli">5. 测试 Presto CLI</a></li>
+<li><a href="#6-测试-jdbc">6. 测试 jdbc</a></li>
+<li><a href="#7-总结">7. 总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-01-26T08:00:00" title="January 26, 2015">January 26, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-安装环境">1. 安装环境</h1>
+
+<ul>
+<li>操作系统：CentOs6.5</li>
+<li>Hadoop 集群：CDH5.3</li>
+<li>JDK 版本：jdk1.8.0_31</li>
+</ul>
+
+<p>为了测试简单，我是将 Presto 的 coordinator 和 worker 都部署在 <code>cdh1</code> 节点上，并且该节点上部署了 hive-metastore 服务。下面的安装和部署过程参考自 <a href="http://prestodb.io/docs/current/installation.html">http://prestodb.io/docs/current/installation.html</a>。</p>
+
+<h1 id="2-安装-presto">2. 安装 Presto</h1>
+
+<p>下载 Presto 的压缩包，目前最新版本为 <a href="https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.90/presto-server-0.90.tar.gz">presto-server-0.90</a>，然后解压为 presto-server-0.90 。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.90/presto-server-0.90.tar.gz
+tar zxvf presto-server-0.90.tar.gz</pre></td></tr></table>
+</div>
+</div>
+<p>解压后的目录结构为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[$ presto-server-0.90]# tree -L 2
+.
+├── bin
+│   ├── launcher
+│   ├── launcher.properties
+│   ├── launcher.py
+│   └── procname
+├── lib
+├── NOTICE
+├── plugin
+│   ├── cassandra
+│   ├── example-http
+│   ├── hive-cdh4
+│   ├── hive-cdh5
+│   ├── hive-hadoop1
+│   ├── hive-hadoop2
+│   ├── kafka
+│   ├── ml
+│   ├── mysql
+│   ├── postgresql
+│   ├── raptor
+│   └── tpch
+└── README.txt</pre></td></tr></table>
+</div>
+</div>
+<p>从 plugin 目录可以看到所有 Presto 支持的插件有哪些，这里我主要使用 hive-cdh5 插件，也成为连接器。</p>
+
+<h1 id="3-配置-presto">3. 配置 Presto</h1>
+
+<p>在 presto-server-0.90 目录创建 etc 目录，并创建以下文件：</p>
+
+<ul>
+<li><code>node.properties</code>：每个节点的环境配置</li>
+<li><code>jvm.config</code>：jvm 参数</li>
+<li><code>config.properties</code>：配置 Presto Server 参数</li>
+<li><code>log.properties</code>：配置日志等级</li>
+<li><code>Catalog Properties</code>：Catalog 的配置</li>
+</ul>
+
+<p><code>etc/node.properties</code> 示例配置如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">node.environment=production
+node.id=ffffffff-ffff-ffff-ffff-ffffffffffff
+node.data-dir=/var/presto/data</code></pre></td></tr></table>
+</div>
+</div>
+<p>参数说明：</p>
+
+<ul>
+<li><code>node.environment</code>：环境名称。一个集群节点中的所有节点的名称应该保持一致。</li>
+<li><code>node.id</code>：节点唯一标识的名称。</li>
+<li><code>node.data-dir</code>：数据和日志存放路径。</li>
+</ul>
+
+<p><code>etc/jvm.config</code> 示例配置如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">-</span><span class="n">server</span>
+<span class="o">-</span><span class="n">Xmx16G</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="o">+</span><span class="n">UseConcMarkSweepGC</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="o">+</span><span class="n">ExplicitGCInvokesConcurrent</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="o">+</span><span class="n">CMSClassUnloadingEnabled</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="o">+</span><span class="n">AggressiveOpts</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="o">+</span><span class="n">HeapDumpOnOutOfMemoryError</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="n">OnOutOfMemoryError</span><span class="o">=</span><span class="n">kill</span> <span class="o">-</span><span class="mi">9</span> <span class="o">%</span><span class="n">p</span>
+<span class="o">-</span><span class="n">XX</span><span class="p">:</span><span class="n">ReservedCodeCacheSize</span><span class="o">=</span><span class="mi">150</span><span class="n">M</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><code>etc/config.properties</code> 包含 Presto Server 相关的配置，每一个 Presto Server 可以通时作为 coordinator 和 worker 使用。你可以将他们配置在一个极点上，但是，在一个大的集群上建议分开配置以提高性能。</p>
+
+<p>coordinator 的最小配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">coordinator=true
+node-scheduler.include-coordinator=false
+http-server.http.port=8080
+task.max-memory=1GB
+discovery-server.enabled=true
+discovery.uri=http://cdh1:8080</code></pre></td></tr></table>
+</div>
+</div>
+<p>worker 的最小配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">coordinator=false
+http-server.http.port=8080
+task.max-memory=1GB
+discovery.uri=http://cdh1:8080</code></pre></td></tr></table>
+</div>
+</div>
+<p>可选的，作为测试，你可以在一个节点上同时配置两者：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">coordinator=true
+node-scheduler.include-coordinator=true
+http-server.http.port=8080
+task.max-memory=1GB
+discovery-server.enabled=true
+discovery.uri=http://cdh1:8080</code></pre></td></tr></table>
+</div>
+</div>
+<p>参数说明：</p>
+
+<ul>
+<li><code>coordinator</code>：Presto 实例是否以 coordinator 对外提供服务</li>
+<li><code>node-scheduler.include-coordinator</code>：是否允许在 coordinator 上进行调度任务</li>
+<li><code>http-server.http.port</code>：HTTP 服务的端口</li>
+<li><code>task.max-memory=1GB</code>：每一个任务（对应一个节点上的一个查询计划）所能使用的最大内存</li>
+<li><code>discovery-server.enabled</code>：是否使用 Discovery service 发现集群中的每一个节点。</li>
+<li><code>discovery.uri</code>：Discovery server 的 url</li>
+</ul>
+
+<p><code>etc/log.properties</code> 可以设置某一个 java 包的日志等级：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">com.facebook.presto=INFO</code></pre></td></tr></table>
+</div>
+</div>
+<p>关于 Catalog 的配置，首先需要创建 etc/catalog 目录，然后根据你想使用的连接器来创建对应的配置文件，比如，你想使用 jmx 连接器，则创建 jmx.properties：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">connector.name=jmx</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果你想使用 hive 的连接器，则创建 hive.properties：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">connector.name=hive-cdh5
+hive.metastore.uri=thrift://cdh1:9083  #修改为 hive-metastore 服务所在的主机名称，这里我是安装在 cdh1节点
+hive.config.resources=/etc/hadoop/conf/core-site.xml,/etc/hadoop/conf/hdfs-site.xml</code></pre></td></tr></table>
+</div>
+</div>
+<p>更多关于连接器的说明，请参考 <a href="http://prestodb.io/docs/current/connector.html">Connectors </a>。</p>
+
+<h1 id="4-运行-presto">4. 运行 Presto</h1>
+
+<p>你可以使用下面命令后台启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">bin/launcher start</pre></td></tr></table>
+</div>
+</div>
+<p>也可以前台启动，观察输出日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">bin/launcher run</pre></td></tr></table>
+</div>
+</div>
+<p>另外，你也可以通过下面命令停止：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">bin/launcher stop</pre></td></tr></table>
+</div>
+</div>
+<p>更多命令，你可以通过 <code>--help</code> 参数来查看。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>root@cdh1 presto-server-0.90<span class="o">]</span><span class="c1"># bin/launcher --help</span>
+Usage: launcher <span class="o">[</span>options<span class="o">]</span> <span class="nb">command</span>
+
+Commands: run, start, stop, restart, kill, status
+
+Options:
+  -h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
+  -v, --verbose         Run verbosely
+  --launcher-config<span class="o">=</span>FILE
+                        Defaults to INSTALL_PATH/bin/launcher.properties
+  --node-config<span class="o">=</span>FILE    Defaults to INSTALL_PATH/etc/node.properties
+  --jvm-config<span class="o">=</span>FILE     Defaults to INSTALL_PATH/etc/jvm.config
+  --config<span class="o">=</span>FILE         Defaults to INSTALL_PATH/etc/config.properties
+  --log-levels-file<span class="o">=</span>FILE
+                        Defaults to INSTALL_PATH/etc/log.properties
+  --data-dir<span class="o">=</span>DIR        Defaults to INSTALL_PATH
+  --pid-file<span class="o">=</span>FILE       Defaults to DATA_DIR/var/run/launcher.pid
+  --launcher-log-file<span class="o">=</span>FILE
+                        Defaults to DATA_DIR/var/log/launcher.log <span class="o">(</span>only in daemon mode<span class="o">)</span>
+  --server-log-file<span class="o">=</span>FILE
+                        Defaults to DATA_DIR/var/log/server.log <span class="o">(</span>only in daemon mode<span class="o">)</span>
+  -D <span class="nv">NAME</span><span class="o">=</span>VALUE         Set a Java system property</code></pre></td></tr></table>
+</div>
+</div>
+<p>启动之后，你可以观察 /var/presto/data/ 目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@cdh1 /var/presto/data/]# tree
+.
+├── etc -&gt; /opt/presto-server-0.90/etc
+├── plugin -&gt; /opt/presto-server-0.90/plugin
+└── var
+    ├── log
+    │   ├── http-request.log
+    │   ├── launcher.log
+    │   └── server.log
+    └── run
+        └── launcher.pid
+
+5 directories, 4 files</pre></td></tr></table>
+</div>
+</div>
+<p>在 /var/presto/data/var/log 目录可以查看日志：</p>
+
+<ul>
+<li><code>launcher.log</code>：启动日志</li>
+<li><code>server.log</code>：Presto Server 输出日志</li>
+<li><code>http-request.log</code>：HTTP 请求日志</li>
+</ul>
+
+<h1 id="5-测试-presto-cli">5. 测试 Presto CLI</h1>
+
+<p>下载 <a href="https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.90/presto-cli-0.90-executable.jar">presto-cli-0.90-executable.jar</a> 并将其重命名为 presto-cli（你也可以重命名为 presto），然后添加执行权限。</p>
+
+<p>运行下面命令进行测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>root@cdh1 bin<span class="o">]</span><span class="c1"># ./presto-cli --server localhost:8080 --catalog hive --schema default</span>
+presto:default&gt; show tables<span class="p">;</span>
+ Table
+-------
+<span class="o">(</span><span class="m">0</span> rows<span class="o">)</span>
+
+Query 20150126_062137_00012_qgwvy, FINISHED, <span class="m">1</span> node
+Splits: <span class="m">2</span> total, <span class="m">2</span> <span class="k">done</span> <span class="o">(</span><span class="m">100</span>.00%<span class="o">)</span>
+<span class="m">0</span>:00 <span class="o">[</span><span class="m">0</span> rows, 0B<span class="o">]</span> <span class="o">[</span><span class="m">0</span> rows/s, 0B/s<span class="o">]</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在 执行 show tables 命令之前，你可以查看 <a href="http://cdh1:8080/">http://cdh1:8080/</a> 页面：</p>
+
+<p><img src="/images/presto-web-01.jpg" alt="" /></p>
+
+<p>然后在执行该命令之后再观察页面变化。单击第一行记录，会跳转到明细页面：</p>
+
+<p><img src="/images/presto-web-02.jpg" alt="" /></p>
+
+<p>可以运行 <code>--help</code> 命令查看更多参数，例如你可以在命令行直接运行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">./presto-cli --server localhost:8080 --catalog hive --schema default --execute &#34;show tables;&#34;</pre></td></tr></table>
+</div>
+</div>
+<p>默认情况下，Presto 的查询结果是使用 <code>less</code> 程序分页输出的，你可以通过修改环境变量 <code>PRESTO_PAGER</code> 的值将其改为其他命令，如 <code>more</code>，或者将其置为空以禁止分页输出。</p>
+
+<h1 id="6-测试-jdbc">6. 测试 jdbc</h1>
+
+<p>使用 jdbc 连接 Presto，需要下载 jdbc 驱动 <a href="https://repo1.maven.org/maven2/com/facebook/presto/presto-jdbc/0.90/presto-jdbc-0.90.jar">presto-jdbc-0.90</a> 并将其加到你的应用程序的 classpath 中。</p>
+
+<p>支持以下几种 JDBC URL 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">jdbc:presto://host:port
+jdbc:presto://host:port/catalog
+jdbc:presto://host:port/catalog/schema</pre></td></tr></table>
+</div>
+</div>
+<p>连接 hive 数据库中 sales 库，示例如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">jdbc:presto://cdh1:8080/hive/sales</pre></td></tr></table>
+</div>
+</div>
+<h1 id="7-总结">7. 总结</h1>
+
+<p>本文主要记录 Presto 的安装部署过程，并使用 hive-cdh5 连接器进行简单测试。下一步，需要基于一些生产数据做一些功能测试以及和 impala 做一些对比测试。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-01-26
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/presto/">presto</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/01/30/raw-sql-query-in-django/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Django中SQL查询</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/01/23/new-in-cdh-5-2-impala-authentication-with-ldap-and-kerberos/">
+            <span class="next-text nav-default">CDH 5.2中Impala认证集成LDAP和Kerberos</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

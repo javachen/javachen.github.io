@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>PostgreSQL监控指标 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="PostgreSQL监控指标" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/04/07/some-metrics-in-postgresql/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="PostgreSQL监控指标" />
+<meta property="og:description" content="PostgreSQL监控指标" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/04/07/some-metrics-in-postgresql/" />
+<meta property="article:published_time" content="2014-04-07T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-04-07T08:00:00+08:00" />
+<meta itemprop="name" content="PostgreSQL监控指标">
+<meta itemprop="description" content="PostgreSQL监控指标">
+
+
+<meta itemprop="datePublished" content="2014-04-07T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-04-07T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2388">
+
+
+
+<meta itemprop="keywords" content="postgresql," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="PostgreSQL监控指标"/>
+<meta name="twitter:description" content="PostgreSQL监控指标"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">PostgreSQL监控指标</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-04-07 </span>
+        <div class="post-category">
+            <a href="/categories/database/"> database </a>
+            </div>
+          <span class="more-meta"> 约 2388 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#数据库状态信息">数据库状态信息</a></li>
+<li><a href="#数据库统计信息">数据库统计信息</a></li>
+<li><a href="#系统监控信息">系统监控信息</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-04-07T08:00:00" title="April 7, 2014">April 7, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>数据库版本：9.3.1（不同版本数据库相关表列名可能略有不同）</p>
+
+<h1 id="数据库状态信息">数据库状态信息</h1>
+
+<p>数据库状态信息主要体现数据库的当前状态</p>
+
+<p>1.目前客户端的连接数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">pg_stat_activity</span> <span class="k">WHERE</span> <span class="k">NOT</span> <span class="n">pid</span><span class="o">=</span><span class="n">pg_backend_pid</span><span class="p">();</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>2.连接状态</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="n">pid</span><span class="p">,</span><span class="n">waiting</span><span class="p">,</span><span class="k">current_timestamp</span> <span class="o">-</span> <span class="n">least</span><span class="p">(</span><span class="n">query_start</span><span class="p">,</span><span class="n">xact_start</span><span class="p">)</span> <span class="k">AS</span> <span class="n">runtime</span><span class="p">,</span><span class="n">substr</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">25</span><span class="p">)</span> <span class="k">AS</span> <span class="n">current_query</span> 
+<span class="k">FROM</span> <span class="n">pg_stat_activity</span> <span class="k">WHERE</span> <span class="k">NOT</span> <span class="n">pid</span><span class="o">=</span><span class="n">pg_backend_pid</span><span class="p">();</span>
+ <span class="n">pid</span>  <span class="o">|</span> <span class="n">waiting</span> <span class="o">|</span> <span class="n">runtime</span>         <span class="o">|</span> <span class="n">current_query</span> 
+<span class="c1">------+---------+-----------------+-----------------------
+</span><span class="c1"></span><span class="mi">9381</span>  <span class="o">|</span> <span class="n">f</span>       <span class="o">|</span> <span class="mi">00</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mi">24</span><span class="p">.</span><span class="mi">425487</span> <span class="o">|</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">orders</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>可以查看每个连接的pid，执行的操作，是否发生等待，根据查询,或者事务统计开始时间等等。有多少个链接查询就有多少行 所以可以用order by,limit限制查询行数</p>
+
+<p>3.数据库占用空间</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">select</span> <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_database_size</span><span class="p">(</span><span class="s1">&#39;postgres&#39;</span><span class="p">));</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>一个数据库数据文件对应存储在以这个数据库PID命名的文件中,通过统计所有以PID命名文件的总大小，也可以得出这个数据库占用的空间。</p>
+
+<p>表占用的空间使用<code>pg_relation_size()</code>查询，对应的系统中的文件名和pg_class中的filenode相同，一个热点的表最好一天一统计大小，获得表的一个增长状况，来预测数据库未来可能的增长状况。根据需求提前准备空间应付数据库的增长。</p>
+
+<p>4.等待事件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">#</span> <span class="k">SELECT</span> <span class="n">bl</span><span class="p">.</span><span class="n">pid</span> <span class="k">AS</span> <span class="n">blocked_pid</span><span class="p">,</span> <span class="n">a</span><span class="p">.</span><span class="n">usename</span> <span class="k">AS</span> <span class="n">blocked_user</span><span class="p">,</span> <span class="n">kl</span><span class="p">.</span><span class="n">pid</span> <span class="k">AS</span> <span class="n">blocking_pid</span><span class="p">,</span> <span class="n">ka</span><span class="p">.</span><span class="n">usename</span> <span class="k">AS</span> <span class="n">blocking_user</span><span class="p">,</span> <span class="n">a</span><span class="p">.</span><span class="n">query</span> <span class="k">AS</span> <span class="n">blocked_statement</span> 
+<span class="k">FROM</span> <span class="n">pg_locks</span> <span class="n">bl</span> 
+<span class="k">JOIN</span> <span class="n">pg_stat_activity</span> <span class="n">a</span> <span class="k">ON</span> <span class="n">a</span><span class="p">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">bl</span><span class="p">.</span><span class="n">pid</span> 
+<span class="k">JOIN</span> <span class="n">pg_locks</span> <span class="n">kl</span> <span class="k">ON</span> <span class="n">kl</span><span class="p">.</span><span class="n">transactionid</span> <span class="o">=</span> <span class="n">bl</span><span class="p">.</span><span class="n">transactionid</span> <span class="k">AND</span> <span class="n">kl</span><span class="p">.</span><span class="n">pid</span> <span class="o">!=</span> <span class="n">bl</span><span class="p">.</span><span class="n">pid</span> 
+<span class="k">JOIN</span> <span class="n">pg_stat_activity</span> <span class="n">ka</span> <span class="k">ON</span> <span class="n">ka</span><span class="p">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">kl</span><span class="p">.</span><span class="n">pid</span> <span class="k">WHERE</span> <span class="k">NOT</span> <span class="n">bl</span><span class="p">.</span><span class="k">granted</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>根据阻塞的语句的会话PID做相应处理</p>
+
+<h1 id="数据库统计信息">数据库统计信息</h1>
+
+<p>1.sql语句统计</p>
+
+<p>实现上述统计需要安装一个pg的extension:<code>pg_stat_statements–1.1.sql</code>，调整postgres.conf:<code>shared_preload_libraries = 'pg_stat_statements'</code>,就可以使用了</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="n">calls</span><span class="p">,</span> <span class="n">total_time</span><span class="p">,</span> <span class="k">rows</span><span class="p">,</span> <span class="mi">100</span><span class="p">.</span><span class="mi">0</span> <span class="o">*</span> <span class="n">shared_blks_hit</span> <span class="o">/</span><span class="k">nullif</span><span class="p">(</span><span class="n">shared_blks_hit</span> <span class="o">+</span> <span class="n">shared_blks_read</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">AS</span> <span class="n">hit_percent</span><span class="p">,</span><span class="n">substr</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">25</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">pg_stat_statements</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">total_time</span> <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="mi">5</span><span class="p">;</span>
+<span class="n">calls</span>  <span class="o">|</span> <span class="n">total_time</span> <span class="o">|</span> <span class="k">rows</span> <span class="o">|</span> <span class="n">hit_percent</span>          <span class="o">|</span> <span class="n">substr</span> 
+<span class="c1">-------+------------+------+----------------------+---------------------------
+</span><span class="c1"></span><span class="mi">1</span>      <span class="o">|</span> <span class="mi">23</span><span class="p">.</span><span class="mi">104</span>     <span class="o">|</span> <span class="mi">17</span>   <span class="o">|</span> <span class="mi">99</span><span class="p">.</span><span class="mi">4974874371859296</span>  <span class="o">|</span> <span class="k">SELECT</span> <span class="n">n</span><span class="p">.</span><span class="n">nspname</span> <span class="k">as</span> <span class="n">Sche</span>
+<span class="mi">1</span>      <span class="o">|</span> <span class="mi">21</span><span class="p">.</span><span class="mi">808</span>     <span class="o">|</span> <span class="mi">2</span>    <span class="o">|</span>                      <span class="o">|</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">pg_stat_sta</span>
+<span class="mi">2</span>      <span class="o">|</span> <span class="mi">5</span><span class="p">.</span><span class="mi">391</span>      <span class="o">|</span> <span class="mi">2</span>    <span class="o">|</span>                      <span class="o">|</span> <span class="k">SELECT</span> <span class="n">name</span> <span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span>
+<span class="mi">3</span>      <span class="o">|</span> <span class="mi">3</span><span class="p">.</span><span class="mi">307</span>      <span class="o">|</span> <span class="mi">57</span>   <span class="o">|</span> <span class="mi">100</span><span class="p">.</span><span class="mi">0000000000000000</span> <span class="o">|</span> <span class="k">SELECT</span> <span class="n">pg_catalog</span><span class="p">.</span><span class="n">quote_i</span>
+<span class="mi">4</span>      <span class="o">|</span> <span class="mi">1</span><span class="p">.</span><span class="mi">318</span>      <span class="o">|</span> <span class="mi">19</span>   <span class="o">|</span> <span class="mi">100</span><span class="p">.</span><span class="mi">0000000000000000</span> <span class="o">|</span> <span class="k">SELECT</span> <span class="n">calls</span><span class="p">,</span> <span class="n">total_time</span><span class="p">,</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上述查询是按照查询的执行时间来排序的，可以定位执行比较慢的sql,也可以用来查出常用sql，以及sql共享内存的命中率等信息</p>
+
+<p>2.表的共享内存的利用情况统计</p>
+
+<p>实现上述统计需要安装一个pg的extension:<code>pg_buffercache–1.0.sql</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="k">c</span><span class="p">.</span><span class="n">relname</span><span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">AS</span> <span class="n">buffers</span> 
+<span class="k">FROM</span> <span class="n">pg_buffercache</span> <span class="n">b</span> <span class="k">INNER</span> <span class="k">JOIN</span> <span class="n">pg_class</span> <span class="k">c</span> <span class="k">ON</span> <span class="n">b</span><span class="p">.</span><span class="n">relfilenode</span> <span class="o">=</span> <span class="n">pg_relation_filenode</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">oid</span><span class="p">)</span> 
+<span class="k">AND</span> <span class="n">b</span><span class="p">.</span><span class="n">reldatabase</span> <span class="k">IN</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">oid</span> <span class="k">FROM</span> <span class="n">pg_database</span> <span class="k">WHERE</span> <span class="n">datname</span> <span class="o">=</span> <span class="n">current_database</span><span class="p">()))</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="k">c</span><span class="p">.</span><span class="n">relname</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="mi">2</span> <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="mi">5</span><span class="p">;</span>
+<span class="n">relname</span>                         <span class="o">|</span> <span class="n">buffers</span> 
+<span class="c1">--------------------------------+---------
+</span><span class="c1"></span><span class="n">pg_proc</span>                         <span class="o">|</span> <span class="mi">28</span>
+<span class="n">pg_attribute</span>                    <span class="o">|</span> <span class="mi">23</span>
+<span class="n">pg_operator</span>                     <span class="o">|</span> <span class="mi">14</span>
+<span class="n">pg_proc_proname_args_nsp_index</span>  <span class="o">|</span> <span class="mi">10</span>
+<span class="n">pg_class</span>                        <span class="o">|</span> <span class="mi">9</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>表在共享内存中占用的块数，用来查看表是不是在内存中，buffers的单位是数据块，默认8K，如果计算大小等于表的大小，说明全表的数据都在缓存中，这时的查询速度是很快的</p>
+
+<p>3.对一个表执行操作的统计</p>
+
+<p>实现统计对一个表操作的偏重，insert,update,delete的比率</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">update</span> <span class="n">products</span> <span class="k">set</span> <span class="n">price</span><span class="o">=</span><span class="mi">11</span><span class="p">.</span><span class="mi">00</span> <span class="k">where</span> <span class="n">prod_id</span><span class="o">=</span><span class="mi">30</span><span class="p">;</span>
+<span class="k">UPDATE</span> <span class="mi">1</span>
+<span class="n">postgres</span><span class="o">=#</span> <span class="k">delete</span> <span class="k">from</span> <span class="n">products</span> <span class="k">where</span> <span class="n">prod_id</span><span class="o">=</span><span class="mi">30</span><span class="p">;</span>
+<span class="k">DELETE</span> <span class="mi">1</span>
+<span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="n">relname</span><span class="p">,</span><span class="k">cast</span><span class="p">(</span><span class="n">n_tup_ins</span> <span class="k">AS</span> <span class="nb">numeric</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_tup_ins</span> <span class="o">+</span> <span class="n">n_tup_upd</span> <span class="o">+</span> <span class="n">n_tup_del</span><span class="p">)</span> <span class="k">AS</span> <span class="n">ins_pct</span><span class="p">,</span>
+<span class="k">cast</span><span class="p">(</span><span class="n">n_tup_upd</span> <span class="k">AS</span> <span class="nb">numeric</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_tup_ins</span> <span class="o">+</span> <span class="n">n_tup_upd</span> <span class="o">+</span> <span class="n">n_tup_del</span><span class="p">)</span> <span class="k">AS</span> <span class="n">upd_pct</span><span class="p">,</span> 
+<span class="k">cast</span><span class="p">(</span><span class="n">n_tup_del</span> <span class="k">AS</span> <span class="nb">numeric</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_tup_ins</span> <span class="o">+</span> <span class="n">n_tup_upd</span> <span class="o">+</span> <span class="n">n_tup_del</span><span class="p">)</span> <span class="k">AS</span> <span class="n">del_pct</span> 
+<span class="k">FROM</span> <span class="n">pg_stat_user_tables</span> <span class="k">where</span> <span class="n">relname</span><span class="o">=</span><span class="s1">&#39;products&#39;</span><span class="p">;</span>
+<span class="n">relname</span>   <span class="o">|</span> <span class="n">ins_pct</span>                <span class="o">|</span> <span class="n">upd_pct</span>                <span class="o">|</span> <span class="n">del_pct</span> 
+<span class="c1">----------+------------------------+------------------------+------------------------
+</span><span class="c1"></span><span class="n">products</span>  <span class="o">|</span> <span class="mi">0</span><span class="p">.</span><span class="mi">00000000000000000000</span> <span class="o">|</span> <span class="mi">0</span><span class="p">.</span><span class="mi">50000000000000000000</span> <span class="o">|</span> <span class="mi">0</span><span class="p">.</span><span class="mi">50000000000000000000</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>4.表的IO和索引的IO</p>
+
+<p>表的IO主要涉及查询的时候查询的逻辑块和物理块，归到底也是命中率的问题，当然最简单的思维方式，一张表存在内存中的内容越多，相应的查询速度越快。相关视图：<code>pg_stat_user_tables</code></p>
+
+<p>相对于表的大小来说，索引占用的空间要小的多，所以常用的表，可以让其索引一直存在内存中，很多时候保持索引的一个高命中率是非常必要的。相关视图: <code>pg_stat_user_indexes</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">#</span> <span class="k">SELECT</span> <span class="n">indexrelname</span><span class="p">,</span><span class="k">cast</span><span class="p">(</span><span class="n">idx_blks_hit</span> <span class="k">as</span> <span class="nb">numeric</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">idx_blks_hit</span> <span class="o">+</span> <span class="n">idx_blks_read</span><span class="p">)</span> <span class="k">AS</span> <span class="n">hit_pct</span><span class="p">,</span>
+<span class="n">idx_blks_hit</span><span class="p">,</span><span class="n">idx_blks_read</span> 
+<span class="k">FROM</span> <span class="n">pg_statio_user_indexes</span> <span class="k">WHERE</span> <span class="p">(</span><span class="n">idx_blks_hit</span> <span class="o">+</span> <span class="n">idx_blks_read</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">hit_pct</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>5.buffer background 和 checkpoint</p>
+
+<p>涉及检查点写和后台写的比率问题，检查点的集中数据写入会对数据库IO的性能有很大的提升，但相应的需要部分空间存储脏数据，而且一旦数据库崩溃，内存中未被写入磁盘的脏数据越多，数据库恢复时间也就越长，这是一个数据库的平衡问题，相关问题在调优文档中做深入研究。 相关视图：<code>pg_stat_bgwriter</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">SELECT</span>
+<span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">checkpoints_req</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">checkpoints_timed</span> <span class="o">+</span> <span class="n">checkpoints_req</span><span class="p">)</span> <span class="k">AS</span> <span class="n">checkpoints_req_pct</span><span class="p">,</span>
+<span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">buffers_checkpoint</span> <span class="o">*</span> <span class="n">block_size</span> <span class="o">/</span> <span class="p">(</span><span class="n">checkpoints_timed</span> <span class="o">+</span> <span class="n">checkpoints_req</span><span class="p">))</span> <span class="k">AS</span> <span class="n">avg_checkpoint_write</span><span class="p">,</span>
+<span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">block_size</span> <span class="o">*</span> <span class="p">(</span><span class="n">buffers_checkpoint</span> <span class="o">+</span> <span class="n">buffers_clean</span> <span class="o">+</span> <span class="n">buffers_backend</span><span class="p">))</span> <span class="k">AS</span> <span class="n">total_written</span><span class="p">,</span>
+<span class="mi">100</span> <span class="o">*</span> <span class="n">buffers_checkpoint</span> <span class="o">/</span> <span class="p">(</span><span class="n">buffers_checkpoint</span> <span class="o">+</span> <span class="n">buffers_clean</span> <span class="o">+</span> <span class="n">buffers_backend</span><span class="p">)</span> <span class="k">AS</span> <span class="n">checkpoint_write_pct</span><span class="p">,</span>
+<span class="mi">100</span> <span class="o">*</span> <span class="n">buffers_backend</span> <span class="o">/</span> <span class="p">(</span><span class="n">buffers_checkpoint</span> <span class="o">+</span> <span class="n">buffers_clean</span> <span class="o">+</span> <span class="n">buffers_backend</span><span class="p">)</span> <span class="k">AS</span> <span class="n">backend_write_pct</span><span class="p">,</span><span class="o">*</span>
+<span class="k">FROM</span> <span class="n">pg_stat_bgwriter</span><span class="p">,(</span><span class="k">SELECT</span> <span class="k">cast</span><span class="p">(</span><span class="n">current_setting</span><span class="p">(</span><span class="s1">&#39;block_size&#39;</span><span class="p">)</span> <span class="k">AS</span> <span class="nb">integer</span><span class="p">)</span> <span class="k">AS</span> <span class="n">block_size</span><span class="p">)</span> <span class="k">AS</span> <span class="n">bs</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="系统监控信息">系统监控信息</h1>
+
+<p>介绍一些关于数据库需要查看的系统状态信息</p>
+
+<p>1.数据库基本状态信息</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ps -ef | grep postgres</span>
+<span class="c1"># netstat -altunp | grep 5432</span>
+<span class="c1"># pg_controdata</span>   </code></pre></td></tr></table>
+</div>
+</div>
+<p>pg_controdata命令和psql同在postgres的bin目录下,系统命令下查询到最全面的数据库快照信息</p>
+
+<p>2.top动态信息配合其他命令使用(截取相关行)</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># top -u postgres</span>
+Cpu<span class="o">(</span>s<span class="o">)</span>: <span class="m">1</span>.7%us, <span class="m">1</span>.0%sy, <span class="m">0</span>.0%ni, <span class="m">97</span>.3%id, <span class="m">0</span>.0%wa, <span class="m">0</span>.0%hi, <span class="m">0</span>.0%si, <span class="m">0</span>.0%st
+Mem: 2051164k total, 1476536k used, 574628k free, 239624k buffers
+Swap: 2097144k total, 0k used, 2097144k free, 768676k cached
+PID   USER    PR NI VIRT RES SHR   S %CPU %MEM TIME+ COMMAND 
+<span class="m">11172</span> postgres <span class="m">20</span> <span class="m">0</span> 709m 34m 33m   S <span class="m">0</span>.0  <span class="m">1</span>.7 <span class="m">0</span>:00.79 postgres 
+<span class="m">9380</span>  postgres <span class="m">20</span> <span class="m">0</span> 167m <span class="m">5284</span> <span class="m">2272</span> S <span class="m">0</span>.0  <span class="m">0</span>.3 <span class="m">0</span>:00.05 psql 
+<span class="m">11178</span> postgres <span class="m">20</span> <span class="m">0</span> 709m <span class="m">5168</span> <span class="m">4408</span> S <span class="m">0</span>.0  <span class="m">0</span>.3 <span class="m">0</span>:00.01 postgres 
+<span class="m">11179</span> postgres <span class="m">20</span> <span class="m">0</span> 709m <span class="m">4656</span> <span class="m">3920</span> S <span class="m">0</span>.0  <span class="m">0</span>.2 <span class="m">0</span>:00.01 postgres </code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># free</span>
+total used free shared buffers cached
+Mem: <span class="m">2051164</span> <span class="m">1476032</span> <span class="m">575132</span> <span class="m">0</span> <span class="m">239624</span> <span class="m">768676</span>
+-/+ buffers/cache: <span class="m">467732</span> <span class="m">1583432</span>
+Swap: <span class="m">2097144</span> <span class="m">0</span> <span class="m">2097144</span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># iotop -u postgres</span>
+Total DISK READ: <span class="m">0</span>.00 B/s <span class="p">|</span> Total DISK WRITE: <span class="m">0</span>.00 B/s
+<span class="m">11175</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: logger process
+<span class="m">11181</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: autovacuum launcher process
+<span class="m">11178</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: checkpointer process
+<span class="m">11180</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: wal writer process
+<span class="m">11182</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: stats collector process
+<span class="m">11179</span> be/4 postgres <span class="m">0</span>.00 B/s <span class="m">0</span>.00 B/s <span class="m">0</span>.00 % <span class="m">0</span>.00 % postgres: writer process</code></pre></td></tr></table>
+</div>
+</div>
+<p>简单分析下top命令,用top可以分析出系统的当前总体的负载状况，如上例，总体负载率很低，在io等待率高的时候可以使用iotop来定位io具体的进程，top中的VIRT RES 可以看出进程希望获取的内存，和占用系统内存的数量，可以根据来判定系统内存的分配情况，内存的值也关联到一些参数的设定，如postgres在发生检查点之前checkpointer process进程会消耗比较大的物理内存，直到检查点发生后，占用的内存才会被释放掉，所以在设置检查点时间的时候也要将内存的占用考虑进去。</p>
+
+<p>free总体的表现内存的使用情况，buffers和cached在应用申请内存的时候会被系统释放掉，所以应用实际可以使用的内存是free的值加上buffers和cached的。</p>
+
+<p>3.sar做辅助分析</p>
+
+<p>sar类似于快照的方式来保存系统过去的信息</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># sar</span>
+<span class="m">03</span>:40:01 PM CPU %user %nice %system %iowait %steal %idle
+<span class="m">03</span>:50:01 PM all <span class="m">1</span>.56  <span class="m">0</span>.00  <span class="m">0</span>.68    <span class="m">0</span>.10    <span class="m">0</span>.00   <span class="m">97</span>.67
+<span class="m">04</span>:00:02 PM all <span class="m">1</span>.91  <span class="m">0</span>.00  <span class="m">0</span>.63    <span class="m">0</span>.05    <span class="m">0</span>.00   <span class="m">97</span>.41
+Average:    all <span class="m">1</span>.07  <span class="m">0</span>.04  <span class="m">1</span>.95    <span class="m">2</span>.65    <span class="m">0</span>.00   <span class="m">94</span>.29</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># sar -r</span>
+<span class="m">12</span>:40:01 PM kbmemfree kbmemused %memused kbbuffers kbcached kbcommit %commit
+<span class="m">12</span>:50:01 PM <span class="m">567124</span>    <span class="m">1484040</span>   <span class="m">72</span>.35    <span class="m">237596</span>    <span class="m">755720</span>   <span class="m">1426740</span>  <span class="m">34</span>.39
+<span class="m">01</span>:10:01 PM <span class="m">567256</span>    <span class="m">1483908</span>   <span class="m">72</span>.34    <span class="m">237600</span>    <span class="m">755720</span>   <span class="m">1426740</span>  <span class="m">34</span>.39
+<span class="m">01</span>:20:01 PM <span class="m">567132</span>    <span class="m">1484032</span>   <span class="m">72</span>.35    <span class="m">237600</span>    <span class="m">755724</span>   <span class="m">1426740</span>  <span class="m">34</span>.39
+Average:    <span class="m">742177</span>    <span class="m">1308987</span>   <span class="m">63</span>.82    <span class="m">195809</span>    <span class="m">669444</span>   <span class="m">1390037</span>  <span class="m">33</span>.51</code></pre></td></tr></table>
+</div>
+</div>
+<p>这些统计信息可以对照性能问题，查看当时的系统状态。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-04-07
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/postgresql/">postgresql</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/04/08/a-benchmark-tool-on-postgresql/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">PostgreSQL测试工具PGbench</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/04/07/install-postgresql-on-rhel-system/">
+            <span class="next-text nav-default">RHEL系统安装PostgreSQL</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

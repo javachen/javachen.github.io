@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Presto介绍 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Presto 是一个运行在集群之上的分布式系统。一个完全的安装报考一个 coordinator  进程和多个 workers 进程。查询通过一个客户端例如 Presto CLI 提交到 coordinator 进程。这个 coordinator 进程解析、分析并且生成查询的执行计划，然后将执行过程分发到 workers 进程。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/01/23/presto-overview/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Presto介绍" />
+<meta property="og:description" content="Presto 是一个运行在集群之上的分布式系统。一个完全的安装报考一个 coordinator  进程和多个 workers 进程。查询通过一个客户端例如 Presto CLI 提交到 coordinator 进程。这个 coordinator 进程解析、分析并且生成查询的执行计划，然后将执行过程分发到 workers 进程。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/01/23/presto-overview/" />
+<meta property="article:published_time" content="2015-01-23T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-01-23T08:00:00+08:00" />
+<meta itemprop="name" content="Presto介绍">
+<meta itemprop="description" content="Presto 是一个运行在集群之上的分布式系统。一个完全的安装报考一个 coordinator  进程和多个 workers 进程。查询通过一个客户端例如 Presto CLI 提交到 coordinator 进程。这个 coordinator 进程解析、分析并且生成查询的执行计划，然后将执行过程分发到 workers 进程。">
+
+
+<meta itemprop="datePublished" content="2015-01-23T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-01-23T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1292">
+
+
+
+<meta itemprop="keywords" content="hadoop,presto," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Presto介绍"/>
+<meta name="twitter:description" content="Presto 是一个运行在集群之上的分布式系统。一个完全的安装报考一个 coordinator  进程和多个 workers 进程。查询通过一个客户端例如 Presto CLI 提交到 coordinator 进程。这个 coordinator 进程解析、分析并且生成查询的执行计划，然后将执行过程分发到 workers 进程。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Presto介绍</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-01-23 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 1292 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-简介">1. 简介</a></li>
+<li><a href="#2-要求">2. 要求</a>
+<ul>
+<li><a href="#2-1-连接器">2.1 连接器</a>
+<ul>
+<li><a href="#hadoop-hive">HADOOP/HIVE</a></li>
+<li><a href="#cassandra">CASSANDRA</a></li>
+<li><a href="#tpc-h">TPC-H</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#3-使用场景">3. 使用场景</a>
+<ul>
+<li><a href="#3-1-what-presto-is-not">3.1 What Presto Is Not</a></li>
+<li><a href="#3-2-what-presto-is">3.2 What Presto Is</a></li>
+<li><a href="#3-3-who-uses-presto">3.3 Who uses Presto?</a></li>
+</ul></li>
+<li><a href="#4-资料">4. 资料</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-01-23T08:00:00" title="January 23, 2015">January 23, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-简介">1. 简介</h1>
+
+<p>Presto 是一个运行在集群之上的分布式系统。一个完全的安装报考一个 coordinator  进程和多个 workers 进程。查询通过一个客户端例如 Presto CLI 提交到 coordinator 进程。这个 coordinator 进程解析、分析并且生成查询的执行计划，然后将执行过程分发到 workers 进程。</p>
+
+<p>下面是一个架构图（图来自 <a href="http://www.dw4e.com/?p=141">http://www.dw4e.com/?p=141</a>，此图将官网的架构图稍微修改了一下，增加了 Discovery 的服务，这样可能看起来会更清楚一些）：</p>
+
+<p><img src="http://www.dw4e.com/wp-content/uploads/images/11/presto.png" alt="" /></p>
+
+<p>Presto 查询引擎是一个 Master-Slave 的架构，由一个 Coordinato r节点，一个 Discovery Server 节点，多个 Worker 节点组成，Discovery Server 通常内嵌于 Coordinator 节点中。Coordinator 负责解析 SQL 语句，生成执行计划，分发执行任务给 Worker 节点执行。Worker 节点负责实际执行查询任务。Worker 节点启动后向 Discovery Server 服务注册，Coordinator 从 Discovery Server 获得可以正常工作的 Worker 节点。如果配置了 Hive Connector，需要配置一个 Hive MetaStore 服务为 Presto 提供 Hive 元信息，Worker 节点与 HDFS 交互读取数据。</p>
+
+<h1 id="2-要求">2. 要求</h1>
+
+<p>Presto 有以下几个基本要求：</p>
+
+<ul>
+<li>Linux 或者 Mac OS X 系统</li>
+<li>Java 8，64位</li>
+<li>Python 2.4++</li>
+</ul>
+
+<h2 id="2-1-连接器">2.1 连接器</h2>
+
+<p>Presto 支持可插拔的连接器用于提供数据查询。不同连接器的要求不一样。</p>
+
+<h3 id="hadoop-hive">HADOOP/HIVE</h3>
+
+<p>Presto 支持读以下版本的 hive 数据：</p>
+
+<ul>
+<li>Apache Hadoop 1.x，使用 <code>hive-hadoop1</code> 连接器</li>
+<li>Apache Hadoop 2.x，使用 <code>hive-hadoop2</code> 连接器</li>
+<li>Cloudera CDH 4，<code>使用 hive-cdh4</code> 连接器</li>
+<li>Cloudera CDH 5，<code>使用 hive-cdh5</code> 连接器</li>
+</ul>
+
+<p>支持以下格式：Text、SequenceFile、RCFile、ORC。</p>
+
+<p>另外，还需要一个远程的 Hive metastore 服务。本地的或者嵌入式模式是不支持的。Presto 不使用 MapReduce 并且只需要 HDFS。</p>
+
+<h3 id="cassandra">CASSANDRA</h3>
+
+<p>Cassandra 2.x 是需要的。这个连接器是完全独立于 Hive 连接器的并且仅仅需要一个安装好的 Cassandra 集群。</p>
+
+<h3 id="tpc-h">TPC-H</h3>
+
+<p>TPC-H 连接器动态地生成数据用于实验和测试 Presto。这个连接器没有额外的要求。</p>
+
+<p>当然，Presto 还支持一些其他的连接器，包括：</p>
+
+<ul>
+<li>JMX</li>
+<li>Kafka</li>
+<li>MySQL</li>
+<li>PostgreSQL</li>
+</ul>
+
+<h1 id="3-使用场景">3. 使用场景</h1>
+
+<h2 id="3-1-what-presto-is-not">3.1 What Presto Is Not</h2>
+
+<p>Presto 支持 SQL 并提供了一个标准数据库的语法特性，但其不是一个通常意义上的关系数据库，他不是关系数据库，如 MySQL、PostgreSQL 或者 Oracle 的替代品。Presto 不是设计用来解决在线事物处理（OLTP）。</p>
+
+<h2 id="3-2-what-presto-is">3.2 What Presto Is</h2>
+
+<p>Presto 是一个工具，被用来通过分布式查询来有效的查询大量的数据。Presto 是一个可选的工具，可以用来查询 HDFS，通过使用 MapReduce 的作业的流水线，例如 hive，pig，但是又不限于查询 HDFS 数据，它还能查询其他的不同数据源的数据，包括关系数据库以及其他的数据源，比如 cassandra。</p>
+
+<p>Presto 被设计为处理数据仓库和分析：分析数据，聚合大量的数据并产生报表，这些场景通常被定义为 OLAP。</p>
+
+<h2 id="3-3-who-uses-presto">3.3 Who uses Presto?</h2>
+
+<p>国外：</p>
+
+<ul>
+<li>Facebook，Presto 的开发者</li>
+</ul>
+
+<p>国内：</p>
+
+<ul>
+<li>腾讯，待考证</li>
+<li>美团，<a href="http://tech.meituan.com/presto.html">Presto实现原理和美团的使用实践</a></li>
+<li>窝窝团，<a href="http://www.cnblogs.com/zhengyun_ustc/p/55solution7.html">#数据技术选型#即席查询Shib+Presto，集群任务调度HUE+Oozie</a></li>
+</ul>
+
+<h1 id="4-资料">4. 资料</h1>
+
+<p>以下是一些资料，希望对你了解 Presto 有所帮助：</p>
+
+<ul>
+<li>Presto官方文档：<a href="http://prestodb.io/">http://prestodb.io/</a></li>
+
+<li><p><a href="https://github.com/tagomoris/shib">Shib</a>：Shib is a web-client written in Node.js designed to query Presto and Hive.</p></li>
+
+<li><p>Facebook Presto团队介绍Presto的文章： <a href="https://www.facebook.com/notes/facebook-engineering/presto-interacting-with-petabytes-of-data-at-facebook/10151786197628920">https://www.facebook.com/notes/facebook-engineering/presto-interacting-with-petabytes-of-data-at-facebook/10151786197628920</a></p></li>
+
+<li><p>SlideShare两个分享Presto 的PPT： <a href="http://www.slideshare.net/zhusx/presto-overview?from_search=1">http://www.slideshare.net/zhusx/presto-overview?from_search=1</a> 和 <a href="http://www.slideshare.net/frsyuki/hadoop-source-code-reading-15-in-japan-presto">http://www.slideshare.net/frsyuki/hadoop-source-code-reading-15-in-japan-presto</a></p></li>
+
+<li><p><a href="http://www.dw4e.com/?p=141">Presto的单节点和多节点配置</a></p></li>
+
+<li><p><a href="http://wangmeng.us/notes/Impala/">Impala Presto wiki</a> 主要介绍了 Presto 的架构、原理和工作流程，以及和 impala 的对比。</p></li>
+
+<li><p><a href="http://www.cnblogs.com/tonghu008/p/3547795.html">记录Presto数据查询引擎的配置过程</a></p></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-01-23
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/presto/">presto</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/01/23/new-in-cdh-5-2-impala-authentication-with-ldap-and-kerberos/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">CDH 5.2中Impala认证集成LDAP和Kerberos</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/01/20/maven-skills/">
+            <span class="next-text nav-default">Maven的一些技巧</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

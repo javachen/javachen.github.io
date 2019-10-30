@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Docker搭建hadoop和hive环境 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="文将介绍如何在docker上从零开始安装hadoop以及hive环境。本文不会介绍如何安装docker，也不会过多的介绍docker各个命令的具体含义，对docker完全不了解的同学建议先简单的学习一下docker再来看本教程。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2019/07/26/install-hadoop-and-hive-with-docker/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Docker搭建hadoop和hive环境" />
+<meta property="og:description" content="文将介绍如何在docker上从零开始安装hadoop以及hive环境。本文不会介绍如何安装docker，也不会过多的介绍docker各个命令的具体含义，对docker完全不了解的同学建议先简单的学习一下docker再来看本教程。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2019/07/26/install-hadoop-and-hive-with-docker/" />
+<meta property="article:published_time" content="2019-07-26T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-07-26T08:00:00+08:00" />
+<meta itemprop="name" content="Docker搭建hadoop和hive环境">
+<meta itemprop="description" content="文将介绍如何在docker上从零开始安装hadoop以及hive环境。本文不会介绍如何安装docker，也不会过多的介绍docker各个命令的具体含义，对docker完全不了解的同学建议先简单的学习一下docker再来看本教程。">
+
+
+<meta itemprop="datePublished" content="2019-07-26T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-07-26T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1659">
+
+
+
+<meta itemprop="keywords" content="hadoop," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Docker搭建hadoop和hive环境"/>
+<meta name="twitter:description" content="文将介绍如何在docker上从零开始安装hadoop以及hive环境。本文不会介绍如何安装docker，也不会过多的介绍docker各个命令的具体含义，对docker完全不了解的同学建议先简单的学习一下docker再来看本教程。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Docker搭建hadoop和hive环境</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-07-26 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 1659 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#构建centos镜像">构建Centos镜像</a></li>
+<li><a href="#安装hadoop">安装Hadoop</a></li>
+<li><a href="#安装hive">安装Hive</a></li>
+<li><a href="#总结">总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>文将介绍如何在docker上从零开始安装hadoop以及hive环境。本文不会介绍如何安装docker，也不会过多的介绍docker各个命令的具体含义，对docker完全不了解的同学建议先简单的学习一下docker再来看本教程。</p>
+
+<h1 id="构建centos镜像">构建Centos镜像</h1>
+
+<p>Dockerfile</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="k">FROM</span><span class="s"> centos:7</span><span class="err">
+</span><span class="err"></span><span class="k">MAINTAINER</span><span class="s"> by javachen(junecloud@163.com)</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c">#升级系统、安装常用软件</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span> yum -y update <span class="o">&amp;&amp;</span> yum -y install openssh-server openssh-clients.x86_64 vim less wget java-1.8.0-openjdk.x86_64 java-1.8.0-openjdk-devel<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="k">ENV</span><span class="s"> JAVA_HOME=/usr/lib/jvm/java</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c">#生成秘钥、公钥</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span> <span class="o">[</span> ! -d ~/.ssh <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> mkdir ~/.ssh <span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> chmod <span class="m">600</span> ~/.ssh <span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">[</span> ! -f ~/.ssh/id_rsa.pub <span class="o">]</span> <span class="se">\
+</span><span class="se"></span><span class="o">&amp;&amp;</span> <span class="o">(</span>yes<span class="p">|</span>ssh-keygen -f ~/.ssh/id_rsa -t rsa -N <span class="s2">&#34;&#34;</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> chmod <span class="m">600</span> ~/.ssh/id_rsa.pub <span class="o">)</span> <span class="se">\
+</span><span class="se"></span><span class="o">&amp;&amp;</span> cat ~/.ssh/id_rsa.pub &gt;&gt; ~/.ssh/authorized_keys<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c">#设置时区</span><span class="err">
+</span><span class="err"></span><span class="k">ENV</span><span class="s"> TZ=Asia/Shanghai</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span> ln -snf /usr/share/zoneinfo/<span class="nv">$TZ</span> /etc/localtime <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s1">&#39;$TZ&#39;</span> &gt; /etc/timezone<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c">#变更root密码为root</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span>  cp /etc/sudoers /etc/sudoers.orig <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">&#34;root            ALL=(ALL)               NOPASSWD: ALL&#34;</span> &gt;&gt; /etc/sudoers <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">&#34;root:root&#34;</span><span class="p">|</span> chpasswd<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c">#开放窗口的22端口</span><span class="err">
+</span><span class="err"></span><span class="k">EXPOSE</span><span class="s"> 22</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>更多的配置镜像脚本，可以参考 <a href="https://github.com/javachen/snippets/blob/master/hadoop-install/bin/config_system.sh">config_system.sh</a></p>
+
+<p>构建镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker build -t centos-hadoop:v1 .</pre></td></tr></table>
+</div>
+</div>
+<p>通过镜像启动容器:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker run -d --name centos-hadoop centos-hadoop:v1 </pre></td></tr></table>
+</div>
+</div>
+<p>启动容器后，我们就可以进入容器进行hadoop和hive的相关安装了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker exec -it centos-hadoop /bin/bash</pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装hadoop">安装Hadoop</h1>
+
+<p>下载安装包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wget http://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz</pre></td></tr></table>
+</div>
+</div>
+<p>解压：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tar xvf hadoop-3.1.2.tar.gz -C /usr/local/</pre></td></tr></table>
+</div>
+</div>
+<p>vim /usr/local/hadoop-3.1.2/etc/hadoop/core-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>hdfs://127.0.0.1:9000<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>vim /usr/local/hadoop-3.1.2/etc/hadoop/hdfs-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>dfs.replication<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>vim /usr/local/hadoop-3.1.2/etc/hadoop/mapred-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+     <span class="nt">&lt;name&gt;</span>mapreduce.framework.name<span class="nt">&lt;/name&gt;</span>
+     <span class="nt">&lt;value&gt;</span>yarn<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>vim /usr/local/hadoop-3.1.2/etc/hadoop/hadoop-env.sh</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">JAVA_HOME</span><span class="o">=</span>/usr/lib/jvm/java</code></pre></td></tr></table>
+</div>
+</div>
+<p>/usr/local/hadoop-3.1.2/sbin/目录下将start-dfs.sh，stop-dfs.sh两个文件顶部添加以下参数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">!/usr/bin/env bash
+
+<span class="nv">HDFS_DATANODE_USER</span><span class="o">=</span>root
+<span class="nv">HDFS_DATANODE_SECURE_USER</span><span class="o">=</span>hdfs
+<span class="nv">HDFS_NAMENODE_USER</span><span class="o">=</span>root
+<span class="nv">HDFS_SECONDARYNAMENODE_USER</span><span class="o">=</span>root</code></pre></td></tr></table>
+</div>
+</div>
+<p>vim /etc/profile</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">export HADOOP_HOME=&#34;/usr/local/hadoop-3.1.2&#34;
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin</pre></td></tr></table>
+</div>
+</div>
+<p>配置生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">source /etc/profile</pre></td></tr></table>
+</div>
+</div>
+<p>namenode 初始化</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hadoop namenode -format</pre></td></tr></table>
+</div>
+</div>
+<p>启动hdfs相关进程:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">start-dfs.sh</pre></td></tr></table>
+</div>
+</div>
+<p>执行<code>start-dfs.sh</code>脚本后，hadoop会启动3个和hdfs相关的进程。通过<code>ps -ef | grep hadoop</code>我们可以看到这几个进程分别是<code>NameNode</code>、<code>SecondaryNamenode</code>、<code>Datanode</code>。如果少了就要注意hdfs是否没有正常启动了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ps -ef | grep hadoop</pre></td></tr></table>
+</div>
+</div>
+<p>之后启动yarn的相关进程:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">start-yarn.sh</pre></td></tr></table>
+</div>
+</div>
+<p>验证程序已经正确启动</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hadoop fs -mkdir /test
+
+hadoop fs -ls /
+Found <span class="m">1</span> items
+drwxr-xr-x   - root supergroup          <span class="m">0</span> <span class="m">2019</span>-07-26 <span class="m">19</span>:15 /test</code></pre></td></tr></table>
+</div>
+</div>
+<p>hadoop默认的存储数据的目录为：/tmp/hadoop-${user}</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ll /tmp/hadoop-root/dfs/
+total <span class="m">0</span>
+drwx------ <span class="m">3</span> root root <span class="m">40</span> Jul <span class="m">26</span> <span class="m">19</span>:39 data
+drwxr-xr-x <span class="m">3</span> root root <span class="m">40</span> Jul <span class="m">26</span> <span class="m">19</span>:39 name
+drwxr-xr-x <span class="m">3</span> root root <span class="m">40</span> Jul <span class="m">26</span> <span class="m">19</span>:39 namesecondary</code></pre></td></tr></table>
+</div>
+</div>
+<p>/usr/local/hadoop-3.1.2/sbin/目录下将start-yarn.sh，stop-yarn.sh两个文件顶部添加以下参数</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">YARN_RESOURCEMANAGER_USER</span><span class="o">=</span>root
+<span class="nv">YARN_NODEMANAGER_USER</span><span class="o">=</span>root</code></pre></td></tr></table>
+</div>
+</div>
+<p>之后启动yarn的相关进程</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">start-yarn.sh</pre></td></tr></table>
+</div>
+</div>
+<p>执行脚本后正常会有<code>ResourceManager</code>和<code>NodeManager</code>这两个进程。</p>
+
+<h1 id="安装hive">安装Hive</h1>
+
+<p>下载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wget http://mirror.bit.edu.cn/apache/hive/hive-3.1.1/apache-hive-3.1.1-bin.tar.gz</pre></td></tr></table>
+</div>
+</div>
+<p>解压：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tar xvf apache-hive-3.1.1-bin.tar.gz -C /usr/local/
+mv /usr/local/apache-hive-3.1.1-bin /usr/local/hive-3.1.1</pre></td></tr></table>
+</div>
+</div>
+<p>vim /usr/local/hive-3.1.1/conf/hive-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;configuration&gt;</span>
+   <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>system:java.io.tmpdir<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>/tmp/hive/java<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>system:user.name<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>${user.name}<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>vim /etc/profile</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">HIVE_HOME</span><span class="o">=</span><span class="s2">&#34;/usr/local/hive-3.1.1&#34;</span>
+<span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:<span class="nv">$HADOOP_HOME</span>/bin:<span class="nv">$HADOOP_HOME</span>/sbin:<span class="nv">$HIVE_HOME</span>/bin</code></pre></td></tr></table>
+</div>
+</div>
+<p>配置生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">source /etc/profile</pre></td></tr></table>
+</div>
+</div>
+<p>查看docker运行的mysql容器的ip：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker inspect mysql <span class="p">|</span> grep <span class="s2">&#34;IPAddress&#34;</span>
+            <span class="s2">&#34;SecondaryIPAddresses&#34;</span>: null,
+            <span class="s2">&#34;IPAddress&#34;</span>: <span class="s2">&#34;&#34;</span>,
+                    <span class="s2">&#34;IPAddress&#34;</span>: <span class="s2">&#34;172.22.0.2&#34;</span>,</code></pre></td></tr></table>
+</div>
+</div>
+<p>并在mysql数据库中创建hive数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">create database hive;</pre></td></tr></table>
+</div>
+</div>
+<p>修改hive的相关配置 vim /usr/local/hive-3.1.1/conf/hive-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionUserName<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>root<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionPassword<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>123456<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionURL<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>jdbc:mysql://172.22.0.2:3306/hive?useSSL=false<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionDriverName<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>com.mysql.jdbc.Driver<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>wget获取mysql驱动到hive的lib下</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /usr/local/hive-3.1.1/lib
+wget http://central.maven.org/maven2/mysql/mysql-connector-java/5.1.47/mysql-connector-java-5.1.47.jar</code></pre></td></tr></table>
+</div>
+</div>
+<p>初始化元数据库</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">schematool -initSchema -dbType mysql</pre></td></tr></table>
+</div>
+</div>
+<p>我们先创建一个数据文件放到<code>/usr/local</code>，vim test.txt</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">1,jack
+2,hel
+3,nack</pre></td></tr></table>
+</div>
+</div>
+<p>之后通过<code>hive</code>命令进入hive交互界面，然后执行相关操作</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">create table test(
+id      int
+,name    string
+)
+row format delimited
+fields terminated by &#39;,&#39;;
+
+
+load data local inpath &#39;/usr/local/test.txt&#39; into table test;
+
+
+select * from test;
+OK
+1       jack
+2       hel
+3       nack</pre></td></tr></table>
+</div>
+</div>
+<p>启动 Hiveserver2</p>
+
+<p>vim /usr/local/hadoop-3.1.2/etc/hadoop/core-site.xml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.root.hosts<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.root.groups<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后重启hdfs:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">stop-dfs.sh
+start-dfs.sh</pre></td></tr></table>
+</div>
+</div>
+<p>后台启动hiveserver2</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">nohup hiveserver2 &amp;</pre></td></tr></table>
+</div>
+</div>
+<p>通过beeline连接</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">beeline -u jdbc:hive2://127.0.0.1:10000</pre></td></tr></table>
+</div>
+</div>
+<p>查询一下之前建立的表看下是否能正常访问</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">select * from test;</pre></td></tr></table>
+</div>
+</div>
+<h1 id="总结">总结</h1>
+
+<p>本篇文章记录了，如果使用docker搭建hadoop单机环境，如果你想更全面的使用Docker构建Hadoop集群，可以参考 <a href="https://github.com/big-data-europe">https://github.com/big-data-europe</a> ，另外，需要注意的是这个镜像只向宿主机暴露了22端口，如果想暴露更多端口，可以将该镜像提交：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker commit <span class="se">\
+</span><span class="se"></span>    --author <span class="s2">&#34;XXX &lt;XXX@gmail.com&gt;&#34;</span> <span class="se">\
+</span><span class="se"></span>    --message <span class="s2">&#34;XXXXX&#34;</span> <span class="se">\
+</span><span class="se"></span>    centos-hadoop <span class="se">\
+</span><span class="se"></span>    centos-hadoop:v2</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，再次使用新镜像启动容器，并暴露hadoop的端口。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-07-26
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/07/27/internet-protocal/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">网络通信协议</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/07/26/tomcat-tuning-in-spring-boot/">
+            <span class="next-text nav-default">SpringBoot中Tomcat调优</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

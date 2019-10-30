@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Llama的使用 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Llama (Low Latency Application MAster) 是一个 Yarn 的  Application Master，用于协调 Impala 和 Yarn 之间的集群资源的管理和监控。Llama 使 Impala 能够获取、使用和释放资源配额，而不需要 Impala 使用 Yarn 管理的 container 进程。Llama 提供了 Thrift API 来和 Yarn 交互。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/09/09/llama/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Llama的使用" />
+<meta property="og:description" content="Llama (Low Latency Application MAster) 是一个 Yarn 的  Application Master，用于协调 Impala 和 Yarn 之间的集群资源的管理和监控。Llama 使 Impala 能够获取、使用和释放资源配额，而不需要 Impala 使用 Yarn 管理的 container 进程。Llama 提供了 Thrift API 来和 Yarn 交互。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/09/09/llama/" />
+<meta property="article:published_time" content="2014-09-09T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-09-09T08:00:00+08:00" />
+<meta itemprop="name" content="Llama的使用">
+<meta itemprop="description" content="Llama (Low Latency Application MAster) 是一个 Yarn 的  Application Master，用于协调 Impala 和 Yarn 之间的集群资源的管理和监控。Llama 使 Impala 能够获取、使用和释放资源配额，而不需要 Impala 使用 Yarn 管理的 container 进程。Llama 提供了 Thrift API 来和 Yarn 交互。">
+
+
+<meta itemprop="datePublished" content="2014-09-09T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-09-09T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1222">
+
+
+
+<meta itemprop="keywords" content="llama,impala,yarn," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Llama的使用"/>
+<meta name="twitter:description" content="Llama (Low Latency Application MAster) 是一个 Yarn 的  Application Master，用于协调 Impala 和 Yarn 之间的集群资源的管理和监控。Llama 使 Impala 能够获取、使用和释放资源配额，而不需要 Impala 使用 Yarn 管理的 container 进程。Llama 提供了 Thrift API 来和 Yarn 交互。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Llama的使用</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-09-09 </span>
+        <div class="post-category">
+            <a href="/categories/impala/"> impala </a>
+            </div>
+          <span class="more-meta"> 约 1222 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-介绍">1. 介绍</a></li>
+<li><a href="#2-架构">2. 架构</a></li>
+<li><a href="#3-llama-安装">3. Llama 安装</a>
+<ul>
+<li><a href="#3-1-安装-llama">3.1 安装 llama</a></li>
+<li><a href="#3-2-配置">3.2 配置</a></li>
+<li><a href="#3-3-启动和停止">3.3 启动和停止</a></li>
+<li><a href="#3-4-配置-ha">3.4 配置 HA</a></li>
+<li><a href="#3-5-修改-impala-启动参数">3.5 修改 Impala 启动参数</a></li>
+</ul></li>
+<li><a href="#4-使用">4. 使用</a>
+<ul>
+<li><a href="#4-1-llama-application-master">4.1 Llama Application Master</a></li>
+<li><a href="#4-2-llama-admin-command-line-tool">4.2 Llama Admin Command Line tool</a></li>
+<li><a href="#4-3-llama-node-manager-auxiliary-service">4.3 Llama Node Manager Auxiliary Service</a></li>
+</ul></li>
+<li><a href="#5-参考文章">5. 参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-09-09T08:00:00" title="September 9, 2014">September 9, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-介绍">1. 介绍</h1>
+
+<p>Llama (Low Latency Application MAster) 是一个 Yarn 的  Application Master，用于协调 Impala 和 Yarn 之间的集群资源的管理和监控。Llama 使 Impala 能够获取、使用和释放资源配额，而不需要 Impala 使用 Yarn 管理的 container 进程。Llama 提供了 Thrift API 来和 Yarn 交互。</p>
+
+<p>个人理解，Llama 的作用就是使 Impala 能够工作在 YARN 之上，使得 Impala 和 YARN 共享集群资源，提供低延迟的查询。</p>
+
+<ul>
+<li>Llama 官网地址：<a href="http://cloudera.github.io/llama/">http://cloudera.github.io/llama/</a></li>
+<li>Llama 源码：<a href="https://github.com/cloudera/llama">https://github.com/cloudera/llama</a></li>
+</ul>
+
+<h1 id="2-架构">2. 架构</h1>
+
+<h1 id="3-llama-安装">3. Llama 安装</h1>
+
+<h2 id="3-1-安装-llama">3.1 安装 llama</h2>
+
+<p>Llama 需要安装在装有 Yarn 的节点上。</p>
+
+<p>在 rhel 系统上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ sudo yum install llama-master</pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-2-配置">3.2 配置</h2>
+
+<blockquote>
+<p>Llama 只能和 Yarn 配合工作，不能用于 MRv1。</p>
+</blockquote>
+
+<p>Llama 的配置文件在 /etc/llama/conf/ 目录，llama-site.xml 默认配置在 <a href="http://cloudera.github.io/llama/llama-site.html">http://cloudera.github.io/llama/llama-site.html</a>。</p>
+
+<h2 id="3-3-启动和停止">3.3 启动和停止</h2>
+
+<p>启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ sudo service llama start</pre></td></tr></table>
+</div>
+</div>
+<p>停止：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ sudo service llama stop</pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-4-配置-ha">3.4 配置 HA</h2>
+
+<p>Llama 使用 Zookeeper 来实现 HA，任一时刻，只有一个 Llama-master 实例是 active的以确保资源不会被分区。</p>
+
+<p>为了从 Yarn 获取资源，Llama 启动 YARN application 并且运行未管理的ApplicationMaster。当一个 Llama 实例宕掉的时候，分配给该实例启动的 application 的所有资源将会被回首，直到这些 application 超时（默认超时时间为10分钟）。当 Llama 运行失败的时候，这些资源将会被杀掉他启动的application的 Llama 回收。</p>
+
+<p>HA 相关配置参数在 /etc/llama/conf/llama-site.xml：</p>
+
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th align="left">描述</th>
+<th align="center">默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>llama.am.cluster.id</code></td>
+<td align="left">Cluster ID of the Llama pair, used to differentiate between different Llamas</td>
+<td align="center">llama</td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.enabled</code></td>
+<td align="left">Whether to enable Llama HA</td>
+<td align="center">false</td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.zk-quorum</code></td>
+<td align="left">ZooKeeper quorum to use for leader election and fencing</td>
+<td align="center"></td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.zk-base</code></td>
+<td align="left">Base znode for leader election and fencing data</td>
+<td align="center">/llama</td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.zk-timeout-ms</code></td>
+<td align="left">The session timeout, in milliseconds, for connections to ZooKeeper quorum</td>
+<td align="center">10000</td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.zk-ac</code>l</td>
+<td align="left">ACLs to control access to ZooKeeper</td>
+<td align="center">world:anyone:rwcda</td>
+</tr>
+
+<tr>
+<td><code>llama.am.ha.zk-auth</code></td>
+<td align="left">Authorization information to go with the ACLs</td>
+<td align="center"></td>
+</tr>
+</tbody>
+</table>
+
+<p>上面必填的两个参数为：</p>
+
+<ul>
+<li><code>llama.am.ha.enabled</code> ： true</li>
+<li><code>llama.am.ha.zk-quorum</code> ： cdh1:21088,cdh2:21088
+<br /></li>
+</ul>
+
+<h2 id="3-5-修改-impala-启动参数">3.5 修改 Impala 启动参数</h2>
+
+<p>使用 jdbc 方式提交查询到 Impala 时，会出现 <code>number of running queries 20 is over limit 20</code> 的异常，这时候在 impala的 源代码中搜索关键字 <code>number of running queries</code>，可以找到<a href="https://github.com/cloudera/Impala/blob/cdh5-1.4_5.1.2/be/src/scheduling/admission-controller.cc">https://github.com/cloudera/Impala/blob/cdh5-1.4_5.1.2/be/src/scheduling/admission-controller.cc</a>，从源代码中可以看到出现该问题和 Llama 有关系，在找不到 llama 的相关配置时，impala 一个队列中能够接受的最大请求数为 20。代码见:<a href="https://github.com/cloudera/Impala/blob/c5c475712f88244e15160befaf4e99d6e165a148/fe/src/main/java/com/cloudera/impala/util/RequestPoolService.java">RequestPoolService.java</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@VisibleForTesting</span>
+  <span class="n">TPoolConfigResult</span> <span class="nf">getPoolConfig</span><span class="p">(</span><span class="n">String</span> <span class="nf">pool</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">TPoolConfigResult</span> <span class="nf">result</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TPoolConfigResult</span><span class="p">();</span>
+    <span class="kt">int</span> <span class="nf">maxMemoryMb</span> <span class="o">=</span> <span class="n">allocationConf_</span><span class="p">.</span><span class="na">get</span><span class="p">().</span><span class="na">getMaxResources</span><span class="p">(</span><span class="n">pool</span><span class="p">).</span><span class="na">getMemory</span><span class="p">();</span>
+    <span class="n">result</span><span class="p">.</span><span class="na">setMem_limit</span><span class="p">(</span>
+        <span class="n">maxMemoryMb</span> <span class="o">==</span> <span class="n">Integer</span><span class="p">.</span><span class="na">MAX_VALUE</span> <span class="o">?</span> <span class="o">-</span><span class="n">1</span> <span class="o">:</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span> <span class="n">maxMemoryMb</span> <span class="o">*</span> <span class="n">ByteUnits</span><span class="p">.</span><span class="na">MEGABYTE</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">llamaConf_</span> <span class="o">==</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>												<span class="c1">//llama配置为空
+</span><span class="c1"></span>      <span class="n">result</span><span class="p">.</span><span class="na">setMax_requests</span><span class="p">(</span><span class="n">LLAMA_MAX_PLACED_RESERVATIONS_DEFAULT</span><span class="p">);</span>
+      <span class="n">result</span><span class="p">.</span><span class="na">setMax_queued</span><span class="p">(</span><span class="n">LLAMA_MAX_QUEUED_RESERVATIONS_DEFAULT</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="c1">// Capture the current llamaConf_ in case it changes while we&#39;re using it.
+</span><span class="c1"></span>      <span class="n">Configuration</span> <span class="nf">currentLlamaConf</span> <span class="o">=</span> <span class="n">llamaConf_</span><span class="p">;</span>
+      <span class="n">result</span><span class="p">.</span><span class="na">setMax_requests</span><span class="p">(</span><span class="n">getLlamaPoolConfigValue</span><span class="p">(</span><span class="n">currentLlamaConf</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span>
+          <span class="n">LLAMA_MAX_PLACED_RESERVATIONS_KEY</span><span class="p">,</span>
+          <span class="n">LLAMA_MAX_PLACED_RESERVATIONS_DEFAULT</span><span class="p">));</span>  <span class="c1">//20
+</span><span class="c1"></span>      <span class="n">result</span><span class="p">.</span><span class="na">setMax_queued</span><span class="p">(</span><span class="n">getLlamaPoolConfigValue</span><span class="p">(</span><span class="n">currentLlamaConf</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span>
+          <span class="n">LLAMA_MAX_QUEUED_RESERVATIONS_KEY</span><span class="p">,</span>
+          <span class="n">LLAMA_MAX_QUEUED_RESERVATIONS_DEFAULT</span><span class="p">));</span>
+    <span class="p">}</span>
+    <span class="n">LOG</span><span class="p">.</span><span class="na">trace</span><span class="p">(</span><span class="s">&#34;getPoolConfig(pool={}): mem_limit={}, max_requests={}, max_queued={}&#34;</span><span class="p">,</span>
+        <span class="k">new</span> <span class="n">Object</span><span class="p">[]</span> <span class="p">{</span> <span class="n">pool</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="na">mem_limit</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="na">max_requests</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="na">max_queued</span> <span class="p">});</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+  <span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>目前，参考 <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/Impala/Installing-and-Using-Impala/ciiu_admission.html">Admission Control and Query Queuing</a>，在不安装和使用 llama 情况下，找到的一种解决办法是：</p>
+
+<p>修改 impala 启动参数（/etc/default/impala），添加 <code>-default_pool_max_requests=-1</code>，该参数设置每一个队列的最大请求数，如果为-1，则表示不做限制。</p>
+
+<h1 id="4-使用">4. 使用</h1>
+
+<h2 id="4-1-llama-application-master">4.1 Llama Application Master</h2>
+
+<h2 id="4-2-llama-admin-command-line-tool">4.2 Llama Admin Command Line tool</h2>
+
+<h2 id="4-3-llama-node-manager-auxiliary-service">4.3 Llama Node Manager Auxiliary Service</h2>
+
+<h1 id="5-参考文章">5. 参考文章</h1>
+
+<ul>
+<li>[1] <a href="http://cloudera.github.io/llama">http://cloudera.github.io/llama</a></li>
+<li>[2] <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/Impala/Installing-and-Using-Impala/ciiu_admission.html">Admission Control and Query Queuing</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-09-09
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/llama/">llama</a>
+          <a href="/tags/impala/">impala</a>
+          <a href="/tags/yarn/">yarn</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/09/12/file-operation-in-groovy/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用Groovy操作文件</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/09/09/create-a-grails-app-step-by-step/">
+            <span class="next-text nav-default">从零开始创建Grails应用</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

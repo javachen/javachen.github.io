@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>HBase中的一些注意事项 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="列举HBase中的一些注意事项" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/06/26/some-tips-about-hbase/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="HBase中的一些注意事项" />
+<meta property="og:description" content="列举HBase中的一些注意事项" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/06/26/some-tips-about-hbase/" />
+<meta property="article:published_time" content="2014-06-26T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-06-26T08:00:00+08:00" />
+<meta itemprop="name" content="HBase中的一些注意事项">
+<meta itemprop="description" content="列举HBase中的一些注意事项">
+
+
+<meta itemprop="datePublished" content="2014-06-26T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-06-26T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="3176">
+
+
+
+<meta itemprop="keywords" content="hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HBase中的一些注意事项"/>
+<meta name="twitter:description" content="列举HBase中的一些注意事项"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">HBase中的一些注意事项</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-06-26 </span>
+        <div class="post-category">
+            <a href="/categories/hbase/"> hbase </a>
+            </div>
+          <span class="more-meta"> 约 3176 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-安装集群前">1. 安装集群前</a></li>
+<li><a href="#2-hdfs客户端配置">2. HDFS客户端配置</a></li>
+<li><a href="#3-一些配置参数">3. 一些配置参数</a></li>
+<li><a href="#4-shell-技巧">4. Shell 技巧</a>
+<ul>
+<li><a href="#irbrc">irbrc</a></li>
+<li><a href="#shell-切换成debug-模式">Shell 切换成debug 模式</a></li>
+</ul></li>
+<li><a href="#5-hbase-和-mapreduce">5. HBase 和 MapReduce</a></li>
+<li><a href="#6-hbase-的-schema-设计">6.HBase 的 Schema 设计</a></li>
+<li><a href="#7-性能调优">7. 性能调优</a></li>
+<li><a href="#8-需要理解一些过程">8. 需要理解一些过程</a>
+<ul>
+<li><a href="#8-1-什么时候做split">8.1 什么时候做split？</a></li>
+<li><a href="#8-2-什么时候做compaction">8.2 什么时候做compaction？</a></li>
+<li><a href="#8-3-memstore什么时候flush-什么时候阻塞写">8.3 memstore什么时候flush，什么时候阻塞写？</a></li>
+<li><a href="#8-4-hlog什么时候会阻塞写">8.4 HLog什么时候会阻塞写？</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-06-26T08:00:00" title="June 26, 2014">June 26, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-安装集群前">1. 安装集群前</h1>
+
+<ul>
+<li>配置SSH无密码登陆</li>
+<li>DNS。HBase使用本地 hostname 才获得IP地址，正反向的DNS都是可以的。你还可以设置 <code>hbase.regionserver.dns.interface</code> 来指定主接口，设置 <code>hbase.regionserver.dns.nameserver</code> 来指定nameserver，而不使用系统带的</li>
+<li>安装NTP服务，并配置和检查crontab是否生效</li>
+<li>操作系统调优，包括最大文件句柄，nproc hard 和 soft limits等等</li>
+<li><code>conf/hdfs-site.xml</code>里面的 <code>dfs.datanode.max.xcievers</code> 参数，至少要有4096</li>
+</ul>
+
+<h1 id="2-hdfs客户端配置">2. HDFS客户端配置</h1>
+
+<p>如果你希望Hadoop集群上做HDFS 客户端配置 ，例如你的HDFS客户端的配置和服务端的不一样。按照如下的方法配置，HBase就能看到你的配置信息:</p>
+
+<ul>
+<li>在hbase-env.sh里将 <code>HBASE_CLASSPATH</code> 环境变量加上 <code>HADOOP_CONF_DIR</code> 。</li>
+<li>在<code>${HBASE_HOME}/conf</code> 下面加一个 hdfs-site.xml (或者 hadoop-site.xml) ，最好是软连接</li>
+<li>如果你的HDFS客户端的配置不多的话，你可以把这些加到 hbase-site.xml上面.</li>
+</ul>
+
+<p>例如HDFS的配置 <code>dfs.replication</code> 你希望复制5份，而不是默认的3份。如果你不照上面的做的话，Hbase只会复制3份。</p>
+
+<h1 id="3-一些配置参数">3. 一些配置参数</h1>
+
+<p>以下参数来自apache的hbase版本，如果你使用的其他厂商的hbase，有可能默认值不一样。</p>
+
+<ul>
+<li><code>zookeeper.session.timeout</code>：这个默认值是3分钟。这意味着一旦一个server宕掉了，Master至少需要3分钟才能察觉到宕机，开始恢复。你可能希望将这个超时调短，这样Master就能更快的察觉到了。在你调这个值之前，你需要确认你的JVM的GC参数，否则一个长时间的GC操作就可能导致超时。</li>
+<li><code>hbase.regionserver.handler.count</code>：这个设置决定了处理用户请求的线程数量。默认是10，这个值设的比较小，主要是为了预防用户用一个比较大的写缓冲，然后还有很多客户端并发，这样region servers会垮掉。有经验的做法是，当请求内容很大(上MB，如大puts, 使用缓存的scans)的时候，把这个值放低。请求内容较小的时候(gets, 小puts, ICVs, deletes)，把这个值放大。把这个值放大的危险之处在于，把所有的Put操作缓冲意味着对内存有很大的压力，甚至会导致OutOfMemory.一个运行在内存不足的机器的RegionServer会频繁的触发GC操作，渐渐就能感受到停顿。一段时间后，集群也会受到影响，因为所有的指向这个region的请求都会变慢。这样就会拖累集群，加剧了这个问题。</li>
+<li><code>hbase.client.keyvalue.maxsize</code>：一个KeyValue实例的最大size。如果设置为0或者更小，就会禁用这个检查。默认10MB。</li>
+<li><code>hbase.regionserver.lease.period</code>：户端租用HRegion server 期限，即超时阀值。单位是毫秒。默认情况下，客户端必须在这个时间内发一条信息，否则视为死掉。默认值为60000。</li>
+<li><code>hbase.regionserver.msginterval</code>：RegionServer 发消息给 Master 时间间隔，单位是毫秒，默认: 3000</li>
+<li><code>hbase.regionserver.optionallogflushinterval</code>：将Hlog同步到HDFS的间隔。如果Hlog没有积累到一定的数量，到了时间，也会触发同步。默认是1秒，单位毫秒。</li>
+<li><code>hbase.regionserver.logroll.period</code>：提交commit log的间隔，不管有没有写足够的值。默认: 3600000</li>
+<li><code>hbase.regionserver.thread.splitcompactcheckfrequency</code>：region server 多久执行一次split/compaction 检查。默认: 20000</li>
+<li><code>hbase.balancer.period</code>：Master执行region balancer的间隔。默认: 300000</li>
+<li><code>hbase.hregion.memstore.block.multiplier</code>：如果memstore有<code>hbase.hregion.memstore.block.multiplier</code>倍数的<code>hbase.hregion.flush.size</code>的大小，就会阻塞update操作。这是为了预防在update高峰期会导致的失控。如果不设上界，flush的时候会花很长的时间来合并或者分割，最坏的情况就是引发out of memory异常。默认: 2</li>
+<li><code>hbase.hstore.compactionThreshold</code>：当一个HStore含有多于这个值的HStoreFiles(每一个memstore flush产生一个HStoreFile)的时候，会执行一个合并操作，把这HStoreFiles写成一个。这个值越大，需要合并的时间就越长。默认: 3</li>
+<li><code>hbase.hstore.blockingStoreFiles</code>：当一个HStore含有多于这个值的HStoreFiles(每一个memstore flush产生一个HStoreFile)的时候，会执行一个合并操作，update会阻塞直到合并完成，直到超过了<code>hbase.hstore.blockingWaitTime</code>的值。默认: 7</li>
+</ul>
+
+<h1 id="4-shell-技巧">4. Shell 技巧</h1>
+
+<h2 id="irbrc">irbrc</h2>
+
+<p>可以在你自己的Home目录下创建一个.irbrc文件，在这个文件里加入自定义的命令。有一个有用的命令就是记录命令历史，这样你就可以把你的命令保存起来。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ more .irbrc
+require &#39;irb/ext/save-history&#39;
+IRB.conf[:SAVE_HISTORY] = 100
+IRB.conf[:HISTORY_FILE] = &#34;#{ENV[&#39;HOME&#39;]}/.irb-save-history&#34;</pre></td></tr></table>
+</div>
+</div>
+<h2 id="shell-切换成debug-模式">Shell 切换成debug 模式</h2>
+
+<p>你可以将shell切换成debug模式。这样可以看到更多的信息。例如可以看到命令异常的stack trace:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hbase&gt; debug</pre></td></tr></table>
+</div>
+</div>
+<p>想要在shell中看到 DEBUG 级别的 logging ，可以在启动的时候加上 <code>-d</code> 参数.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ ./bin/hbase shell -d</pre></td></tr></table>
+</div>
+</div>
+<h1 id="5-hbase-和-mapreduce">5. HBase 和 MapReduce</h1>
+
+<p>当 MapReduce job的HBase table 使用TableInputFormat为数据源格式的时候,他的splitter会给这个table的每个region一个map。因此，如果一个table有100个region，就有100个map-tasks，不论需要scan多少个column families 。</p>
+
+<p>通常建议关掉针对HBase的MapReduce job的<code>预测执行</code>(speculative execution)功能。这个功能也可以用每个Job的配置来完成。对于整个集群，使用预测执行意味着双倍的运算量。这可不是你所希望的。</p>
+
+<h1 id="6-hbase-的-schema-设计">6.HBase 的 Schema 设计</h1>
+
+<p>flush和compaction操作是针对一个Region。</p>
+
+<p>Compaction操作现在是根据一个column family下的全部文件的数量触发的，而不是根据文件大小触发的。当很多的column families在flush和compaction时,会造成很多没用的I/O负载(要想解决这个问题，需要将flush和compaction操作只针对一个column family)</p>
+
+<p>行的版本的数量是HColumnDescriptor设置的，每个column family可以单独设置，默认是3。</p>
+
+<h1 id="7-性能调优">7. 性能调优</h1>
+
+<p>1、长时间GC停顿</p>
+
+<p>Hbase中常见的两种stop-the-world的GC操作：</p>
+
+<ul>
+<li>一种是CMS失败的模式</li>
+<li>另一种是老一代的堆碎片导致的</li>
+</ul>
+
+<p>要想定位第一种，只要将CMS执行的时间提前就可以了，加入 <code>-XX:CMSInitiatingOccupancyFraction</code> 参数，把值调低。可以先从60%和70%开始(这个值调的越低，触发的GC次数就越多，消耗的CPU时间就越长)。要想定位第二种错误，Todd加入了一个实验性的功能，将你的Configuration中的 <code>hbase.hregion.memstore.mslab.enabled</code> 设置为true。</p>
+
+<p>2、使用压缩</p>
+
+<p>3、设置合理的版本</p>
+
+<p>4、控制split和compaction</p>
+
+<h1 id="8-需要理解一些过程">8. 需要理解一些过程</h1>
+
+<h2 id="8-1-什么时候做split">8.1 什么时候做split？</h2>
+
+<p>答：根据拆分策略算法来定，具体过程见：<a href="/2014/01/16/hbase-region-split-policy.html">HBase笔记：Region拆分策略</a></p>
+
+<h2 id="8-2-什么时候做compaction">8.2 什么时候做compaction？</h2>
+
+<p>答：当有3个小文件时候，会进行合并小文件</p>
+
+<h2 id="8-3-memstore什么时候flush-什么时候阻塞写">8.3 memstore什么时候flush，什么时候阻塞写？</h2>
+
+<p>答：memstore满了64M就会flush，当memstore大小达到128M时候，聚会阻塞update，进行flush。</p>
+
+<h2 id="8-4-hlog什么时候会阻塞写">8.4 HLog什么时候会阻塞写？</h2>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-06-26
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/07/01/spark-install-and-usage/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Spark集群安装和使用</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/06/24/hbase-vs-cassandra/">
+            <span class="next-text nav-default">HBase和Cassandra比较</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

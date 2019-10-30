@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>安装和配置Hue - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录使用 yum 源安装 Hue 以及配置 Hue 集成 Hdfs、Hive、Impala、Yarn、Kerberos、LDAP、Sentry、Solr 等的过程。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/02/28/install-and-config-hue/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="安装和配置Hue" />
+<meta property="og:description" content="本文主要记录使用 yum 源安装 Hue 以及配置 Hue 集成 Hdfs、Hive、Impala、Yarn、Kerberos、LDAP、Sentry、Solr 等的过程。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/02/28/install-and-config-hue/" />
+<meta property="article:published_time" content="2015-02-28T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-02-28T08:00:00+08:00" />
+<meta itemprop="name" content="安装和配置Hue">
+<meta itemprop="description" content="本文主要记录使用 yum 源安装 Hue 以及配置 Hue 集成 Hdfs、Hive、Impala、Yarn、Kerberos、LDAP、Sentry、Solr 等的过程。">
+
+
+<meta itemprop="datePublished" content="2015-02-28T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-02-28T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2132">
+
+
+
+<meta itemprop="keywords" content="hue," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="安装和配置Hue"/>
+<meta name="twitter:description" content="本文主要记录使用 yum 源安装 Hue 以及配置 Hue 集成 Hdfs、Hive、Impala、Yarn、Kerberos、LDAP、Sentry、Solr 等的过程。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">安装和配置Hue</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-02-28 </span>
+        <div class="post-category">
+            <a href="/categories/mapreduce/"> mapreduce </a>
+            </div>
+          <span class="more-meta"> 约 2132 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装-hue">安装 Hue</a></li>
+<li><a href="#配置-hue">配置 Hue</a>
+<ul>
+<li><a href="#配置hue-server">配置hue server</a></li>
+<li><a href="#配置-db-query">配置 DB Query</a></li>
+<li><a href="#配置-hadoop-参数">配置 Hadoop 参数</a>
+<ul>
+<li><a href="#hdfs-集群配置">HDFS 集群配置</a></li>
+<li><a href="#配置-webhdfs-或者-httpfs">配置 WebHDFS 或者 HttpFS</a></li>
+<li><a href="#yarn-集群配置">YARN 集群配置</a></li>
+</ul></li>
+<li><a href="#集成-hive">集成 Hive</a></li>
+<li><a href="#集成-impala">集成 Impala</a></li>
+<li><a href="#集成-kerberos">集成 kerberos</a></li>
+<li><a href="#集成-ldap">集成 LDAP</a></li>
+<li><a href="#集成-sentry">集成 Sentry</a></li>
+<li><a href="#集成-sqoop2">集成 Sqoop2</a></li>
+<li><a href="#集成-hbase">集成 HBase</a></li>
+<li><a href="#集成-zookeeper">集成 Zookeeper</a></li>
+<li><a href="#集成-oozie">集成 Oozie</a></li>
+</ul></li>
+<li><a href="#管理-hue">管理 Hue</a></li>
+<li><a href="#测试">测试</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-02-28T08:00:00" title="February 28, 2015">February 28, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>本文主要记录使用 yum 源安装 Hue 以及配置 Hue 集成 Hdfs、Hive、Impala、Yarn、Kerberos、LDAP、Sentry、Solr 等的过程。</p>
+
+<p>安装环境：</p>
+
+<ul>
+<li>操作系统：<code>CentOs6.5</code></li>
+<li>Hadoop：<code>cdh5.2.0</code></li>
+<li>Hue：<code>3.6.0+cdh5.2.0</code></li>
+</ul>
+
+<h1 id="安装-hue">安装 Hue</h1>
+
+<p>在 Hadoop 集群的一个节点上安装 Hue server，这里我是在我的测试集群中的 <code>cdh1</code> 节点上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install hue hue-server</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="配置-hue">配置 Hue</h1>
+
+<h2 id="配置hue-server">配置hue server</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[desktop]</span>
+    <span class="na">http_host</span><span class="o">=</span><span class="s">cdh1
+</span><span class="s">    http_port=8888
+</span><span class="s">    secret_key=qpbdxoewsqlkhztybvfidtvwekftusgdlofbcfghaswuicmqp
+</span><span class="s">    time_zone=Asia/Shanghai</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果想配置 SSL，则添加下面设置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="na">ssl_certificate</span><span class="o">=</span><span class="s">/path/to/certificate</span>
+<span class="na">ssl_private_key</span><span class="o">=</span><span class="s">/path/to/key</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>并使用下面命令生成证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Create a key</span> 
+$ openssl genrsa <span class="m">1024</span> &gt; host.key 
+<span class="c1"># Create a self-signed certificate</span> 
+$ openssl req -new -x509 -nodes -sha1 -key host.key &gt; host.cert</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置-db-query">配置 DB Query</h2>
+
+<p>DB Query 的相关配置在 hue.ini 中 databases 节点下面，目前共支持 sqlite, mysql, postgresql 和 oracle 四种数据库，默认使用的是 sqlite 数据库，你可以按自己的需要修改为其他的数据库。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[[database]]</span>
+    <span class="na">engine</span><span class="o">=</span><span class="s">sqlite3
+</span><span class="s">    name=/var/lib/hue/desktop.db</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置-hadoop-参数">配置 Hadoop 参数</h2>
+
+<h3 id="hdfs-集群配置">HDFS 集群配置</h3>
+
+<p>在 hadoop.hdfs_clusters.default 节点下配置以下参数：</p>
+
+<ul>
+<li><code>fs_defaultfs</code>：</li>
+<li><code>logical_name</code>： NameNode 逻辑名称</li>
+<li><code>webhdfs_url</code>：</li>
+<li><code>security_enabled</code>：是否开启 Kerberos</li>
+<li><code>hadoop_conf_dir</code>： hadoop 配置文件路径</li>
+</ul>
+
+<p>完整配置如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[hadoop]</span>
+  <span class="k">[[hdfs_clusters]]</span>
+    <span class="k">[[[default]]]</span>
+      <span class="c1"># Enter the filesystem uri</span>
+      <span class="na">fs_defaultfs</span><span class="o">=</span><span class="s">hdfs://mycluster</span>
+
+      <span class="c1"># NameNode logical name.</span>
+      <span class="na">logical_name</span><span class="o">=</span><span class="s">mycluster</span>
+
+      <span class="c1"># Use WebHdfs/HttpFs as the communication mechanism.</span>
+      <span class="c1"># Domain should be the NameNode or HttpFs host.</span>
+      <span class="c1"># Default port is 14000 for HttpFs.</span>
+      <span class="c1">## webhdfs_url=http://localhost:50070/webhdfs/v1</span>
+      <span class="na">webhdfs_url</span><span class="o">=</span><span class="s">http://cdh1:14000/webhdfs/v1</span>
+
+      <span class="c1"># Change this if your HDFS cluster is Kerberos-secured</span>
+      <span class="na">security_enabled</span><span class="o">=</span><span class="s">true</span>
+
+      <span class="na">hadoop_conf_dir</span><span class="o">=</span><span class="s">/etc/hadoop/conf</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="配置-webhdfs-或者-httpfs">配置 WebHDFS 或者 HttpFS</h3>
+
+<p>Hue 可以通过下面两种方式访问 Hdfs 中的数据：</p>
+
+<ul>
+<li><code>WebHDFS</code>：提供高速的数据传输，客户端直接和 DataNode 交互</li>
+<li><code>HttpFS</code>：一个代理服务，方便与集群外部的系统集成</li>
+</ul>
+
+<p>两者都支持 HTTP REST API，但是 Hue 只能配置其中一种方式；对于 HDFS HA部署方式，只能使用 HttpFS。</p>
+
+<ul>
+<li><p>1、对于 WebHDFS 方式，在每个节点上的 hdfs-site.xml 文件添加如下配置并重启服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>dfs.webhdfs.enabled<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div></li>
+
+<li><p>2、 配置 Hue 为其他用户和组的代理用户。对于 WebHDFS 方式，在 core-site.xml 添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!-- Hue WebHDFS proxy user setting --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hue.hosts<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hue.groups<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<p>对于 HttpFS 方式，在 /etc/hadoop-httpfs/conf/httpfs-site.xml  中添加下面配置并重启 HttpFS 进程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!-- Hue HttpFS proxy user setting --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>httpfs.proxyuser.hue.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>httpfs.proxyuser.hue.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>对于 HttpFS 方式，在 core-site.xml 中添加下面配置并重启 hadoop 服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>  
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.httpfs.hosts<span class="nt">&lt;/name&gt;</span>  
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>  
+<span class="nt">&lt;/property&gt;</span>  
+<span class="nt">&lt;property&gt;</span>  
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.httpfs.groups<span class="nt">&lt;/name&gt;</span>  
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>  
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>3、修改 /etc/hue/conf/hue.ini 中 hadoop.hdfs_clusters.default.webhdfs_url 属性。</li>
+</ul>
+
+<p>对于 WebHDFS：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="na">webhdfs_url</span><span class="o">=</span><span class="s">http://cdh1:50070/webhdfs/v1/</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>对于 HttpFS：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="na">webhdfs_url</span><span class="o">=</span><span class="s">http://cdh1:14000/webhdfs/v1/</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="yarn-集群配置">YARN 集群配置</h3>
+
+<p>在 hadoop.yarn_clusters.default 节点下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[hadoop]</span>
+  <span class="k">[[yarn_clusters]]</span>
+    <span class="k">[[[default]]]</span>
+        <span class="na">resourcemanager_host</span><span class="o">=</span><span class="s">cdh1
+</span><span class="s">        resourcemanager_port=8032
+</span><span class="s">        submit_to=True
+</span><span class="s">        security_enabled=true
+</span><span class="s">        resourcemanager_api_url=http://cdh1:8088
+</span><span class="s">        proxy_api_url=http://cdh1:8088
+</span><span class="s">        history_server_api_url=http://cdh1:19888</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="集成-hive">集成 Hive</h2>
+
+<p>在 beeswax 节点下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[beeswax]</span>
+    <span class="na">hive_server_host</span><span class="o">=</span><span class="s">cdh1
+</span><span class="s">    hive_server_port=10000 
+</span><span class="s">    hive_conf_dir=/etc/hive/conf</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里是配置为连接一个 Hive Server2 节点，如有需要可以配置负载均衡，连接一个负载节点。</p>
+
+<h2 id="集成-impala">集成 Impala</h2>
+
+<p>在 impala 节点下配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[impala]</span>
+  <span class="c1"># Host of the Impala Server (one of the Impalad)</span>
+  <span class="na">server_host</span><span class="o">=</span><span class="s">cdh1</span>
+
+  <span class="c1"># Port of the Impala Server</span>
+  <span class="na">server_port</span><span class="o">=</span><span class="s">21050</span>
+
+  <span class="c1"># Kerberos principal</span>
+  <span class="na">impala_principal</span><span class="o">=</span><span class="s">impala/cdh1@JAVACHEN.COM</span>
+
+  <span class="c1"># Turn on/off impersonation mechanism when talking to Impala</span>
+  <span class="na">impersonation_enabled</span><span class="o">=</span><span class="s">True</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里是配置为连接一个 Impala Server 节点，如有需要可以配置负载均衡，连接一个负载节点。</p>
+
+<p>参考 <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/v5-2-x/topics/impala_authorization.html#impersonation_unique_1">Configuring Per-User Access for Hue</a> 和 <a href="http://gethue.com/use-the-impala-app-with-sentry-for-real-security/">Use the Impala App with Sentry for real security</a>，在配置 <code>impersonation_enabled</code> 为 true 的情况下，还需要在 impalad 的启动参数中添加 <code>authorized_proxy_user_config</code> 参数，修改 /etc/default/impala中的 IMPALA_SERVER_ARGS 添加下面一行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="na">-authorized_proxy_user_config</span><span class="o">=</span><span class="s">hue=*  \</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>另外，如果集群开启了 Kerberos，别忘了配置 <code>impala_principal</code> 参数。</p>
+
+<h2 id="集成-kerberos">集成 kerberos</h2>
+
+<p>首先，需要在 kerberos server 节点上生成 hue 用户的凭证，并将其拷贝到 /etc/hue/conf 目录。：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kadmin: addprinc -randkey hue/cdh1@JAVACHEN.COM
+$ kadmin: xst -k hue.keytab hue/cdh1@JAVACHEN.COM
+
+$ cp hue.keytab /etc/hue/conf/</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，修改 hue.ini 中 kerberos 节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[[kerberos]]</span>
+    <span class="c1"># Path to Hue&#39;s Kerberos keytab file</span>
+    <span class="na">hue_keytab</span><span class="o">=</span><span class="s">/etc/hue/conf/hue.keytab</span>
+
+    <span class="c1"># Kerberos principal name for Hue</span>
+    <span class="na">hue_principal</span><span class="o">=</span><span class="s">hue/cdh1@JAVACHEN.COM</span>
+
+    <span class="c1"># Path to kinit</span>
+    <span class="na">kinit_path</span><span class="o">=</span><span class="s">/usr/bin/kinit</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，修改 /etc/hadoop/conf/core-site.xml，添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!--hue kerberos--&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hue.groups<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hue.hosts<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hue.kerberos.principal.shortname<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>hue<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>最后，重启 hadoop 服务。</p>
+
+<h2 id="集成-ldap">集成 LDAP</h2>
+
+<p>开启 ldap 验证，使用 ldap 用户登录 hue server，修改 auth 节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[desktop]</span>
+    <span class="k">[[auth]]</span>
+        <span class="na">backend</span><span class="o">=</span><span class="s">desktop.auth.backend.LdapBackend</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>另外修改 ldap 节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[desktop]</span>
+    <span class="k">[[ldap]]</span>
+        <span class="na">base_dn</span><span class="o">=</span><span class="s">&#34;dc=javachen,dc=com&#34;
+</span><span class="s">        ldap_url=ldap://cdh1</span>
+
+        <span class="c1"># ldap用户登陆时自动在hue创建用户</span>
+        <span class="na">create_users_on_login</span> <span class="o">=</span> <span class="s">true</span>
+
+        <span class="c1"># 开启direct bind mechanism</span>
+        <span class="na">search_bind_authentication</span><span class="o">=</span><span class="s">false</span>
+
+        <span class="c1"># ldap登陆用户的模板，username运行时被替换</span>
+        <span class="na">ldap_username_pattern</span><span class="o">=</span><span class="s">&#34;uid=&lt;username&gt;,ou=people,dc=javachen,dc=com&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：在开启ldap验证前，先普通方法创建一个ldap存在的用户，赋超级用户权限，否则无法管理hue用户。</p>
+
+<h2 id="集成-sentry">集成 Sentry</h2>
+
+<p>如果 hive 和 impala 中集成了 Sentry，则需要修改 hue.ini 中的 libsentry 节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[libsentry]</span>
+  <span class="c1"># Hostname or IP of server.</span>
+  <span class="na">hostname</span><span class="o">=</span><span class="s">cdh1</span>
+
+  <span class="c1"># Port the sentry service is running on.</span>
+  <span class="na">port</span><span class="o">=</span><span class="s">8038</span>
+
+  <span class="c1"># Sentry configuration directory, where sentry-site.xml is located.</span>
+  <span class="na">sentry_conf_dir</span><span class="o">=</span><span class="s">/etc/sentry/conf</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>另外，修改 /etc/sentry/conf/sentry-store-site.xml 确保 hue 用户可以连接 sentry：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>sentry.service.allow.connect<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>impala,hive,solr,hue<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="集成-sqoop2">集成 Sqoop2</h2>
+
+<p>在 sqoop 节点配置 server_url 参数为 sqoop2 的地址即可。</p>
+
+<h2 id="集成-hbase">集成 HBase</h2>
+
+<p>在 hbase 节点配置下面参数：</p>
+
+<ul>
+<li><code>truncate_limit</code>：Hard limit of rows or columns per row fetched before truncating.</li>
+<li><code>hbase_clusters</code>：HBase Thrift 服务列表，例如：<code>Cluster1|cdh1:9090,Cluster2|cdh2:9090</code>，默认为：<code>Cluster|localhost:9090</code></li>
+</ul>
+
+<h2 id="集成-zookeeper">集成 Zookeeper</h2>
+
+<p>在 zookeeper 节点配置下面两个参数：</p>
+
+<ul>
+<li><code>host_ports</code>：zookeeper 节点列表，例如：<code>localhost:2181,localhost:2182,localhost:2183</code></li>
+<li><code>rest_url</code>：zookeeper 的 REST 接口，默认值为 <a href="http://localhost:9998">http://localhost:9998</a></li>
+</ul>
+
+<h2 id="集成-oozie">集成 Oozie</h2>
+
+<p>未使用，暂不记录。</p>
+
+<h1 id="管理-hue">管理 Hue</h1>
+
+<p>如果配置了 kerberos，则先获取 hue 凭证：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kinit -k -t /etc/hue/conf/hue.keytab hue/cdh1@JAVACHEN.COM</code></pre></td></tr></table>
+</div>
+</div>
+<p>启动 hue server：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hue start</code></pre></td></tr></table>
+</div>
+</div>
+<p>停止 hue server：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hue stop</code></pre></td></tr></table>
+</div>
+</div>
+<p>hue server 默认使用 8888 作为 web 访问端口，故需要在防火墙上开放该端口。</p>
+
+<p>你可以在 /var/log/hue 目录查看 hue 的日志，或者通过 <a href="http://cdh1:8888/logs">http://cdh1:8888/logs</a> 查看。</p>
+
+<h1 id="测试">测试</h1>
+
+<p>在开启了 LDAP 后，使用 LDAP 中的管理员用户登录 hue，根据提示向导进行设置并将 LDAP 中的用户同步到 Hue Server，然后依次测试每一个功能是否运行正常。</p>
+
+<p>关于 Hue 的使用向导，请参考 <a href="http://archive.cloudera.com/cdh5/cdh/5/hue/user-guide/index.html">http://archive.cloudera.com/cdh5/cdh/5/hue/user-guide/index.html</a>。</p>
+
+<p>Enjoy it !</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-02-28
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hue/">hue</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/03/04/note-about-java-exception/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Java笔记：异常</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/02/12/hadoop-streaming/">
+            <span class="next-text nav-default">Hadoop Streaming 原理</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>编译CDH Spark源代码 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文以Cloudera维护的Spark分支项目为例，记录跟新Spark分支以及编译Spark源代码的过程。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/04/28/compile-cdh-spark-source-code/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="编译CDH Spark源代码" />
+<meta property="og:description" content="本文以Cloudera维护的Spark分支项目为例，记录跟新Spark分支以及编译Spark源代码的过程。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/04/28/compile-cdh-spark-source-code/" />
+<meta property="article:published_time" content="2015-04-28T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-04-28T08:00:00+08:00" />
+<meta itemprop="name" content="编译CDH Spark源代码">
+<meta itemprop="description" content="本文以Cloudera维护的Spark分支项目为例，记录跟新Spark分支以及编译Spark源代码的过程。">
+
+
+<meta itemprop="datePublished" content="2015-04-28T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-04-28T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="897">
+
+
+
+<meta itemprop="keywords" content="spark," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="编译CDH Spark源代码"/>
+<meta name="twitter:description" content="本文以Cloudera维护的Spark分支项目为例，记录跟新Spark分支以及编译Spark源代码的过程。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">编译CDH Spark源代码</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-04-28 </span>
+        <div class="post-category">
+            <a href="/categories/spark/"> spark </a>
+            </div>
+          <span class="more-meta"> 约 897 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#下载代码">下载代码</a></li>
+<li><a href="#编译">编译</a>
+<ul>
+<li><a href="#安装-zinc">安装 zinc</a></li>
+<li><a href="#使用maven编译">使用maven编译</a></li>
+<li><a href="#使用sbt编译">使用sbt编译</a></li>
+<li><a href="#生成压缩包">生成压缩包</a></li>
+</ul></li>
+<li><a href="#排错">排错</a></li>
+<li><a href="#参考">参考</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-04-28T08:00:00" title="April 28, 2015">April 28, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>本文以Cloudera维护的Spark分支项目为例，记录跟新Spark分支以及编译Spark源代码的过程。</p>
+
+<h1 id="下载代码">下载代码</h1>
+
+<p>在Github上fork Cloudera维护的<a href="https://github.com/cloudera">Spark</a>项目到自己的github账号里，对应的地址为<a href="https://github.com/javachen">https://github.com/javachen</a>。</p>
+
+<p>下载代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git clone https://github.com/javachen</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，切换到最新的分支，当前为 cdh5-1.3.0_5.4.0。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> spark
+$ git checkout cdh5-1.3.0_5.4.0</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看当前分支：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">⇒  git branch
+* cdh5-1.3.0_5.4.0
+  master</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果spark发布了新的版本，需要同步到我自己维护的spark项目中，可以按以下步骤进行操作:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 添加远程仓库地址</span>
+$ git remote add cdh git@github.com:cloudera.git
+
+<span class="c1"># 抓取远程仓库更新：</span>
+$ git fetch cdh
+
+<span class="c1"># 假设cloudera发布了新的版本 cdh/cdh5-1.3.0_5.4.X</span>
+$ git checkout -b cdh5-1.3.0_5.4.X cdh/cdh5-1.3.0_5.4.X
+
+<span class="c1"># 切换到新下载的分支</span> 
+$ git checkout cdh5-1.3.0_5.4.X
+
+<span class="c1"># 将其提交到自己的远程仓库：</span>
+$ git push origin cdh5-1.3.0_5.4.X:cdh5-1.3.0_5.4.X</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="编译">编译</h1>
+
+<h2 id="安装-zinc">安装 zinc</h2>
+
+<p>在mac上安装<a href="https://github.com/typesafehub/zinc">zinc</a>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ brew install zinc</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="使用maven编译">使用maven编译</h2>
+
+<p>指定hadoop版本为<code>2.6.0-cdh5.4.0</code>，并集成yarn和hive：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">export</span> <span class="nv">MAVEN_OPTS</span><span class="o">=</span><span class="s2">&#34;-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m&#34;</span>
+$ mvn -Pyarn -Dhadoop.version<span class="o">=</span><span class="m">2</span>.6.0-cdh5.4.0 -Phive -DskipTests clean package</code></pre></td></tr></table>
+</div>
+</div>
+<p>在CDH的spark中，要想集成<code>hive-thriftserver</code>进行编译，需要修改 pom.xml 文件，添加一行 <module>sql/hive-thriftserver</module>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;modules&gt;</span>
+    <span class="nt">&lt;module&gt;</span>core<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>bagel<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>graphx<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>mllib<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>tools<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>streaming<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>sql/catalyst<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>sql/core<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>sql/hive<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>sql/hive-thriftserver<span class="nt">&lt;/module&gt;</span> <span class="c">&lt;!--添加的一行--&gt;</span>
+    <span class="nt">&lt;module&gt;</span>repl<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>assembly<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/twitter<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/kafka<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/flume<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/flume-sink<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/zeromq<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>external/mqtt<span class="nt">&lt;/module&gt;</span>
+    <span class="nt">&lt;module&gt;</span>examples<span class="nt">&lt;/module&gt;</span>
+  <span class="nt">&lt;/modules&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，再执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">export</span> <span class="nv">MAVEN_OPTS</span><span class="o">=</span><span class="s2">&#34;-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m&#34;</span>
+$ mvn -Pyarn -Dhadoop.version<span class="o">=</span><span class="m">2</span>.6.0-cdh5.4.0 -Phive -Phive-thriftserver -DskipTests clean package</code></pre></td></tr></table>
+</div>
+</div>
+<p>运行测试用例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mvn -Pyarn -Dhadoop.version<span class="o">=</span><span class="m">2</span>.6.0-cdh5.4.0 -Phive  test</code></pre></td></tr></table>
+</div>
+</div>
+<p>运行java8测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mvn install -DskipTests -Pjava8-tests</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="使用sbt编译">使用sbt编译</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ build/sbt -Pyarn -Dhadoop.version<span class="o">=</span><span class="m">2</span>.6.0-cdh5.4.0 -Phive assembly</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="生成压缩包">生成压缩包</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ./make-distribution.sh</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="排错">排错</h1>
+
+<ol>
+<li><code>Unable to find configuration file at location scalastyle-config.xml</code> 异常</li>
+</ol>
+
+<p>在idea中使用maven对examples模块运行<code>package</code>或者<code>install</code>命令会出现<code>Unable to find configuration file at location scalastyle-config.xml</code>异常，解决办法是将根目录下的scalastyle-config.xml拷贝到examples目录下去，这是因为pom.xml中定义的是scalastyle-maven-plugin插件从maven运行的当前目录查找该文件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;plugin&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.scalastyle<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>scalastyle-maven-plugin<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>0.4.0<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;configuration&gt;</span>
+      <span class="nt">&lt;verbose&gt;</span>false<span class="nt">&lt;/verbose&gt;</span>
+      <span class="nt">&lt;failOnViolation&gt;</span>true<span class="nt">&lt;/failOnViolation&gt;</span>
+      <span class="nt">&lt;includeTestSourceDirectory&gt;</span>false<span class="nt">&lt;/includeTestSourceDirectory&gt;</span>
+      <span class="nt">&lt;failOnWarning&gt;</span>false<span class="nt">&lt;/failOnWarning&gt;</span>
+      <span class="nt">&lt;sourceDirectory&gt;</span>${basedir}/src/main/scala<span class="nt">&lt;/sourceDirectory&gt;</span>
+      <span class="nt">&lt;testSourceDirectory&gt;</span>${basedir}/src/test/scala<span class="nt">&lt;/testSourceDirectory&gt;</span>
+      <span class="nt">&lt;configLocation&gt;</span>scalastyle-config.xml<span class="nt">&lt;/configLocation&gt;</span>
+      <span class="nt">&lt;outputFile&gt;</span>scalastyle-output.xml<span class="nt">&lt;/outputFile&gt;</span>
+      <span class="nt">&lt;outputEncoding&gt;</span>UTF-8<span class="nt">&lt;/outputEncoding&gt;</span>
+    <span class="nt">&lt;/configuration&gt;</span>
+    <span class="nt">&lt;executions&gt;</span>
+      <span class="nt">&lt;execution&gt;</span>
+        <span class="nt">&lt;phase&gt;</span>package<span class="nt">&lt;/phase&gt;</span>
+        <span class="nt">&lt;goals&gt;</span>
+          <span class="nt">&lt;goal&gt;</span>check<span class="nt">&lt;/goal&gt;</span>
+        <span class="nt">&lt;/goals&gt;</span>
+      <span class="nt">&lt;/execution&gt;</span>
+    <span class="nt">&lt;/executions&gt;</span>
+<span class="nt">&lt;/plugin&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="参考">参考</h1>
+
+<ul>
+<li><a href="http:/.apache.org/docs/latest/building-spark.html">Building Spark</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-04-28
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/spark/">spark</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/04/29/apache-sentry-architecture/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Apache Sentry架构介绍</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/04/23/all-the-uses-of-an-underscore-in-scala/">
+            <span class="next-text nav-default">Scala中下划线的用途</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

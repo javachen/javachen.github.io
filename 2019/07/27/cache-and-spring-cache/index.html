@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>缓存和SpringCache介绍 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="缓存的相关介绍和SpringCache如何使用。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2019/07/27/cache-and-spring-cache/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="缓存和SpringCache介绍" />
+<meta property="og:description" content="缓存的相关介绍和SpringCache如何使用。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2019/07/27/cache-and-spring-cache/" />
+<meta property="article:published_time" content="2019-07-27T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-07-27T08:00:00+08:00" />
+<meta itemprop="name" content="缓存和SpringCache介绍">
+<meta itemprop="description" content="缓存的相关介绍和SpringCache如何使用。">
+
+
+<meta itemprop="datePublished" content="2019-07-27T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-07-27T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="5830">
+
+
+
+<meta itemprop="keywords" content="spring,cache," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="缓存和SpringCache介绍"/>
+<meta name="twitter:description" content="缓存的相关介绍和SpringCache如何使用。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">缓存和SpringCache介绍</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-07-27 </span>
+        <div class="post-category">
+            <a href="/categories/spring/"> spring </a>
+            </div>
+          <span class="more-meta"> 约 5830 字 </span>
+          <span class="more-meta"> 预计阅读 12 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-缓存">1 缓存</a>
+<ul>
+<li><a href="#1-1-什么是缓存">1.1 什么是缓存？</a></li>
+<li><a href="#1-2-缓存穿透">1.2 缓存穿透</a>
+<ul>
+<li><a href="#1-2-1-什么是缓存穿透">1.2.1 什么是缓存穿透</a></li>
+<li><a href="#1-2-2-解决办法">1.2.2 解决办法</a>
+<ul>
+<li><a href="#缓存空值">缓存空值</a></li>
+<li><a href="#bloomfilter">BloomFilter</a></li>
+</ul></li>
+<li><a href="#1-2-3-如何选择">1.2.3 如何选择</a></li>
+</ul></li>
+<li><a href="#1-3-缓存击穿"><strong>1.3 缓存击穿</strong></a>
+<ul>
+<li><a href="#1-3-1-什么是击穿">1.3.1 什么是击穿</a></li>
+<li><a href="#1-3-2-如何解决">1.3.2 如何解决</a></li>
+</ul></li>
+<li><a href="#1-4-缓存雪崩"><strong>1.4 缓存雪崩</strong></a>
+<ul>
+<li><a href="#1-4-1-什么是缓存雪崩">1.4.1 什么是缓存雪崩</a></li>
+<li><a href="#1-4-2-解决办法">1.4.2 解决办法</a></li>
+</ul></li>
+<li><a href="#1-5-解决热点数据集中失效问题">1.5 解决热点数据集中失效问题</a></li>
+</ul></li>
+<li><a href="#2-springcache">2 SpringCache</a>
+<ul>
+<li><a href="#2-1-spring缓存抽象">2.1 Spring缓存抽象</a></li>
+<li><a href="#2-2-几个重要概念">2.2 几个重要概念</a></li>
+<li><a href="#2-3-spel上下文数据">2.3 SpEL上下文数据</a></li>
+<li><a href="#2-4-如何使用">2.4 如何使用</a>
+<ul>
+<li><a href="#2-4-1-需要导入依赖">2.4.1 需要导入依赖</a></li>
+<li><a href="#2-4-2-开启缓存">2.4.2 开启缓存</a></li>
+<li><a href="#2-4-3-缓存-cacheable">2.4.3 缓存@Cacheable</a></li>
+<li><a href="#2-4-4-配置缓存">2.4.4 配置缓存</a></li>
+<li><a href="#2-4-5-更新缓存">2.4.5 更新缓存</a></li>
+<li><a href="#2-4-6-清除缓存">2.4.6 清除缓存</a></li>
+<li><a href="#2-4-7-组合-caching">2.4.7 组合@Caching</a></li>
+</ul></li>
+<li><a href="#2-5-整合">2.5 整合</a>
+<ul>
+<li><a href="#2-5-1-整合redis">2.5.1 整合Redis</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="1-缓存">1 缓存</h1>
+
+<h2 id="1-1-什么是缓存">1.1 什么是缓存？</h2>
+
+<p>我们使用缓存时，我们的业务系统大概的调用流程如下图：</p>
+
+<p><img src="http://ww3.sinaimg.cn/large/006tNc79gy1g5dnwx1winj30bh09kdfp.jpg" alt="img" /></p>
+
+<p>当我们查询一条数据时，先去查询缓存，如果缓存有就直接返回，如果没有就去查询数据库，然后返回。这种情况下就可能会出现一些现象。</p>
+
+<h2 id="1-2-缓存穿透">1.2 缓存穿透</h2>
+
+<h3 id="1-2-1-什么是缓存穿透">1.2.1 什么是缓存穿透</h3>
+
+<p>正常情况下，我们去查询数据都是存在。</p>
+
+<p>那么请求去查询一条压根儿数据库中根本就不存在的数据，也就是缓存和数据库都查询不到这条数据，但是请求每次都会打到数据库上面去。</p>
+
+<p>这种查询不存在数据的现象我们称为<strong>缓存穿透</strong>，可能会导致你的数据库由于压力过大而宕掉。</p>
+
+<h3 id="1-2-2-解决办法">1.2.2 解决办法</h3>
+
+<h4 id="缓存空值">缓存空值</h4>
+
+<p>之所以会发生穿透，就是因为缓存中没有存储这些空数据的key。从而导致每次查询都到数据库去了。</p>
+
+<p>那么我们就可以为这些key对应的值设置为null 丢到缓存里面去。后面再出现查询这个key 的请求的时候，直接返回null 。</p>
+
+<p>这样，就不用在到数据库中去走一圈了，但是别忘了设置过期时间。</p>
+
+<h4 id="bloomfilter">BloomFilter</h4>
+
+<p>BloomFilter 类似于一个hbase set 用来判断某个元素（key）是否存在于某个集合中。</p>
+
+<p>这种方式在大数据场景应用比较多，比如 Hbase 中使用它去判断数据是否在磁盘上。还有在爬虫场景判断url 是否已经被爬取过。</p>
+
+<p>这种方案可以加在第一种方案中，在缓存之前在加一层 BloomFilter ，在查询的时候先去 BloomFilter 去查询 key 是否存在，如果不存在就直接返回，存在再走查缓存 -&gt; 查 DB。</p>
+
+<p>流程图如下：</p>
+
+<p><img src="http://ww2.sinaimg.cn/large/006tNc79gy1g5dnx681jaj30dx0akmx2.jpg" alt="img" /></p>
+
+<h3 id="1-2-3-如何选择">1.2.3 如何选择</h3>
+
+<p>针对于一些恶意攻击，攻击带过来的大量key 是不存在的，那么我们采用第一种方案就会缓存大量不存在key的数据。</p>
+
+<p>此时我们采用第一种方案就不合适了，我们完全可以先对使用第二种方案进行过滤掉这些key。</p>
+
+<p>针对这种key异常多、请求重复率比较低的数据，我们就没有必要进行缓存，使用第二种方案直接过滤掉。</p>
+
+<p>而对于空数据的key有限的，重复率比较高的，我们则可以采用第一种方式进行缓存。</p>
+
+<h2 id="1-3-缓存击穿"><strong>1.3 缓存击穿</strong></h2>
+
+<h3 id="1-3-1-什么是击穿">1.3.1 什么是击穿</h3>
+
+<p>缓存击穿是我们可能遇到的第二个使用缓存方案可能遇到的问题。</p>
+
+<p>在平常高并发的系统中，大量的请求同时查询一个 key 时，此时这个key正好失效了，就会导致大量的请求都打到数据库上面去，导致某一时刻数据库请求量过大，压力剧增。这种现象我们称为<strong>缓存击穿</strong>。</p>
+
+<h3 id="1-3-2-如何解决">1.3.2 如何解决</h3>
+
+<p>上面的现象是多个线程同时去查询数据库的这条数据，那么我们可以在第一个查询数据的请求上使用一个 互斥锁来锁住它。</p>
+
+<p>其他的线程走到这一步拿不到锁就等着，等第一个线程查询到了数据，然后做缓存。后面的线程进来发现已经有缓存了，就直接走缓存。</p>
+
+<h2 id="1-4-缓存雪崩"><strong>1.4 缓存雪崩</strong></h2>
+
+<h3 id="1-4-1-什么是缓存雪崩">1.4.1 什么是缓存雪崩</h3>
+
+<p>缓存雪崩的情况是说，当某一时刻发生大规模的缓存失效的情况，比如你的缓存服务宕机了，会有大量的请求进来直接打到DB上面。结果就是DB 称不住，挂掉。</p>
+
+<h3 id="1-4-2-解决办法">1.4.2 解决办法</h3>
+
+<ul>
+<li>使用集群缓存，保证缓存服务的高可用**</li>
+</ul>
+
+<p>这种方案就是在发生雪崩前对缓存集群实现高可用，如果是使用 Redis，可以使用 主从+哨兵 ，Redis Cluster 来避免 Redis 全盘崩溃的情况。</p>
+
+<ul>
+<li><strong>ehcache本地缓存 + Hystrix限流&amp;降级,避免MySQL被打死</strong></li>
+</ul>
+
+<p>使用 ehcache 本地缓存的目的也是考虑在 Redis Cluster 完全不可用的时候，ehcache 本地缓存还能够支撑一阵。</p>
+
+<p>使用 Hystrix进行限流 &amp; 降级 ，比如一秒来了5000个请求，我们可以设置假设只能有一秒 2000个请求能通过这个组件，那么其他剩余的 3000 请求就会走限流逻辑。</p>
+
+<p>然后去调用我们自己开发的降级组件（降级），比如设置的一些默认值呀之类的。以此来保护最后的 MySQL 不会被大量的请求给打死。</p>
+
+<ul>
+<li><strong>开启Redis持久化机制，尽快恢复缓存集群</strong></li>
+</ul>
+
+<p>一旦重启，就能从磁盘上自动加载数据恢复内存中的数据。</p>
+
+<p>防止雪崩方案如下图所示：</p>
+
+<p><img src="https://upload-images.jianshu.io/upload_images/16454441-f0313b09322868ca" alt="img" /></p>
+
+<h2 id="1-5-解决热点数据集中失效问题">1.5 解决热点数据集中失效问题</h2>
+
+<p>我们在设置缓存的时候，一般会给缓存设置一个失效时间，过了这个时间，缓存就失效了。</p>
+
+<p>对于一些热点的数据来说，当缓存失效以后会存在大量的请求过来，然后打到数据库去，从而可能导致数据库崩溃的情况。</p>
+
+<p>解决办法：</p>
+
+<ul>
+<li><p><strong>设置不同失效时间</strong>。为了避免这些热点的数据集中失效，那么我们在设置缓存过期时间的时候，我们让他们失效的时间错开。比如在一个基础的时间上加上或者减去一个范围内的随机值。</p></li>
+
+<li><p><strong>互斥锁</strong>。结合上面的击穿的情况，在第一个请求去查询数据库的时候对他加一个互斥锁，其余的查询请求都会被阻塞住，直到锁被释放，从而保护数据库。但是也是由于它会阻塞其他的线程，此时系统吞吐量会下降。需要结合实际的业务去考虑是否要这么做。</p></li>
+</ul>
+
+<h1 id="2-springcache">2 SpringCache</h1>
+
+<h2 id="2-1-spring缓存抽象">2.1 Spring缓存抽象</h2>
+
+<p>Spring从3.1开始定义了<code>org.springframework.cache.Cache</code>和<code>org.springframework.cache.CacheManager</code>接口来统一不同的缓存技术；并支持使用JCache（JSR-107）注解简化我们开发；</p>
+
+<ul>
+<li><p>Cache接口为缓存的组件规范定义，包含缓存的各种操作集合；</p></li>
+
+<li><p>Cache接口下Spring提供了各种<code>xxxCache</code>的实现；如RedisCache，EhCacheCache，ConcurrentMapCache等；</p></li>
+
+<li><p>每次调用需要缓存功能的方法时，Spring会检查检查指定参数的指定的目标方法是否已经被调用过；如果有就直接从缓存中获取方法调用后的结果，如果没有就调用方法并缓存结果后返回给用户。下次调用直接从缓存中获取。</p></li>
+
+<li><p>使用Spring缓存抽象时我们需要关注以下两点；</p>
+
+<ul>
+<li><p>1、确定方法需要被缓存以及他们的缓存策略</p></li>
+
+<li><p>2、从缓存中读取之前缓存存储的数据</p></li>
+</ul></li>
+</ul>
+
+<h2 id="2-2-几个重要概念">2.2 几个重要概念</h2>
+
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>解释</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Cache</td>
+<td>缓存接口，定义缓存操作。实现有：RedisCache、EhCacheCache、ConcurrentMapCache等</td>
+</tr>
+
+<tr>
+<td>CacheManager</td>
+<td>缓存管理器，管理各种缓存（cache）组件</td>
+</tr>
+
+<tr>
+<td>@Cacheable</td>
+<td>主要针对方法配置，能够根据方法的请求参数对其进行缓存</td>
+</tr>
+
+<tr>
+<td>@CacheEvict</td>
+<td>清空缓存</td>
+</tr>
+
+<tr>
+<td>@CachePut</td>
+<td>保证方法被调用，又希望结果被缓存。 与@Cacheable区别在于是否每次都调用方法，常用于更新</td>
+</tr>
+
+<tr>
+<td>@EnableCaching</td>
+<td>开启基于注解的缓存</td>
+</tr>
+
+<tr>
+<td>keyGenerator</td>
+<td>缓存数据时key生成策略</td>
+</tr>
+
+<tr>
+<td>serialize</td>
+<td>缓存数据时value序列化策略</td>
+</tr>
+
+<tr>
+<td>@CacheConfig</td>
+<td>统一配置本类的缓存注解的属性</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>@Cacheable/@CachePut/@CacheEvict 主要的参数</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>解释</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>value</td>
+<td>缓存的名称，在 spring 配置文件中定义，必须指定至少一个 例如： @Cacheable(value=”mycache”) 或者 @Cacheable(value={”cache1”,”cache2”}</td>
+</tr>
+
+<tr>
+<td>key</td>
+<td>缓存的 key，可以为空，如果指定要按照 SpEL 表达式编写， 如果不指定，则缺省按照方法的所有参数进行组合 例如： @Cacheable(value=”testcache”,key=”#id”)</td>
+</tr>
+
+<tr>
+<td>condition</td>
+<td>缓存的条件，可以为空，使用 SpEL 编写，返回 true 或者 false， 只有为 true 才进行缓存/清除缓存 例如：@Cacheable(value=”testcache”,condition=”#userName.length()&gt;2”)</td>
+</tr>
+
+<tr>
+<td>unless</td>
+<td>否定缓存。当条件结果为TRUE时，就不会缓存。 @Cacheable(value=”testcache”,unless=”#userName.length()&gt;2”)</td>
+</tr>
+
+<tr>
+<td>allEntries (@CacheEvict )</td>
+<td>是否清空所有缓存内容，缺省为 false，如果指定为 true， 则方法调用后将立即清空所有缓存 例如： @CachEvict(value=”testcache”,allEntries=true)</td>
+</tr>
+
+<tr>
+<td>beforeInvocation (@CacheEvict)</td>
+<td>是否在方法执行前就清空，缺省为 false，如果指定为 true， 则在方法还没有执行的时候就清空缓存，缺省情况下，如果方法 执行抛出异常，则不会清空缓存 例如： @CachEvict(value=”testcache”，beforeInvocation=true)</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="2-3-spel上下文数据">2.3 SpEL上下文数据</h2>
+
+<p>Spring Cache提供了一些供我们使用的SpEL上下文数据，下表直接摘自Spring官方文档：</p>
+
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>位置</th>
+<th>描述</th>
+<th>示例</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>methodName</td>
+<td>root对象</td>
+<td>当前被调用的方法名</td>
+<td><code>#root.methodname</code></td>
+</tr>
+
+<tr>
+<td>method</td>
+<td>root对象</td>
+<td>当前被调用的方法</td>
+<td><code>#root.method.name</code></td>
+</tr>
+
+<tr>
+<td>target</td>
+<td>root对象</td>
+<td>当前被调用的目标对象实例</td>
+<td><code>#root.target</code></td>
+</tr>
+
+<tr>
+<td>targetClass</td>
+<td>root对象</td>
+<td>当前被调用的目标对象的类</td>
+<td><code>#root.targetClass</code></td>
+</tr>
+
+<tr>
+<td>args</td>
+<td>root对象</td>
+<td>当前被调用的方法的参数列表</td>
+<td><code>#root.args[0]</code></td>
+</tr>
+
+<tr>
+<td>caches</td>
+<td>root对象</td>
+<td>当前方法调用使用的缓存列表</td>
+<td><code>#root.caches[0].name</code></td>
+</tr>
+
+<tr>
+<td>Argument Name</td>
+<td>执行上下文</td>
+<td>当前被调用的方法的参数，如findArtisan(Artisan artisan),可以通过#artsian.id获得参数</td>
+<td><code>#artsian.id</code></td>
+</tr>
+
+<tr>
+<td>result</td>
+<td>执行上下文</td>
+<td>方法执行后的返回值（仅当方法执行后的判断有效，如 unless cacheEvict的beforeInvocation=false）</td>
+<td><code>#result</code></td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>注意：</strong></p>
+
+<p>1.当我们要使用root对象的属性作为key时我们也可以将“#root”省略，因为Spring默认使用的就是root对象的属性。 如</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Cacheable</span><span class="p">(</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;targetClass + methodName +#p0&#34;</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>2.使用方法参数时我们可以直接使用“#参数名”或者“#p参数index”。 如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Cacheable</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;users&#34;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#34;#id&#34;</span><span class="p">)</span>
+<span class="nd">@Cacheable</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;users&#34;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#34;#p0&#34;</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>SpEL提供了多种运算符</strong></p>
+
+<table>
+<thead>
+<tr>
+<th><strong>类型</strong></th>
+<th><strong>运算符</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>关系</td>
+<td>&lt;，&gt;，&lt;=，&gt;=，==，!=，lt，gt，le，ge，eq，ne</td>
+</tr>
+
+<tr>
+<td>算术</td>
+<td>+，- ，* ，/，%，^</td>
+</tr>
+
+<tr>
+<td>逻辑</td>
+<td>&amp;&amp;，||，!，and，or，not，between，instanceof</td>
+</tr>
+
+<tr>
+<td>条件</td>
+<td>?: (ternary)，?: (elvis)</td>
+</tr>
+
+<tr>
+<td>正则表达式</td>
+<td>matches</td>
+</tr>
+
+<tr>
+<td>其他类型</td>
+<td>?.，?[…]，![…]，<sup class="footnote-ref" id="fnref:-"><a href="#fn:-">1</a></sup>，$[…]</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="2-4-如何使用">2.4 如何使用</h2>
+
+<p>Spring Cache目前集成的cache：</p>
+
+<ol>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-generic">Generic</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-jcache">JCache (JSR-107)</a> (EhCache 3, Hazelcast, Infinispan, and others)</li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-ehcache2">EhCache 2.x</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-hazelcast">Hazelcast</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-infinispan">Infinispan</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-couchbase">Couchbase</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-redis">Redis</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-caffeine">Caffeine</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-caching.html#boot-features-caching-provider-simple">Simple</a></li>
+</ol>
+
+<h3 id="2-4-1-需要导入依赖">2.4.1 需要导入依赖</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-cache<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-2-开启缓存">2.4.2 开启缓存</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SpringBootApplication</span>
+<span class="nd">@EnableCaching</span>  <span class="c1">//开启缓存
+</span><span class="c1"></span><span class="kd">public</span> <span class="nf">class</span> <span class="n">DemoApplication</span><span class="p">{</span>
+    <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="p">[]</span> <span class="nf">args</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">SpringApplication</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">DemoApplication</span><span class="p">.</span><span class="na">class</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>当加上@EnableCaching注解之后，Spring Boot会自动装配查找一个合适cache的实现类，如果你想禁用cache，可以添加下面配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">spring.cache.type=none</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-3-缓存-cacheable">2.4.3 缓存@Cacheable</h3>
+
+<p><code>@Cacheable</code>注解会先查询是否已经有缓存，有会使用缓存，没有则会执行方法并缓存。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Cacheable</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span> <span class="p">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;targetClass + methodName +#p0&#34;</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">List</span><span class="o">&lt;</span><span class="n">Job</span><span class="o">&gt;</span> <span class="nf">queryAll</span><span class="p">(</span><span class="n">User</span> <span class="nf">uid</span><span class="p">)</span> <span class="p">{</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>此处的<code>value</code>是必需的，它指定了你的缓存存放在哪块命名空间。</p>
+
+<p>此处的<code>key</code>是使用的spEL表达式，参考上章。这里有一个小坑，如果你把<code>methodName</code>换成<code>method</code>运行会报错，观察它们的返回类型，原因在于<code>methodName</code>是<code>String</code>而<code>methoh</code>是<code>Method</code>。</p>
+
+<p>此处的<code>User</code>实体类一定要实现序列化<code>public class User implements Serializable</code>，否则会报<code>java.io.NotSerializableException</code>异常。</p>
+
+<p>打开<code>@Cacheable</code>注解的源码，可以看到该注解提供的其他属性，如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">String</span><span class="p">[]</span> <span class="nf">cacheNames</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span> <span class="c1">//和value注解差不多，二选一
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">keyGenerator</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//key的生成器。key/keyGenerator二选一使用
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheManager</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//指定缓存管理器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheResolver</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//或者指定获取解析器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">condition</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//条件符合则缓存
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">unless</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//条件符合则不缓存
+</span><span class="c1"></span><span class="kt">boolean</span> <span class="nf">sync</span><span class="p">()</span> <span class="k">default</span> <span class="kc">false</span><span class="p">;</span> <span class="o">//</span><span class="n">是否使用异步模式</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-4-配置缓存">2.4.4 配置缓存</h3>
+
+<p>当我们需要缓存的地方越来越多，你可以使用<code>@CacheConfig(cacheNames = {&quot;myCache&quot;})</code>注解来统一指定<code>value</code>的值，这时可省略<code>value</code>，如果你在你的方法依旧写上了<code>value</code>，那么依然以方法的<code>value</code>值为准。</p>
+
+<p>使用方法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@CacheConfig</span><span class="p">(</span><span class="n">cacheNames</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#34;myCache&#34;</span><span class="p">})</span>
+<span class="kd">public</span> <span class="nf">class</span> <span class="n">BotRelationServiceImpl</span> <span class="nf">implements</span> <span class="n">BotRelationService</span> <span class="p">{</span>
+    <span class="nd">@Override</span>
+    <span class="nd">@Cacheable</span><span class="p">(</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;targetClass + methodName +#p0&#34;</span><span class="p">)</span><span class="c1">//此处没写value
+</span><span class="c1"></span>    <span class="kd">public</span> <span class="nf">List</span><span class="o">&lt;</span><span class="n">BotRelation</span><span class="o">&gt;</span> <span class="nf">findAllLimit</span><span class="p">(</span><span class="kt">int</span> <span class="nf">num</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">botRelationRepository</span><span class="p">.</span><span class="na">findAllLimit</span><span class="p">(</span><span class="n">num</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="p">.....</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>查看它的其它属性</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">String</span> <span class="nf">keyGenerator</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//key的生成器。key/keyGenerator二选一使用
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheManager</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//指定缓存管理器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheResolver</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="o">//</span><span class="n">或者指定获取解析器</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-5-更新缓存">2.4.5 更新缓存</h3>
+
+<p><code>@CachePut</code>注解的作用 主要针对方法配置，能够根据方法的请求参数对其结果进行缓存，和 <code>@Cacheable</code> 不同的是，它每次都会触发真实方法的调用 。简单来说就是用户更新缓存数据。但需要注意的是该注解的<code>value</code> 和 <code>key</code> 必须与要更新的缓存相同，也就是与<code>@Cacheable</code> 相同。示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@CachePut</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s">&#34;targetClass + #p0&#34;</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">Job</span> <span class="n">updata</span><span class="p">(</span><span class="n">Job</span> <span class="nf">job</span><span class="p">)</span> <span class="p">{</span>
+ 
+  <span class="k">return</span> <span class="n">job</span><span class="p">;</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>查看它的其它属性</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">String</span><span class="p">[]</span> <span class="nf">cacheNames</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span> <span class="c1">//与value二选一
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">keyGenerator</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//key的生成器。key/keyGenerator二选一使用
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheManager</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//指定缓存管理器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheResolver</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//或者指定获取解析器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">condition</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//条件符合则缓存
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">unless</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="o">//</span><span class="n">条件符合则不缓存</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-6-清除缓存">2.4.6 清除缓存</h3>
+
+<p><code>@CachEvict</code> 的作用 主要针对方法配置，能够根据一定的条件对缓存进行清空 。</p>
+
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>解释</th>
+<th>示例</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>allEntries</td>
+<td>是否清空所有缓存内容，缺省为 false，如果指定为 true，则方法调用后将立即清空所有缓存</td>
+<td>@CachEvict(value=”testcache”,allEntries=true)</td>
+</tr>
+
+<tr>
+<td>beforeInvocation</td>
+<td>是否在方法执行前就清空，缺省为 false，如果指定为 true，则在方法还没有执行的时候就清空缓存，缺省情况下，如果方法执行抛出异常，则不会清空缓存</td>
+<td>@CachEvict(value=”testcache”，beforeInvocation=true)</td>
+</tr>
+</tbody>
+</table>
+
+<p>示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Cacheable</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span><span class="p">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;#p0.id&#34;</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">Job</span> <span class="n">save</span><span class="p">(</span><span class="n">Job</span> <span class="nf">job</span><span class="p">)</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="c1">//清除一条缓存，key为要清空的数据
+</span><span class="c1"></span><span class="nd">@CacheEvict</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;emp&#34;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s">&#34;#id&#34;</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">void</span> <span class="n">delect</span><span class="p">(</span><span class="kt">int</span> <span class="nf">id</span><span class="p">)</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="c1">//方法调用后清空所有缓存
+</span><span class="c1"></span><span class="nd">@CacheEvict</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;accountCache&#34;</span><span class="p">,</span><span class="n">allEntries</span><span class="o">=</span><span class="kc">true</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">void</span> <span class="n">delectAll</span><span class="p">()</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="c1">//方法调用前清空所有缓存
+</span><span class="c1"></span><span class="nd">@CacheEvict</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;accountCache&#34;</span><span class="p">,</span><span class="n">beforeInvocation</span><span class="o">=</span><span class="kc">true</span><span class="p">)</span>
+<span class="kd">public</span> <span class="nf">void</span> <span class="n">delectAll</span><span class="p">()</span> <span class="p">{</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>其他属性</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">String</span><span class="p">[]</span> <span class="nf">cacheNames</span><span class="p">()</span> <span class="k">default</span> <span class="p">{};</span> <span class="c1">//与value二选一
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">keyGenerator</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//key的生成器。key/keyGenerator二选一使用
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheManager</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span>  <span class="c1">//指定缓存管理器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">cacheResolver</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="c1">//或者指定获取解析器
+</span><span class="c1"></span><span class="n">String</span> <span class="nf">condition</span><span class="p">()</span> <span class="k">default</span> <span class="s">&#34;&#34;</span><span class="p">;</span> <span class="o">//</span><span class="n">条件符合则清空</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="2-4-7-组合-caching">2.4.7 组合@Caching</h3>
+
+<p>有时候我们可能组合多个Cache注解使用，此时就需要@Caching组合多个注解标签了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">    <span class="nd">@Caching</span><span class="p">(</span><span class="n">cacheable</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nd">@Cacheable</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span><span class="p">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;#p0&#34;</span><span class="p">),</span>
+            <span class="p">...</span>
+    <span class="p">},</span>
+    <span class="n">put</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nd">@CachePut</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span><span class="p">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;#p0&#34;</span><span class="p">),</span>
+            <span class="p">...</span>
+    <span class="p">},</span><span class="n">evict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nd">@CacheEvict</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#34;emp&#34;</span><span class="p">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">&#34;#p0&#34;</span><span class="p">),</span>
+            <span class="p">....</span>
+    <span class="p">})</span>
+    <span class="kd">public</span> <span class="nf">User</span> <span class="n">save</span><span class="p">(</span><span class="n">User</span> <span class="nf">user</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">....</span>
+    <span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-5-整合">2.5 整合</h2>
+
+<h3 id="2-5-1-整合redis">2.5.1 整合Redis</h3>
+
+<p>添加依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-data-redis<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>当你导入这一个依赖时，SpringBoot的CacheManager就会使用RedisCache。如果你的Redis使用默认配置，这时候已经可以启动程序了。</p>
+
+<p>添加Redis配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"># Redis数据库索引（默认为0）
+spring.redis.database=1
+# Redis服务器地址
+spring.redis.host=127.0.0.1
+# Redis服务器连接端口
+spring.redis.port=6379
+# Redis服务器连接密码（默认为空）
+spring.redis.password=
+# 连接池最大连接数（使用负值表示没有限制）
+spring.redis.pool.max-active=1000
+# 连接池最大阻塞等待时间（使用负值表示没有限制）
+spring.redis.pool.max-wait=-1
+# 连接池中的最大空闲连接
+spring.redis.pool.max-idle=10
+# 连接池中的最小空闲连接
+spring.redis.pool.min-idle=2
+# 连接超时时间（毫秒）
+spring.redis.timeout=0</code></pre></td></tr></table>
+</div>
+</div>
+<p>Spring提供了类来操作缓存：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Autowired</span>
+<span class="kd">private</span> <span class="nf">StringRedisTemplate</span> <span class="n">stringRedisTemplate</span><span class="p">;</span><span class="c1">//操作key-value都是字符串
+</span><span class="c1"></span>
+<span class="nd">@Autowired</span>
+<span class="kd">private</span> <span class="nf">RedisTemplate</span> <span class="n">redisTemplate</span><span class="p">;</span><span class="o">//</span><span class="n">操作key</span><span class="o">-</span><span class="n">value都是对象</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>StringRedisTemplate类的方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">//Redis常见的五大数据类型：
+</span><span class="c1"></span><span class="n">stringRedisTemplate</span><span class="p">.</span><span class="na">opsForValue</span><span class="p">();</span>  <span class="c1">//[String(字符串)]
+</span><span class="c1"></span><span class="n">stringRedisTemplate</span><span class="p">.</span><span class="na">opsForList</span><span class="p">();</span>		<span class="c1">//[List(列表)]
+</span><span class="c1"></span><span class="n">stringRedisTemplate</span><span class="p">.</span><span class="na">opsForSet</span><span class="p">();</span>		<span class="c1">//[Set(集合)]
+</span><span class="c1"></span><span class="n">stringRedisTemplate</span><span class="p">.</span><span class="na">opsForHash</span><span class="p">();</span>		<span class="c1">//[Hash(散列)]
+</span><span class="c1"></span><span class="n">stringRedisTemplate</span><span class="p">.</span><span class="na">opsForZSet</span><span class="p">();</span>		<span class="o">//</span><span class="p">[</span><span class="n">ZSet</span><span class="p">(</span><span class="n">有序集合</span><span class="p">)]</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>可以通过配置文件配置cache名称和过期时间：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">spring.cache.cache-names=cache1,cache2
+spring.cache.redis.time-to-live=600000</code></pre></td></tr></table>
+</div>
+</div><div class="footnotes">
+
+<hr />
+
+<ol>
+<li id="fn:-">… <a class="footnote-return" href="#fnref:-"><sup>[return]</sup></a></li>
+</ol>
+</div>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-07-27
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/spring/">spring</a>
+          <a href="/tags/cache/">cache</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/08/04/docker-with-vagrant/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Vagrant搭建Docker开发环境</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/07/27/internet-protocal/">
+            <span class="next-text nav-default">网络通信协议</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

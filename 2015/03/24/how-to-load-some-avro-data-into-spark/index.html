@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>如何将Avro数据加载到Spark - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="这是一篇翻译，主要讲述如何将 Avro 格式的数据加载到 Spark 中。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/03/24/how-to-load-some-avro-data-into-spark/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="如何将Avro数据加载到Spark" />
+<meta property="og:description" content="这是一篇翻译，主要讲述如何将 Avro 格式的数据加载到 Spark 中。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/03/24/how-to-load-some-avro-data-into-spark/" />
+<meta property="article:published_time" content="2015-03-24T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-03-24T08:00:00+08:00" />
+<meta itemprop="name" content="如何将Avro数据加载到Spark">
+<meta itemprop="description" content="这是一篇翻译，主要讲述如何将 Avro 格式的数据加载到 Spark 中。">
+
+
+<meta itemprop="datePublished" content="2015-03-24T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-03-24T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1440">
+
+
+
+<meta itemprop="keywords" content="avro,spark," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="如何将Avro数据加载到Spark"/>
+<meta name="twitter:description" content="这是一篇翻译，主要讲述如何将 Avro 格式的数据加载到 Spark 中。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">如何将Avro数据加载到Spark</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-03-24 </span>
+        <div class="post-category">
+            <a href="/categories/spark/"> spark </a>
+            </div>
+          <span class="more-meta"> 约 1440 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#首先-为什么使用-avro">首先，为什么使用 Avro ？</a></li>
+<li><a href="#例子">例子</a></li>
+<li><a href="#验证">验证</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-03-24T08:00:00" title="March 24, 2015">March 24, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>这是一篇翻译，原文来自：<a href="http://www.bigdatatidbits.cc/2015/01/how-to-load-some-avro-data-into-spark.html">How to load some Avro data into Spark</a>。</p>
+
+<h1 id="首先-为什么使用-avro">首先，为什么使用 Avro ？</h1>
+
+<p>最基本的格式是 CSV ，其廉价并且不需要顶一个一个 schema 和数据关联。</p>
+
+<p>随后流行起来的一个通用的格式是 XML，其有一个 schema 和 数据关联，XML 广泛的使用于 Web Services 和 SOA 架构中。不幸的是，其非常冗长，并且解析 XML 需要消耗内存。</p>
+
+<p>另外一种格式是 JSON，其非常流行易于使用因为它非常方便易于理解。</p>
+
+<p>这些格式在 Big Data 环境中都是不可拆分的，这使得他们难于使用。在他们之上使用一个压缩机制（Snappy，Gzip）并不能解决这个问题。</p>
+
+<p>因此不同的数据格式出现了。Avro 作为一种序列化平台被广泛使用，因为它能跨语言，提供了一个小巧紧凑的快速的二进制格式，支持动态 schema 发现（通过它的泛型）和 schema 演变，并且是可压缩和拆分的。它还提供了复杂的数据结构，例如嵌套类型。</p>
+
+<h1 id="例子">例子</h1>
+
+<p>让我们来看一个例子，创建一个 Avro schema 并生成一些数据。在一个真实案例的例子中，组织机构通常有一些更加普通的格式，例如 XML，的数据，并且他们需要通过一些工具例如  <a href="http://www.infoq.com/articles/AVROSchemaJAXB">JAXB</a> 将他们的数据转换成 Avro。我们来使用<a href="http://www.michael-noll.com/blog/images/03/17/reading-and-writing-avro-files-from-the-command-line/">这个例子</a>，其中 twitter.avsc 如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+   <span class="nt">&#34;type&#34;</span> <span class="p">:</span> <span class="s2">&#34;record&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;name&#34;</span> <span class="p">:</span> <span class="s2">&#34;twitter_schema&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;namespace&#34;</span> <span class="p">:</span> <span class="s2">&#34;com.miguno.avro&#34;</span><span class="p">,</span>
+   <span class="nt">&#34;fields&#34;</span> <span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>     <span class="nt">&#34;name&#34;</span> <span class="p">:</span> <span class="s2">&#34;username&#34;</span><span class="p">,</span>
+               <span class="nt">&#34;type&#34;</span> <span class="p">:</span> <span class="s2">&#34;string&#34;</span><span class="p">,</span>
+              <span class="nt">&#34;doc&#34;</span>  <span class="p">:</span> <span class="s2">&#34;Name of the user account on Twitter.com&#34;</span>   <span class="p">},</span>
+         <span class="p">{</span>
+             <span class="nt">&#34;name&#34;</span> <span class="p">:</span> <span class="s2">&#34;tweet&#34;</span><span class="p">,</span>
+             <span class="nt">&#34;type&#34;</span> <span class="p">:</span> <span class="s2">&#34;string&#34;</span><span class="p">,</span>
+             <span class="nt">&#34;doc&#34;</span>  <span class="p">:</span> <span class="s2">&#34;The content of the user&#39;s Twitter message&#34;</span>   <span class="p">},</span>
+         <span class="p">{</span>
+             <span class="nt">&#34;name&#34;</span> <span class="p">:</span> <span class="s2">&#34;timestamp&#34;</span><span class="p">,</span>
+             <span class="nt">&#34;type&#34;</span> <span class="p">:</span> <span class="s2">&#34;long&#34;</span><span class="p">,</span>
+             <span class="nt">&#34;doc&#34;</span>  <span class="p">:</span> <span class="s2">&#34;Unix epoch time in seconds&#34;</span>   <span class="p">}</span> 
+    <span class="p">],</span>
+   <span class="nt">&#34;doc:&#34;</span> <span class="p">:</span> <span class="s2">&#34;A basic schema for storing Twitter messages&#34;</span> 
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>twitter.json 中有一些数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span><span class="nt">&#34;username&#34;</span><span class="p">:</span><span class="s2">&#34;miguno&#34;</span><span class="p">,</span><span class="nt">&#34;tweet&#34;</span><span class="p">:</span><span class="s2">&#34;Rock: Nerf paper, scissors is fine.&#34;</span><span class="p">,</span><span class="nt">&#34;timestamp&#34;</span><span class="p">:</span> <span class="mi">1366150681</span> <span class="p">}</span> 
+<span class="p">{</span><span class="nt">&#34;username&#34;</span><span class="p">:</span><span class="s2">&#34;BlizzardCS&#34;</span><span class="p">,</span><span class="nt">&#34;tweet&#34;</span><span class="p">:</span><span class="s2">&#34;Works as intended.  Terran is IMBA.&#34;</span><span class="p">,</span><span class="nt">&#34;timestamp&#34;</span><span class="p">:</span> <span class="mi">1366154481</span> <span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>我们将这些数据转换成二进制的 Avro 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ java -jar ~/avro-tools-1.7.7.jar fromjson --schema-file twitter.avsc twitter.json &gt; twitter.avro</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，我们将 Avro 数据转换为 Java：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ java -jar /app/avro/avro-tools-1.7.7.jar compile schema /app/avro/data/twitter.avsc /app/avro/data/</code></pre></td></tr></table>
+</div>
+</div>
+<p>现在，我们编译这些类并将其打包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nv">CLASSPATH</span><span class="o">=</span>/app/avro/avro-1.7.7-javadoc.jar:/app/avro/avro-mapred-1.7.7-hadoop1.jar:/app/avro/avro-tools-1.7.7.jar
+$ javac -classpath <span class="nv">$CLASSPATH</span> /app/avro/data/com/miguno/avro/twitter_schema.java
+$ jar cvf Twitter.jar com/miguno/avro/*.class</code></pre></td></tr></table>
+</div>
+</div>
+<p>我们启动 Spark，并将上面创建的 Jar 和一些需要的库（Hadoop 和 Avro）传递给 Spark 程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ./bin-shell --jars /app/avro/avro-mapred-1.7.7-hadoop1.jar,/avro/avro-1.7.7.jar,/app/avro/data/Twitter.jar</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 REPL 中，我们获取数据并创建一个 RDD：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">scala&gt;
+import com.miguno.avro.twitter_schema
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.mapreduce.AvroKeyInputFormat
+import org.apache.avro.mapred.AvroKey
+import org.apache.hadoop.io.NullWritable
+import org.apache.avro.mapred.AvroInputFormat
+import org.apache.avro.mapred.AvroWrapper
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.mapred.{AvroInputFormat, AvroWrapper}
+import org.apache.hadoop.io.NullWritable
+
+
+val path = &#34;/app/avro/data/twitter.avro&#34;
+val avroRDD = sc.hadoopFile[AvroWrapper[GenericRecord], NullWritable, AvroInputFormat[GenericRecord]](path)
+avroRDD.map(l =&gt; new String(l._1.datum.get(&#34;username&#34;).toString() ) ).first</pre></td></tr></table>
+</div>
+</div>
+<p>返回结果：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">res2: String = miguno</pre></td></tr></table>
+</div>
+</div>
+<p>一些注意事项：</p>
+
+<ul>
+<li>我们在使用 MR1 的类，但是 MR2的类同样能够运行。</li>
+<li>我们使用GenericRecord 而不是 Specific ，因为我们生成了 Avro schema（并且导入了它）。更多内容参见 <a href="http://avro.apache.org/docs/current/gettingstartedjava.html">http://avro.apache.org/docs/current/gettingstartedjava.html</a></li>
+<li>注意到即使 Avro 类是用 Java 编译的，你还是可以在 Spark 中导入他们，因为 Scala 也是运行在 JVM 之上。</li>
+<li>Avro 允许你定义一个可选的方式去定义 schema 中每个节点的反序列化类型，即通过 key/value 的键值对，这是方式非常方便。参考 <a href="http://stackoverflow.com/questions/27827649/trying-to-deserialize-avro-in-spark-with-specific-type/27859980?noredirect=1%23comment44240726_27859980">http://stackoverflow.com/questions/27827649/trying-to-deserialize-avro-in-spark-with-specific-type/27859980?noredirect=1%23comment44240726_27859980</a> 。</li>
+<li>还有大量的其他方式来实现这个功能，一种是使用 Kryo，另一种是使用 Spark SQL。然而，这需要你创建一个 Spark SQL 的上下文（见 <a href="https://github.com/databricks-avro">https://github.com/databricks-avro</a> ），而不是一个纯粹的 Spark/Scala  方式。然而，也许这在将来会是一种最佳方式？</li>
+</ul>
+
+<p>翻译结束。</p>
+
+<hr />
+
+<p>接下来，我将上述过程在 CDH 5.3 集群中测试一遍。</p>
+
+<h1 id="验证">验证</h1>
+
+<p>首先，在集群一个节点创建 twitter.avsc 和 twitter.json 两个文件。</p>
+
+<p>然后，使用 avro-tools 将这些数据转换成二进制的 Avro 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ java -jar /usr/lib/avro/avro-tools.jar fromjson --schema-file twitter.avsc twitter.json &gt; twitter.avro</pre></td></tr></table>
+</div>
+</div>
+<p>这时候会生成 avro 文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ll
+总用量 <span class="m">12</span>
+-rw-r--r-- <span class="m">1</span> root root <span class="m">543</span>  3月 <span class="m">25</span> <span class="m">15</span>:13 twitter.avro
+-rw-r--r-- <span class="m">1</span> root root <span class="m">590</span>  3月 <span class="m">25</span> <span class="m">15</span>:12 twitter.avsc
+-rw-r--r-- <span class="m">1</span> root root <span class="m">191</span>  3月 <span class="m">25</span> <span class="m">15</span>:12 twitter.json</code></pre></td></tr></table>
+</div>
+</div>
+<p>将 Avro 数据转换为 Java：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ java -jar /usr/lib/avro/avro-tools.jar compile schema twitter.avsc .</pre></td></tr></table>
+</div>
+</div>
+<p>这时候会生成 twitter_schema.java 文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ tree
+.
+├── com
+│   └── miguno
+│       └── avro
+│           └── twitter_schema.java
+├── twitter.avro
+├── twitter.avsc
+└── twitter.json</code></pre></td></tr></table>
+</div>
+</div>
+<p>这时候会生成一个 Twitter.jar 的 jar 包。</p>
+
+<p>编译这些类并将其打包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nv">CLASSPATH</span><span class="o">=</span>/usr/lib/avro/avro-mapred-hadoop2.jar:/usr/lib/avro/avro-tools.jar
+$ javac -classpath <span class="nv">$CLASSPATH</span> com/miguno/avro/twitter_schema.java
+$ jar cvf Twitter.jar com/miguno/avro/*.class</code></pre></td></tr></table>
+</div>
+</div>
+<p>在当前目录，运行 spark-shell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">spark-shell --jars /usr/lib/avro/avro-mapred-hadoop2.jar,/usr/lib/avro/avro.jar,Twitter.jar</code></pre></td></tr></table>
+</div>
+</div>
+<p>将 twitter.avro 上传到 hdfs:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hadoop fs -put twitter.avro</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 REPL 中，我们创建一个 RDD 并查看结果是否和上面一致：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">scala&gt;
+import com.miguno.avro.twitter_schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.mapreduce.AvroKeyInputFormat
+import org.apache.avro.mapred.AvroKey
+import org.apache.hadoop.io.NullWritable
+import org.apache.avro.mapred.AvroInputFormat
+import org.apache.avro.mapred.AvroWrapper
+import org.apache.avro.generic.GenericRecord
+import org.apache.avro.mapred.{AvroInputFormat, AvroWrapper}
+import org.apache.hadoop.io.NullWritable
+
+
+val path = &#34;twitter.avro&#34;
+val avroRDD = sc.hadoopFile[AvroWrapper[GenericRecord], NullWritable, AvroInputFormat[GenericRecord]](path)
+avroRDD.map(l =&gt; new String(l._1.datum.get(&#34;username&#34;).toString() ) ).first</pre></td></tr></table>
+</div>
+</div>
+<p>更多的 Avro Tools 用法，可以参考 <a href="/2015/03/20/about-avro.html">Avro 介绍</a>。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-03-24
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/avro/">avro</a>
+          <a href="/tags/spark/">spark</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/03/25/converting-avro-data-to-parquet-format/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">将Avro数据转换为Parquet格式</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/03/20/about-avro/">
+            <span class="next-text nav-default">Avro介绍</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

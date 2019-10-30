@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>CDH 5.2中Impala认证集成LDAP和Kerberos - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Impala是基于 Apache Hadoop 的一个开源的分析数据库，使用 Kerberos 和 LDAP 来支持认证-作为一种角色来证明你是否是你所说的你是谁。Kerberos 在1.0版本中就已经被支持了，而 LDAP 是最近才被支持，在 CDH 5.2 中，你能够同时使用两者。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/01/23/new-in-cdh-5-2-impala-authentication-with-ldap-and-kerberos/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="CDH 5.2中Impala认证集成LDAP和Kerberos" />
+<meta property="og:description" content="Impala是基于 Apache Hadoop 的一个开源的分析数据库，使用 Kerberos 和 LDAP 来支持认证-作为一种角色来证明你是否是你所说的你是谁。Kerberos 在1.0版本中就已经被支持了，而 LDAP 是最近才被支持，在 CDH 5.2 中，你能够同时使用两者。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/01/23/new-in-cdh-5-2-impala-authentication-with-ldap-and-kerberos/" />
+<meta property="article:published_time" content="2015-01-23T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-01-23T08:00:00+08:00" />
+<meta itemprop="name" content="CDH 5.2中Impala认证集成LDAP和Kerberos">
+<meta itemprop="description" content="Impala是基于 Apache Hadoop 的一个开源的分析数据库，使用 Kerberos 和 LDAP 来支持认证-作为一种角色来证明你是否是你所说的你是谁。Kerberos 在1.0版本中就已经被支持了，而 LDAP 是最近才被支持，在 CDH 5.2 中，你能够同时使用两者。">
+
+
+<meta itemprop="datePublished" content="2015-01-23T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-01-23T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="4077">
+
+
+
+<meta itemprop="keywords" content="hadoop,kerberos,ldap,impala," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CDH 5.2中Impala认证集成LDAP和Kerberos"/>
+<meta name="twitter:description" content="Impala是基于 Apache Hadoop 的一个开源的分析数据库，使用 Kerberos 和 LDAP 来支持认证-作为一种角色来证明你是否是你所说的你是谁。Kerberos 在1.0版本中就已经被支持了，而 LDAP 是最近才被支持，在 CDH 5.2 中，你能够同时使用两者。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">CDH 5.2中Impala认证集成LDAP和Kerberos</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-01-23 </span>
+        <div class="post-category">
+            <a href="/categories/impala/"> impala </a>
+            </div>
+          <span class="more-meta"> 约 4077 字 </span>
+          <span class="more-meta"> 预计阅读 9 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-kerberos">1. Kerberos</a>
+<ul>
+<li><a href="#调试-kerberos">调试 Kerberos</a></li>
+<li><a href="#kerberos-flags">Kerberos Flags</a></li>
+</ul></li>
+<li><a href="#2-ldap">2. LDAP</a>
+<ul>
+<li><a href="#ldap-配置">LDAP 配置</a></li>
+<li><a href="#ldap-和-impalad">LDAP 和 Impalad</a></li>
+<li><a href="#ldap-和-tls">LDAP 和 TLS</a>
+<ul>
+<li><a href="#客户端和-impalad-之间">客户端和 impalad 之间</a></li>
+<li><a href="#impalad-和-ldap-服务器之间">Impalad 和 LDAP 服务器之间</a></li>
+<li><a href="#ldap-flags">LDAP Flags</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#3-一起使用">3. 一起使用</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-01-23T08:00:00" title="January 23, 2015">January 23, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>这是一篇翻译的文章，原文为 <a href="http://blog.cloudera.com/blog/images/10/new-in-cdh-5-2-impala-authentication-with-ldap-and-kerberos/">New in CDH 5.2: Impala Authentication with LDAP and Kerberos</a>。由于翻译水平有限，难免会一些翻译不准确的地方，欢迎指正！</p>
+
+<hr />
+
+<p>Impala 认证现在可以通过 LDAP 和 Kerberos 联合使用来解决。下文来解释为什么和怎样解决。</p>
+
+<p>Impala，是基于 Apache Hadoop 的一个开源的分析数据库，使用 Kerberos 和 LDAP 来支持认证-作为一种角色来证明你是否是你所说的你是谁。Kerberos 在1.0版本中就已经被支持了，而 LDAP 是最近才被支持，在 CDH 5.2 中，你能够同时使用两者。</p>
+
+<p>同时使用 LDAP 和 Kerberos 提供了显著的价值；Kerberos 保留了核心的认证协议并且总是用在 Impala 进程彼此之间以及和 Hadoop 集群连接的时候。然后，Kerberos 需要更多的维护支持。LDAP 是在整个企业中无处不在，并且通常由通过 ODBC 和 JDBC 驱动程序连接到 Impala 的客户端应用程序来使用。两者的组合使用是有一定道理的。</p>
+
+<p>下表表明了各种组合和它们的使用场景：</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Impala 认证</th>
+<th align="left">使用场景</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">No Authentication</td>
+<td align="left">非安全的集群。我们确定既然你在阅读这篇文章，那你不会对这种场景感兴趣</td>
+</tr>
+
+<tr>
+<td align="left">Kerberos Only</td>
+<td align="left">Hadoop 集群开启 Kerberos 认证，并且连接到 Impala 的每个用户或者客户端都有一个 Kerberos principal。（详细说明见下文。）</td>
+</tr>
+
+<tr>
+<td align="left">LDAP Only</td>
+<td align="left">Hadoop 集群 没有开启 Kerberos 认证，但是你想认证连接 Impala 的外包的客户端，如你使用 Active Directory 或者其他的 LDAP 服务。</td>
+</tr>
+
+<tr>
+<td align="left">Kerberos and LDAP</td>
+<td align="left">Hadoop 集群开启 Kerberos 认证。在 Impala 外部的用户没有 Kerberos principal，但是有一个 LDAP 的凭证。</td>
+</tr>
+</tbody>
+</table>
+
+<p><img src="http://blog.cloudera.com/wp-content/uploads/images/10/impala-ldap-f1.png" alt="impala-ldap" /></p>
+
+<p>在这篇文章中，我将解释为何以及如何使用 LDAP 和 Kerberos 的组合来建立 Impala 认证。</p>
+
+<h1 id="1-kerberos">1. Kerberos</h1>
+
+<p>Kerberos 仍然是 Apache Hadoop 的主要认证机制。下面是 Kerberos 的一些术语将会帮助你理解这篇文章讨论的内容。</p>
+
+<ul>
+<li><code>principal</code> 是 Kerberos 主体，就要一个用户或者一个守护进程。对于我们来说，一个 principal 对于守护进程来说是 <code>name/hostname@realm</code>，或者对于用户来说仅仅是 <code>name@realm</code>。</li>
+<li><code>name</code> 字段可能是一个进程，例如 <code>impala</code>，或者是一个用户名，例如 <code>m</code>yoder`。</li>
+<li><code>hostname</code> 可能是一个机器的全名称，或者是一个 Hadoop 定义的 _HOST 字符串，通常会机器全名称自动替换。</li>
+<li><code>realm</code> 类似于（但不必要和其一样）一个 DNS 域名。</li>
+</ul>
+
+<p>Kerberos 主体能够证明他们是谁，要么通过提供一个密码（如果主体是人），或者通过提供“密钥表”的文件。 Impala 守护进程需要一个密钥表文件，该文件必须得到很好的保护：任何可以读取密钥表文件的人可以冒充 Impala 守护进程。</p>
+
+<p>Basic support for Kerberos in impala for this process is straightforward: Supply the following arguments, and the daemons will use the given principal and the keys in the keytab file to take on the identity of the principal for all communication.</p>
+
+<p>在 Impala 中对 Kerberos 基本的支持很简单：提供以下参数，守护程序将使用给定的主体和 key，在密钥表文件中验证所有通信的主体的身份。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">--principal<span class="o">=</span>impala/hostname@realm
+--keytab_file<span class="o">=</span>/full/path/to/keytab</code></pre></td></tr></table>
+</div>
+</div>
+<p>还有另一外一种情况是 Impala 守护进程（impalad）运行在一个负载均衡器下。</p>
+
+<p>当客户端通过负载平衡器（一个代理）运行查询时，客户端期望 impalad 有一个和负载平衡器的名称的主体。所以当 Impalad 对外部查询提供服务时，需要使用一个和代理相同名称的主体，但是当做后台程序之间的通讯时需要一个主体匹配实际的主机名称。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">--principal<span class="o">=</span>impala/proxy-hostname@realm
+--be_principal<span class="o">=</span>impala/actual-hostname@realm
+--keytab_file<span class="o">=</span>/full/path/to/keytab</code></pre></td></tr></table>
+</div>
+</div>
+<p>第一个参数 <code>--principal</code> 定义 Impalad 服务外部查询时使用哪一个主体，<code>--be_principal</code> 参数定义 Impalad 进程之间通信时使用哪一个主体。两个主体的 key 必须存在于相同的 keytab 文件中。</p>
+
+<h2 id="调试-kerberos">调试 Kerberos</h2>
+
+<p>Kerberos是一个优雅的协议，但是当出现错误的时候实际的实现不是非常有帮助的。下面主要有两件事情需要检查，在出现认证失败的时候：</p>
+
+<ul>
+<li><code>Time</code>。Kerberos 是依赖于同步时钟，因此在所有使用 Kerberos 的机器上安装和使用 NTP（网络时间协议）是一个最佳实践。</li>
+<li><code>DNS</code>。请确保您的主机名是全名称的并且正向（名称 - &gt; IP）和反向（IP-&gt;名称）DNS查找是否正确。</li>
+</ul>
+
+<p>除此之外，也可以设置两个环境变量以输出 Kerberos 调试信息。输出可能是一小部分的内容，但通常是帮助你解决问题。</p>
+
+<ul>
+<li><code>KRB5_TRACE=/full/path/to/trace/output.log</code>：该环境变量指定调试日志输出路径。</li>
+<li><code>JAVA_TOOL_OPTIONS=-Dsun.security.krb5.debug=true</code>：该环境变量会传给 Impala 守护进程，并传递给内部的 java 组件。</li>
+</ul>
+
+<h2 id="kerberos-flags">Kerberos Flags</h2>
+
+<p><a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/Impala/Installing-and-Using-Impala/ciiu_kerberos.html">Cloudera documentation for Kerberos and Impala</a> 给出了详细的说明，这里只做简要介绍：</p>
+
+<p><img src="http://blog.cloudera.com/wp-content/uploads/images/10/impala-auth-tab2.png" alt="" /></p>
+
+<h1 id="2-ldap">2. LDAP</h1>
+
+<p>Kerberos 是伟大的，但它确实需要最终用户有一个有效的 Kerberos 证书，这在许多环境中是不实际的，因为每个与 Impala 和Hadoop集群交互的用户都必须配置 Kerberos 主体。对于使用 Active Directory 来管理用户帐户的组织，可能需要在 MIT Kerberos 领域频繁的创建每个用户对应的用户帐户。取而代之的时许多企业环境使用 LDAP 协议，在客户使用自己的用户名和密码进行身份验证自己。</p>
+
+<p>当配置为使用LDAP，把 impalad 看作为一个 LDAP 代理：客户端（ Impala shell，ODBC，JDBC，hue 等等）发送其用户名和密码到 impalad ，然后 impalad 将用户名和密码发送给 LDAP 服务器并尝试登录。在 LDAP 术语中，impalad 发出 LDAP “绑定” 操作。如果 LDAP 服务器为该次登陆尝试返回成功，则 impalad 接受连接。</p>
+
+<p>LDAP只用于验证外部客户，如Impala shell，ODBC，JDBC，和 hue。所有其他后端认证由 Kerberos 的处理。</p>
+
+<h2 id="ldap-配置">LDAP 配置</h2>
+
+<p>LDAP 是复杂的（而且强大的），因为它非常灵活；有许多方式来配置 LDAP 实体和验证这些实体。在一般情况下，每个人都在 LDAP 具有专有名称或DN，可被认为是 LDAP 中的用户名或主体。</p>
+
+<p>让我们来看看对于两个不同的LDAP服务器用户是如何设置的。第一个用户名为“Test1 Person”，并存在 Windows2008 Active Directory 中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># Test1 Person, Users, ad.sec.cloudera.com
+dn: CN=Test1 Person,CN=Users,DC=ad,DC=sec,DC=cloudera,DC=com
+cn: Test1 Person
+sAMAccountName: test1
+userPrincipalName: test1@ad.sec.cloudera.com</pre></td></tr></table>
+</div>
+</div>
+<p>第二个用户是我：用户 myoder 的项，存在于 OpenLDAP 服务器中：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># myoder, People, cloudera.com
+dn: uid=myoder,ou=People,dc=cloudera,dc=com
+cn: Michael Yoder
+uid: myoder
+homeDirectory: /home/myoder</pre></td></tr></table>
+</div>
+</div>
+<p>为了简单，上面中的其他的许多项都被删除了。下面来看看这两个账户的相同点和不同点：</p>
+
+<ul>
+<li><code>DN</code>：在注释后面的第一行就是 DN。这是一个 LDAP 账户最主要的标识串。</li>
+<li><code>CN</code>：通用名称。对 AD 来说，他和 DN 是一样的；对于 OpenLDAP 来说他是一个人的名称，他不是 DN 中的 uid。</li>
+<li><code>sAMAccountName</code>：只存在 AD 中的条目，是一个用户名称的过时的形式。尽管其过时了，但是被广泛使用中。</li>
+<li><code>userPrincipalName</code>：只存在 AD 中的条目，通过转换，应该映射到用户的邮箱名称。其通常像这样的格式：<code>sAMAccountName@fully.qualified.domain.com</code>。这是 Active Directory 更现代的名称并且被广泛使用。</li>
+</ul>
+
+<p>这里还有一些额外有趣的关于 AD 的实现细节。通常，LDAP 认证是基于 DN。对于 AD，下面<a href="http://msdn.microsoft.com/en-us/library/cc223499.aspx">几项会被轮流尝试</a>：</p>
+
+<ul>
+<li>首先，使用 DN</li>
+<li>userPrincipalName</li>
+<li>sAMAccountName + &ldquo;@&rdquo; + the DNS domain name</li>
+<li>Netbios domain name + &ldquo;\&rdquo; + the sAMAccountName</li>
+<li>其他的一些机制，请看上面的链接里的内容。</li>
+</ul>
+
+<h2 id="ldap-和-impalad">LDAP 和 Impalad</h2>
+
+<p>考虑所有这些的不同点，幸运的是 Impala 进程提供了几个机制去标识 LDAP 的配置。首先，使用简单的配置：</p>
+
+<ul>
+<li><code>--enable_ldap_auth</code> 必须设置为 true</li>
+<li><code>--ldap_uri=ldap://ldapserver.your.company.com</code> 必须定义</li>
+</ul>
+
+<p>仅仅设置这些，传递给 impalad 的用户名（通过 impala shell、jdbc、odbc 等等）直接传递到 LDAP 服务器。这个过程对于 AD 来说没什么问题，如果用户名称是全名称，就像 <code>test1@ad.sec.cloudera.com</code> - 其使用 <code>userPrincipal</code> 或者 <code>sAMAccountName</code> 加上 DNS 域名都会匹配上。</p>
+
+<p>也可以设置 impalad 启动参数以便 这域名（在当前情况下是 <code>ad.sec.cloudera.com</code> ）可以自动添加到 用户名上，这需要通过设置参数 <code>--ldap_domain=ad.sec.cloudera.com</code> 添加到 impalad 的启动参数中。现在，当一个客户端用户访问时，例如 test1 用户，其会将域名名称追加到用户名称之后以便追加后的结果 <code>test1@ad.sec.cloudera.com</code> 传递给 AD 。这种方式对于你的用户来说是很方便的。</p>
+
+<p>目前，对于 AD 来说都运行正常。但是对于其他的 LDAP 服务器，例如 OpenLDAP 呢？OpenLDAP 没有 sAMAccountName 或者 userPrincipalName 中的任何一个，取而代之的是我们不得不直接使用 DN 进行认证。用户将不会去关心他们的 LDAP DN！</p>
+
+<p>幸运地是，impalade 对于这种场景也提供了一些参数。<code>--ldap_baseDN=X</code> 参数用户将用户名称转换为 LDAP DN，以便这个 DN 结果看上去像 <code>uid=username,X</code>。例如，如果设置 <code>--ldap_baseDN=ou=People,dc=cloudera,dc=com</code>，传递的用户名是 myoder，传到到 LDAP 的查询将是 <code>uid=myoder,ou=People,dc=cloudera,dc=com</code>，这将会和 myoder 的 DN 想匹配。</p>
+
+<p>为了获得最大的灵活性，也可以通过 <code>--ldap_bind_pattern</code> 参数将指定用户名任意映射到一个DN。这个想法是，该参数中必须有一个名称为 #UID 的占位符，并且 <code>#UID</code> 会被用户名替代。例如你可以通过指定 <code>--ldap_bind_pattern=uid=#UID,ou=People,dc=cloudera,dc=com</code> 来定义 <code>--ldap_baseDN</code>。当 myoder 这个用户进来时，其将会替换 <code>#UID</code>，并且我们将得到和上面一直的字符串。这个参数应该在需要对 DN 有更多控制的时候才使用。</p>
+
+<h2 id="ldap-和-tls">LDAP 和 TLS</h2>
+
+<p>当使用 LDAP 时，传递个 LDAP 服务器的用户名和密码都是明文的。这意味着没有任何的保护，任何人都可以看到传输中的密码。为了阻止这一点，你必须使用 TLS（Transport Layer Security，更为人熟知的是 SSL） 来保护连接。 这里有两种不同的连接需要保护：客户端和 impalad 进程之间以及 impalad 进程和 LDAP 服务器之间。</p>
+
+<h3 id="客户端和-impalad-之间">客户端和 impalad 之间</h3>
+
+<p>TLS 连接的认证需要使用证书来完成，所以 impalad 进程（作为 TLS server）需要他自己的证书。Impalad 呈现该证书给客户端以证明他的确是 impalad 进程。为了提供该证书，impalad 进程需要设置下面两个参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">--ssl_server_certificate<span class="o">=</span>/full/path/to/impalad-cert.pem 
+--ssl_private_key<span class="o">=</span>/full/path/to/impalad-key.pem</code></pre></td></tr></table>
+</div>
+</div>
+<p>现在客户端必须使用 TLS 和 impalad 通信。在 impala-shell 中，你必须设置 <code>--ssl</code> 和 <code>--ca_cert=/full/path/to/ca-certificate.pem</code> 这两个参数。ca_cert 参数必须指定为上面 <code>ssl_server_certificate</code> 参数定义的值。对于 ODBC 连接来说，请参考 <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/Connectors/PDF/Cloudera-ODBC-Driver-for-Impala-Install-Guide.pdf"> the Cloudera ODBC driver for Impala</a>。其提供了一个全面的描述。关于设置证书、认证和 TLS 的必要性。</p>
+
+<p>坦白地说，在 impala 客户端和 impalad 进程之间使用 TLS 是一个很好的想法，不管是否使用 LDAP。然而，你的查询，以及这些查询的结果都是通过明文传输的。</p>
+
+<h3 id="impalad-和-ldap-服务器之间">Impalad 和 LDAP 服务器之间</h3>
+
+<p>这里有两种方法开启和 LDAP 服务器之间的 TLS ：</p>
+
+<ul>
+<li>在 impalad 启动参数中添加 <code>--ldap_tls</code>。该连接会使用 LDAP 的端口，但是在第一次连接之后，会发送一个 <code>STRATETLS</code> 的请求，该请求会使用 TLS 升级该连接为一个安全的连接并且使用相同的端口。</li>
+<li>URL 使用 <code>ldaps://</code> 开头。这将会使用一个不同于  <code>ldap://</code> 的端口。</li>
+</ul>
+
+<p>最后，到 LDAP 服务器的连接需要他自己的认证；在这种情况下，你知道 impalad 是在和正确的 ldap 服务器通话并且你不会将你的密码发送给一个无赖的人为工具的请求。你需要添加 <code>--ldap_ca_certificate</code> 参数到 impalad 定义 LDAP 服务器的证书存放的位置。</p>
+
+<h3 id="ldap-flags">LDAP Flags</h3>
+
+<p><a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/Impala/Installing-and-Using-Impala/ciiu_ldap.html">Cloudera documentation for LDAP and Impala</a> 一文包括这部分的信息，并且建议你阅读 <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/Impala/Installing-and-Using-Impala/ciiu_ssl.html">TLS between the Impala client and the Impala daemon</a> 这篇文章。</p>
+
+<p><img src="http://blog.cloudera.com/wp-content/uploads/images/10/impala-auth-tab3.png" alt="" /></p>
+
+<h1 id="3-一起使用">3. 一起使用</h1>
+
+<p>如果我们想同事使用 Kerberos 和 LDAP 认证，则需要如下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">impalad --enable_ldap_auth <span class="se">\
+</span><span class="se"></span>    --ldap_uri<span class="o">=</span>ldap://ldapserver.your.company.com <span class="se">\
+</span><span class="se"></span>    --ldap_tls <span class="se">\
+</span><span class="se"></span>    --ldap_ca_certificate<span class="o">=</span>/full/path/to/certs/ldap-ca-cert.pem <span class="se">\
+</span><span class="se"></span>    --ssl_server_certificate<span class="o">=</span>/full/path/to/certs/impala-cert.pem <span class="se">\
+</span><span class="se"></span>    --ssl_private_key<span class="o">=</span>/full/path/to/certs/impala-key.pem <span class="se">\
+</span><span class="se"></span>    --principal<span class="o">=</span>impala/_HOST@EXAMPLE.COM <span class="se">\
+</span><span class="se"></span>    --keytab_file<span class="o">=</span>/full/path/to/keytab</code></pre></td></tr></table>
+</div>
+</div>
+<p>当使用 Kerberos 认证时，使用  impala shell 连接：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">impala-shell.sh --ssl <span class="se">\
+</span><span class="se"></span>    --ca_cert<span class="o">=</span>/full/path/to/cert/impala-ca-cert.pem <span class="se">\
+</span><span class="se"></span>    -k</code></pre></td></tr></table>
+</div>
+</div>
+<p>当使用 LDAP 认证时：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">impala-shell.sh --ssl <span class="se">\
+</span><span class="se"></span>   --ca_cert<span class="o">=</span>/full/path/to/cert/impala-ca-cert.pem <span class="se">\
+</span><span class="se"></span>   -l -u myoder@cloudera.com</code></pre></td></tr></table>
+</div>
+</div>
+<p>原文作者为 Michael Yoder，Cloudera 软件工程师。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-01-23
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/kerberos/">kerberos</a>
+          <a href="/tags/ldap/">ldap</a>
+          <a href="/tags/impala/">impala</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/01/26/install-and-deploy-presto/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">安装和部署Presto</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/01/23/presto-overview/">
+            <span class="next-text nav-default">Presto介绍</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

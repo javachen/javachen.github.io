@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Hadoop配置LDAP集成Kerberos - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录 cdh hadoop 集群配置 LDAP 集成 Kerberos 的过程，这里 LDAP 安装的是 OpenLDAP。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Hadoop配置LDAP集成Kerberos" />
+<meta property="og:description" content="本文主要记录 cdh hadoop 集群配置 LDAP 集成 Kerberos 的过程，这里 LDAP 安装的是 OpenLDAP。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop/" />
+<meta property="article:published_time" content="2014-11-12T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-11-12T08:00:00+08:00" />
+<meta itemprop="name" content="Hadoop配置LDAP集成Kerberos">
+<meta itemprop="description" content="本文主要记录 cdh hadoop 集群配置 LDAP 集成 Kerberos 的过程，这里 LDAP 安装的是 OpenLDAP。">
+
+
+<meta itemprop="datePublished" content="2014-11-12T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-11-12T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="3814">
+
+
+
+<meta itemprop="keywords" content="hadoop,openldap,kerberos," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hadoop配置LDAP集成Kerberos"/>
+<meta name="twitter:description" content="本文主要记录 cdh hadoop 集群配置 LDAP 集成 Kerberos 的过程，这里 LDAP 安装的是 OpenLDAP。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Hadoop配置LDAP集成Kerberos</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-11-12 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 3814 字 </span>
+          <span class="more-meta"> 预计阅读 8 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-环境说明">1. 环境说明</a></li>
+<li><a href="#2-安装服务端">2. 安装服务端</a>
+<ul>
+<li><a href="#2-1-安装">2.1 安装</a></li>
+<li><a href="#2-2-openssl">2.2 OpenSSL</a></li>
+<li><a href="#2-3-ldap-服务端配置">2.3 LDAP 服务端配置</a></li>
+<li><a href="#2-4-启动服务">2.4 启动服务</a></li>
+<li><a href="#2-5-ldap-和-kerberos">2.5 LDAP 和 Kerberos</a></li>
+<li><a href="#2-6-创建数据库">2.6 创建数据库</a></li>
+<li><a href="#2-7-ldap-的使用">2.7 LDAP 的使用</a>
+<ul>
+<li><a href="#导入系统用户">导入系统用户</a></li>
+<li><a href="#查询">查询</a></li>
+<li><a href="#修改">修改</a></li>
+<li><a href="#删除">删除</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#3-客户端配置">3. 客户端配置</a></li>
+<li><a href="#4-配置-hive-集成-ldap">4. 配置 Hive 集成 LDAP</a>
+<ul>
+<li><a href="#修改配置文件">修改配置文件</a></li>
+<li><a href="#测试">测试</a></li>
+</ul></li>
+<li><a href="#5-配置-impala-集成-ldap">5. 配置 Impala 集成 LDAP</a>
+<ul>
+<li><a href="#修改配置文件-1">修改配置文件</a></li>
+<li><a href="#测试-1">测试</a></li>
+</ul></li>
+<li><a href="#6-参考文章">6. 参考文章</a></li>
+<li><a href="#7-相关文章">7 相关文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-11-12T08:00:00" title="November 12, 2014">November 12, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>本文主要记录 cdh hadoop 集群集成 ldap 的过程，这里 ldap 安装的是 <a href="http://www.openldap.org/">OpenLDAP</a> 。LDAP 用来做账号管理，Kerberos作为认证。授权一般来说是由应用来决定的，通过在 LDAP 数据库中配置一些属性可以让应用程序来进行授权判断。</p>
+
+<p>关于 Kerberos 的安装和 HDFS 配置 kerberos 认证，请参考 <a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置kerberos认证</a>。</p>
+
+<h1 id="1-环境说明">1. 环境说明</h1>
+
+<p>系统环境：</p>
+
+<ul>
+<li>操作系统：CentOs 6.6</li>
+<li>Hadoop版本：<code>CDH5.4</code></li>
+<li>JDK版本：<code>1.7.0_71</code></li>
+<li>OpenLDAP 版本：2.4.39</li>
+<li>Kerberos 版本：1.10.3</li>
+<li>运行用户：root</li>
+</ul>
+
+<p>集群各节点角色规划为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+192.168.56.122        cdh2     DataNode、NodeManager、HBase、Hiveserver2、Impala Server
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hiveserver2、Impala Server</pre></td></tr></table>
+</div>
+</div>
+<p>cdh1作为master节点，其他节点作为slave节点，我们在cdh1节点安装kerberos Server，在其他节点安装kerberos client。</p>
+
+<h1 id="2-安装服务端">2. 安装服务端</h1>
+
+<h2 id="2-1-安装">2.1 安装</h2>
+
+<p>同安装 kerberos 一样，这里使用 cdh1 作为服务端安装 openldap。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install db4 db4-utils db4-devel cyrus-sasl* krb5-server-ldap -y
+$ yum install openldap openldap-servers openldap-clients openldap-devel compat-openldap -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看安装的版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ rpm -qa openldap
+openldap-2.4.39-8.el6.x86_64
+
+$ rpm -qa krb5-server-ldap
+krb5-server-ldap-1.10.3-33.el6.x86_64</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-2-openssl">2.2 OpenSSL</h2>
+
+<blockquote>
+<p>如果，你不配置ssl，这部分内容可以略过，实际安装过程中，我也没有详细去操作这部分内容。</p>
+</blockquote>
+
+<p>OpenLDAP 默认使用 Mozilla NSS，安装后已经生成了一份证书，可使用 <code>certutil -d /etc/openldap/certs/ -L -n 'OpenLDAP Server'</code> 命令查看。使用如下命令生成RFC格式CA证书并分发到客户机待用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ certutil -d /etc/openldap/certs/ -L -a -n <span class="s1">&#39;OpenLDAP Server&#39;</span> -f /etc/openldap/certs/password &gt; /etc/openldap/ldapCA.rfc
+
+<span class="c1"># 拷贝到其他节点</span>
+$ scp /etc/openldap/ldapCA.rfc cdh2:/tmp
+$ scp /etc/openldap/ldapCA.rfc cdh3:/tmp</code></pre></td></tr></table>
+</div>
+</div>
+<p>附，生成自签名证书的命令供参考：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ certutil -d /etc/openldap/certs -S -n <span class="s1">&#39;test cert&#39;</span> -x -t <span class="s1">&#39;u,u,u&#39;</span> -s <span class="s1">&#39;C=XX, ST=Default Province, L=Default City, O=Default Company Ltd, OU=Default Unit, CN=cdh1&#39;</span> -k rsa -v <span class="m">120</span> -f /etc/openldap/certs/password</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 <code>/etc/sysconfig/ldap</code>，开启 ldaps：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Run slapd with -h &#34;... ldaps:/// ...&#34;</span>
+<span class="c1">#   yes/no, default: no</span>
+<span class="nv">SLAPD_LDAPS</span><span class="o">=</span>yes</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-3-ldap-服务端配置">2.3 LDAP 服务端配置</h2>
+
+<p>更新配置库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rm -rf /var/lib/ldap/*
+cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+chown -R ldap.ldap /var/lib/ldap</code></pre></td></tr></table>
+</div>
+</div>
+<p>在2.4以前的版本中，OpenLDAP 使用 slapd.conf 配置文件来进行服务器的配置，而2.4开始则使用 <code>slapd.d</code> 目录保存细分后的各种配置，这一点需要注意，其数据存储位置即目录 <code>/etc/openldap/slapd.d</code> 。尽管该系统的数据文件是透明格式的，还是建议使用 ldapadd, ldapdelete, ldapmodify 等命令来修改而不是直接编辑。</p>
+
+<p>默认配置文件保存在 /etc/openldap/slapd.d，将其备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cp -rf /etc/openldap/slapd.d /etc/openldap/slapd.d.bak</code></pre></td></tr></table>
+</div>
+</div>
+<p>添加一些基本配置，并引入 kerberos 和 openldap 的 schema：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ cp /usr/share/doc/krb5-server-ldap-1.10.3/kerberos.schema /etc/openldap/schema/
+
+$ touch /etc/openldap/slapd.conf
+
+$ <span class="nb">echo</span> <span class="s2">&#34;include /etc/openldap/schema/corba.schema
+</span><span class="s2">include /etc/openldap/schema/core.schema
+</span><span class="s2">include /etc/openldap/schema/cosine.schema
+</span><span class="s2">include /etc/openldap/schema/duaconf.schema
+</span><span class="s2">include /etc/openldap/schema/dyngroup.schema
+</span><span class="s2">include /etc/openldap/schema/inetorgperson.schema
+</span><span class="s2">include /etc/openldap/schema/java.schema
+</span><span class="s2">include /etc/openldap/schema/misc.schema
+</span><span class="s2">include /etc/openldap/schema/nis.schema
+</span><span class="s2">include /etc/openldap/schema/openldap.schema
+</span><span class="s2">include /etc/openldap/schema/ppolicy.schema
+</span><span class="s2">include /etc/openldap/schema/collective.schema
+</span><span class="s2">include /etc/openldap/schema/kerberos.schema&#34;</span> &gt; /etc/openldap/slapd.conf
+$ <span class="nb">echo</span> -e <span class="s2">&#34;pidfile /var/run/openldap/slapd.pid\nargsfile /var/run/openldap/slapd.args&#34;</span> &gt;&gt; /etc/openldap/slapd.conf
+
+<span class="c1">#更新slapd.d</span>
+$ slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d
+
+$ chown -R ldap:ldap /etc/openldap/slapd.d <span class="o">&amp;&amp;</span> chmod -R <span class="m">700</span> /etc/openldap/slapd.d</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-4-启动服务">2.4 启动服务</h2>
+
+<p>启动 LDAP 服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chkconfig --add slapd
+chkconfig --level <span class="m">345</span> slapd on
+
+/etc/init.d/slapd start</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态，验证服务端口：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ps aux <span class="p">|</span> grep slapd <span class="p">|</span> grep -v grep
+  ldap      <span class="m">9225</span>  <span class="m">0</span>.0  <span class="m">0</span>.2 <span class="m">581188</span> <span class="m">44576</span> ?        Ssl  <span class="m">15</span>:13   <span class="m">0</span>:00 /usr/sbin/slapd -h ldap:/// -u ldap
+
+$ netstat -tunlp  <span class="p">|</span> grep :389
+  tcp        <span class="m">0</span>      <span class="m">0</span> <span class="m">0</span>.0.0.0:389                 <span class="m">0</span>.0.0.0:*                   LISTEN      <span class="m">8510</span>/slapd
+  tcp        <span class="m">0</span>      <span class="m">0</span> :::389                      :::*                        LISTEN      <span class="m">8510</span>/slapd</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果启动失败，则运行下面命令来启动 slapd 服务并查看日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ slapd -h ldap://127.0.0.1 -d <span class="m">481</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>待查明原因之后，停止该进程使用正常方式启动 slapd 服务。</p>
+
+<h2 id="2-5-ldap-和-kerberos">2.5 LDAP 和 Kerberos</h2>
+
+<p>在Kerberos安全机制里，一个principal就是realm里的一个对象，一个principal总是和一个密钥（secret key）成对出现的。</p>
+
+<p>这个principal的对应物可以是service，可以是host，也可以是user，对于Kerberos来说，都没有区别。</p>
+
+<p>Kdc(Key distribute center)知道所有principal的secret key，但每个principal对应的对象只知道自己的那个secret key。这也是 &ldquo;共享密钥&rdquo; 的由来。</p>
+
+<p>为了使 Kerberos 能够绑定到 OpenLDAP 服务器，请创建一个管理员用户和一个 principal，并生成 keytab 文件，设置该文件的权限为 LDAP 服务运行用户可读（ LDAP 服务运行用户一般为 ldap）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kadmin.local -q <span class="s2">&#34;addprinc ldapadmin@JAVACHEN.COM&#34;</span>
+$ kadmin.local -q <span class="s2">&#34;addprinc -randkey ldap/cdh1@JAVACHEN.COM&#34;</span>
+$ kadmin.local -q <span class="s2">&#34;ktadd -k /etc/openldap/ldap.keytab ldap/cdh1@JAVACHEN.COM&#34;</span>
+
+$ chown ldap:ldap /etc/openldap/ldap.keytab <span class="o">&amp;&amp;</span> chmod <span class="m">640</span> /etc/openldap/ldap.keytab</code></pre></td></tr></table>
+</div>
+</div>
+<p>ktadd 后面的<code>-k</code> 指定把 key 存放在一个本地文件中。</p>
+
+<p>使用 ldapadmin 用户测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kinit ldapadmin</code></pre></td></tr></table>
+</div>
+</div>
+<p>系统会提示输入密码，如果一切正常，那么会安静的返回。实际上，你已经通过了kerberos的身份验证，且获得了一个Service TGT(Ticket-Granting Ticket). Service TGT的意义是， 在一段时间内，你都可以用此TGT去请求某些service，比如ldap service，而不需要再次通过kerberos的认证。</p>
+
+<p>确保 LDAP 启动时使用上一步中创建的keytab文件，在 <code>/etc/sysconfig/ldap</code> 增加 <code>KRB5_KTNAME</code> 配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">KRB5_KTNAME</span><span class="o">=</span>/etc/openldap/ldap.keytab</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，重启 slapd 服务。</p>
+
+<h2 id="2-6-创建数据库">2.6 创建数据库</h2>
+
+<p>进入到 /etc/openldap/slapd.d 目录，查看 <code>etc/openldap/slapd.d/cn\=config/olcDatabase={2}bdb.ldif</code> 可以看到一些默认的配置，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">olcRootDN: cn=Manager,dc=my-domain,dc=com  
+olcRootPW: secret  
+olcSuffix: dc=my-domain,dc=com</pre></td></tr></table>
+</div>
+</div>
+<p>接下来更新这三个配置，建立 modify.ldif 文件，内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">dn: <span class="nv">olcDatabase</span><span class="o">={</span><span class="m">2</span><span class="o">}</span>bdb,cn<span class="o">=</span>config
+changetype: modify
+replace: olcSuffix
+olcSuffix: <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com
+
+dn: <span class="nv">olcDatabase</span><span class="o">={</span><span class="m">2</span><span class="o">}</span>bdb,cn<span class="o">=</span>config
+changetype: modify
+replace: olcRootDN
+<span class="c1"># Temporary lines to allow initial setup</span>
+olcRootDN: <span class="nv">uid</span><span class="o">=</span>ldapadmin,ou<span class="o">=</span>people,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+
+dn: <span class="nv">olcDatabase</span><span class="o">={</span><span class="m">2</span><span class="o">}</span>bdb,cn<span class="o">=</span>config
+changetype: modify
+add: olcRootPW
+olcRootPW: secret
+
+dn: <span class="nv">cn</span><span class="o">=</span>config
+changetype: modify
+add: olcAuthzRegexp
+olcAuthzRegexp: <span class="nv">uid</span><span class="o">=([</span>^,<span class="o">]</span>*<span class="o">)</span>,cn<span class="o">=</span>GSSAPI,cn<span class="o">=</span>auth <span class="nv">uid</span><span class="o">=</span><span class="nv">$1</span>,ou<span class="o">=</span>people,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+
+dn: <span class="nv">olcDatabase</span><span class="o">={</span><span class="m">2</span><span class="o">}</span>bdb,cn<span class="o">=</span>config
+changetype: modify
+add: olcAccess
+<span class="c1"># Everyone can read everything</span>
+olcAccess: <span class="o">{</span><span class="m">0</span><span class="o">}</span>to dn.base<span class="o">=</span><span class="s2">&#34;&#34;</span> by * <span class="nb">read</span>
+<span class="c1"># The ldapadm dn has full write access</span>
+olcAccess: <span class="o">{</span><span class="m">1</span><span class="o">}</span>to * by <span class="nv">dn</span><span class="o">=</span><span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> write by * read</code></pre></td></tr></table>
+</div>
+</div>
+<p>说明：</p>
+
+<ul>
+<li>上面的密码使用的是明文密码 secret ，你也可以使用 <code>slappasswd -s secret</code> 生成的字符串作为密码。</li>
+<li>上面的权限中指明了只有用户 <code>uid=ldapadmin,ou=people,dc=javachen,dc=com</code> 有写权限。</li>
+</ul>
+
+<p>使用下面命令导入更新配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapmodify -Y EXTERNAL -H ldapi:/// -f modify.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<p>这时候数据库没有数据，需要添加数据，你可以手动编写 ldif 文件来导入一些用户和组，或者使用 migrationtools 工具来生成 ldif 模板。创建 setup.ldif 文件如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">dn: dc=javachen,dc=com
+objectClass: top
+objectClass: dcObject
+objectclass: organization
+o: javachen com
+dc: javachen
+
+dn: ou=people,dc=javachen,dc=com
+objectclass: organizationalUnit
+ou: people
+description: Users
+
+dn: ou=group,dc=javachen,dc=com
+objectClass: organizationalUnit
+ou: group
+
+dn: uid=ldapadmin,ou=people,dc=javachen,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: LDAP admin account
+uid: ldapadmin
+sn: ldapadmin
+uidNumber: 1001
+gidNumber: 100
+homeDirectory: /home/ldap
+loginShell: /bin/bash</pre></td></tr></table>
+</div>
+</div>
+<p>使用下面命令导入数据，密码是前面设置的 secret 。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f setup.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<p>参数说明：</p>
+
+<ul>
+<li><code>-w</code> 指定密码</li>
+<li><code>-x</code> 是使用一个匿名的绑定</li>
+</ul>
+
+<h2 id="2-7-ldap-的使用">2.7 LDAP 的使用</h2>
+
+<h3 id="导入系统用户">导入系统用户</h3>
+
+<p>接下来你可以从 /etc/passwd, /etc/shadow, /etc/groups 中生成 ldif 更新 ldap 数据库，这需要用到 migrationtools 工具。</p>
+
+<p>安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install migrationtools -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>利用迁移工具生成模板，先修改默认的配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ vim /usr/share/migrationtools/migrate_common.ph
+
+<span class="c1">#line 71 defalut DNS domain</span>
+<span class="nv">$DEFAULT_MAIL_DOMAIN</span> <span class="o">=</span> <span class="s2">&#34;javachen.com&#34;</span><span class="p">;</span>
+<span class="c1">#line 74 defalut base</span>
+<span class="nv">$DEFAULT_BASE</span> <span class="o">=</span> <span class="s2">&#34;dc=javachen,dc=com&#34;</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>生成模板文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/usr/share/migrationtools/migrate_base.pl &gt; /opt/base.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，可以修改该文件，然后执行导入命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/base.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<p>将当前节点上的用户导入到 ldap 中，可以有选择的导入指定的用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 先添加用户</span>
+$ useradd <span class="nb">test</span> hive
+<span class="c1"># 查找系统上的 test、hive 等用户</span>
+$ grep -E <span class="s2">&#34;test|hive&#34;</span> /etc/passwd  &gt;/opt/passwd.txt
+$ /usr/share/migrationtools/migrate_passwd.pl /opt/passwd.txt /opt/passwd.ldif
+$ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/passwd.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<p>将用户组导入到 ldap 中：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 生成用户组的 ldif 文件，然后导入到 ldap</span>
+$ grep -E <span class="s2">&#34;test|hive&#34;</span> /etc/group  &gt;/opt/group.txt
+$ /usr/share/migrationtools/migrate_group.pl /opt/group.txt /opt/group.ldif
+$ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/group.ldif</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="查询">查询</h3>
+
+<p>查询新添加的 test 用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapsearch -LLL -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret -b <span class="s1">&#39;dc=javachen,dc=com&#39;</span> <span class="s1">&#39;uid=test&#39;</span>
+  dn: <span class="nv">uid</span><span class="o">=</span>test,ou<span class="o">=</span>people,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+  objectClass: inetOrgPerson
+  objectClass: posixAccount
+  objectClass: shadowAccount
+  cn: <span class="nb">test</span> account
+  sn: <span class="nb">test</span>
+  uid: <span class="nb">test</span>
+  uidNumber: <span class="m">1001</span>
+  gidNumber: <span class="m">100</span>
+  homeDirectory: /home/test
+  loginShell: /bin/bash</code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到，通过指定 &lsquo;uid=test&rsquo;，我们只查询这个用户的数据，这个查询条件叫做filter。有关 filter 的使用可以查看 ldapsearch 的 manpage。</p>
+
+<h3 id="修改">修改</h3>
+
+<p>用户添加好以后，需要给其设定初始密码，运行命令如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=test,ou=people,dc=javachen,dc=com&#34;</span> -S</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="删除">删除</h3>
+
+<p>删除用户或组条目：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapdelete -x -w secret -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> <span class="s2">&#34;uid=test,ou=people,dc=javachen,dc=com&#34;</span>
+$ ldapdelete -x -w secret -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> <span class="s2">&#34;cn=test,ou=group,dc=javachen,dc=com&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="3-客户端配置">3. 客户端配置</h1>
+
+<p>在 cdh2 和 cdh3上，使用下面命令安装openldap客户端</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install openldap-clients -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 /etc/openldap/ldap.conf 以下两个配置</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">BASE    dc=javachen,dc=com
+URI     ldap://cdh1</pre></td></tr></table>
+</div>
+</div>
+<p>然后，运行下面命令测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#先删除 ticket</span>
+$ kdestroy
+
+$ ldapsearch -b <span class="s1">&#39;dc=javachen,dc=com&#39;</span>
+  SASL/GSSAPI authentication started
+  ldap_sasl_interactive_bind_s: Local error <span class="o">(</span>-2<span class="o">)</span>
+    additional info: SASL<span class="o">(</span>-1<span class="o">)</span>: generic failure: GSSAPI Error: Unspecified GSS failure.  Minor code may provide more information <span class="o">(</span>No credentials cache found<span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>重新获取 ticket：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit root/admin
+$ ldapsearch -b <span class="s1">&#39;dc=javachen,dc=com&#39;</span>
+ <span class="c1"># 没有报错了</span>
+$ ldapwhoami
+  SASL/GSSAPI authentication started
+  SASL username: root/admin@JAVACHEN.COM
+  SASL SSF: <span class="m">56</span>
+  SASL installing layers
+  dn:uid<span class="o">=</span>root/admin,ou<span class="o">=</span>people,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+  Result: Success <span class="o">(</span><span class="m">0</span><span class="o">)</span>
+
+<span class="c1"># 直接输入 ldapsearch 不会报错</span>
+$ ldapsearch  </code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 LDAP 客户端工具进行测试，这里我使用的是 LDAP Browser/Editor：</p>
+
+<p><img src="/2015/hadoop-ldap-LdapBrowser.jpg" alt="" /></p>
+
+<h1 id="4-配置-hive-集成-ldap">4. 配置 Hive 集成 LDAP</h1>
+
+<blockquote>
+<p>说明： CDH5.2 之前 hive-server2 支不支持集成 ldap，故需要升级 cdh 版本到高版本，如 cdh5.3，该版本支持 ldap。</p>
+</blockquote>
+
+<h2 id="修改配置文件">修改配置文件</h2>
+
+<p>这部分内容参考自<a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_sg_hiveserver2_security.html#topic_9_1_3_unique_1">Using LDAP Username/Password Authentication with HiveServer2</a>。</p>
+
+<p>我这使用的是 OpenLDAP ，故修改 hive-site.xml 配置文件如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>LDAP<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication.ldap.url<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>ldap://cdh1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication.ldap.baseDN<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>ou=people,dc=javachen,dc=com<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>为什么这样配置，可以参考 <a href="https://svn.apache.org/repos/asf/hive/trunk/service/src/java/org/apache/hive/service/auth/LdapAuthenticationProviderImpl.java">LdapAuthenticationProviderImpl.java</a> 源码。</p>
+
+<h2 id="测试">测试</h2>
+
+<p>重启服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/etc/init.d/hive-server2 restart</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后使用 beeline 测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">beeline --verbose=true
+beeline&gt; !connect jdbc:hive2://cdh1:10000/default
+Connecting to jdbc:hive2://cdh1:10000/default;
+Enter username for jdbc:hive2://cdh1:10000/default;: hive
+Enter password for jdbc:hive2://cdh1:10000/default;: ****</pre></td></tr></table>
+</div>
+</div>
+<h1 id="5-配置-impala-集成-ldap">5. 配置 Impala 集成 LDAP</h1>
+
+<h2 id="修改配置文件-1">修改配置文件</h2>
+
+<p>修改 /etc/default/impala 中的 <code>IMPALA_SERVER_ARGS</code> 参数，添加</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">-enable_ldap_auth<span class="o">=</span><span class="nb">true</span> <span class="se">\
+</span><span class="se"></span>-ldap_uri<span class="o">=</span>ldaps://cdh1 <span class="se">\
+</span><span class="se"></span>-ldap_baseDN<span class="o">=</span><span class="nv">ou</span><span class="o">=</span>people,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com</code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：</p>
+
+<ul>
+<li>如果没有开启 ssl，则添加 <code>-ldap_passwords_in_clear_ok=true</code>，同样如果开启了 ssl，则 <code>ldap_uri</code> 值为 <code>ldaps://XXXX</code></li>
+<li>ldap_baseDN 的值是 <code>ou=people,dc=javachen,dc=com</code>，因为 impala 会将其追加到 <code>uid={用户名},</code> 后面</li>
+</ul>
+
+<h2 id="测试-1">测试</h2>
+
+<p>重启服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ /etc/init.d/impala-server restart</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后使用 impala-shell 测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ impala-shell -l -u <span class="nb">test</span>
+  Starting Impala Shell using LDAP-based authentication
+  LDAP password <span class="k">for</span> test:
+  Connected to cdh1:21000
+  Server version: impalad version <span class="m">2</span>.0.0-cdh5 RELEASE <span class="o">(</span>build ecf30af0b4d6e56ea80297df2189367ada6b7da7<span class="o">)</span>
+  Welcome to the Impala shell. Press TAB twice to see a list of available commands.
+
+  Copyright <span class="o">(</span>c<span class="o">)</span> <span class="m">2012</span> Cloudera, Inc. All rights reserved.
+
+  <span class="o">(</span>Shell build version: Impala Shell v2.0.0-cdh5 <span class="o">(</span>ecf30af<span class="o">)</span> built on Sat Oct <span class="m">11</span> <span class="m">13</span>:56:06 PDT <span class="m">2014</span><span class="o">)</span>
+  <span class="o">[</span>cdh1:21000<span class="o">]</span> &gt;</code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 beeline 通过 ldap 方式来连接 jdbc 进行测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:21050/default;&#34;</span> -n <span class="nb">test</span> -p <span class="nb">test</span>
+  scan <span class="nb">complete</span> in 2ms
+  Connecting to jdbc:hive2://cdh1:21050/default<span class="p">;</span>
+  Connected to: Impala <span class="o">(</span>version <span class="m">2</span>.0.0-cdh5<span class="o">)</span>
+  Driver: Hive JDBC <span class="o">(</span>version <span class="m">0</span>.13.1-cdh5.2.0<span class="o">)</span>
+  Transaction isolation: TRANSACTION_REPEATABLE_READ
+  Beeline version <span class="m">0</span>.13.1-cdh5.2.0 by Apache Hive
+
+  <span class="m">0</span>: jdbc:hive2://cdh1:21050/default&gt;show tables<span class="p">;</span>
+  +-----------------------------+--+
+  <span class="p">|</span>            name             <span class="p">|</span>
+  +-----------------------------+--+
+  <span class="p">|</span> t1                          <span class="p">|</span>
+  <span class="p">|</span> tab1                        <span class="p">|</span>
+  <span class="p">|</span> tab2                        <span class="p">|</span>
+  <span class="p">|</span> tab3                        <span class="p">|</span>
+  +-----------------------------+--+
+  <span class="m">4</span> rows selected <span class="o">(</span><span class="m">0</span>.325 seconds<span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-参考文章">6. 参考文章</h1>
+
+<ul>
+<li><a href="http://www.tuicool.com/articles/6fy6z2r">New in CDH 5.2: Impala Authentication with LDAP and Kerberos</a></li>
+<li><a href="http://blog.clanzx.net/images/09/27/ldap-kerberos.html">使用 LDAP + Kerberos 实现集中用户认证及授权系统</a></li>
+<li><a href="http://www.cnblogs.com/mchina/archive/images/01/03/2840040.html">Linux NFS服务器的安装与配置</a></li>
+<li><a href="http://blog.csdn.net/kakane/article/details/7455922">linux的LDAP认证服务器的配置及客户端pam网络验证实例</a></li>
+<li><a href="https://help.ubuntu.com/10.04/serverguide/kerberos-ldap.html">Kerberos and LDAP</a></li>
+<li><a href="http://blog.sina.com.cn/s/blog_64aac6750101gwst.html">RHEL6配置简单LDAP服务器</a></li>
+<li><a href="https://www.suse.com/zh-cn/documentation/sles10/book_sle_reference/data/sec.kerbadmin.ldap.html">使用 LDAP 和 Kerberos</a></li>
+<li><a href="http://wenku.baidu.com/view/fe7c82757fd5360cba1adbe7.html">kerberos与openldap整合</a></li>
+<li><a href="http://ovirt-china.org/mediawiki/index.php/LDAP%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B">LDAP配置示例</a></li>
+<li><a href="http://kinggoo.com/openldapinstallconf.htm">centos下yum安装配置openldap 2.4.23-32外送svn的apache下配置</a></li>
+<li><a href="http://www.linux-mag.com/id/4765/">Integrating LDAP and Kerberos: Part Two (LDAP)</a></li>
+<li><a href="http://techpubs.spinlocksolutions.com/dklar/kerberos.html">Debian GNU and Ubuntu: Setting up MIT Kerberos</a></li>
+</ul>
+
+<h1 id="7-相关文章">7 相关文章</h1>
+
+<ul>
+<li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
+<li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-hive">Hive配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-impala">Impala配置Kerberos认证</a></li>
+<li><a href="/2014/11/18/config-kerberos-in-cdh-zookeeper.">Zookeeper配置Kerberos认证</a></li>
+<li><a href="/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop">Hadoop配置LDAP集成Kerberos</a></li>
+<li><a href="/2014/11/14/config-secured-hive-with-sentry">配置安全的Hive集群集成Sentry</a></li>
+<li><a href="/2014/11/14/config-secured-impala-with-sentry">配置安全的Impala集群集成Sentry</a></li>
+<li><a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop">Hadoop集群部署权限总结</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-11-12
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/openldap/">openldap</a>
+          <a href="/tags/kerberos/">kerberos</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/11/14/config-secured-impala-with-sentry/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">配置安全的Impala集群集成Sentry</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/11/06/config-kerberos-in-cdh-hive/">
+            <span class="next-text nav-default">Hive配置Kerberos认证</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

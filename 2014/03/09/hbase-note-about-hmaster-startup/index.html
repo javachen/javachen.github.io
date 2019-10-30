@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>HBase源码：HMaster启动过程 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="记录HBase中HMaster启动过程" /><meta name="keywords" content="HBase源码：HMaster启动过程" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/03/09/hbase-note-about-hmaster-startup/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="HBase源码：HMaster启动过程" />
+<meta property="og:description" content="记录HBase中HMaster启动过程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/03/09/hbase-note-about-hmaster-startup/" />
+<meta property="article:published_time" content="2014-03-09T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-03-09T08:00:00+08:00" />
+<meta itemprop="name" content="HBase源码：HMaster启动过程">
+<meta itemprop="description" content="记录HBase中HMaster启动过程">
+
+
+<meta itemprop="datePublished" content="2014-03-09T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-03-09T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="8696">
+
+
+
+<meta itemprop="keywords" content="hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HBase源码：HMaster启动过程"/>
+<meta name="twitter:description" content="记录HBase中HMaster启动过程"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">HBase源码：HMaster启动过程</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-03-09 </span>
+        <div class="post-category">
+            <a href="/categories/hbase/"> hbase </a>
+            </div>
+          <span class="more-meta"> 约 8696 字 </span>
+          <span class="more-meta"> 预计阅读 18 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#调试hmaster">调试HMaster</a></li>
+<li><a href="#main方法">main方法</a></li>
+<li><a href="#hmaster类图">HMaster类图</a></li>
+<li><a href="#hmaster的构造方法">HMaster的构造方法</a></li>
+<li><a href="#run方法">run方法</a></li>
+<li><a href="#masterfilesystem构造方法">MasterFileSystem构造方法</a></li>
+<li><a href="#总结">总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-03-09T08:00:00" title="March 9, 2014">March 9, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>版本：HBase 0.94.15-cdh4.7.0</p>
+
+<h1 id="调试hmaster">调试HMaster</h1>
+
+<blockquote>
+<p><strong>说明：</strong></p>
+
+<p>这部分参考和使用了<a href="https://github.com/codefollower/HBase-Research">https://github.com/codefollower/HBase-Research</a>上的代码（注意：原仓库已经被作者删除了），包括该作者自己写的一些<a href="https://github.com/codefollower/HBase-Research/tree/0.94/src/test/java/my/test">测试类</a>和<a href="https://github.com/codefollower/HBase-Research/blob/0.94/my-docs">文档</a>。</p>
+</blockquote>
+
+<p>首先，在IDE里启动HMaster和HRegionServer：</p>
+
+<p>运行<code>/hbase/src/test/java/my/test/start/HMasterStarter.java</code>，当看到提示<code>Waiting for region servers count to settle</code>时，
+再打开同目录中的HRegionServerStarter，统一运行该类。</p>
+
+<p>此时会有两个Console，在HMasterStarter这个Console最后出现<code>Master has completed initialization</code>，这样的信息时就表示它启动成功了，而HRegionServerStarter这个Console最后出现<code>Done with post open deploy task</code>这样的信息时说明它启动成功了。</p>
+
+<h1 id="main方法">main方法</h1>
+
+<p>运行HMasterStarter类启动HMaster：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nf">my</span><span class="p">.</span><span class="na">test</span><span class="p">.</span><span class="na">start</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">File</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nf">my</span><span class="p">.</span><span class="na">test</span><span class="p">.</span><span class="na">TestBase</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">HConstants</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">master</span><span class="p">.</span><span class="na">HMaster</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">zookeeper</span><span class="p">.</span><span class="na">MiniZooKeeperCluster</span><span class="p">;</span>
+
+<span class="kd">public</span> <span class="nf">class</span> <span class="n">HMasterStarter</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">deleteRecursive</span><span class="p">(</span><span class="n">File</span><span class="p">[]</span> <span class="nf">files</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">files</span> <span class="o">==</span> <span class="kc">null</span><span class="p">)</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">File</span> <span class="nf">f</span> <span class="o">:</span> <span class="n">files</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="na">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+                <span class="n">deleteRecursive</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="na">listFiles</span><span class="p">());</span>
+            <span class="p">}</span>
+            <span class="n">f</span><span class="p">.</span><span class="na">delete</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="p">[]</span> <span class="nf">args</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
+        <span class="n">File</span> <span class="nf">f</span> <span class="o">=</span> <span class="n">TestBase</span><span class="p">.</span><span class="na">getTestDir</span><span class="p">();</span>
+        <span class="c1">//删除临时测试目录
+</span><span class="c1"></span>        <span class="n">deleteRecursive</span><span class="p">(</span><span class="n">f</span><span class="p">.</span><span class="na">listFiles</span><span class="p">());</span>
+
+        <span class="k">new</span> <span class="n">ZookeeperThread</span><span class="p">().</span><span class="na">start</span><span class="p">();</span>
+        <span class="n">Thread</span><span class="p">.</span><span class="na">sleep</span><span class="p">(</span><span class="n">1000</span><span class="p">);</span>
+        <span class="n">HMaster</span><span class="p">.</span><span class="na">main</span><span class="p">(</span><span class="k">new</span> <span class="n">String</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&#34;start&#34;</span> <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="kd">public</span> <span class="nf">static</span> <span class="kd">class</span> <span class="nf">ZookeeperThread</span> <span class="kd">extends</span> <span class="nf">Thread</span> <span class="p">{</span>
+        <span class="kd">public</span> <span class="nf">void</span> <span class="n">run</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">MiniZooKeeperCluster</span> <span class="nf">zooKeeperCluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MiniZooKeeperCluster</span><span class="p">();</span>
+
+            <span class="n">File</span> <span class="nf">zkDataPath</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="p">(</span><span class="n">TestBase</span><span class="p">.</span><span class="na">sharedConf</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">HConstants</span><span class="p">.</span><span class="na">ZOOKEEPER_DATA_DIR</span><span class="p">));</span>
+            <span class="kt">int</span> <span class="nf">zkClientPort</span> <span class="o">=</span> <span class="n">TestBase</span><span class="p">.</span><span class="na">sharedConf</span><span class="p">.</span><span class="na">getInt</span><span class="p">(</span><span class="n">HConstants</span><span class="p">.</span><span class="na">ZOOKEEPER_CLIENT_PORT</span><span class="p">,</span> <span class="n">2181</span><span class="p">);</span>
+            <span class="n">zooKeeperCluster</span><span class="p">.</span><span class="na">setDefaultClientPort</span><span class="p">(</span><span class="n">zkClientPort</span><span class="p">);</span>
+            <span class="k">try</span> <span class="p">{</span>
+                <span class="n">zooKeeperCluster</span><span class="p">.</span><span class="na">startup</span><span class="p">(</span><span class="n">zkDataPath</span><span class="p">);</span>
+            <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">e</span><span class="p">.</span><span class="na">printStackTrace</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>HMaster的入口是main方法，main方法需要传递一个参数，start或者stop。</p>
+
+<p>main方法内首先打印hbase版本信息，然后在调用HMasterCommandLine的doMain方法。HMasterCommandLine继承自ServerCommandLine类并且ServerCommandLine类实现了Tool接口。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">void</span> <span class="n">doMain</span><span class="p">(</span><span class="n">String</span> <span class="nf">args</span><span class="p">[])</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="nf">ret</span> <span class="o">=</span> <span class="n">ToolRunner</span><span class="p">.</span><span class="na">run</span><span class="p">(</span>
+      <span class="n">HBaseConfiguration</span><span class="p">.</span><span class="na">create</span><span class="p">(),</span> <span class="k">this</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">!=</span> <span class="n">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">System</span><span class="p">.</span><span class="na">exit</span><span class="p">(</span><span class="n">ret</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>doMain方法内会调用ToolRunner的run方法，查看ToolRunner类可以知道，实际上最后会调用HMasterCommandLine的run方法。</p>
+
+<p>接下来会解析参数，根据参数值判断是执行startMaster方法还是stopMaster方法。</p>
+
+<p>startMaster方法中分两种情况：本地模式和分布式模式。如果是分布式模式，通过反射调用HMaster的<strong>构造方法</strong>，并调用其start和join方法。</p>
+
+<p>HMaster继承自HasThread类，而HasThread类实现了Runnable接口，故HMaster也是一个线程。</p>
+
+<h1 id="hmaster类图">HMaster类图</h1>
+
+<p>HMaster类继承关系如下图：</p>
+
+<p><img src="/images/hbase-hmaster-class.jpg" alt="" /></p>
+
+<h1 id="hmaster的构造方法">HMaster的构造方法</h1>
+
+<p>1、构造方法总体过程</p>
+
+<p>创建Configuration并设置和获取一些参数。包括：</p>
+
+<ul>
+<li>在master上禁止block cache</li>
+<li>设置服务端重试次数</li>
+<li>获取主机名称和master绑定的ip和端口号，端口号默认为60000</li>
+<li>设置regionserver的coprocessorhandler线程数为0</li>
+<li><strong>创建rpcServer</strong>（见下文分析）</li>
+<li>初始化serverName，其值为：<code>192.168.1.129,60000,1404117936154</code></li>
+<li>zk授权登录和hbase授权</li>
+<li>设置当前线程名称：<code>master + &quot;-&quot; + this.serverName.toString()</code></li>
+<li>判断是否开启复制：<code>Replication.decorateMasterConfiguration(this.conf);</code></li>
+<li>设置<code>mapred.task.id</code>，如果其为空，则其值为：<code>&quot;hb_m_&quot; + this.serverName.toString()</code></li>
+<li><strong>创建ZooKeeperWatcher监听器</strong>（见下文分析），并在zookeeper上创建一些节点</li>
+<li>启动rpcServer中的线程</li>
+<li>创建一个MasterMetrics</li>
+<li>判断是否进行健康检测：HealthCheckChore</li>
+<li>另外还初始化两个参数：shouldSplitMetaSeparately、waitingOnLogSplitting</li>
+</ul>
+
+<p>涉及到的参数有：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hfile.block.cache.size
+hbase.master.dns.interface
+hbase.master.dns.nameserver
+hbase.master.port
+hbase.master.ipc.address
+hbase.master.handler.count
+hbase.regionserver.handler.count
+hbase.master.buffer.for.rs.fatals
+hbase.zookeeper.client.keytab.file
+hbase.zookeeper.client.kerberos.principal
+hbase.master.keytab.file
+hbase.master.kerberos.principal
+hbase.master.logcleaner.plugins
+mapred.task.id
+hbase.node.health.script.frequency
+hbase.regionserver.separate.hlog.for.meta
+hbase.master.wait.for.log.splitting</pre></td></tr></table>
+</div>
+</div>
+<p>2、创建rpcServer并启动其中的线程：</p>
+
+<p>这部分涉及到RPC的使用，包括的知识点有<code>动态代理</code>、<code>Java NIO</code>等。</p>
+
+<p>通过反射创建RpcEngine的实现类，实现类可以在配置文件中配置（<code>hbase.rpc.engine</code>），默认实现为WritableRpcEngine。
+调用getServer方法，其实也就是new一个HBaseServer类。</p>
+
+<p>构造方法中：</p>
+
+<ul>
+<li>启动一个Listener线程，功能是监听client的请求，将请求放入nio请求队列，逻辑如下：
+
+<ul>
+<li>&ndash;&gt;创建n个selector，和一个n个线程的readpool，n由<code>ipc.server.read.threadpool.size</code>决定，默认为10</li>
+<li>&ndash;&gt;读取每个请求的头和内容，将内容放入priorityQueue中</li>
+</ul></li>
+<li>启动一个Responder线程，功能是将响应队列里的数据写给各个client的connection通道，逻辑如下：
+
+<ul>
+<li>&ndash;&gt;创建nio selector</li>
+<li>&ndash;&gt;默认超时时间为15 mins</li>
+<li>&ndash;&gt;依次将responseQueue中的内容写回各通道，并关闭连接，buffer=8k</li>
+<li>&ndash;&gt;如果该请求的返回没有写完，则放回队列头，推迟再发送</li>
+<li>&ndash;&gt;对于超时未完成的响应，丢弃并关闭相应连接</li>
+</ul></li>
+<li>启动N（n默认为10）个Handler线程，功能是处理请求队列，并将结果写到响应队列
+
+<ul>
+<li>&ndash;&gt;读取priorityQueue中的call，调用对应的call方法获得value，写回out并调用doRespond方法，处理该请求，并唤醒writable　selector</li>
+<li>&ndash;&gt;启动M(m默认为0)个Handler线程以处理priority</li>
+</ul></li>
+</ul>
+
+<p>3、创建ZooKeeperWatcher</p>
+
+<p>构造函数中生成如下持久节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">/hbase
+/hbase/root-region-server
+/hbase/rs
+/table/draining
+/hbase/master
+/hbase/backup-masters
+/hbase/shutdown
+/hbase/unassigned
+/hbase/table94
+/hbase/table
+/hbase/hbaseid
+/hbase/splitlog</pre></td></tr></table>
+</div>
+</div>
+<h1 id="run方法">run方法</h1>
+
+<p>接下来看HMaster的run方法做了哪些事情。</p>
+
+<p>1、总体过程</p>
+
+<ul>
+<li>创建MonitoredTask，并把HMaster的状态设置为Master startup</li>
+<li>启动info server，即Jetty服务器，端口默认为60010，其对外提供两个接口：/master-status和/dump</li>
+<li><strong>调用becomeActiveMaster方法</strong>（见下文分析），阻塞等待直至当前master成为active master</li>
+<li>当成为了master之后并且当前master进程正在运行，则调用finishInitialization方法（见下文分析），并且调用loop方法循环等待，一直到stop发生</li>
+<li>当HMaster停止运行时候，会做以下事情：
+
+<ul>
+<li>清理startupStatus</li>
+<li>停止balancerChore和catalogJanitorChore</li>
+<li>让RegionServers shutdown</li>
+<li>停止服务线程：rpcServer、logCleaner、hfileCleaner、infoServer、executorService、healthCheckChore</li>
+<li>停止以下线程：activeMasterManager、catalogTracker、serverManager、assignmentManager、fileSystemManager、snapshotManager、zooKeeper<br /></li>
+</ul></li>
+</ul>
+
+<p>2、becomeActiveMaster方法：</p>
+
+<ul>
+<li>创建ActiveMasterManager</li>
+<li>ZooKeeperWatcher注册activeMasterManager监听器</li>
+<li>调用stallIfBackupMaster：
+&ndash;&gt;先检查配置项 &ldquo;hbase.master.backup&rdquo;，自己是否backup机器，如果是则直接block直至检查到系统中的active master挂掉（<code>zookeeper.session.timeout</code>，默认每3分钟检查一次）</li>
+<li>创建clusterStatusTracker并启动</li>
+<li>调用activeMasterManager的blockUntilBecomingActiveMaster方法。
+
+<ul>
+<li>创建短暂的&rdquo;/hbase/master&rdquo;，此节点值为version+ServerName，如果创建成功，则删除备份节点；否则，创建备份节点</li>
+<li>获得&rdquo;/hbase/master&rdquo;节点上的数据，如果不为null，则获得ServerName，并判断是否是在当前节点上创建了&rdquo;/hbase/master&rdquo;，如果是则删除该节点，这是因为该节点已经是备份节点了。</li>
+</ul></li>
+</ul>
+
+<p>3、finishInitialization方法：</p>
+
+<ul>
+<li>创建MasterFileSystem对象，封装了master常用的一些文件系统操作，包括splitlog file、删除region目录、删除table目录、删除cf目录、检查文件系统状态等.</li>
+<li>创建FSTableDescriptors对象</li>
+<li>设置集群id</li>
+<li>如果不是备份master：
+
+<ul>
+<li>创建ExecutorService，维护一个ExecutorMap,一种Event对应一个Executor(线程池).可以提交EventHandler来执行异步事件；</li>
+<li>创建serverManager，管理regionserver信息,维护着onlineregion server 和deadregion server列表，处理regionserver的startups、shutdowns、 deaths，同时也维护着每个regionserver rpc stub.</li>
+</ul></li>
+<li>调用initializeZKBasedSystemTrackers，初始化zk文件系统
+
+<ul>
+<li>创建CatalogTracker, 它包含RootRegionTracker和MetaNodeTracker，对应&rdquo;/hbase/root-region-server&rdquo;和/&ldquo;hbase/unassigned/1028785192&rdquo;这两个结点(1028785192是.META.的分区名)。如果之前从未启动过hbase，那么在start CatalogTracker时这两个结点不存在。&rdquo;/hbase/root-region-server&rdquo;是一个持久结点，在RootLocationEditor中建立</li>
+<li>创建 LoadBalancer，负责region在regionserver之间的移动，关于balancer的策略，可以通过hbase.regions.slop来设置load区间</li>
+<li>创建 AssignmentManager，负责管理和分配region，同时它也会接受zk上关于region的event，根据event来完成region的上下线、关闭打开等工作。</li>
+<li>创建 RegionServerTracker: 监控&rdquo;/hbase/rs&rdquo;结点，通过ZK的Event来跟踪onlineregion servers， 如果有rs下线，删除ServerManager中对应的onlineregions.</li>
+<li>创建 DrainingServerTracker: 监控&rdquo;/hbase/draining&rdquo;结点</li>
+<li>创建 ClusterStatusTracker，监控&rdquo;/hbase/shutdown&rdquo;结点维护集群状态</li>
+<li>创建SnapshotManager</li>
+</ul></li>
+<li>如果不是备份master，初始化MasterCoprocessorHost并执行startServiceThreads()。说明：<code>info server的启动移到构造函数了去了，这样可以早点通过Jetty服务器查看HMaster启动状态。</code>
+
+<ul>
+<li>创建一些executorService</li>
+<li>创建logCleaner并启动</li>
+<li>创建hfileCleaner并启动</li>
+<li>启动healthCheckChore</li>
+<li>打开rpcServer</li>
+</ul></li>
+<li>等待RegionServer注册。满足以下这些条件后返回当前所有region server上的region数后继续：
+
+<ul>
+<li>a 至少等待4.5s，&rdquo;hbase.master.wait.on.regionservers.timeout&rdquo;</li>
+<li>b 成功启动regionserver节点数&gt;=1，&rdquo;hbase.master.wait.on.regionservers.mintostart&rdquo;</li>
+<li>c 1.5s内没有regionsever死掉或重新启动，<code>hbase.master.wait.on.regionservers.interval</code>)</li>
+</ul></li>
+<li>serverManager注册新的在线region server</li>
+<li>如果不是备份master，启动assignmentManager</li>
+<li>获取下线的Region server，然后拆分HLog
+
+<ul>
+<li>&ndash;&gt;依次检查每一个hlog目录，查看它所属的region server是否online，如果是则不需要做任何动作，region server自己会恢复数据，如果不是，则需要将它分配给其它的region server</li>
+<li>&ndash;&gt;split是加锁操作:</li>
+<li>&ndash;&gt; 创建一个新的hlogsplitter,遍历每一个server目录下的所有hlog文件，依次做如下操作。（如果遇到文件损坏等无法跳过的错误，配 置 <code>hbase.hlog.split.skip.errors=true</code> 以忽略之）</li>
+<li>&ndash;&gt;启动<code>hbase.regionserver.hlog.splitlog.writer.threads</code>（默认为3）个线程，共使用128MB内存，启动这些写线程</li>
+<li>&ndash;&gt;先通过lease机制检查文件是否能够append，如果不能则死循环等待</li>
+<li>&ndash;&gt;把hlog中的内容全部加载到内存中（内存同时被几个写线程消费)）
+
+<ul>
+<li>&ndash;&gt;把有损坏并且跳过的文件移到<code>/hbase/.corrupt/</code>目录中</li>
+<li>&ndash;&gt; 把其余己经处理过的文件移到<code>/hbase/.oldlogs</code>中，然后删除原有的server目录</li>
+<li>&ndash;&gt; 等待写线程结束，返回新写的所有路径</li>
+</ul></li>
+<li>&ndash;&gt;解锁</li>
+<li>写线程逻辑：
+
+<ul>
+<li>&ndash;&gt;从内存中读出每一行数据的key和value，然后查询相应的region路径。如果该region路径不存在，说明该region很可能己经被split了，则不处理这部分数据,因为此时忽略它们是安全的。</li>
+<li>&ndash;&gt;如果上一步能查到相应的路径，则到对应路径下创建&rdquo;recovered.edits&rdquo;文件夹(如果该文件夹存在则删除后覆盖之)，然后将数据写入该文件夹<br /></li>
+</ul></li>
+</ul></li>
+<li>调用assignRoot方法，检查是否分配了-ROOT-表，如果没有，则通过assignmentManager.assignRoot()来分配root表，并激活该表</li>
+<li>运行this.serverManager.enableSSHForRoot()方法</li>
+<li>拆分.META. server上的HLog</li>
+<li>分配.META.表</li>
+<li>enableServerShutdownHandler</li>
+<li>处理dead的server</li>
+<li>assignmentManager.joinCluster();</li>
+<li>设置balancer</li>
+<li>fixupDaughters(status)</li>
+<li>如果不是备份master
+
+<ul>
+<li>启动balancerChore线程，运行LoadBalancer</li>
+<li>启动startCatalogJanitorChore，周期性扫描<code>.META.</code>表上未使用的region并回收</li>
+<li>registerMBean</li>
+</ul></li>
+<li>serverManager.clearDeadServersWithSameHostNameAndPortOfOnlineServer，清理dead的server</li>
+<li>如果不是备份master，cpHost.postStartMaster
+<br /></li>
+</ul>
+
+<h1 id="masterfilesystem构造方法">MasterFileSystem构造方法</h1>
+
+<p>在<code>HMaster.finishInitialization</code>方法中触发了MasterFileSystem的构造方法，该类在HMaster类中会被以下类使用：</p>
+
+<ul>
+<li>LogCleaner</li>
+<li>HFileCleaner</li>
+</ul>
+
+<p>另外该类可以完成拆分log的工作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java">  <span class="cm">/**
+</span><span class="cm">   * Override to change master&#39;s splitLogAfterStartup. Used testing
+</span><span class="cm">   * @param mfs
+</span><span class="cm">   */</span>
+  <span class="kd">protected</span> <span class="nf">void</span> <span class="n">splitLogAfterStartup</span><span class="p">(</span><span class="kd">final</span> <span class="nf">MasterFileSystem</span> <span class="n">mfs</span><span class="p">){</span>
+    <span class="n">mfs</span><span class="p">.</span><span class="na">splitLogAfterStartup</span><span class="p">();</span>
+  <span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里主要是关心创建了哪些目录，其他用途暂不分析。</p>
+
+<p>1、接下来，看其构造方法运行过程：</p>
+
+<ul>
+<li>获取rootdir：由参数<code>hbase.rootdir</code>配置</li>
+<li>获取tempdir：<code>${hbase.rootdir}/.tmp</code></li>
+<li>获取文件系统的uri，并设置到<code>fs.default.name</code>和<code>fs.defaultFS</code></li>
+<li>判断是否进行分布式文件拆分，参数：<code>hbase.master.distributed.log.splitting</code>，如果需要，则创建SplitLogManager</li>
+<li>创建oldLogDir，调用createInitialFileSystemLayout方法
+
+<ul>
+<li>checkRootDir</li>
+<li>等待fs退出安全模式(默认10秒钟轮循一次，可通过参数<code>hbase.server.thread.wakefrequency</code>调整</li>
+<li>如果hbase.rootdir目录不存在则创建它，然后在此目录中创建名为&rdquo;hbase.version&rdquo;的文件，内容是文件系统版本号，当前为7；如果hbase.rootdir目录已存在，则读出&rdquo;hbase.version&rdquo;文件的内容与当前的版本号相比，如果不相等，则打印错误信息(提示版本不对)，抛出异常FileSystemVersionException</li>
+<li>检查<code>${hbase.rootdir}</code>目录下是否有名为&rdquo;hbase.id&rdquo;的文件，如果没有则创建它，内容是随机生成的UUID(总长度36位，由5部份组成，用&rdquo;-&ldquo;分隔)，如：6c43f934-37a2-4cae-9d49-3f5abfdc113d</li>
+<li>读出&rdquo;hbase.id&rdquo;的文件的内容存到clusterId字段</li>
+<li>判断hbase.rootdir目录中是否有&rdquo;-ROOT-/70236052&rdquo;目录，没有的话说明是第一次启动hbase，进入<strong>bootstrap</strong>方法</li>
+<li>createRootTableInfo 建立&rdquo;-ROOT-&ldquo;表的描述文件，判断<code>hbase.rootdir/-ROOT-</code>目录中是否存在tableinfo开头的文件，另外还创建了.tmp目录</li>
+<li>checkTempDir</li>
+<li>如果oldLogDir（<code>${hbase.rootdir}/.oldlogs</code>）不存在，则创建</li>
+</ul></li>
+</ul>
+
+<p>2、bootstrap方法运行过程：</p>
+
+<ul>
+<li>调用HRegion.createHRegion建立&rdquo;-ROOT-&ldquo;分区和&rdquo;.META.&ldquo;分区</li>
+<li>把&rdquo;.META.&ldquo;分区信息加到&rdquo;-ROOT-&ldquo;表，并关闭分区和hlog</li>
+</ul>
+
+<h1 id="总结">总结</h1>
+
+<p>经过上面分析之后，来看看zookeeper创建的一些目录分布式由哪个类来监控的：</p>
+
+<ul>
+<li><code>/hbase</code></li>
+<li><code>/hbase/root-region-server</code>：RootRegionTracker，监控root所在的regionserver</li>
+<li><code>/hbase/rs</code>：RegionServerTracker，监控regionserver的上线和下线</li>
+<li><code>/table/draining</code>：DrainingServerTracker，监听regionserver列表的变化</li>
+<li><code>/hbase/master</code>：在HMaster中建立，并且是一个短暂结点，结点的值是HMaster的ServerName：<code>hostname,port,当前毫秒</code></li>
+<li><code>/hbase/backup-masters</code></li>
+<li><code>/hbase/shutdown</code>：ClusterStatusTracker，当HMaster启动之后，会将当前时间（<code>Bytes.toBytes(new java.util.Date().toString())</code>）存到该节点</li>
+<li><code>/hbase/unassigned</code>：MetaNodeTracker</li>
+<li><code>/hbase/table94</code></li>
+<li><code>/hbase/table</code></li>
+<li><code>/hbase/hbaseid</code>：在<code>HMaster.finishInitialization</code>方法中调用ClusterId.setClusterId建立，结点值是UUID</li>
+<li><code>/hbase/splitlog</code></li>
+</ul>
+
+<p>在HMaster启动之后，<code>${hbase.rootdir}</code>目录如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">.
+├── -ROOT-                            //&#34;-ROOT-&#34;表名
+│   ├── ..tableinfo.0000000001.crc    //crc校验文件
+│   ├── .tableinfo.0000000001
+│   ├── .tmp
+│   └── 70236052                      //&#34;-ROOT-&#34;分区名
+│       ├── ..regioninfo.crc
+│       ├── .oldlogs                  //存放hlog文件
+│       │   ├── .hlog.1402551641526.crc
+│       │   └── hlog.1402551641526
+│       ├── .regioninfo               //&#34;-ROOT-&#34;分区描述表件
+│       ├── .tmp
+│       └── info                      //列族名
+│           ├── .5037e69a0c244bd78945aaa333d0230a.crc
+│           └── 5037e69a0c244bd78945aaa333d0230a  //存放&#34;.META.&#34;分区信息的StoreFile
+├── .META.
+│   └── 1028785192
+│       ├── ..regioninfo.crc
+│       ├── .oldlogs
+│       │   ├── .hlog.1402551641701.crc
+│       │   └── hlog.1402551641701
+│       ├── .regioninfo
+│       └── info
+├── .hbase.id.crc
+├── .hbase.version.crc
+├── .oldlogs
+├── .tmp
+├── hbase.id                         //集群uuid
+└── hbase.version                    //hbase版本</pre></td></tr></table>
+</div>
+</div>
+<p>简单总结一下HMaster启动过程做了哪些事情：</p>
+
+<ul>
+<li>创建rpcServer，及HBaseServer</li>
+<li>创建ZooKeeperWatcher监听器</li>
+<li>阻塞等待成为activeMaster</li>
+<li>创建master的一些文件目录</li>
+<li>初始化一些基于zk的跟踪器</li>
+<li>创建LoadBalancer</li>
+<li>创建SnapshotManager</li>
+<li>如果不是备份master
+
+<ul>
+<li>创建logCleaner并启动</li>
+<li>创建hfileCleaner并启动</li>
+<li>创建jetty的infoServer并启动</li>
+<li>启动健康检查</li>
+<li>打开rpcServer</li>
+</ul></li>
+<li>等待RegionServer注册</li>
+<li>从hlog中恢复数据</li>
+<li>分配root和meta表</li>
+<li>分配region</li>
+<li>运行负载均衡线程</li>
+<li>周期性扫描.META.表上未使用的region并回收</li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-03-09
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/03/10/how-to-install-solrcloud/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Apache SolrCloud安装</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/03/09/hbase-note-about-hregionserver-startup/">
+            <span class="next-text nav-default">HBase源码：HRegionServer启动过程</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

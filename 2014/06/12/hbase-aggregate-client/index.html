@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>HBase实现简单聚合计算 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录如何通过打补丁的方式将“hbase中实现简单聚合计算”的特性引入hbase源代码中，并介绍通过命令行和java代码的使用方法。" /><meta name="keywords" content="HBase实现简单聚合计算" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/06/12/hbase-aggregate-client/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="HBase实现简单聚合计算" />
+<meta property="og:description" content="本文主要记录如何通过打补丁的方式将“hbase中实现简单聚合计算”的特性引入hbase源代码中，并介绍通过命令行和java代码的使用方法。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/06/12/hbase-aggregate-client/" />
+<meta property="article:published_time" content="2014-06-12T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-06-12T08:00:00+08:00" />
+<meta itemprop="name" content="HBase实现简单聚合计算">
+<meta itemprop="description" content="本文主要记录如何通过打补丁的方式将“hbase中实现简单聚合计算”的特性引入hbase源代码中，并介绍通过命令行和java代码的使用方法。">
+
+
+<meta itemprop="datePublished" content="2014-06-12T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-06-12T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1055">
+
+
+
+<meta itemprop="keywords" content="hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HBase实现简单聚合计算"/>
+<meta name="twitter:description" content="本文主要记录如何通过打补丁的方式将“hbase中实现简单聚合计算”的特性引入hbase源代码中，并介绍通过命令行和java代码的使用方法。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">HBase实现简单聚合计算</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-06-12 </span>
+        <div class="post-category">
+            <a href="/categories/hbase/"> hbase </a>
+            </div>
+          <span class="more-meta"> 约 1055 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-06-12T08:00:00" title="June 12, 2014">June 12, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      <p>本文主要记录如何通过打补丁的方式将“hbase中实现简单聚合计算”的特性引入hbase源代码中，并介绍通过命令行和java代码的使用方法。</p>
+
+<p>支持的简单聚合计算，包括：</p>
+
+<ul>
+<li>rowcount</li>
+<li>min</li>
+<li>max</li>
+<li>sum</li>
+<li>std</li>
+<li>avg</li>
+<li>median</li>
+</ul>
+
+<p>1、 下载并编译hbase源代码</p>
+
+<p>我这里使用的HBase源代码版本是：cdh4-0.94.6_4.3.0，如果你使用其他版本，有可能patch打不上。</p>
+
+<p>2、 引入patch</p>
+
+<p>基于提交日志<a href="https://github.com/javachen/hbase/commit/94e61f28d60cac40f2b499b8530dd1989adf76d3">add-aggregate-support-in-hbase-shell</a>生成patch文件，然后打patch，或者也可以使用其他方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ git apply add-aggregate-in-hbase-shell.patch</pre></td></tr></table>
+</div>
+</div>
+<p>该patch所做修改包括如下文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">src/main/java/org/apache/hadoop/hbase/client/coprocessor/AbstractDoubleColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/AbstractLongColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/CompositeDoubleStrColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/CompositeLongStrColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/DoubleColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/DoubleStrColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/LongColumnInterpreter.java
+src/main/java/org/apache/hadoop/hbase/client/coprocessor/LongStrColumnInterpreter.java
+src/main/ruby/hbase.rb
+src/main/ruby/hbase/coprocessor.rb
+src/main/ruby/hbase/hbase.rb
+src/main/ruby/shell.rb
+src/main/ruby/shell/commands.rb
+src/main/ruby/shell/commands/aggregate.rb</pre></td></tr></table>
+</div>
+</div>
+<p>3、 编译源代码</p>
+
+<p>为了使编译花费时间不会太长，请运行如下命令编译代码，你也可以自己修改下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ MAVEN_OPTS=&#34;-Xmx2g&#34; mvn clean install  -DskipTests -Prelease,security -Drat.numUnapprovedLicenses=200 -Dhadoop.profile=2.0</pre></td></tr></table>
+</div>
+</div>
+<p>4、测试</p>
+
+<p>然后将target目录下生成的jar包拷贝到集群中每个hbase节点的/usr/lib/hbase目录。</p>
+
+<p>修改hbase-site.xml配置文件，添加如下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hbase.coprocessor.region.classes<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>org.apache.hadoop.hbase.coprocessor.AggregateImplementation<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>重启hbase服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ /etc/init.d/hbase-master restart
+$ /etc/init.d/hbase-regionserver restart</pre></td></tr></table>
+</div>
+</div>
+<p>a）运行hbase shell进行测试</p>
+
+<p>首先创建表并插入几条记录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span><span class="s1">&#39;f&#39;</span>
+ 
+<span class="n">put</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="s1">&#39;f:id&#39;</span><span class="p">,</span><span class="s1">&#39;1&#39;</span>
+<span class="n">put</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;f:id&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span>
+<span class="n">put</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;f:id&#39;</span><span class="p">,</span><span class="s1">&#39;3&#39;</span>
+<span class="n">put</span> <span class="s1">&#39;t&#39;</span><span class="p">,</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="s1">&#39;f:id&#39;</span><span class="p">,</span><span class="s1">&#39;4&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在hbase shell命令行中输入agg并按tab键自动提示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hbase(main):004:0&gt; aggregate</pre></td></tr></table>
+</div>
+</div>
+<p>什么参数不输入，提示如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hbase</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mi">004</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="k">aggregate</span>
+ 
+<span class="n">ERROR</span><span class="p">:</span> <span class="n">wrong</span> <span class="nb">number</span> <span class="k">of</span> <span class="n">arguments</span> <span class="p">(</span><span class="mi">0</span> <span class="k">for</span> <span class="mi">2</span><span class="p">)</span>
+ 
+<span class="n">Here</span> <span class="k">is</span> <span class="k">some</span> <span class="n">help</span> <span class="k">for</span> <span class="n">this</span> <span class="n">command</span><span class="p">:</span>
+<span class="k">Execute</span> <span class="n">a</span> <span class="n">Coprocessor</span> <span class="n">aggregation</span> <span class="k">function</span><span class="p">;</span> <span class="n">pass</span> <span class="n">aggregation</span> <span class="k">function</span> <span class="n">name</span><span class="p">,</span> <span class="k">table</span> <span class="n">name</span><span class="p">,</span> <span class="k">column</span> <span class="n">name</span><span class="p">,</span> <span class="k">column</span> <span class="n">interpreter</span> <span class="k">and</span> <span class="n">optionally</span> <span class="n">a</span> <span class="k">dictionary</span> <span class="k">of</span> <span class="n">aggregation</span> <span class="n">specifications</span><span class="p">.</span> <span class="n">Aggregation</span> <span class="n">specifications</span> <span class="n">may</span> <span class="n">include</span> <span class="n">STARTROW</span><span class="p">,</span> <span class="n">STOPROW</span> <span class="k">or</span> <span class="n">FILTER</span><span class="p">.</span> <span class="k">For</span> <span class="n">a</span> <span class="k">cross</span><span class="o">-</span><span class="n">site</span> <span class="n">big</span> <span class="k">table</span><span class="p">,</span> <span class="k">if</span> <span class="k">no</span> <span class="n">clusters</span> <span class="k">are</span> <span class="n">specified</span><span class="p">,</span> <span class="k">all</span> <span class="n">clusters</span> <span class="n">will</span> <span class="n">be</span> <span class="n">counted</span> <span class="k">for</span> <span class="n">aggregation</span><span class="p">.</span>
+<span class="k">Usage</span><span class="p">:</span> <span class="k">aggregate</span> <span class="s1">&#39;subcommand&#39;</span><span class="p">,</span><span class="s1">&#39;table&#39;</span><span class="p">,</span><span class="s1">&#39;column&#39;</span><span class="p">,[</span><span class="err">{</span><span class="n">COLUMN_INTERPRETER</span> <span class="o">=&gt;</span> <span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">LongColumnInterpreter</span><span class="p">.</span><span class="k">new</span><span class="p">,</span> <span class="n">STARTROW</span> <span class="o">=&gt;</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="n">STOPROW</span> <span class="o">=&gt;</span> <span class="s1">&#39;def&#39;</span><span class="p">,</span> <span class="n">FILTER</span> <span class="o">=&gt;</span> <span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">filter</span><span class="p">.</span><span class="n">ColumnPaginationFilter</span><span class="p">.</span><span class="k">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="err">}</span><span class="p">]</span>
+<span class="n">Available</span> <span class="n">subcommands</span><span class="p">:</span>
+<span class="n">rowcount</span>
+<span class="k">min</span>
+<span class="k">max</span>
+<span class="k">sum</span>
+<span class="n">std</span>
+<span class="k">avg</span>
+<span class="n">median</span>
+<span class="n">Available</span> <span class="n">COLUMN_INTERPRETER</span><span class="p">:</span>
+<span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">LongColumnInterpreter</span><span class="p">.</span><span class="k">new</span>
+<span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">LongStrColumnInterpreter</span><span class="p">.</span><span class="k">new</span>
+<span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">CompositeLongStrColumnInterpreter</span><span class="p">.</span><span class="k">new</span><span class="p">(</span><span class="s2">&#34;,&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">The</span> <span class="k">default</span> <span class="n">COLUMN_INTERPRETER</span> <span class="k">is</span> <span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">LongStrColumnInterpreter</span><span class="p">.</span><span class="k">new</span><span class="p">.</span>
+ 
+<span class="k">Some</span> <span class="n">examples</span><span class="p">:</span>
+ 
+<span class="n">hbase</span><span class="o">&gt;</span> <span class="k">aggregate</span> <span class="s1">&#39;min&#39;</span><span class="p">,</span><span class="s1">&#39;t1&#39;</span><span class="p">,</span><span class="s1">&#39;f1:c1&#39;</span>
+<span class="n">hbase</span><span class="o">&gt;</span> <span class="k">aggregate</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span><span class="s1">&#39;t1&#39;</span><span class="p">,</span><span class="s1">&#39;f1:c1&#39;</span><span class="p">,</span><span class="s1">&#39;f1:c2&#39;</span>
+<span class="n">hbase</span><span class="o">&gt;</span> <span class="k">aggregate</span> <span class="s1">&#39;rowcount&#39;</span><span class="p">,</span><span class="s1">&#39;t1&#39;</span><span class="p">,</span><span class="s1">&#39;f1:c1&#39;</span> <span class="p">,</span><span class="err">{</span><span class="n">COLUMN_INTERPRETER</span> <span class="o">=&gt;</span> <span class="n">org</span><span class="p">.</span><span class="n">apache</span><span class="p">.</span><span class="n">hadoop</span><span class="p">.</span><span class="n">hbase</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">coprocessor</span><span class="p">.</span><span class="n">CompositeLongStrColumnInterpreter</span><span class="p">.</span><span class="k">new</span><span class="p">(</span><span class="s2">&#34;,&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="err">}</span>
+<span class="n">hbase</span><span class="o">&gt;</span> <span class="k">aggregate</span> <span class="s1">&#39;min&#39;</span><span class="p">,</span><span class="s1">&#39;t1&#39;</span><span class="p">,</span><span class="s1">&#39;f1:c1&#39;</span><span class="p">,</span><span class="err">{</span><span class="n">STARTROW</span> <span class="o">=&gt;</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="n">STOPROW</span> <span class="o">=&gt;</span> <span class="s1">&#39;def&#39;</span><span class="err">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>从上可以看到aggregate的帮助说明。</p>
+
+<p>接下来进行测试，例如求id列的最小值：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hbase(main):005:0&gt; aggregate &#39;min&#39;,&#39;t&#39;,&#39;f:id&#39;
+The result of min for table t is 1
+0 row(s) in 0.0170 seconds
+ 
+hbase(main):006:0&gt; aggregate &#39;avg&#39;,&#39;t&#39;,&#39;f:id&#39;
+The result of avg for table t is 2.5
+0 row(s) in 0.0170 seconds</pre></td></tr></table>
+</div>
+</div>
+<p>正确输出结果，表明测试成功。</p>
+
+<p>b）通过hbase client测试</p>
+
+<p>创建AggregateTest.java类并添加如下代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">conf</span><span class="p">.</span><span class="na">Configuration</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">HBaseConfiguration</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">client</span><span class="p">.</span><span class="na">Scan</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">client</span><span class="p">.</span><span class="na">coprocessor</span><span class="p">.</span><span class="na">AggregationClient</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">client</span><span class="p">.</span><span class="na">coprocessor</span><span class="p">.</span><span class="na">LongStrColumnInterpreter</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">coprocessor</span><span class="p">.</span><span class="na">ColumnInterpreter</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">hbase</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Bytes</span><span class="p">;</span>
+<span class="kd">public</span> <span class="nf">class</span> <span class="n">AggregateTest</span> <span class="p">{</span>
+  <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="p">[]</span> <span class="nf">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Configuration</span> <span class="nf">conf</span> <span class="o">=</span> <span class="n">HBaseConfiguration</span><span class="p">.</span><span class="na">create</span><span class="p">();</span>
+    <span class="n">conf</span><span class="p">.</span><span class="na">setInt</span><span class="p">(</span><span class="s">&#34;hbase.client.retries.number&#34;</span><span class="p">,</span> <span class="n">1</span><span class="p">);</span>
+    <span class="n">conf</span><span class="p">.</span><span class="na">setInt</span><span class="p">(</span><span class="s">&#34;ipc.client.connect.max.retries&#34;</span><span class="p">,</span> <span class="n">1</span><span class="p">);</span>
+     
+    <span class="kt">byte</span><span class="p">[]</span> <span class="nf">table</span> <span class="o">=</span> <span class="n">Bytes</span><span class="p">.</span><span class="na">toBytes</span><span class="p">(</span><span class="s">&#34;t&#34;</span><span class="p">);</span>
+    <span class="n">Scan</span> <span class="nf">scan</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Scan</span><span class="p">();</span>
+    <span class="n">scan</span><span class="p">.</span><span class="na">addColumn</span><span class="p">(</span><span class="n">Bytes</span><span class="p">.</span><span class="na">toBytes</span><span class="p">(</span><span class="s">&#34;f&#34;</span><span class="p">),</span> <span class="n">Bytes</span><span class="p">.</span><span class="na">toBytes</span><span class="p">(</span><span class="s">&#34;id&#34;</span><span class="p">));</span>
+    <span class="kd">final</span> <span class="nf">ColumnInterpreter</span><span class="o">&lt;</span><span class="n">Long</span><span class="p">,</span> <span class="n">Long</span><span class="o">&gt;</span> <span class="nf">columnInterpreter</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LongStrColumnInterpreter</span><span class="p">();</span>
+    <span class="k">try</span> <span class="p">{</span>
+      <span class="n">AggregationClient</span> <span class="nf">aClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AggregationClient</span><span class="p">(</span><span class="n">conf</span><span class="p">);</span>
+      <span class="n">Long</span> <span class="nf">rowCount</span> <span class="o">=</span> <span class="n">aClient</span><span class="p">.</span><span class="na">min</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">columnInterpreter</span><span class="p">,</span> <span class="n">scan</span><span class="p">);</span>
+      <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&#34;The result is &#34;</span> <span class="o">+</span> <span class="n">rowCount</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Throwable</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">e</span><span class="p">.</span><span class="na">printStackTrace</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>运行该类并查看输出结果。</p>
+
+<p>以上源代码及所做的修改我已提交到我github仓库上hbase的cdh4-0.94.15_4.7.0分支，见提交日志<a href="https://github.com/javachen/hbase/commit/94e61f28d60cac40f2b499b8530dd1989adf76d3">add-aggregate-support-in-hbase-shell</a>。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-06-12
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/06/13/hbase-code-about-htable-put/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">HBase源码分析：HTable put过程</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/06/12/hbase-parallel-client-scanner/">
+            <span class="next-text nav-default">HBase客户端实现并行扫描</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

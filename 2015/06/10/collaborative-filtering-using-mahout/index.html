@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用Mahout实现协同过滤 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录使用Mahout实现协同过滤过程中的一些笔记，主要是记录源码相关的，不包含原理性的说明。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/06/10/collaborative-filtering-using-mahout/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用Mahout实现协同过滤" />
+<meta property="og:description" content="本文主要记录使用Mahout实现协同过滤过程中的一些笔记，主要是记录源码相关的，不包含原理性的说明。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/06/10/collaborative-filtering-using-mahout/" />
+<meta property="article:published_time" content="2015-06-10T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-06-10T08:00:00+08:00" />
+<meta itemprop="name" content="使用Mahout实现协同过滤">
+<meta itemprop="description" content="本文主要记录使用Mahout实现协同过滤过程中的一些笔记，主要是记录源码相关的，不包含原理性的说明。">
+
+
+<meta itemprop="datePublished" content="2015-06-10T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-06-10T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="4883">
+
+
+
+<meta itemprop="keywords" content="mahout,recommendation," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用Mahout实现协同过滤"/>
+<meta name="twitter:description" content="本文主要记录使用Mahout实现协同过滤过程中的一些笔记，主要是记录源码相关的，不包含原理性的说明。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用Mahout实现协同过滤</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-06-10 </span>
+        <div class="post-category">
+            <a href="/categories/mahout/"> mahout </a>
+            </div>
+          <span class="more-meta"> 约 4883 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#接口相关介绍">接口相关介绍</a></li>
+<li><a href="#单机运行">单机运行</a></li>
+<li><a href="#在spark中运行">在Spark中运行</a></li>
+<li><a href="#分布式运行">分布式运行</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-06-10T08:00:00" title="June 10, 2015">June 10, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>Mahout算法框架自带的推荐器有下面这些：</p>
+
+<ul>
+<li>GenericUserBasedRecommender：基于用户的推荐器，用户数量少时速度快；</li>
+<li>GenericItemBasedRecommender：基于商品推荐器，商品数量少时速度快，尤其当外部提供了商品相似度数据后效率更好；</li>
+<li>SlopeOneRecommender：基于slope-one算法的推荐器，在线推荐或更新较快，需要事先大量预处理运算，物品数量少时较好；</li>
+<li>SVDRecommender：奇异值分解，推荐效果较好，但之前需要大量预处理运算；</li>
+<li>KnnRecommender：基于k近邻算法(KNN)，适合于物品数量较小时；</li>
+<li>TreeClusteringRecommender：基于聚类的推荐器，在线推荐较快，之前需要大量预处理运算，用户数量较少时效果好；</li>
+</ul>
+
+<p>Mahout最常用的三个推荐器是上述的前三个，本文主要讨论前两种的使用。</p>
+
+<h1 id="接口相关介绍">接口相关介绍</h1>
+
+<p>基于用户或物品的推荐器主要包括以下几个接口：</p>
+
+<ul>
+<li><code>DataModel</code> 是用户喜好信息的抽象接口，它的具体实现支持从任意类型的数据源抽取用户喜好信息。Taste 默认提供 JDBCDataModel 和 FileDataModel，分别支持从数据库和文件中读取用户的喜好信息。</li>
+<li><code>UserSimilarity</code> 和 <code>ItemSimilarity</code>。UserSimilarity 用于定义两个用户间的相似度，它是基于协同过滤的推荐引擎的核心部分，可以用来计算用户的“邻居”，这里我们将与当前用户口味相似的用户称为他的邻居。ItemSimilarity 类似的，计算内容之间的相似度。</li>
+<li><code>UserNeighborhood</code> 用于基于用户相似度的推荐方法中，推荐的内容是基于找到与当前用户喜好相似的邻居用户的方式产生的。UserNeighborhood 定义了确定邻居用户的方法，具体实现一般是基于 UserSimilarity 计算得到的。</li>
+<li><code>Recommender</code> 是推荐引擎的抽象接口，Taste 中的核心组件。程序中，为它提供一个 DataModel，它可以计算出对不同用户的推荐内容。实际应用中，主要使用它的实现类 GenericUserBasedRecommender 或者 GenericItemBasedRecommender，分别实现基于用户相似度的推荐引擎或者基于内容的推荐引擎。</li>
+<li><code>RecommenderEvaluator</code>：评分器。</li>
+<li><code>RecommenderIRStatsEvaluator</code>：搜集推荐性能相关的指标，包括准确率、召回率等等。</li>
+</ul>
+
+<p>目前，Mahout为DataModel提供了以下几种实现：</p>
+
+<ul>
+<li>org.apache.mahout.cf.taste.impl.model.GenericDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.GenericBooleanPrefDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.PlusAnonymousUserDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.file.FileDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.hbase.HBaseDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.cassandra.CassandraDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.mongodb.MongoDBDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.SQL92JDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.MySQLJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.GenericJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.SQL92BooleanPrefJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.MySQLBooleanPrefJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.PostgreBooleanPrefSQLJDBCDataModel</li>
+<li>org.apache.mahout.cf.taste.impl.model.jdbc.ReloadFromJDBCDataModel</li>
+</ul>
+
+<p>从类名上就可以大概猜出来每个DataModel的用途，奇怪的是竟然没有HDFS的DataModel，有人实现了一个，请参考<a href="https://issues.apache.org/jira/browse/MAHOUT-1579">MAHOUT-1579</a>。</p>
+
+<p><code>UserSimilarity</code> 和 <code>ItemSimilarity</code> 相似度实现有以下几种：</p>
+
+<ul>
+<li><code>CityBlockSimilarity</code>：基于Manhattan距离相似度</li>
+<li><code>EuclideanDistanceSimilarity</code>：基于欧几里德距离计算相似度</li>
+<li><code>LogLikelihoodSimilarity</code>：基于对数似然比的相似度</li>
+<li><code>PearsonCorrelationSimilarity</code>：基于皮尔逊相关系数计算相似度</li>
+<li><code>SpearmanCorrelationSimilarity</code>：基于皮尔斯曼相关系数相似度</li>
+<li><code>TanimotoCoefficientSimilarity</code>：基于谷本系数计算相似度</li>
+<li><code>UncenteredCosineSimilarity</code>：计算 Cosine 相似度</li>
+</ul>
+
+<p>以上相似度的说明，请参考<a href="/2014/09/22/mahout-recommend-engine.html">Mahout推荐引擎介绍</a>。</p>
+
+<p>UserNeighborhood 主要实现有两种：</p>
+
+<ul>
+<li>NearestNUserNeighborhood：对每个用户取固定数量N个最近邻居</li>
+<li>ThresholdUserNeighborhood：对每个用户基于一定的限制，取落在相似度限制以内的所有用户为邻居</li>
+</ul>
+
+<p>Recommender分为以下几种实现：</p>
+
+<ul>
+<li>GenericUserBasedRecommender：基于用户的推荐引擎</li>
+<li>GenericBooleanPrefUserBasedRecommender：基于用户的无偏好值推荐引擎</li>
+<li>GenericItemBasedRecommender：基于物品的推荐引擎</li>
+<li>GenericBooleanPrefItemBasedRecommender：基于物品的无偏好值推荐引擎</li>
+</ul>
+
+<p>RecommenderEvaluator有以下几种实现：</p>
+
+<ul>
+<li><code>AverageAbsoluteDifferenceRecommenderEvaluator</code>：计算平均差值</li>
+<li><code>RMSRecommenderEvaluator</code>：计算均方根差</li>
+</ul>
+
+<p>RecommenderIRStatsEvaluator的实现类是GenericRecommenderIRStatsEvaluator。</p>
+
+<h1 id="单机运行">单机运行</h1>
+
+<p>首先，需要在maven中加入对mahout的依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.apache.mahout<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mahout-core<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>0.9<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+
+<span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.apache.mahout<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mahout-integration<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>0.9<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+
+<span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.apache.mahout<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mahout-math<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>0.9<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+
+<span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.apache.mahout<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mahout-examples<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>0.9<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>基于用户的推荐，以FileDataModel为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">File</span> <span class="nf">modelFile</span> <span class="n">modelFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="p">(</span><span class="s">&#34;intro.csv&#34;</span><span class="p">);</span>
+
+<span class="n">DataModel</span> <span class="nf">model</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileDataModel</span><span class="p">(</span><span class="n">modelFile</span><span class="p">);</span>
+
+<span class="c1">//用户相似度，使用基于皮尔逊相关系数计算相似度
+</span><span class="c1"></span><span class="n">UserSimilarity</span> <span class="nf">similarity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PearsonCorrelationSimilarity</span><span class="p">(</span><span class="n">model</span><span class="p">);</span>
+
+<span class="c1">//选择邻居用户，使用NearestNUserNeighborhood实现UserNeighborhood接口，选择邻近的4个用户
+</span><span class="c1"></span><span class="n">UserNeighborhood</span> <span class="nf">neighborhood</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NearestNUserNeighborhood</span><span class="p">(</span><span class="n">4</span><span class="p">,</span> <span class="n">similarity</span><span class="p">,</span> <span class="n">model</span><span class="p">);</span>
+
+<span class="n">Recommender</span> <span class="nf">recommender</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericUserBasedRecommender</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">neighborhood</span><span class="p">,</span> <span class="n">similarity</span><span class="p">);</span>
+
+<span class="c1">//给用户1推荐4个物品
+</span><span class="c1"></span><span class="n">List</span><span class="o">&lt;</span><span class="n">RecommendedItem</span><span class="o">&gt;</span> <span class="nf">recommendations</span> <span class="o">=</span> <span class="n">recommender</span><span class="p">.</span><span class="na">recommend</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">4</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">RecommendedItem</span> <span class="nf">recommendation</span> <span class="o">:</span> <span class="n">recommendations</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">recommendation</span><span class="p">);</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：
+FileDataModel要求输入文件中的字段分隔符为逗号或者制表符，如果你想使用其他分隔符，你可以扩展一个FileDataModel的实现，例如，mahout中已经提供了一个解析MoiveLens的数据集（分隔符为<code>::</code>）的实现GroupLensDataModel。</p>
+</blockquote>
+
+<p>GenericUserBasedRecommender是基于用户的简单推荐器实现类，推荐主要参照传入的DataModel和UserNeighborhood，总体是三个步骤：</p>
+
+<ul>
+<li>(1) 从UserNeighborhood获取当前用户Ui最相似的K个用户集合{U1, U2, …Uk}；</li>
+<li>(2) 从这K个用户集合排除Ui的偏好商品，剩下的Item集合为{Item0, Item1, …Itemm}；</li>
+<li>(3) 对Item集合里每个Itemj计算Ui可能偏好程度值pref(Ui, Itemj)，并把Item按此数值从高到低排序，前N个item推荐给用户Ui。</li>
+</ul>
+
+<p>对相同用户重复获得推荐结果，我们可以改用CachingRecommender来包装GenericUserBasedRecommender对象，将推荐结果缓存起来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">Recommender</span> <span class="nf">cachingRecommender</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CachingRecommender</span><span class="p">(</span><span class="n">recommender</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上面代码可以在main方法中直接运行，然后，我们可以获取推荐模型的评分：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">//使用平均绝对差值获得评分
+</span><span class="c1"></span><span class="n">RecommenderEvaluator</span> <span class="nf">evaluator</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AverageAbsoluteDifferenceRecommenderEvaluator</span><span class="p">();</span>
+<span class="c1">// 用RecommenderBuilder构建推荐引擎
+</span><span class="c1"></span><span class="n">RecommenderBuilder</span> <span class="nf">recommenderBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RecommenderBuilder</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="nf">Recommender</span> <span class="n">buildRecommender</span><span class="p">(</span><span class="n">DataModel</span> <span class="nf">model</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">TasteException</span> <span class="p">{</span>
+        <span class="n">UserSimilarity</span> <span class="nf">similarity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PearsonCorrelationSimilarity</span><span class="p">(</span><span class="n">model</span><span class="p">);</span>
+        <span class="n">UserNeighborhood</span> <span class="nf">neighborhood</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NearestNUserNeighborhood</span><span class="p">(</span><span class="n">4</span><span class="p">,</span> <span class="n">similarity</span><span class="p">,</span> <span class="n">model</span><span class="p">);</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">GenericUserBasedRecommender</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">neighborhood</span><span class="p">,</span> <span class="n">similarity</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="c1">// Use 70% of the data to train; test using the other 30%.
+</span><span class="c1"></span><span class="kt">double</span> <span class="nf">score</span> <span class="o">=</span> <span class="n">evaluator</span><span class="p">.</span><span class="na">evaluate</span><span class="p">(</span><span class="n">recommenderBuilder</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">0</span><span class="p">.</span><span class="na">7</span><span class="p">,</span> <span class="n">1</span><span class="p">.</span><span class="na">0</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">score</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，可以获取推荐结果的查准率和召回率：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">RecommenderIRStatsEvaluator</span> <span class="nf">statsEvaluator</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericRecommenderIRStatsEvaluator</span><span class="p">();</span>
+<span class="c1">// Build the same recommender for testing that we did last time:
+</span><span class="c1"></span><span class="n">RecommenderBuilder</span> <span class="nf">recommenderBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RecommenderBuilder</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="nf">Recommender</span> <span class="n">buildRecommender</span><span class="p">(</span><span class="n">DataModel</span> <span class="nf">model</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">TasteException</span> <span class="p">{</span>
+        <span class="n">UserSimilarity</span> <span class="nf">similarity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PearsonCorrelationSimilarity</span><span class="p">(</span><span class="n">model</span><span class="p">);</span>
+        <span class="n">UserNeighborhood</span> <span class="nf">neighborhood</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NearestNUserNeighborhood</span><span class="p">(</span><span class="n">4</span><span class="p">,</span> <span class="n">similarity</span><span class="p">,</span> <span class="n">model</span><span class="p">);</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">GenericUserBasedRecommender</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">neighborhood</span><span class="p">,</span> <span class="n">similarity</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+<span class="c1">// 计算推荐4个结果时的查准率和召回率
+</span><span class="c1"></span><span class="n">IRStatistics</span> <span class="nf">stats</span> <span class="o">=</span> <span class="n">statsEvaluator</span><span class="p">.</span><span class="na">evaluate</span><span class="p">(</span><span class="n">recommenderBuilder</span><span class="p">,</span><span class="kc">null</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="n">4</span><span class="p">,</span>
+        <span class="n">GenericRecommenderIRStatsEvaluator</span><span class="p">.</span><span class="na">CHOOSE_THRESHOLD</span><span class="p">,</span><span class="n">1</span><span class="p">.</span><span class="na">0</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">stats</span><span class="p">.</span><span class="na">getPrecision</span><span class="p">());</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">stats</span><span class="p">.</span><span class="na">getRecall</span><span class="p">());</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果是基于物品的推荐，代码大体相似，只是没有了UserNeighborhood，然后将上面代码中的User换成Item即可，完整代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">File</span> <span class="nf">modelFile</span> <span class="n">modelFile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="p">(</span><span class="s">&#34;intro.csv&#34;</span><span class="p">);</span>
+
+<span class="n">DataModel</span> <span class="nf">model</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileDataModel</span><span class="p">(</span><span class="k">new</span> <span class="n">File</span><span class="p">(</span><span class="n">file</span><span class="p">));</span>
+
+<span class="c1">// Build the same recommender for testing that we did last time:
+</span><span class="c1"></span><span class="n">RecommenderBuilder</span> <span class="nf">recommenderBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RecommenderBuilder</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="nf">Recommender</span> <span class="n">buildRecommender</span><span class="p">(</span><span class="n">DataModel</span> <span class="nf">model</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">TasteException</span> <span class="p">{</span>
+        <span class="n">ItemSimilarity</span> <span class="nf">similarity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PearsonCorrelationSimilarity</span><span class="p">(</span><span class="n">model</span><span class="p">);</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">GenericItemBasedRecommender</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">similarity</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="c1">//获取推荐结果
+</span><span class="c1"></span><span class="n">List</span><span class="o">&lt;</span><span class="n">RecommendedItem</span><span class="o">&gt;</span> <span class="nf">recommendations</span> <span class="o">=</span> <span class="n">recommenderBuilder</span><span class="p">.</span><span class="na">buildRecommender</span><span class="p">(</span><span class="n">model</span><span class="p">).</span><span class="na">recommend</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">4</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">RecommendedItem</span> <span class="nf">recommendation</span> <span class="o">:</span> <span class="n">recommendations</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">recommendation</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">//计算评分
+</span><span class="c1"></span><span class="n">RecommenderEvaluator</span> <span class="nf">evaluator</span> <span class="o">=</span>
+        <span class="k">new</span> <span class="n">AverageAbsoluteDifferenceRecommenderEvaluator</span><span class="p">();</span>
+<span class="c1">// Use 70% of the data to train; test using the other 30%.
+</span><span class="c1"></span><span class="kt">double</span> <span class="nf">score</span> <span class="o">=</span> <span class="n">evaluator</span><span class="p">.</span><span class="na">evaluate</span><span class="p">(</span><span class="n">recommenderBuilder</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">0</span><span class="p">.</span><span class="na">7</span><span class="p">,</span> <span class="n">1</span><span class="p">.</span><span class="na">0</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">score</span><span class="p">);</span>
+
+<span class="c1">//计算查全率和查准率
+</span><span class="c1"></span><span class="n">RecommenderIRStatsEvaluator</span> <span class="nf">statsEvaluator</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GenericRecommenderIRStatsEvaluator</span><span class="p">();</span>
+
+<span class="c1">// Evaluate precision and recall &#34;at 2&#34;:
+</span><span class="c1"></span><span class="n">IRStatistics</span> <span class="nf">stats</span> <span class="o">=</span> <span class="n">statsEvaluator</span><span class="p">.</span><span class="na">evaluate</span><span class="p">(</span><span class="n">recommenderBuilder</span><span class="p">,</span>
+        <span class="kc">null</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="n">4</span><span class="p">,</span>
+        <span class="n">GenericRecommenderIRStatsEvaluator</span><span class="p">.</span><span class="na">CHOOSE_THRESHOLD</span><span class="p">,</span>
+        <span class="n">1</span><span class="p">.</span><span class="na">0</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">stats</span><span class="p">.</span><span class="na">getPrecision</span><span class="p">());</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">stats</span><span class="p">.</span><span class="na">getRecall</span><span class="p">());</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="在spark中运行">在Spark中运行</h1>
+
+<p>在Spark中运行，需要将Mahout相关的jar添加到Spark的classpath中，修改/etc/conf-env.sh，添加下面两行代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">SPARK_DIST_CLASSPATH=&#34;$SPARK_DIST_CLASSPATH:/usr/lib/mahout/lib/*&#34;
+SPARK_DIST_CLASSPATH=&#34;$SPARK_DIST_CLASSPATH:/usr/lib/mahout/*&#34;</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，以本地模式在spark-shell中运行下面代码交互测试：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="c1">//注意：这里是本地目录
+</span><span class="c1"></span><span class="k">val</span> <span class="n">model</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">FileDataModel</span><span class="o">(</span><span class="k">new</span> <span class="nc">File</span><span class="o">(</span><span class="s">&#34;intro.csv&#34;</span><span class="o">))</span>
+
+<span class="k">val</span> <span class="n">evaluator</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">RMSRecommenderEvaluator</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">recommenderBuilder</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">RecommenderBuilder</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="n">buildRecommender</span><span class="o">(</span><span class="n">dataModel</span><span class="k">:</span> <span class="kt">DataModel</span><span class="o">)</span><span class="k">:</span> <span class="kt">Recommender</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">similarity</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LogLikelihoodSimilarity</span><span class="o">(</span><span class="n">dataModel</span><span class="o">)</span>
+    <span class="k">new</span> <span class="nc">GenericItemBasedRecommender</span><span class="o">(</span><span class="n">dataModel</span><span class="o">,</span> <span class="n">similarity</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">score</span> <span class="k">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">evaluate</span><span class="o">(</span><span class="n">recommenderBuilder</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">model</span><span class="o">,</span> <span class="mf">0.95</span><span class="o">,</span> <span class="mf">0.05</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="s">s&#34;Score=</span><span class="si">$score</span><span class="s">&#34;</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">recommender</span><span class="k">=</span><span class="n">recommenderBuilder</span><span class="o">.</span><span class="n">buildRecommender</span><span class="o">(</span><span class="n">model</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">users</span><span class="k">=</span><span class="n">trainingRatings</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">user</span><span class="o">).</span><span class="n">distinct</span><span class="o">().</span><span class="n">take</span><span class="o">(</span><span class="mi">20</span><span class="o">)</span>
+
+<span class="k">import</span> <span class="nn">scala.collection.JavaConversions._</span>
+
+<span class="k">val</span> <span class="n">result</span><span class="k">=</span><span class="n">users</span><span class="o">.</span><span class="n">par</span><span class="o">.</span><span class="n">map</span><span class="o">{</span><span class="n">user</span><span class="k">=&gt;</span>
+  <span class="n">user</span><span class="o">+</span><span class="s">&#34;,&#34;</span><span class="o">+</span><span class="n">recommender</span><span class="o">.</span><span class="n">recommend</span><span class="o">(</span><span class="n">user</span><span class="o">,</span><span class="mi">40</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">getItemID</span><span class="o">).</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><a href="https://github.com/sujitpal/mia-scala-examples">https://github.com/sujitpal/mia-scala-examples</a>上面有一个评估基于物品或是用户的各种相似度下的评分的类，叫做 RecommenderEvaluator，供大家学习参考。</p>
+
+<h1 id="分布式运行">分布式运行</h1>
+
+<p>Mahout提供了<code>org.apache.mahout.cf.taste.hadoop.item.RecommenderJob</code>类以MapReduce的方式来实现基于物品的协同过滤，查看该类的使用说明：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop jar /usr/lib/mahout/mahout-examples-0.9-cdh5.4.0-job.jar org.apache.mahout.cf.taste.hadoop.item.RecommenderJob
+<span class="m">15</span>/06/10 <span class="m">16</span>:19:34 ERROR common.AbstractJob: Missing required option --similarityClassname
+Missing required option --similarityClassname
+Usage:
+ <span class="o">[</span>--input &lt;input&gt; --output &lt;output&gt; --numRecommendations &lt;numRecommendations&gt;
+--usersFile &lt;usersFile&gt; --itemsFile &lt;itemsFile&gt; --filterFile &lt;filterFile&gt;
+--booleanData &lt;booleanData&gt; --maxPrefsPerUser &lt;maxPrefsPerUser&gt;
+--minPrefsPerUser &lt;minPrefsPerUser&gt; --maxSimilaritiesPerItem
+&lt;maxSimilaritiesPerItem&gt; --maxPrefsInItemSimilarity &lt;maxPrefsInItemSimilarity&gt;
+--similarityClassname &lt;similarityClassname&gt; --threshold &lt;threshold&gt;
+--outputPathForSimilarityMatrix &lt;outputPathForSimilarityMatrix&gt; --randomSeed
+&lt;randomSeed&gt; --sequencefileOutput --help --tempDir &lt;tempDir&gt; --startPhase
+&lt;startPhase&gt; --endPhase &lt;endPhase&gt;<span class="o">]</span>
+--similarityClassname <span class="o">(</span>-s<span class="o">)</span> similarityClassname    Name of distributed
+                                                  similarity measures class to
+                                                  instantiate, alternatively
+                                                  use one of the predefined
+                                                  similarities
+                                                  <span class="o">([</span>SIMILARITY_COOCCURRENCE,
+                                                  SIMILARITY_LOGLIKELIHOOD,
+                                                  SIMILARITY_TANIMOTO_COEFFICIEN
+                                                  T, SIMILARITY_CITY_BLOCK,
+                                                  SIMILARITY_COSINE,
+                                                  SIMILARITY_PEARSON_CORRELATION
+                                                  ,
+                                                  SIMILARITY_EUCLIDEAN_DISTANCE<span class="o">]</span>
+                                                  <span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>可见，该类可以接收的命令行参数如下：</p>
+
+<ul>
+<li><code>--input(path)</code>: 存储用户偏好数据的目录，该目录下可以包含一个或多个存储用户偏好数据的文本文件；</li>
+<li><code>--output(path)</code>: 结算结果的输出目录</li>
+<li><code>--numRecommendations (integer)</code>: 为每个用户推荐的item数量，默认为10</li>
+<li><code>--usersFile (path)</code>: 指定一个包含了一个或多个存储userID的文件路径，仅为该路径下所有文件包含的userID做推荐计算 (该选项可选)</li>
+<li><code>--itemsFile (path)</code>: 指定一个包含了一个或多个存储itemID的文件路径，仅为该路径下所有文件包含的itemID做推荐计算 (该选项可选)</li>
+<li><code>--filterFile (path)</code>: 指定一个路径，该路径下的文件包含了<code>[userID,itemID]</code>值对，userID和itemID用逗号分隔。计算结果将不会为user推荐<code>[userID,itemID]</code>值对中包含的item (该选项可选)</li>
+<li><code>--booleanData (boolean)</code>: 如果输入数据不包含偏好数值，则将该参数设置为true，默认为false</li>
+<li><code>--maxPrefsPerUser (integer)</code>: 在最后计算推荐结果的阶段，针对每一个user使用的偏好数据的最大数量，默认为10</li>
+<li><code>--minPrefsPerUser (integer)</code>: 在相似度计算中，忽略所有偏好数据量少于该值的用户，默认为1</li>
+<li><code>--maxSimilaritiesPerItem (integer)</code>: 针对每个item的相似度最大值，默认为100</li>
+<li><code>--maxPrefsPerUserInItemSimilarity (integer)</code>: 在item相似度计算阶段，针对每个用户考虑的偏好数据最大数量，默认为1000</li>
+<li><code>--similarityClassname (classname)</code>: 向量相似度计算类</li>
+<li><code>outputPathForSimilarityMatrix</code>：SimilarityMatrix输出目录</li>
+<li><code>--randomSeed</code>：随机种子
+&ndash;<code>sequencefileOutput</code>：序列文件输出路径</li>
+<li><code>--tempDir (path)</code>: 存储临时文件的目录，默认为当前用户的home目录下的temp目录</li>
+<li><code>--startPhase</code></li>
+<li><code>--endPhase</code></li>
+<li><code>--threshold (double)</code>: 忽略相似度低于该阀值的item对</li>
+</ul>
+
+<p>一个例子如下，使用SIMILARITY_LOGLIKELIHOOD相似度推荐物品：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop jar /usr/lib/mahout/mahout-examples-0.9-cdh5.4.0-job.jar org.apache.mahout.cf.taste.hadoop.item.RecommenderJob --input /tmp/mahout/part-00000 --output /tmp/mahout-out  -s SIMILARITY_LOGLIKELIHOOD</code></pre></td></tr></table>
+</div>
+</div>
+<p>默认情况下，mahout使用的reduce数目为1，这样造成大数据处理时效率较低，可以通过参数mahout执行脚本中的<code>MAHOUT_OPTS</code>中的<code>-Dmapred.reduce.tasks</code>参数指定reduce数目。</p>
+
+<p>上面命令运行完成之后，会在当前用户的hdfs主目录生成temp目录，该目录可由<code>--tempDir (path)</code>参数设置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop fs -ls temp
+Found <span class="m">10</span> items
+-rw-r--r--   <span class="m">3</span> root hadoop          <span class="m">7</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:42 temp/maxValues.bin
+-rw-r--r--   <span class="m">3</span> root hadoop    <span class="m">5522717</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:42 temp/norms.bin
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:41 temp/notUsed
+-rw-r--r--   <span class="m">3</span> root hadoop          <span class="m">7</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:42 temp/numNonZeroEntries.bin
+-rw-r--r--   <span class="m">3</span> root hadoop    <span class="m">3452222</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:41 temp/observationsPerColumn.bin
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:47 temp/pairwiseSimilarity
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:52 temp/partialMultiply
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:39 temp/preparePreferenceMatrix
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:50 temp/similarityMatrix
+drwxr-xr-x   - root hadoop          <span class="m">0</span> <span class="m">2015</span>-06-10 <span class="m">14</span>:42 temp/weights</code></pre></td></tr></table>
+</div>
+</div>
+<p>观察yarn的管理界面，该命令会生成9个任务，任务名称依次是：</p>
+
+<ul>
+<li>PreparePreferenceMatrixJob-ItemIDIndexMapper-Reducer</li>
+<li>PreparePreferenceMatrixJob-ToItemPrefsMapper-Reducer</li>
+<li>PreparePreferenceMatrixJob-ToItemVectorsMapper-Reducer</li>
+<li>RowSimilarityJob-CountObservationsMapper-Reducer</li>
+<li>RowSimilarityJob-VectorNormMapper-Reducer</li>
+<li>RowSimilarityJob-CooccurrencesMapper-Reducer</li>
+<li>RowSimilarityJob-UnsymmetrifyMapper-Reducer</li>
+<li>partialMultiply</li>
+<li>RecommenderJob-PartialMultiplyMapper-Reducer</li>
+</ul>
+
+<p>从任务名称，大概可以知道每个任务在做什么，如果你的输入参数不一样，生成的任务数可能不一样，这个需要测试一下才能确认。</p>
+
+<p>在hdfs上查看输出的结果，用户和推荐结果用<code>\t</code>分隔，推荐结果中物品之间用逗号分隔，物品后面通过冒号连接评分：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">843 [10709679:4.8334665,8389878:4.833426,9133835:4.7503786,10366169:4.7503185,9007487:4.750272,8149253:4.7501993,10366165:4.750115,9780049:4.750108,8581254:4.750071,10456307:4.7500467]
+6253    [10117445:3.0375953,10340299:3.0340924,8321090:3.0340924,10086615:3.032164,10436801:3.0187714,9668385:3.0141575,8502110:3.013954,10476325:3.0074399,10318667:3.0004222,8320987:3.0003839]</pre></td></tr></table>
+</div>
+</div>
+<p>使用Java API方式执行，请参考<a href="http://blog.fens.me/hadoop-mahout-mapreduce-itemcf/">Mahout分步式程序开发 基于物品的协同过滤ItemCF</a>。</p>
+
+<p>在Scala或者Spark中，可以以Java API或者命令方式运行，最后还可以通过Spark来处理推荐的结果，例如：过滤、去重、补足数据，这部分内容不做介绍。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="http://matrix-lisp.github.io/blog/images/12/20/mahout-taste-CF/">协同过滤原理与Mahout实现</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-06-10
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/mahout/">mahout</a>
+          <a href="/tags/recommendation/">recommendation</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/06/15/note-about-recommendation-system/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">推荐系统笔记</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/06/09/memory-in-spark-on-yarn/">
+            <span class="next-text nav-default">Spark On YARN内存分配</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

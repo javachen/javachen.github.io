@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Flume-ng的原理和使用 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Flume 是 Cloudera 提供的日志收集系统，具有分布式、高可靠、高可用性等特点，对海量日志采集、聚合和传输，Flume 支持在日志系统中定制各类数据发送方，同时，Flume提供对数据进行简单处理，并写到各种数据接受方的能力。" /><meta name="keywords" content="Flume" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/07/22/flume-ng/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Flume-ng的原理和使用" />
+<meta property="og:description" content="Flume 是 Cloudera 提供的日志收集系统，具有分布式、高可靠、高可用性等特点，对海量日志采集、聚合和传输，Flume 支持在日志系统中定制各类数据发送方，同时，Flume提供对数据进行简单处理，并写到各种数据接受方的能力。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/07/22/flume-ng/" />
+<meta property="article:published_time" content="2014-07-22T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-07-22T08:00:00+08:00" />
+<meta itemprop="name" content="Flume-ng的原理和使用">
+<meta itemprop="description" content="Flume 是 Cloudera 提供的日志收集系统，具有分布式、高可靠、高可用性等特点，对海量日志采集、聚合和传输，Flume 支持在日志系统中定制各类数据发送方，同时，Flume提供对数据进行简单处理，并写到各种数据接受方的能力。">
+
+
+<meta itemprop="datePublished" content="2014-07-22T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-07-22T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="6278">
+
+
+
+<meta itemprop="keywords" content="hadoop,flume," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Flume-ng的原理和使用"/>
+<meta name="twitter:description" content="Flume 是 Cloudera 提供的日志收集系统，具有分布式、高可靠、高可用性等特点，对海量日志采集、聚合和传输，Flume 支持在日志系统中定制各类数据发送方，同时，Flume提供对数据进行简单处理，并写到各种数据接受方的能力。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Flume-ng的原理和使用</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-07-22 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 6278 字 </span>
+          <span class="more-meta"> 预计阅读 13 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-介绍">1. 介绍</a></li>
+<li><a href="#2-架构">2. 架构</a>
+<ul>
+<li><a href="#2-1-数据流">2.1 数据流</a></li>
+<li><a href="#2-2-核心组件">2.2 核心组件</a>
+<ul>
+<li><a href="#2-2-1-source">2.2.1 source</a></li>
+<li><a href="#2-2-2-channel">2.2.2 Channel</a></li>
+<li><a href="#2-2-3-sink">2.2.3 sink</a></li>
+</ul></li>
+<li><a href="#2-3-可靠性">2.3 可靠性</a></li>
+<li><a href="#2-4-可恢复性">2.4 可恢复性</a></li>
+</ul></li>
+<li><a href="#3-使用场景">3. 使用场景</a></li>
+<li><a href="#4-安装和使用">4. 安装和使用</a>
+<ul>
+<li><a href="#示例1-avro-数据源">示例1： avro 数据源</a></li>
+<li><a href="#示例2-spooldir-数据源">示例2：spooldir 数据源</a></li>
+<li><a href="#示例3-spooldir-数据源-写入-hdfs">示例3：spooldir 数据源，写入 hdfs</a></li>
+<li><a href="#示例4-spooldir-数据源-写入-hbase">示例4：spooldir 数据源，写入 HBase</a></li>
+</ul></li>
+<li><a href="#5-开发相关">5. 开发相关</a>
+<ul>
+<li><a href="#5-1-编译源代码">5.1 编译源代码</a></li>
+</ul></li>
+<li><a href="#6-最佳实践">6. 最佳实践</a></li>
+<li><a href="#7-参考文章">7. 参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-07-22T08:00:00" title="July 22, 2014">July 22, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-介绍">1. 介绍</h1>
+
+<p>Flume NG是Cloudera提供的一个分布式、可靠、可用的系统，它能够将不同数据源的海量日志数据进行高效收集、聚合、移动，最后存储到一个中心化数据存储系统中。由原来的Flume OG到现在的Flume NG，进行了架构重构，并且现在NG版本完全不兼容原来的OG版本。经过架构重构后，Flume NG更像是一个轻量的小工具，非常简单，容易适应各种方式日志收集，并支持failover和负载均衡。</p>
+
+<p>Flume 使用 java 编写，其需要运行在 Java1.6 或更高版本之上。</p>
+
+<ul>
+<li>官方网站：<a href="http://flume.apache.org/">http://flume.apache.org/</a></li>
+<li>用户文档：<a href="http://flume.apache.org/FlumeUserGuide.html">http://flume.apache.org/FlumeUserGuide.html</a></li>
+<li>开发文档：<a href="http://flume.apache.org/FlumeDeveloperGuide.html">http://flume.apache.org/FlumeDeveloperGuide.html</a></li>
+</ul>
+
+<h1 id="2-架构">2. 架构</h1>
+
+<p>Flume的架构主要有一下几个核心概念：</p>
+
+<ul>
+<li>Event：一个数据单元，带有一个可选的消息头</li>
+<li>Flow：Event从源点到达目的点的迁移的抽象</li>
+<li>Client：操作位于源点处的Event，将其发送到Flume Agent</li>
+<li>Agent：一个独立的Flume进程，包含组件Source、Channel、Sink</li>
+<li>Source：用来消费传递到该组件的Event</li>
+<li>Channel：中转Event的一个临时存储，保存有Source组件传递过来的Event</li>
+<li>Sink：从Channel中读取并移除Event，将Event传递到Flow Pipeline中的下一个Agent（如果有的话）</li>
+</ul>
+
+<h2 id="2-1-数据流">2.1 数据流</h2>
+
+<p>Flume 的核心是把数据从数据源收集过来，再送到目的地。为了保证输送一定成功，在送到目的地之前，会先缓存数据，待数据真正到达目的地后，删除自己缓存的数据。</p>
+
+<p>Flume 传输的数据的基本单位是 Event，如果是文本文件，通常是一行记录，这也是事务的基本单位。Event 从 Source，流向 Channel，再到 Sink，本身为一个 byte 数组，并可携带 headers 信息。Event 代表着一个数据流的最小完整单元，从外部数据源来，向外部的目的地去。</p>
+
+<p>Flume 运行的核心是 Agent。它是一个完整的数据收集工具，含有三个核心组件，分别是 source、channel、sink。通过这些组件，Event 可以从一个地方流向另一个地方，如下图所示。</p>
+
+<p><img src="/images/flume-ng-architecture.png" alt="" /></p>
+
+<ul>
+<li>source 可以接收外部源发送过来的数据。不同的 source，可以接受不同的数据格式。比如有目录池(spooling directory)数据源，可以监控指定文件夹中的新文件变化，如果目录中有文件产生，就会立刻读取其内容。</li>
+<li>channel 是一个存储地，接收 source 的输出，直到有 sink 消费掉 channel 中的数据。channel 中的数据直到进入到下一个channel中或者进入终端才会被删除。当 sink 写入失败后，可以自动重启，不会造成数据丢失，因此很可靠。</li>
+<li>sink 会消费 channel 中的数据，然后送给外部源或者其他 source。如数据可以写入到 HDFS 或者 HBase 中。</li>
+</ul>
+
+<h2 id="2-2-核心组件">2.2 核心组件</h2>
+
+<h3 id="2-2-1-source">2.2.1 source</h3>
+
+<p>Client端操作消费数据的来源，Flume 支持 Avro，log4j，syslog 和 http post(body为json格式)。可以让应用程序同已有的Source直接打交道，如AvroSource，SyslogTcpSource。也可以 写一个 Source，以 IPC 或 RPC 的方式接入自己的应用，Avro和 Thrift 都可以(分别有 NettyAvroRpcClient 和 ThriftRpcClient 实现了 RpcClient接口)，其中 Avro 是默认的 RPC 协议。具体代码级别的 Client 端数据接入，可以参考官方手册。</p>
+
+<p>对现有程序改动最小的使用方式是使用是直接读取程序原来记录的日志文件，基本可以实现无缝接入，不需要对现有程序进行任何改动。
+对于直接读取文件 Source,有两种方式：</p>
+
+<ul>
+<li>ExecSource: 以运行 Linux 命令的方式，持续的输出最新的数据，如 <code>tail -F 文件名</code> 指令，在这种方式下，取的文件名必须是指定的。 ExecSource 可以实现对日志的实时收集，但是存在Flume不运行或者指令执行出错时，将无法收集到日志数据，无法保证日志数据的完整性。</li>
+<li>SpoolSource: 监测配置的目录下新增的文件，并将文件中的数据读取出来。需要注意两点：拷贝到 spool 目录下的文件不可以再打开编辑；spool 目录下不可包含相应的子目录。</li>
+</ul>
+
+<p>SpoolSource 虽然无法实现实时的收集数据，但是可以使用以分钟的方式分割文件，趋近于实时。</p>
+
+<p>如果应用无法实现以分钟切割日志文件的话， 可以两种收集方式结合使用。 在实际使用的过程中，可以结合 log4j 使用，使用 log4j的时候，将 log4j 的文件分割机制设为1分钟一次，将文件拷贝到spool的监控目录。</p>
+
+<p>log4j 有一个 TimeRolling 的插件，可以把 log4j 分割文件到 spool 目录。基本实现了实时的监控。Flume 在传完文件之后，将会修改文件的后缀，变为 .COMPLETED（后缀也可以在配置文件中灵活指定）。</p>
+
+<p>Flume Source 支持的类型：</p>
+
+<p>|  Source类型 |    说明 |
+| :&mdash; |:&mdash;-  |
+| Avro Source | 支持Avro协议（实际上是Avro RPC），内置支持|
+| Thrift Source   | 支持Thrift协议，内置支持|
+| | Exec Source | 基于Unix的command在标准输出上生产数据|
+| JMS Source |  从JMS系统（消息、主题）中读取数据，ActiveMQ已经测试过|
+| Spooling Directory Source  |  监控指定目录内数据变更|
+| Twitter 1% firehose Source |  通过API持续下载Twitter数据，试验性质|
+| Netcat Source  |  监控某个端口，将流经端口的每一个文本行数据作为Event输入|
+| Sequence Generator Source   | 序列生成器数据源，生产序列数据|
+| Syslog Sources |  读取syslog数据，产生Event，支持UDP和TCP两种协议|
+| HTTP Source | 基于HTTP POST或GET方式的数据源，支持JSON、BLOB表示形式|
+| Legacy Sources |  兼容老的Flume OG中Source（0.9.x版本）|</p>
+
+<h3 id="2-2-2-channel">2.2.2 Channel</h3>
+
+<p>当前有几个 channel 可供选择，分别是 Memory Channel, JDBC Channel , File Channel，Psuedo Transaction Channel。比较常见的是前三种 channel。</p>
+
+<ul>
+<li>MemoryChannel 可以实现高速的吞吐，但是无法保证数据的完整性。</li>
+<li>MemoryRecoverChannel 在官方文档的建议上已经建义使用FileChannel来替换。</li>
+<li>FileChannel保证数据的完整性与一致性。在具体配置FileChannel时，建议FileChannel设置的目录和程序日志文件保存的目录设成不同的磁盘，以便提高效率。</li>
+</ul>
+
+<p>File Channel 是一个持久化的隧道（channel），它持久化所有的事件，并将其存储到磁盘中。因此，即使 Java 虚拟机当掉，或者操作系统崩溃或重启，再或者事件没有在管道中成功地传递到下一个代理（agent），这一切都不会造成数据丢失。Memory Channel 是一个不稳定的隧道，其原因是由于它在内存中存储所有事件。如果 java 进程死掉，任何存储在内存的事件将会丢失。另外，内存的空间收到 RAM大小的限制,而 File Channel 这方面是它的优势，只要磁盘空间足够，它就可以将所有事件数据存储到磁盘上。</p>
+
+<p>Flume Channel 支持的类型：</p>
+
+<p>| Channel类型 |   说明|
+|:&mdash;&ndash;|:&mdash;  |
+| Memory Channel |  Event数据存储在内存中|
+| JDBC Channel   |  Event数据存储在持久化存储中，当前Flume Channel内置支持Derby|
+| File Channel   |  Event数据存储在磁盘文件中|
+| Spillable Memory Channel  |   Event数据存储在内存中和磁盘上，当内存队列满了，会持久化到磁盘文件（当前试验性的，不建议生产环境使用）|
+| Pseudo Transaction Channel  | 测试用途|
+| Custom Channel  | 自定义Channel实现|</p>
+
+<h3 id="2-2-3-sink">2.2.3 sink</h3>
+
+<p>Sink在设置存储数据时，可以向文件系统、数据库、hadoop存数据，在日志数据较少时，可以将数据存储在文件系中，并且设定一定的时间间隔保存数据。在日志数据较多时，可以将相应的日志数据存储到Hadoop中，便于日后进行相应的数据分析。</p>
+
+<p>Flume Sink支持的类型</p>
+
+<p>| Sink类型 |  说明 |
+| :&mdash;- |:&mdash;-  |
+| HDFS Sink |   数据写入HDFS|
+| Logger Sink | 数据写入日志文件|
+| Avro Sink  |  数据被转换成Avro Event，然后发送到配置的RPC端口上|
+| Thrift Sink | 数据被转换成Thrift Event，然后发送到配置的RPC端口上|
+| IRC Sink  |   数据在IRC上进行回放|
+| File Roll Sink  | 存储数据到本地文件系统|
+| Null Sink  |  丢弃到所有数据|
+| HBase Sink |  数据写入HBase数据库|
+| Morphline Solr Sink | 数据发送到Solr搜索服务器（集群）|
+| ElasticSearch Sink  | 数据发送到Elastic Search搜索服务器（集群）|
+| Kite Dataset Sink   | 写数据到Kite Dataset，试验性质的|
+| Custom Sink|  自定义Sink实现|</p>
+
+<p>更多sink的内容可以参考<a href="http://flume.apache.org/FlumeDeveloperGuide.html#sink">官方手册</a>。</p>
+
+<h2 id="2-3-可靠性">2.3 可靠性</h2>
+
+<p>Flume 的核心是把数据从数据源收集过来，再送到目的地。为了保证输送一定成功，在送到目的地之前，会先缓存数据，待数据真正到达目的地后，删除自己缓存的数据。</p>
+
+<p>Flume 使用事务性的方式保证传送Event整个过程的可靠性。Sink 必须在 Event 被存入 Channel 后，或者，已经被传达到下一站agent里，又或者，已经被存入外部数据目的地之后，才能把 Event 从 Channel 中 remove 掉。这样数据流里的 event 无论是在一个 agent 里还是多个 agent 之间流转，都能保证可靠，因为以上的事务保证了 event 会被成功存储起来。而 Channel 的多种实现在可恢复性上有不同的保证。也保证了 event 不同程度的可靠性。比如 Flume 支持在本地保存一份文件 channel 作为备份，而memory channel 将 event 存在内存 queue 里，速度快，但丢失的话无法恢复。</p>
+
+<h2 id="2-4-可恢复性">2.4 可恢复性</h2>
+
+<h1 id="3-使用场景">3. 使用场景</h1>
+
+<p>下面，根据官网文档，我们展示几种Flow Pipeline，各自适应于什么样的应用场景：</p>
+
+<ul>
+<li>多个 agent 顺序连接：</li>
+</ul>
+
+<p><img src="/images/flume-multiseq-agents.png" alt="" /></p>
+
+<p>可以将多个Agent顺序连接起来，将最初的数据源经过收集，存储到最终的存储系统中。这是最简单的情况，一般情况下，应该控制这种顺序连接的Agent的数量，因为数据流经的路径变长了，如果不考虑failover的话，出现故障将影响整个Flow上的Agent收集服务。</p>
+
+<ul>
+<li>多个Agent的数据汇聚到同一个Agent:</li>
+</ul>
+
+<p><img src="/images/flume-join-agent.png" alt="" /></p>
+
+<p>这种情况应用的场景比较多，比如要收集Web网站的用户行为日志，Web网站为了可用性使用的负载均衡的集群模式，每个节点都产生用户行为日志，可以为每个节点都配置一个Agent来单独收集日志数据，然后多个Agent将数据最终汇聚到一个用来存储数据存储系统，如HDFS上。</p>
+
+<ul>
+<li>多路（Multiplexing）Agent</li>
+</ul>
+
+<p><img src="/images/flume-multiplexing-agent.png" alt="" /></p>
+
+<p>这种模式，有两种方式，一种是用来复制（Replication），另一种是用来分流（Multiplexing）。Replication方式，可以将最前端的数据源复制多份，分别传递到多个channel中，每个channel接收到的数据都是相同的。</p>
+
+<p>配置格式示例如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"># List the sources, sinks and channels for the agent
+&lt;Agent&gt;.sources = &lt;Source1&gt;
+&lt;Agent&gt;.sinks = &lt;Sink1&gt; &lt;Sink2&gt;
+&lt;Agent&gt;.channels = &lt;Channel1&gt; &lt;Channel2&gt;
+
+# set list of channels for source (separated by space)
+&lt;Agent&gt;.sources.&lt;Source1&gt;.channels = &lt;Channel1&gt; &lt;Channel2&gt;
+
+# set channel for sinks
+&lt;Agent&gt;.sinks.&lt;Sink1&gt;.channel = &lt;Channel1&gt;
+&lt;Agent&gt;.sinks.&lt;Sink2&gt;.channel = &lt;Channel2&gt;
+
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.type = replicating</code></pre></td></tr></table>
+</div>
+</div>
+<p>上面指定了selector的type的值为replication，其他的配置没有指定，使用的Replication方式，Source1会将数据分别存储到Channel1和Channel2，这两个channel里面存储的数据是相同的，然后数据被传递到Sink1和Sink2。</p>
+
+<p>Multiplexing方式，selector可以根据header的值来确定数据传递到哪一个channel，配置格式，如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"># Mapping for multiplexing selector
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.type = multiplexing
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.header = &lt;someHeader&gt;
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value1&gt; = &lt;Channel1&gt;
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value2&gt; = &lt;Channel1&gt; &lt;Channel2&gt;
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value3&gt; = &lt;Channel2&gt;
+#...
+
+&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.default = &lt;Channel2&gt;</code></pre></td></tr></table>
+</div>
+</div>
+<p>上面selector的type的值为multiplexing，同时配置selector的header信息，还配置了多个selector的mapping的值，即header的值：如果header的值为Value1、Value2，数据从Source1路由到Channel1；如果header的值为Value2、Value3，数据从Source1路由到Channel2。</p>
+
+<ul>
+<li>实现load balance功能</li>
+</ul>
+
+<p><img src="/images/flume-load-balance-agents.png" alt="" /></p>
+
+<p>Load balancing Sink Processor能够实现load balance功能，上图Agent1是一个路由节点，负责将Channel暂存的Event均衡到对应的多个Sink组件上，而每个Sink组件分别连接到一个独立的Agent上，示例配置，如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">a1.sinkgroups = g1
+a1.sinkgroups.g1.sinks = k1 k2 k3
+a1.sinkgroups.g1.processor.type = load_balance
+a1.sinkgroups.g1.processor.backoff = true
+a1.sinkgroups.g1.processor.selector = round_robin
+a1.sinkgroups.g1.processor.selector.maxTimeOut=10000</code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>实现failover能</li>
+</ul>
+
+<p>Failover Sink Processor能够实现failover功能，具体流程类似load balance，但是内部处理机制与load balance完全不同：Failover Sink Processor维护一个优先级Sink组件列表，只要有一个Sink组件可用，Event就被传递到下一个组件。如果一个Sink能够成功处理Event，则会加入到一个Pool中，否则会被移出Pool并计算失败次数，设置一个惩罚因子，示例配置如下所示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">a1.sinkgroups = g1
+a1.sinkgroups.g1.sinks = k1 k2 k3
+a1.sinkgroups.g1.processor.type = failover
+a1.sinkgroups.g1.processor.priority.k1 = 5
+a1.sinkgroups.g1.processor.priority.k2 = 7
+a1.sinkgroups.g1.processor.priority.k3 = 6
+a1.sinkgroups.g1.processor.maxpenalty = 20000</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="4-安装和使用">4. 安装和使用</h1>
+
+<p>Flume 的 rpm 安装方式很简单，这里不做说明。</p>
+
+<h2 id="示例1-avro-数据源">示例1： avro 数据源</h2>
+
+<p>安装成功之后，在 /etc/flume/conf 目录创建f1.conf 文件，内容如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">agent-1.channels.ch-1.type = memory
+
+agent-1.sources.avro-source1.channels = ch-1
+agent-1.sources.avro-source1.type = avro
+agent-1.sources.avro-source1.bind = 0.0.0.0
+agent-1.sources.avro-source1.port = 41414
+agent-1.sources.avro-source1.threads = 5
+
+agent-1.sinks.log-sink1.channel = ch-1
+agent-1.sinks.log-sink1.type = logger
+
+agent-1.channels = ch-1
+agent-1.sources = avro-source1
+agent-1.sinks = log-sink1</code></pre></td></tr></table>
+</div>
+</div>
+<p>关于 avro-source 配置说明，请参考 <a href="http://flume.apache.org/FlumeUserGuide.html#avro-source">avro-source</a></p>
+
+<p>接下来启动 agent：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ flume-ng agent -c /etc/flume-ng/conf -f /etc/flume-ng/conf/f1.conf -Dflume.root.logger<span class="o">=</span>DEBUG,console -n agent-1</code></pre></td></tr></table>
+</div>
+</div>
+<p>参数说明：</p>
+
+<ul>
+<li><code>-n</code> 指定agent名称</li>
+<li><code>-c</code> 指定配置文件目录</li>
+<li><code>-f</code> 指定配置文件</li>
+<li><code>-Dflume.root.logger=DEBUG,console</code> 设置日志等级</li>
+</ul>
+
+<p>下面可以启动一个 avro-client 客户端生产数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ flume-ng avro-client -c /etc/flume-ng/conf -H localhost -p <span class="m">41414</span> -F /etc/passwd -Dflume.root.logger<span class="o">=</span>DEBUG,console</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="示例2-spooldir-数据源">示例2：spooldir 数据源</h2>
+
+<p>在 /etc/flume/conf 目录创建 f2.conf 文件，内容如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">agent-1.channels = ch-1
+agent-1.sources = src-1
+
+agent-1.channels.ch-1.type = memory
+
+agent-1.sources.src-1.type = spooldir
+agent-1.sources.src-1.channels = ch-1
+agent-1.sources.src-1.spoolDir = /root/log
+agent-1.sources.src-1.fileHeader = true
+
+agent-1.sinks.log-sink1.channel = ch-1
+agent-1.sinks.log-sink1.type = logger
+
+agent-1.sinks = log-sink1</code></pre></td></tr></table>
+</div>
+</div>
+<p>关于 Spooling Directory Source 配置说明，请参考 <a href="http://flume.apache.org/FlumeUserGuide.html#spooling-directory-source">Spooling Directory Source</a></p>
+
+<p>接下来启动 agent：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ flume-ng agent -c /etc/flume-ng/conf -f /etc/flume-ng/conf/f2.conf -Dflume.root.logger<span class="o">=</span>DEBUG,console -n agent-1</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，手动拷贝一个文件到 /root/log 目录，观察日志输出以及/root/log 目录下的变化。</p>
+
+<h2 id="示例3-spooldir-数据源-写入-hdfs">示例3：spooldir 数据源，写入 hdfs</h2>
+
+<p>在 /etc/flume/conf 目录创建 f3.conf 文件，内容如下:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">agent-1.channels.ch-1.type = file
+agent-1.channels.ch-1.checkpointDir= /root/checkpoint
+agent-1.channels.ch-1.dataDirs= /root/data
+
+agent-1.sources.src-1.type = spooldir
+agent-1.sources.src-1.channels = ch-1
+agent-1.sources.src-1.spoolDir = /root/log
+agent-1.sources.src-1.deletePolicy= never
+agent-1.sources.src-1.fileHeader = true
+
+agent-1.sources.src-1.interceptors =i1
+agent-1.sources.src-1.interceptors.i1.type = timestamp
+
+agent-1.sinks.sink_hdfs.channel = ch-1
+agent-1.sinks.sink_hdfs.type = hdfs
+agent-1.sinks.sink_hdfs.hdfs.path = hdfs://cdh1:8020/user/root/events/%Y-%m-%d
+agent-1.sinks.sink_hdfs.hdfs.filePrefix = logs
+agent-1.sinks.sink_hdfs.hdfs.inUsePrefix = .
+agent-1.sinks.sink_hdfs.hdfs.rollInterval = 30
+agent-1.sinks.sink_hdfs.hdfs.rollSize = 0
+agent-1.sinks.sink_hdfs.hdfs.rollCount = 0
+agent-1.sinks.sink_hdfs.hdfs.batchSize = 1000
+agent-1.sinks.sink_hdfs.hdfs.writeFormat = text
+agent-1.sinks.sink_hdfs.hdfs.fileType = DataStream
+#agent-1.sinks.sink_hdfs.hdfs.fileType = CompressedStream
+#agent-1.sinks.sink_hdfs.hdfs.codeC = lzop
+
+agent-1.channels = ch-1
+agent-1.sources = src-1
+agent-1.sinks = sink_hdfs</code></pre></td></tr></table>
+</div>
+</div>
+<p>关于 HDFS Sink配置说明，请参考 <a href="http://flume.apache.org/FlumeUserGuide.html#hdfs-sink">HDFS Sink</a></p>
+
+<p><strong>说明：</strong></p>
+
+<ol>
+<li>通过 interceptors 往 header 里添加 timestamp，这样做，可以在 hdfs.path 引用系统内部的时间变量或者主机的 hostname。</li>
+<li>通过设置 <code>hdfs.inUsePrefix</code>，例如设置为 <code>.</code>时，hdfs 会把该文件当做隐藏文件，以避免在 mr 过程中读到这些临时文件，引起一些错误</li>
+<li>如果使用 lzo 压缩，则需要手动创建 lzo 索引，可以通过修改 HdfsSink 的代码，通过代码创建索引</li>
+<li>FileChannel 的目录最好是和 spooldir 的数据目录处于不同磁盘。</li>
+</ol>
+
+<h2 id="示例4-spooldir-数据源-写入-hbase">示例4：spooldir 数据源，写入 HBase</h2>
+
+<p>关于 HBase Sink 配置说明，请参考 <a href="http://flume.apache.org/FlumeUserGuide.html#hbasesink">HBase Sink</a></p>
+
+<h1 id="5-开发相关">5. 开发相关</h1>
+
+<h2 id="5-1-编译源代码">5.1 编译源代码</h2>
+
+<p>从 github 下载源代码并编译：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git clone git@github.com:cloudera/flume-ng.git -b cdh4-1.4.0_4.7.0
+$ <span class="nb">cd</span> flume-ng
+$ mvn install -DskipTests -Phadoop-2</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果提示找不到 hadoop-test 的 jar 包，则修改 pom.xml 中的版本，如改为 <code>2.0.0-mr1-cdh4.7.0</code>，具体版本视你使用的分支版本而定，我这里是 cdh4.7.0。</p>
+
+<p>如果提示找不到 uanodeset-parser 的 jarb，则在 pom.xml 中添加下面仓库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;repository&gt;</span>
+  <span class="nt">&lt;id&gt;</span>tempo-db<span class="nt">&lt;/id&gt;</span>
+  <span class="nt">&lt;url&gt;</span>http://maven.tempo-db.com/artifactory/list/twitter/
+  <span class="nt">&lt;/url&gt;</span>
+  <span class="nt">&lt;snapshots&gt;</span>
+    <span class="nt">&lt;enabled&gt;</span>false<span class="nt">&lt;/enabled&gt;</span>
+  <span class="nt">&lt;/snapshots&gt;</span>
+<span class="nt">&lt;/repository&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-最佳实践">6. 最佳实践</h1>
+
+<p>参考<a href="http://tech.meituan.com/mt-log-system-arch.html">基于Flume的美团日志收集系统(一)架构和设计</a>，列出一些最佳实践：</p>
+
+<ul>
+<li>模块命名规则：所有的 Source 以 src 开头，所有的 Channel 以 ch 开头，所有的 Sink 以 sink 开头；</li>
+<li>模块之间内部通信统一使用 Avro 接口；</li>
+<li>将日志采集系统系统分为三层：Agent 层，Collector 层和 Store 层，其中 Agent 层每个机器部署一个进程，负责对单机的日志收集工作；Collector 层部署在中心服务器上，负责接收Agent层发送的日志，并且将日志根据路由规则写到相应的 Store 层中；Store 层负责提供永久或者临时的日志存储服务，或者将日志流导向其它服务器。</li>
+<li>扩展 MemoryChannel 和 FileChannel ，提供 DualChannel 的实现，以提供高吞吐和大缓存</li>
+<li>监控 collector HdfsSink写数据到 hdfs 的速度、FileChannel 中拥堵的 events 数量，以及写 hdfs 状态（查看是否有 .tmp 文件生成）</li>
+</ul>
+
+<p>美团对 flume 的改进代码见 github：<a href="https://github.com/javachen/mt-flume">https://github.com/javachen/mt-flume</a>。</p>
+
+<h1 id="7-参考文章">7. 参考文章</h1>
+
+<ul>
+<li><a href="http://flume.apache.org/FlumeUserGuide.html">Flume User Guide</a></li>
+<li><a href="https://blogs.apache.org/flume/entry/flume_ng_architecture">Apache Flume - Architecture of Flume NG</a></li>
+<li><a href="http://shiyanjun.cn/archives/915.html">Flume(NG)架构设计要点及配置实践</a></li>
+<li><a href="http://tech.meituan.com/mt-log-system-arch.html">基于Flume的美团日志收集系统(一)架构和设计</a></li>
+<li><a href="http://tech.meituan.com/mt-log-system-optimization.html">基于Flume的美团日志收集系统(二)架构和设计</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-07-22
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/flume/">flume</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/07/25/collect-log-to-hive/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">采集日志到Hive</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/07/18/install-hdfs-ha-in-cdh/">
+            <span class="next-text nav-default">CDH中配置HDFS HA</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

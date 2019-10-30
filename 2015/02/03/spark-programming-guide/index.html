@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Spark编程指南笔记 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文是参考Spark官方编程指南（Spark 版本为1.2）整理出来的学习笔记，主要是用于加深对 Spark 的理解，并记录一些知识点。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/02/03/spark-programming-guide/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Spark编程指南笔记" />
+<meta property="og:description" content="本文是参考Spark官方编程指南（Spark 版本为1.2）整理出来的学习笔记，主要是用于加深对 Spark 的理解，并记录一些知识点。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/02/03/spark-programming-guide/" />
+<meta property="article:published_time" content="2015-02-03T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-02-03T08:00:00+08:00" />
+<meta itemprop="name" content="Spark编程指南笔记">
+<meta itemprop="description" content="本文是参考Spark官方编程指南（Spark 版本为1.2）整理出来的学习笔记，主要是用于加深对 Spark 的理解，并记录一些知识点。">
+
+
+<meta itemprop="datePublished" content="2015-02-03T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-02-03T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="8654">
+
+
+
+<meta itemprop="keywords" content="spark," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Spark编程指南笔记"/>
+<meta name="twitter:description" content="本文是参考Spark官方编程指南（Spark 版本为1.2）整理出来的学习笔记，主要是用于加深对 Spark 的理解，并记录一些知识点。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Spark编程指南笔记</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-02-03 </span>
+        <div class="post-category">
+            <a href="/categories/spark/"> spark </a>
+            </div>
+          <span class="more-meta"> 约 8654 字 </span>
+          <span class="more-meta"> 预计阅读 18 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-spark介绍">1. Spark介绍</a>
+<ul>
+<li><a href="#产生原因">产生原因</a></li>
+<li><a href="#设计目标">设计目标</a></li>
+</ul></li>
+<li><a href="#2-一些概念">2. 一些概念</a></li>
+<li><a href="#3-如何编程">3. 如何编程</a>
+<ul>
+<li><a href="#初始化-spark">初始化 Spark</a></li>
+<li><a href="#运行代码">运行代码</a></li>
+</ul></li>
+<li><a href="#4-弹性分布式数据集">4. 弹性分布式数据集</a>
+<ul>
+<li><a href="#4-1-并行集合">4.1 并行集合</a></li>
+<li><a href="#4-2-外部数据源">4.2 外部数据源</a></li>
+<li><a href="#4-3-rdd-操作">4.3 RDD 操作</a>
+<ul>
+<li><a href="#测试">测试</a></li>
+<li><a href="#常见的转换">常见的转换</a></li>
+<li><a href="#常见的动作">常见的动作</a></li>
+</ul></li>
+<li><a href="#4-4-rdd持久化">4.4 RDD持久化</a></li>
+</ul></li>
+<li><a href="#5-共享变量">5. 共享变量</a>
+<ul>
+<li><a href="#广播变量">广播变量</a></li>
+<li><a href="#累加器">累加器</a></li>
+</ul></li>
+<li><a href="#6-参考文章">6. 参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-02-03T08:00:00" title="February 3, 2015">February 3, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>本文是参考Spark官方编程指南（Spark 版本为1.2）整理出来的学习笔记，主要是用于加深对 Spark 的理解，并记录一些知识点。</p>
+
+<h1 id="1-spark介绍">1. Spark介绍</h1>
+
+<p>Spark是UC Berkeley AMP lab所开源的类Hadoop MapReduce 框架，都是基于map reduce算法所实现的分布式计算框架，拥有Hadoop MapReduce所具有的优点；不同于MapReduce的是Job中间输出和结果可以保存在内存中，而不需要读写HDFS，因此Spark能更好地适用于machine learning等需要迭代的map reduce算法。</p>
+
+<h2 id="产生原因">产生原因</h2>
+
+<p>1、 MapReduce具有很多局限性：</p>
+
+<ul>
+<li>仅支持Map和Reduce两种操作</li>
+<li>迭代效率低</li>
+<li>不适合交互式处理</li>
+<li>不擅长流式处理</li>
+</ul>
+
+<p>2、 现有的计算框架各自为战</p>
+
+<ul>
+<li>批处理计算：MapReduce、Hive</li>
+<li>流式计算：Storm</li>
+<li>交互式计算：Impala ​</li>
+</ul>
+
+<h2 id="设计目标">设计目标</h2>
+
+<p>在一个统一的框架下能够进行批处理、流式计算和交互式计算。</p>
+
+<h1 id="2-一些概念">2. 一些概念</h1>
+
+<p>每一个 Spark 的应用，都是由一个驱动程序构成，它运行用户的 main 函数，在一个集群上执行各种各样的并行操作。</p>
+
+<p>Spark 提出的最主要抽象概念是<code>弹性分布式数据集</code>，它是一个有容错机制（划分到集群的各个节点上）并可以被并行操作的元素集合。</p>
+
+<ul>
+<li>分布在集群中的对象集合</li>
+<li>存储在磁盘或者内存中</li>
+<li>通过并行“转换”操作构造</li>
+<li>失效后自动重构</li>
+</ul>
+
+<p>目前有两种类型的RDD：</p>
+
+<ul>
+<li><code>并行集合</code>：接收一个已经存在的 Scala 集合，然后进行各种并行计算。</li>
+<li><code>外部数据集</code>：外部存储系统，例如一个共享的文件系统，HDFS、HBase以及任何支持 Hadoop InputFormat 的数据源。</li>
+</ul>
+
+<p>这两种类型的 RDD 都可以通过相同的方式进行操作。用户可以让 Spark 保留一个 RDD 在内存中，使其能在并行操作中被有效的重复使用，并且，RDD 能自动从节点故障中恢复。</p>
+
+<p>Spark 的第二个抽象概念是<code>共享变量</code>，可以在并行操作中使用。在默认情况下，Spark 通过不同节点上的一系列任务来运行一个函数，它将每一个函数中用到的变量的拷贝传递到每一个任务中。有时候，一个变量需要在任务之间，或任务与驱动程序之间被共享。</p>
+
+<p>Spark 支持两种类型的共享变量：<code>广播变量</code>，可以在内存的所有的结点上缓存变量；<code>累加器</code>：只能用于做加法的变量，例如计数或求和。</p>
+
+<h1 id="3-如何编程">3. 如何编程</h1>
+
+<h2 id="初始化-spark">初始化 Spark</h2>
+
+<p>在一个Spark程序中要做的第一件事就是创建一个SparkContext对象来告诉Spark如何连接一个集群。为了创建SparkContext，你首先需要创建一个SparkConf对象，这个对象会包含你的应用的一些相关信息。这个通常是通过下面的构造器来实现的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="k">new</span> <span class="n">SparkContext</span><span class="p">(</span><span class="n">master</span><span class="p">,</span> <span class="n">appName</span><span class="p">,</span> <span class="p">[</span><span class="n">sparkHome</span><span class="p">],</span> <span class="p">[</span><span class="n">jars</span><span class="p">])</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>参数说明：</p>
+
+<ul>
+<li><code>master</code>：用于指定所连接的 Spark 或者 Mesos 集群的 URL。</li>
+<li><code>appName</code> ：应用的名称，将会在集群的 Web 监控 UI 中显示。</li>
+<li><code>sparkHome</code>：可选，你的集群机器上 Spark 的安装路径（所有机器上路径必须一致）。</li>
+<li><code>jars</code>：可选，在本地机器上的 JAR 文件列表，其中包括你应用的代码以及任何的依赖，Spark 将会把他们部署到所有的集群结点上。</li>
+</ul>
+
+<p>在 python 中初始化，示例代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">//</span><span class="n">conf</span> <span class="o">=</span> <span class="n">SparkContext</span><span class="p">(</span><span class="s2">&#34;local&#34;</span><span class="p">,</span> <span class="s2">&#34;Hello Spark&#34;</span><span class="p">)</span>
+<span class="n">conf</span> <span class="o">=</span> <span class="n">SparkConf</span><span class="p">()</span><span class="o">.</span><span class="n">setAppName</span><span class="p">(</span><span class="s2">&#34;Hello Spark&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">setMaster</span><span class="p">(</span><span class="s2">&#34;local&#34;</span><span class="p">)</span>
+<span class="n">sc</span> <span class="o">=</span> <span class="n">SparkContext</span><span class="p">(</span><span class="n">conf</span><span class="o">=</span><span class="n">conf</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>说明：如果部署到集群，在分布式模式下运行，最后两个参数是必须的，第一个参数可以是以下任一种形式：</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Master URL</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><code>loca</code></td>
+<td align="left">默认值，使用一个 Worker 线程本地化运行(完全不并行)</td>
+</tr>
+
+<tr>
+<td align="left"><code>local[N]</code></td>
+<td align="left">使用 N 个 Worker 线程本地化运行，N 为 <code>*</code> 时，表示使用系统中所有核</td>
+</tr>
+
+<tr>
+<td align="left"><code>local[N,M]</code></td>
+<td align="left">第一个代表的是用到的核个数；第二个参数代表的是容许该作业失败M次</td>
+</tr>
+
+<tr>
+<td align="left"><code>spark://HOST:PORT</code></td>
+<td align="left">连接到指定的 Spark 单机版集群 master 进程所在的主机和端口，端口默认是7077</td>
+</tr>
+
+<tr>
+<td align="left"><code>mesos://HOST:PORT</code></td>
+<td align="left">连接到指定的 Mesos 集群。host 参数是Moses master的hostname。端口默认是5050</td>
+</tr>
+</tbody>
+</table>
+
+<p>如果你在一个集群上运行 spark-shell，则 master 参数默认为 <code>local</code>。在实际使用中，当你在集群中运行你的程序，你一般不会把 master 参数写死在代码中，而是通过用 spark-submit 运行程序来获得这个参数。但是，在本地测试以及单元测试时，你仍需要自行传入 local 来运行Spark程序。</p>
+
+<h2 id="运行代码">运行代码</h2>
+
+<p>运行代码有几种方式，一是通过 spark-shell 来运行 scala 代码，一是编写 java 代码并打成包以 spark on yarn 方式运行，还有一种是通过 PySpark 来运行 python 代码。</p>
+
+<p>在  spark-shell 和 PySpark 命令行中，一个特殊的集成在解释器里的 SparkContext 变量已经建立好了，变量名叫做 sc，创建你自己的 SparkContext 不会起作用。</p>
+
+<h1 id="4-弹性分布式数据集">4. 弹性分布式数据集</h1>
+
+<h2 id="4-1-并行集合">4.1 并行集合</h2>
+
+<p>并行集合是通过调用 SparkContext 的 <code>parallelize</code> 方法，在一个已经存在的 Scala 集合上创建一个 Seq 对象。</p>
+
+<p>parallelize 方法还可以接受一个参数 <code>slices</code>，表示数据集切分的份数。Spark 将会在集群上为每一份数据起一个任务。典型地，你可以在集群的每个 CPU 上分布 2-4个 slices。一般来说，Spark 会尝试根据集群的状况，来自动设定 slices 的数目，当然，你也可以手动设置。</p>
+
+<p>Scala 示例程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">scala</span><span class="o">&gt;</span> <span class="nf">val</span> <span class="n">data</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">2</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">4</span><span class="p">,</span> <span class="n">5</span><span class="p">)</span>
+<span class="nl">data:</span> <span class="n">Array</span><span class="p">[</span><span class="n">Int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">2</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">4</span><span class="p">,</span> <span class="n">5</span><span class="p">)</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="nf">var</span> <span class="n">distData</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">parallelize</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nl">distData:</span> <span class="n">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">rdd</span><span class="p">.</span><span class="na">RDD</span><span class="p">[</span><span class="n">Int</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParallelCollectionRDD</span><span class="p">[</span><span class="n">0</span><span class="p">]</span> <span class="nf">at</span> <span class="n">parallelize</span> <span class="nf">at</span> <span class="o">&lt;</span><span class="n">console</span><span class="o">&gt;:</span><span class="n">14</span>
+
+<span class="nf">scala</span><span class="o">&gt;</span> <span class="n">distData</span><span class="p">.</span><span class="na">reduce</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+<span class="nl">res4:</span> <span class="n">Int</span> <span class="o">=</span> <span class="n">15</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Java 示例程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">List</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">data</span> <span class="o">=</span> <span class="n">Arrays</span><span class="p">.</span><span class="na">asList</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">2</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">4</span><span class="p">,</span> <span class="n">5</span><span class="p">);</span>
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">distData</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">parallelize</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<span class="n">Integer</span> <span class="nf">sum</span><span class="o">=</span><span class="n">distData</span><span class="p">.</span><span class="na">reduce</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Python 示例程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="n">distData</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">distData</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="4-2-外部数据源">4.2 外部数据源</h2>
+
+<p>Spark可以从存储在 HDFS，或者 Hadoop 支持的其它文件系统（包括本地文件，Amazon S3， Hypertable， HBase 等等）上的文件创建分布式数据集。Spark 支持 <code>TextFile</code>、<code>SequenceFiles</code> 以及其他任何 <code>Hadoop InputFormat</code> 格式的输入。</p>
+
+<p>TextFile 的 RDD 可以通过下面方式创建，该方法接受一个文件的 URI 地址，该地址可以是本地路径，或者 <code>hdfs://</code>、<code>s3n://</code> 等 URL 地址。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">// scala 语法
+</span><span class="c1"></span><span class="n">val</span> <span class="nf">distFile</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">)</span>
+
+<span class="c1">// java 语法
+</span><span class="c1"></span><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">distFile</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">);</span>
+
+<span class="c1">// python 语法
+</span><span class="c1"></span><span class="n">distFile</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>一些说明：</p>
+
+<ul>
+<li>如果使用了本地文件路径时，要保证在worker节点上这个文件也能够通过这个路径访问。这点可以通过将这个文件拷贝到所有worker上或者使用网络挂载的共享文件系统来解决。</li>
+
+<li><p>包括textFile在内的所有基于文件的Spark读入方法，都支持将文件夹、压缩文件、包含通配符的路径作为参数。比如，以下代码都是合法的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;/my/directory&#34;</span><span class="o">)</span>
+<span class="n">textFile</span><span class="o">(</span><span class="s">&#34;/my/directory/*.txt&#34;</span><span class="o">)</span>
+<span class="n">textFile</span><span class="o">(</span><span class="s">&#34;/my/directory/*.gz&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div></li>
+
+<li><p>textFile方法也可以传入第二个可选参数来控制文件的分片数量。默认情况下，Spark会为文件的每一个块（在HDFS中块的大小默认是64MB）创建一个分片。但是你也可以通过传入一个更大的值来要求Spark建立更多的分片。注意，分片的数量绝不能小于文件块的数量。</p></li>
+</ul>
+
+<p>除了文本文件之外，Spark 还支持其他格式的输入：</p>
+
+<ul>
+<li><code>SparkContext.wholeTextFiles</code> 方法可以读取一个包含多个小文件的目录，并以 filename，content 键值对的方式返回结果。</li>
+<li>对于 SequenceFiles，可以使用 SparkContext 的 <code>sequenceFile[K, V]</code>` 方法创建。像 IntWritable 和 Text 一样，它们必须是 Hadoop 的 Writable 接口的子类。另外，对于几种通用 Writable 类型，Spark 允许你指定原生类型来替代。例如：sequencFile[Int, String] 将会自动读取 IntWritable 和 Texts。</li>
+<li>对于其他类型的 Hadoop 输入格式，你可以使用 <code>SparkContext.hadoopRDD</code> 方法，它可以接收任意类型的 JobConf 和输入格式类，键类型和值类型。按照像 Hadoop 作业一样的方法设置输入源就可以了。</li>
+<li><code>RDD.saveAsObjectFile</code> 和 <code>SparkContext.objectFile</code> 提供了以 Java 序列化的简单方式来保存 RDD。虽然这种方式没有 Avro 高效，但也是一种简单的方式来保存任意的 RDD。</li>
+</ul>
+
+<h2 id="4-3-rdd-操作">4.3 RDD 操作</h2>
+
+<p>RDD支持两类操作：</p>
+
+<ul>
+<li>转化操作，用于从已有的数据集转化产生新的数据集；</li>
+<li>启动操作，用于在计算结束后向驱动程序返回结果。</li>
+</ul>
+
+<p>举个例子，map是一个转化操作，可以将数据集中每一个元素传给一个函数，同时将计算结果作为一个新的RDD返回。另一方面，reduce操作是一个启动操作，能够使用某些函数来聚集计算RDD中所有的元素，并且向驱动程序返回最终结果（同时还有一个并行的reduceByKey操作可以返回一个分布数据集）。</p>
+
+<p>在Spark所有的转化操作都是惰性求值的，就是说它们并不会立刻真的计算出结果。相反，它们仅仅是记录下了转换操作的操作对象（比如：一个文件）。只有当一个启动操作被执行，要向驱动程序返回结果时，转化操作才会真的开始计算。这样的设计使得Spark运行更加高效——比如，我们会发觉由map操作产生的数据集将会在reduce操作中用到，之后仅仅是返回了reduce的最终的结果而不是map产生的庞大数据集。</p>
+
+<p>在默认情况下，每一个由转化操作得到的RDD都会在每次执行启动操作时重新计算生成。但是，你也可以通过调用persist(或cache)方法来将RDD持久化到内存中，这样Spark就可以在下次使用这个数据集时快速获得。Spark同样提供了对将RDD持久化到硬盘上或在多个节点间复制的支持。</p>
+
+<p>Scala 示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">lines</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;data.txt&#34;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">lineLengths</span> <span class="k">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">s</span> <span class="k">=&gt;</span> <span class="n">s</span><span class="o">.</span><span class="n">length</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">totalLength</span> <span class="k">=</span> <span class="n">lineLengths</span><span class="o">.</span><span class="n">reduce</span><span class="o">((</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Java 示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">);</span>
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">lineLengths</span> <span class="o">=</span> <span class="n">lines</span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="p">.</span><span class="na">length</span><span class="p">());</span>
+<span class="kt">int</span> <span class="nf">totalLength</span> <span class="o">=</span> <span class="n">lineLengths</span><span class="p">.</span><span class="na">reduce</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Python 示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="s2">&#34;data.txt&#34;</span><span class="p">)</span>
+<span class="n">lineLengths</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="n">totalLength</span> <span class="o">=</span> <span class="n">lineLengths</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>第一行定义了一个由外部文件产生的基本RDD。这个数据集不是从内存中载入的也不是由其他操作产生的；lines仅仅是一个指向文件的指针。第二行将lineLengths定义为map操作的结果。再强调一次，由于惰性求值的缘故，lineLengths并不会被立即计算得到。最后，我们运行了reduce操作，这是一个启动操作。从这个操作开始，Spark将计算过程划分成许多任务并在多机上运行，每台机器运行自己部分的map操作和reduce操作，最终将自己部分的运算结果返回给驱动程序。</p>
+
+<p>如果我们希望以后重复使用lineLengths，只需在reduce前加入下面这行代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">lineLengths</span><span class="o">.</span><span class="n">persist</span><span class="o">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这条代码将使得 lineLengths 在第一次计算生成之后保存在内存中。</p>
+
+<p>除了使用 lambda 表达式，也可以通过函数来运行转换或者动作，使用函数需要注意局部变量的作用域问题。</p>
+
+<p>例如下面的 Python 代码中的 field 变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">MyClass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span> <span class="o">=</span> <span class="s2">&#34;Hello&#34;</span>
+
+    <span class="k">def</span> <span class="nf">doStuff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdd</span><span class="p">):</span>
+        <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span>
+        <span class="k">return</span> <span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">field</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>    </code></pre></td></tr></table>
+</div>
+</div>
+<p>如果使用 Java 语言，则需要用到匿名内部类：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nf">GetLength</span> <span class="kd">implements</span> <span class="nf">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="kd">public</span> <span class="nf">Integer</span> <span class="n">call</span><span class="p">(</span><span class="n">String</span> <span class="nf">s</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">s</span><span class="p">.</span><span class="na">length</span><span class="p">();</span> <span class="p">}</span>
+<span class="p">}</span>
+<span class="kd">class</span> <span class="nf">Sum</span> <span class="kd">implements</span> <span class="nf">Function2</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="kd">public</span> <span class="nf">Integer</span> <span class="n">call</span><span class="p">(</span><span class="n">Integer</span> <span class="nf">a</span><span class="p">,</span> <span class="n">Integer</span> <span class="nf">b</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">);</span>
+<span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">lineLengths</span> <span class="o">=</span> <span class="n">lines</span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">GetLength</span><span class="p">());</span>
+<span class="kt">int</span> <span class="nf">totalLength</span> <span class="o">=</span> <span class="n">lineLengths</span><span class="p">.</span><span class="na">reduce</span><span class="p">(</span><span class="k">new</span> <span class="n">Sum</span><span class="p">());</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Spark 也支持键值对的操作，这在分组和聚合操作时候用得到。定义一个键值对对象时，需要自定义该对象的 equals() 和 hashCode() 方法。</p>
+
+<p>在 Scala 中有一个 <a href="http://www.scala-lang.org/api/2.10.4/index.html#scala.Tuple2">Tuple2</a> 对象表示键值对，这是一个内置的对象，通过 <code>(a,b)</code> 就可以创建一个 Tuple2 对象。在你的程序中，通过导入 <code>org.apache.spark.SparkContext._</code> 就可以对 Tuple2 进行操作。对键值对的操作方法，可以查看 <a href="http:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.rdd.PairRDDFunctions">PairRDDFunctions</a></p>
+
+<p>下面是一个用 scala 统计单词出现次数的例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">lines</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;data.txt&#34;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">pairs</span> <span class="k">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">s</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="mi">1</span><span class="o">))</span>
+<span class="k">val</span> <span class="n">counts</span> <span class="k">=</span> <span class="n">pairs</span><span class="o">.</span><span class="n">reduceByKey</span><span class="o">((</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，你还可以执行 <code>counts.sortByKey()</code>、<code>counts.collect()</code> 等操作。</p>
+
+<p>如果用 Java 统计，则代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;data.txt&#34;</span><span class="p">);</span>
+<span class="n">JavaPairRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">pairs</span> <span class="o">=</span> <span class="n">lines</span><span class="p">.</span><span class="na">mapToPair</span><span class="p">(</span><span class="n">s</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Tuple2</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">1</span><span class="p">));</span>
+<span class="n">JavaPairRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">counts</span> <span class="o">=</span> <span class="n">pairs</span><span class="p">.</span><span class="na">reduceByKey</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>用 Python 统计，代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="s2">&#34;data.txt&#34;</span><span class="p">)</span>
+<span class="n">pairs</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">counts</span> <span class="o">=</span> <span class="n">pairs</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="测试">测试</h3>
+
+<p>现在来结合上面的例子实现一个完整的例子。下面，我们来 <a href="http://segmentfault.com/blog/whuwb/1190000000723037">分析 Nginx 日志中状态码出现次数</a>，并且将结果按照状态码从小到大排序。</p>
+
+<p>先将测试数据上传到 hdfs:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop fs -put access.log</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，编写一个 python 文件，保存为 SimpleApp.py：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyspark</span> <span class="kn">import</span> <span class="n">SparkContext</span>
+
+<span class="n">logFile</span> <span class="o">=</span> <span class="s2">&#34;access.log&#34;</span>
+
+<span class="n">sc</span> <span class="o">=</span> <span class="n">SparkContext</span><span class="p">(</span><span class="s2">&#34;local&#34;</span><span class="p">,</span> <span class="s2">&#34;Simple App&#34;</span><span class="p">)</span>
+
+<span class="n">rdd</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="n">logFile</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+<span class="n">counts</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">8</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">word</span><span class="p">:</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">sortByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span> 
+
+<span class="c1"># This is just a demo on how to bring all the sorted data back to a single node.  </span>
+<span class="c1"># In reality, we wouldn&#39;t want to collect all the data to the driver node.</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>  
+<span class="k">for</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>  
+    <span class="k">print</span> <span class="s2">&#34;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%i</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>  
+
+<span class="n">counts</span><span class="o">.</span><span class="n">saveAsTextFile</span><span class="p">(</span><span class="s2">&#34;/data/result&#34;</span><span class="p">)</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，运行下面代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ spark-submit  --master local<span class="o">[</span><span class="m">4</span><span class="o">]</span>   SimpleApp.py</code></pre></td></tr></table>
+</div>
+</div>
+<p>运行成功之后，你会在终端看到以下输出：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nl">200:</span> <span class="n">6827</span>
+<span class="nf">206</span><span class="o">:</span> <span class="n">120</span>
+<span class="nf">301</span><span class="o">:</span> <span class="n">7</span>
+<span class="nf">304</span><span class="o">:</span> <span class="n">10</span>
+<span class="nf">403</span><span class="o">:</span> <span class="n">38</span>
+<span class="nf">404</span><span class="o">:</span> <span class="n">125</span>
+<span class="nf">416</span><span class="o">:</span> <span class="n">1</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>并且，在hdfs 上 /user_results/part-00000 内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;200&#39;</span><span class="p">,</span> <span class="mi">6827</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;206&#39;</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;301&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;304&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;403&#39;</span><span class="p">,</span> <span class="mi">38</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;404&#39;</span><span class="p">,</span> <span class="mi">125</span><span class="p">)</span>
+<span class="p">(</span><span class="sa">u</span><span class="s1">&#39;416&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>其实，这个例子和官方提供的例子很相像，具体请看 <a href="https://github.com/apache/blob/master/examples/src/main/python/wordcount.py">wordcount.py</a>。</p>
+
+<p>如果用 scala 来实现，代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">rdd</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;access.log&#34;</span><span class="o">).</span><span class="n">cache</span><span class="o">()</span>
+<span class="n">rdd</span><span class="o">.</span><span class="n">flatMap</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="sc">&#39; &#39;</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span> <span class="o">(</span><span class="k">_</span><span class="o">,</span><span class="mi">1</span><span class="o">)).</span><span class="n">reduceByKey</span><span class="o">(</span><span class="k">_</span><span class="o">+</span><span class="k">_</span><span class="o">).</span><span class="n">sortByKey</span><span class="o">(</span><span class="kc">true</span><span class="o">).</span><span class="n">saveAsTextFile</span><span class="o">(</span><span class="s">&#34;/data/result&#34;</span><span class="o">)</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">stop</span><span class="o">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果想要对结果按照次数进行排序，则代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">rdd</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;access.log&#34;</span><span class="o">).</span><span class="n">cache</span><span class="o">()</span>
+<span class="n">rdd</span><span class="o">.</span><span class="n">flatMap</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="sc">&#39; &#39;</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span> <span class="o">(</span><span class="k">_</span><span class="o">,</span><span class="mi">1</span><span class="o">)).</span><span class="n">reduceByKey</span><span class="o">(</span><span class="k">_</span><span class="o">+</span><span class="k">_</span><span class="o">).</span><span class="n">map</span><span class="o">(</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">x</span><span class="o">.</span><span class="n">_2</span><span class="o">,</span><span class="n">x</span><span class="o">.</span><span class="n">_1</span><span class="o">)).</span><span class="n">sortByKey</span><span class="o">(</span><span class="kc">false</span><span class="o">).</span><span class="n">map</span><span class="o">(</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">x</span><span class="o">.</span><span class="n">_2</span><span class="o">,</span><span class="n">x</span><span class="o">.</span><span class="n">_1</span><span class="o">)</span> <span class="o">).</span><span class="n">saveAsTextFile</span><span class="o">(</span><span class="s">&#34;/data/resultSorted&#34;</span><span class="o">)</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">stop</span><span class="o">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="常见的转换">常见的转换</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">转换</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><code>map(func)</code></td>
+<td align="left">每一个输入元素经过func函数转换后输出一个元素</td>
+</tr>
+
+<tr>
+<td align="left"><code>filter(func)</code></td>
+<td align="left">返回经过 func 函数计算后返回值为 true 的输入元素组成的一个新数据集</td>
+</tr>
+
+<tr>
+<td align="left"><code>flatMap(func)</code></td>
+<td align="left">类似于 map，但是每一个输入元素可以被映射为0或多个输出元素，因此 func 应该返回一个序列</td>
+</tr>
+
+<tr>
+<td align="left"><code>mapPartitions(func)</code></td>
+<td align="left">类似于 map，但独立地在 RDD 的每一个分块上运行，因此在类型为 T 的 RDD 上运行时，func 的函数类型必须是 <code>Iterator[T] ⇒ Iterator[U]</code></td>
+</tr>
+
+<tr>
+<td align="left"><code>mapPartitionsWithSplit(func)</code></td>
+<td align="left">类似于 mapPartitions, 但 func 带有一个整数参数表示分块的索引值。因此在类型为 T的RDD上运行时，func 的函数类型必须是 <code>(Int, Iterator[T]) ⇒ Iterator[U]</code></td>
+</tr>
+
+<tr>
+<td align="left"><code>sample(withReplacement,fraction, seed)</code></td>
+<td align="left">根据 fraction 指定的比例，对数据进行采样，可以选择是否用随机数进行替换，seed 用于指定随机数生成器种子</td>
+</tr>
+
+<tr>
+<td align="left"><code>union(otherDataset)</code></td>
+<td align="left">返回一个新的数据集，新数据集是由源数据集和参数数据集联合而成</td>
+</tr>
+
+<tr>
+<td align="left"><code>distinct([numTasks]))</code></td>
+<td align="left">返回一个包含源数据集中所有不重复元素的新数据集</td>
+</tr>
+
+<tr>
+<td align="left"><code>groupByKey([numTasks])</code></td>
+<td align="left">在一个键值对的数据集上调用，返回一个<code>(K，Seq[V])</code>对的数据集 。注意：默认情况下，只有8个并行任务来做操作，但是你可以传入一个可选的 numTasks 参数来改变它</td>
+</tr>
+
+<tr>
+<td align="left"><code>reduceByKey(func, [numTasks])</code></td>
+<td align="left">在一个键值对的数据集上调用时，返回一个键值对的数据集，使用指定的 reduce 函数，将相同 key 的值聚合到一起。类似 groupByKey，reduce 任务个数是可以通过第二个可选参数来配置的</td>
+</tr>
+
+<tr>
+<td align="left"><code>sortByKey([ascending], [numTasks])</code></td>
+<td align="left">在一个键值对的数据集上调用，K 必须实现 <code>Ordered</code> 接口，返回一个按照 Key 进行排序的键值对数据集。升序或降序由 ascending 布尔参数决定</td>
+</tr>
+
+<tr>
+<td align="left"><code>join(otherDataset, [numTasks])</code></td>
+<td align="left">在类型为（K,V)和（K,W) 类型的数据集上调用时，返回一个相同key对应的所有元素对在一起的 <code>(K, (V, W))</code> 数据集</td>
+</tr>
+
+<tr>
+<td align="left"><code>cogroup(otherDataset, [numTasks])</code></td>
+<td align="left">在类型为（K,V)和（K,W) 的数据集上调用，返回一个 <code>(K, Seq[V], Seq[W])</code> 元组的数据集。这个操作也可以称之为 groupwith</td>
+</tr>
+
+<tr>
+<td align="left"><code>cartesian(otherDataset)</code></td>
+<td align="left">笛卡尔积，在类型为 T 和 U 类型的数据集上调用时，返回一个 (T, U) 对数据集(两两的元素对)</td>
+</tr>
+
+<tr>
+<td align="left"><code>pipe(command, [envVars])</code></td>
+<td align="left">对 RDD 进行管道操作</td>
+</tr>
+
+<tr>
+<td align="left"><code>coalesce(numPartitions)</code></td>
+<td align="left">减少 RDD 的分区数到指定值。在过滤大量数据之后，可以执行此操作</td>
+</tr>
+
+<tr>
+<td align="left"><code>repartition(numPartitions)</code></td>
+<td align="left">重新给 RDD 分区</td>
+</tr>
+
+<tr>
+<td align="left"><code>repartitionAndSortWithinPartitions(partitioner)</code></td>
+<td align="left">重新给 RDD 分区，并且每个分区内以记录的 key 排序</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="常见的动作">常见的动作</h3>
+
+<p>常见的动作列表：</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">动作</th>
+<th align="left">含义</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><code>reduce(func)</code></td>
+<td align="left">通过函数 func 聚集数据集中的所有元素。这个功能必须可交换且可关联的，从而可以正确的被并行执行。</td>
+</tr>
+
+<tr>
+<td align="left"><code>collect()</code></td>
+<td align="left">在驱动程序中，以数组的形式，返回数据集的所有元素。这通常会在使用 filter 或者其它操作并返回一个足够小的数据子集后再使用会比较有用。</td>
+</tr>
+
+<tr>
+<td align="left"><code>count()</code></td>
+<td align="left">返回数据集的元素的个数。</td>
+</tr>
+
+<tr>
+<td align="left"><code>first()</code></td>
+<td align="left">返回数据集的第一个元素，类似于 <code>take(1)</code></td>
+</tr>
+
+<tr>
+<td align="left"><code>take(n)</code></td>
+<td align="left">返回一个由数据集的前 n 个元素组成的数组。注意，这个操作目前并非并行执行，而是由驱动程序计算所有的元素</td>
+</tr>
+
+<tr>
+<td align="left"><code>takeSample(withReplacement,num, seed)</code></td>
+<td align="left">返回一个数组，在数据集中随机采样 num 个元素组成，可以选择是否用随机数替换不足的部分，seed 用于指定的随机数生成器种子</td>
+</tr>
+
+<tr>
+<td align="left"><code>takeOrdered(n, [ordering])</code></td>
+<td align="left">返回自然顺序或者自定义顺序的前 n 个元素</td>
+</tr>
+
+<tr>
+<td align="left"><code>saveAsTextFile(path)</code></td>
+<td align="left">将数据集的元素，以 textfile 的形式，保存到本地文件系统，HDFS或者任何其它 hadoop 支持的文件系统。对于每个元素，Spark 将会调用 <code>toString</code> 方法，将它转换为文件中的文本行</td>
+</tr>
+
+<tr>
+<td align="left"><code>saveAsSequenceFile(path)</code> (Java and Scala)</td>
+<td align="left">将数据集的元素，以 Hadoop sequencefile 的格式保存到指定的目录下</td>
+</tr>
+
+<tr>
+<td align="left"><code>saveAsObjectFile(path)</code> (Java and Scala)</td>
+<td align="left">将数据集的元素，以 Java 序列化的方式保存到指定的目录下</td>
+</tr>
+
+<tr>
+<td align="left"><code>countByKey()</code></td>
+<td align="left">对(K,V)类型的 RDD 有效，返回一个 (K，Int) 对的 Map，表示每一个key对应的元素个数</td>
+</tr>
+
+<tr>
+<td align="left"><code>foreach(func)</code></td>
+<td align="left">在数据集的每一个元素上，运行函数 func 进行更新。这通常用于边缘效果，例如更新一个累加器，或者和外部存储系统进行交互，例如 HBase</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="4-4-rdd持久化">4.4 RDD持久化</h2>
+
+<p>Spark 的一个重要功能就是在将数据集持久化（或缓存）到内存中以便在多个操作中重复使用。当我们持久化一个 RDD 是，每一个节点将这个RDD的每一个分片计算并保存到内存中以便在下次对这个数据集（或者这个数据集衍生的数据集）的计算中可以复用。这使得接下来的计算过程速度能够加快（经常能加快超过十倍的速度）。缓存是加快迭代算法和快速交互过程速度的关键工具。</p>
+
+<p>你可以通过调用<code>persist</code>或<code>cache</code>方法来标记一个想要持久化的 RDD。在第一次被计算产生之后，它就会始终停留在节点的内存中。Spark 的缓存是具有容错性的——如果 RDD 的任意一个分片丢失了，Spark 就会依照这个 RDD 产生的转化过程自动重算一遍。</p>
+
+<p>另外，每一个持久化的 RDD 都有一个可变的存储级别，这个级别使得用户可以改变 RDD 持久化的储存位置。比如，你可以将数据集持久化到硬盘上，也可以将它以序列化的 Java 对象形式（节省空间）持久化到内存中，还可以将这个数据集在节点之间复制，或者使用 Tachyon 将它储存到堆外。这些存储级别都是通过向 <code>persist()</code> 传递一个 StorageLevel 对象（Scala, Java, Python）来设置的。</p>
+
+<blockquote>
+<p>注意：在Python中，储存的对象永远是通过 Pickle 库序列化过的，所以设不设置序列化级别不会产生影响。</p>
+</blockquote>
+
+<p>Spark 还会在 shuffle 操作（比如 reduceByKey）中自动储存中间数据，即使用户没有调用 persist。这是为了防止在 shuffle 过程中某个节点出错而导致的全盘重算。不过如果用户打算复用某些结果 RDD，我们仍然建议用户对结果 RDD 手动调用 persist，而不是依赖自动持久化机制。</p>
+
+<p>使用以下两种方法可以标记要缓存的 RDD：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">lineLengths</span><span class="o">.</span><span class="n">persist</span><span class="o">()</span>  
+<span class="n">lineLengths</span><span class="o">.</span><span class="n">cache</span><span class="o">()</span> </code></pre></td></tr></table>
+</div>
+</div>
+<p>取消缓存则用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">lineLengths</span><span class="o">.</span><span class="n">unpersist</span><span class="o">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>每一个 RDD 都可以用不同的保存级别进行保存，通过将一个 <code>org.apache.spark.storage.StorageLevel</code> 对象传递给 <code>persist(self, storageLevel)</code> 可以控制 RDD 持久化到磁盘、内存或者是跨节点复制等等。<code>cache()</code> 方法是使用默认存储级别的快捷方法，也就是 <code>StorageLevel.MEMORY_ONLY</code>。 完整的可选存储级别如下：</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">存储级别</th>
+<th align="left">意义</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><code>MEMORY_ONLY</code></td>
+<td align="left">默认的级别， 将 RDD 作为反序列化的的对象存储在 JVM 中。如果不能被内存装下，一些分区将不会被缓存，并且在需要的时候被重新计算</td>
+</tr>
+
+<tr>
+<td align="left"><code>MEMORY_AND_DISK</code></td>
+<td align="left">将 RDD 作为反序列化的的对象存储在 JVM 中。如果不能被与内存装下，超出的分区将被保存在硬盘上，并且在需要时被读取</td>
+</tr>
+
+<tr>
+<td align="left"><code>MEMORY_ONLY_SER</code></td>
+<td align="left">将 RDD 作为序列化的的对象进行存储（每一分区占用一个字节数组）。通常来说，这比将对象反序列化的空间利用率更高，尤其当使用fast serializer,但在读取时会比较占用CPU</td>
+</tr>
+
+<tr>
+<td align="left"><code>MEMORY_AND_DISK_SER</code></td>
+<td align="left">与 <code>MEMORY_ONLY_SER</code> 相似，但是把超出内存的分区将存储在硬盘上而不是在每次需要的时候重新计算</td>
+</tr>
+
+<tr>
+<td align="left"><code>DISK_ONLY</code></td>
+<td align="left">只将 RDD 分区存储在硬盘上</td>
+</tr>
+
+<tr>
+<td align="left"><code>MEMORY_ONLY_2</code>、<code>MEMORY_AND_DISK_2</code>等</td>
+<td align="left">与上述的存储级别一样，但是将每一个分区都复制到两个集群结点上</td>
+</tr>
+
+<tr>
+<td align="left"><code>OFF_HEAP</code></td>
+<td align="left">开发中</td>
+</tr>
+</tbody>
+</table>
+
+<p>Spark 的不同存储级别，旨在满足内存使用和 CPU 效率权衡上的不同需求。我们建议通过以下的步骤来进行选择：</p>
+
+<ul>
+<li>如果你的 RDD 可以很好的与默认的存储级别契合，就不需要做任何修改了。这已经是 CPU 使用效率最高的选项，它使得 RDD的操作尽可能的快。</li>
+<li>如果不行，试着使用 <code>MEMORY_ONLY_SER</code> 并且选择一个快速序列化的库使得对象在有比较高的空间使用率的情况下，依然可以较快被访问。</li>
+<li>尽可能不要存储到硬盘上，除非计算数据集的函数，计算量特别大，或者它们过滤了大量的数据。否则，重新计算一个分区的速度，和与从硬盘中读取基本差不多快。</li>
+<li>如果你想有快速故障恢复能力，使用复制存储级别。例如：用 Spark 来响应web应用的请求。所有的存储级别都有通过重新计算丢失数据恢复错误的容错机制，但是复制存储级别可以让你在 RDD 上持续的运行任务，而不需要等待丢失的分区被重新计算。</li>
+<li>如果你想要定义你自己的存储级别，比如复制因子为3而不是2，可以使用 <code>StorageLevel</code> 单例对象的 <code>apply()</code>方法。</li>
+</ul>
+
+<h1 id="5-共享变量">5. 共享变量</h1>
+
+<p>通常情况下，当一个函数传递给一个在远程集群节点上运行的Spark操作（比如map和reduce）时，Spark会对涉及到的变量的所有副本执行这个函数。这些变量会被复制到每个机器上，而且这个过程不会被反馈给驱动程序。通常情况下，在任务之间读写共享变量是很低效的。但是，Spark仍然提供了有限的两种共享变量类型用于常见的使用场景：<code>广播变量</code>和<code>累加器</code>。</p>
+
+<h2 id="广播变量">广播变量</h2>
+
+<p>广播变量允许程序员在每台机器上保持一个只读变量的缓存而不是将一个变量的拷贝传递给各个任务。它们可以被使用，比如，给每一个节点传递一份大输入数据集的拷贝是很低效的。Spark 试图使用高效的广播算法来分布广播变量，以此来降低通信花销。
+可以通过 <code>SparkContext.broadcast(v)</code> 来从变量 v 创建一个广播变量。这个广播变量是 v 的一个包装，同时它的值可以功过调用 value 方法来获得。以下的代码展示了这一点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">broadcastVar</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="o">&lt;</span><span class="n">pyspark</span><span class="o">.</span><span class="n">broadcast</span><span class="o">.</span><span class="n">Broadcast</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x102789f10</span><span class="o">&gt;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">broadcastVar</span><span class="o">.</span><span class="n">value</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在广播变量被创建之后，在所有函数中都应当使用它来代替原来的变量v，这样就可以保证v在节点之间只被传递一次。另外，v变量在被广播之后不应该再被修改了，这样可以确保每一个节点上储存的广播变量的一致性（如果这个变量后来又被传输给一个新的节点）。</p>
+
+<h2 id="累加器">累加器</h2>
+
+<p>累加器是在一个相关过程中只能被”累加”的变量，对这个变量的操作可以有效地被并行化。它们可以被用于实现计数器（就像在MapReduce过程中）或求和运算。Spark原生支持对数字类型的累加器，程序员也可以为其他新的类型添加支持。累加器被以一个名字创建之后，会在Spark的UI中显示出来。这有助于了解计算的累进过程（注意：目前Python中不支持这个特性）。</p>
+
+<p>可以通过<code>SparkContext.accumulator(v)</code>来从变量v创建一个累加器。在集群中运行的任务随后可以使用add方法或<code>+=</code>操作符（在Scala和Python中）来向这个累加器中累加值。但是，他们不能读取累加器中的值。只有驱动程序可以读取累加器中的值，通过累加器的value方法。</p>
+
+<p>以下的代码展示了向一个累加器中累加数组元素的过程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">accum</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">accumulator</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">Accumulator</span><span class="o">&lt;</span><span class="nb">id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="o">&gt;</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span><span class="o">.</span><span class="n">foreach</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">accum</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+<span class="o">...</span>
+<span class="mi">10</span><span class="o">/</span><span class="mi">09</span><span class="o">/</span><span class="mi">29</span> <span class="mi">18</span><span class="p">:</span><span class="mi">41</span><span class="p">:</span><span class="mi">08</span> <span class="n">INFO</span> <span class="n">SparkContext</span><span class="p">:</span> <span class="n">Tasks</span> <span class="n">finished</span> <span class="ow">in</span> <span class="mf">0.317106</span> <span class="n">s</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">accum</span><span class="o">.</span><span class="n">value</span>
+<span class="mi">10</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这段代码利用了累加器对 int 类型的内建支持，程序员可以通过继承 <code>AccumulatorParam</code> 类来创建自己想要的类型支持。AccumulatorParam 的接口提供了两个方法：<code>zero</code> 用于为你的数据类型提供零值；<code>addInPlace</code> 用于计算两个值得和。比如，假设我们有一个 <code>Vector</code>类表示数学中的向量，我们可以这样写：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">VectorAccumulatorParam</span><span class="p">(</span><span class="n">AccumulatorParam</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">zero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initialValue</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Vector</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">initialValue</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">addInPlace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">):</span>
+        <span class="n">v1</span> <span class="o">+=</span> <span class="n">v2</span>
+        <span class="k">return</span> <span class="n">v1</span>
+
+<span class="c1"># Then, create an Accumulator of this type:</span>
+<span class="n">vecAccum</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">accumulator</span><span class="p">(</span><span class="n">Vector</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">VectorAccumulatorParam</span><span class="p">())</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>累加器的更新操作只会被运行一次，Spark 提供了保证，每个任务中对累加器的更新操作都只会被运行一次。比如，重启一个任务不会再次更新累加器。在转化过程中，用户应该留意每个任务的更新操作在任务或作业重新运算时是否被执行了超过一次。</p>
+
+<p>累加器不会该别 Spark 的惰性求值模型。如果累加器在对RDD的操作中被更新了，它们的值只会在启动操作中作为 RDD 计算过程中的一部分被更新。所以，在一个懒惰的转化操作中调用累加器的更新，并没法保证会被及时运行。下面的代码段展示了这一点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">accum</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">accumulator</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">acc</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">);</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-参考文章">6. 参考文章</h1>
+
+<ul>
+<li><a href="http:/.apache.org/docs/latest/programming-guide.html">http:/.apache.org/docs/latest/programming-guide.html</a></li>
+<li><a href="http://rdc.taobao.org/?p=2024">http://rdc.taobao.org/?p=2024</a></li>
+<li><a href="http://blog.csdn.net/u011391905/article/details/37929731">http://blog.csdn.net/u011391905/article/details/37929731</a></li>
+<li><a href="http://segmentfault.com/blog/whuwb/1190000000723037">http://segmentfault.com/blog/whuwb/1190000000723037</a></li>
+<li><a href="http://cholerae.com/2015/04/11/-%E7%BF%BB%E8%AF%91-Spark%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97-Python%E7%89%88/">[翻译]Spark编程指南(Python版)</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-02-03
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/spark/">spark</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/02/04/how-to-run-a-simple-apache-spark-app-in-cdh-5/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">如何在CDH5上运行Spark应用</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/02/02/quick-start-of-requirejs/">
+            <span class="next-text nav-default">Require.JS快速入门</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

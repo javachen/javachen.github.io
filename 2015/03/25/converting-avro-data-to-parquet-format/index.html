@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>将Avro数据转换为Parquet格式 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要测试将Avro数据转换为Parquet格式的过程并查看 Parquet 文件的 schema 和元数据。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/03/25/converting-avro-data-to-parquet-format/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="将Avro数据转换为Parquet格式" />
+<meta property="og:description" content="本文主要测试将Avro数据转换为Parquet格式的过程并查看 Parquet 文件的 schema 和元数据。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/03/25/converting-avro-data-to-parquet-format/" />
+<meta property="article:published_time" content="2015-03-25T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-03-25T08:00:00+08:00" />
+<meta itemprop="name" content="将Avro数据转换为Parquet格式">
+<meta itemprop="description" content="本文主要测试将Avro数据转换为Parquet格式的过程并查看 Parquet 文件的 schema 和元数据。">
+
+
+<meta itemprop="datePublished" content="2015-03-25T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-03-25T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="638">
+
+
+
+<meta itemprop="keywords" content="avro,parquet," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="将Avro数据转换为Parquet格式"/>
+<meta name="twitter:description" content="本文主要测试将Avro数据转换为Parquet格式的过程并查看 Parquet 文件的 schema 和元数据。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">将Avro数据转换为Parquet格式</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-03-25 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 638 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#准备">准备</a></li>
+<li><a href="#将-csv-转换为-parquet">将 CSV 转换为 Parquet</a></li>
+<li><a href="#将-avro-转换为-parquet">将 Avro 转换为 Parquet</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-03-25T08:00:00" title="March 25, 2015">March 25, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>本文主要测试将Avro数据转换为Parquet格式的过程并查看 Parquet 文件的 schema 和元数据。</p>
+
+<h1 id="准备">准备</h1>
+
+<p>将文本数据转换为 Parquet 格式并读取内容，可以参考 Cloudera 的 MapReduce 例子：<a href="https://github.com/cloudera/parquet-examples">https://github.com/cloudera/parquet-examples</a>。</p>
+
+<p>准备文本数据 a.txt 为 CSV 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">1,2
+3,4
+4,5</pre></td></tr></table>
+</div>
+</div>
+<p>准备 Avro 测试数据，可以参考 <a href="/2015/03/25/how-to-load-some-avro-data-into-spark.html">将Avro数据加载到Spark</a> 一文。</p>
+
+<p>本文测试环境为：CDH 5.2，并且 Avro、Parquet 组件已经通过 YUM 源安装。</p>
+
+<h1 id="将-csv-转换为-parquet">将 CSV 转换为 Parquet</h1>
+
+<p>在 Hive 中创建一个表并导入数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">table</span> <span class="n">mycsvtable</span> <span class="p">(</span><span class="n">x</span> <span class="nb">int</span><span class="p">,</span> <span class="n">y</span> <span class="nb">int</span><span class="p">)</span>
+<span class="k">row</span> <span class="n">format</span> <span class="n">delimited</span>
+<span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;,&#39;</span>
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span><span class="p">;</span>
+
+<span class="k">LOAD</span> <span class="k">DATA</span> <span class="k">LOCAL</span> <span class="n">INPATH</span> <span class="s1">&#39;a.txt&#39;</span> <span class="n">OVERWRITE</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">mycsvtable</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>创建 Parquet 表并转换数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">table</span> <span class="n">myparquettable</span> <span class="p">(</span><span class="n">a</span> <span class="nb">INT</span><span class="p">,</span> <span class="n">b</span> <span class="nb">INT</span><span class="p">)</span>
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">PARQUET</span>
+<span class="k">LOCATION</span> <span class="s1">&#39;/tmp/data&#39;</span><span class="p">;</span>
+
+<span class="k">insert</span> <span class="n">overwrite</span> <span class="k">table</span> <span class="n">myparquettable</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">mycsvtable</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看 hdfs 上生成的 myparquettable 表的数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ hadoop fs -ls /tmp/data
+Found 1 items
+-rwxrwxrwx   3 hive hadoop        331 2015-03-25 15:50 /tmp/data/000000_0</pre></td></tr></table>
+</div>
+</div>
+<p>在 hive 中查看 myparquettable 表的数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span> <span class="p">(</span><span class="k">default</span><span class="p">)</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">myparquettable</span><span class="p">;</span>
+<span class="n">OK</span>
+<span class="n">myparquettable</span><span class="p">.</span><span class="n">a</span>  <span class="n">myparquettable</span><span class="p">.</span><span class="n">b</span>
+<span class="mi">1</span> <span class="mi">2</span>
+<span class="mi">3</span> <span class="mi">4</span>
+<span class="mi">4</span> <span class="mi">5</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">149</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">3</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看 /tmp/data/000000_0 文件的 schema ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop parquet.tools.Main schema /tmp/data/000000_0
+message hive_schema <span class="o">{</span>
+  optional int32 a<span class="p">;</span>
+  optional int32 b<span class="p">;</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看 /tmp/data/000000_0 文件的元数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop parquet.tools.Main meta /tmp/data/000000_0
+creator:     parquet-mr version <span class="m">1</span>.5.0-cdh5.2.0 <span class="o">(</span>build 8e266e052e423af5 <span class="o">[</span>more<span class="o">]</span>...
+
+file schema: hive_schema
+--------------------------------------------------------------------------------
+a:           OPTIONAL INT32 R:0 D:1
+b:           OPTIONAL INT32 R:0 D:1
+
+row group <span class="m">1</span>: RC:3 TS:102
+--------------------------------------------------------------------------------
+a:            INT32 UNCOMPRESSED DO:0 FPO:4 SZ:51/51/1.00 VC:3 ENC:BIT <span class="o">[</span>more<span class="o">]</span>...
+b:            INT32 UNCOMPRESSED DO:0 FPO:55 SZ:51/51/1.00 VC:3 ENC:BI <span class="o">[</span>more<span class="o">]</span>...</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="将-avro-转换为-parquet">将 Avro 转换为 Parquet</h1>
+
+<p>使用 <a href="/2015/03/25/how-to-load-some-avro-data-into-spark.html">将Avro数据加载到Spark</a>  中的 schema 和 json 数据，从 json 数据生成 avro 数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ java -jar /usr/lib/avro/avro-tools.jar fromjson --schema-file twitter.avsc twitter.json &gt; twitter.avro</code></pre></td></tr></table>
+</div>
+</div>
+<p>将 twitter.avsc 和 twitter.avro 上传到 hdfs：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop fs -put twitter.avsc
+$ hadoop fs -put twitter.avro</code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 <a href="https://github.com/laserson/avro2parquet">https://github.com/laserson/avro2parquet</a> 将 avro 转换为 parquet 格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop jar avro2parquet.jar twitter.avsc  twitter.avro /tmp/out</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，在 hive 中创建表并导入数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">table</span> <span class="n">tweets_parquet</span> <span class="p">(</span><span class="n">username</span> <span class="n">string</span><span class="p">,</span> <span class="n">tweet</span> <span class="n">string</span><span class="p">,</span> <span class="k">timestamp</span> <span class="nb">bigint</span><span class="p">)</span> 
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">PARQUET</span><span class="p">;</span>
+
+<span class="k">load</span> <span class="k">data</span> <span class="n">inpath</span> <span class="s1">&#39;/tmp/out/part-m-00000.snappy.parquet&#39;</span> <span class="n">overwrite</span> <span class="k">into</span> <span class="k">table</span> <span class="n">tweets_parquet</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，可以查询数据并查看 parquet 文件的 schema 和元数据，方法同上文。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="http://www.bigdatatidbits.cc/2015/03/converting-avro-data-to-parquet-format.html">Converting Avro data to Parquet format in Hadoop</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-03-25
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/avro/">avro</a>
+          <a href="/tags/parquet/">parquet</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/03/26/spark-sql-dataframe/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Spark SQL中的DataFrame</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/03/24/how-to-load-some-avro-data-into-spark/">
+            <span class="next-text nav-default">如何将Avro数据加载到Spark</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

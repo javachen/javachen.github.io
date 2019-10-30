@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>All Things OpenTSDB - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="OpenTSDB用HBase存储所有的时序（无须采样）来构建一个分布式、可伸缩的时间序列数据库。它支持秒级数据采集所有metrics，支持永久存储，可以做容量规划，并很容易的接入到现有的报警系统里。OpenTSDB可以从大规模的集群（包括集群中的网络设备、操作系统、应用程序）中获取相应的metrics并进行存储、索引以及服务，从而使得这些数据更容易让人理解，如web化、图形化等。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/01/22/all-things-opentsdb/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="All Things OpenTSDB" />
+<meta property="og:description" content="OpenTSDB用HBase存储所有的时序（无须采样）来构建一个分布式、可伸缩的时间序列数据库。它支持秒级数据采集所有metrics，支持永久存储，可以做容量规划，并很容易的接入到现有的报警系统里。OpenTSDB可以从大规模的集群（包括集群中的网络设备、操作系统、应用程序）中获取相应的metrics并进行存储、索引以及服务，从而使得这些数据更容易让人理解，如web化、图形化等。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/01/22/all-things-opentsdb/" />
+<meta property="article:published_time" content="2014-01-22T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-01-22T08:00:00+08:00" />
+<meta itemprop="name" content="All Things OpenTSDB">
+<meta itemprop="description" content="OpenTSDB用HBase存储所有的时序（无须采样）来构建一个分布式、可伸缩的时间序列数据库。它支持秒级数据采集所有metrics，支持永久存储，可以做容量规划，并很容易的接入到现有的报警系统里。OpenTSDB可以从大规模的集群（包括集群中的网络设备、操作系统、应用程序）中获取相应的metrics并进行存储、索引以及服务，从而使得这些数据更容易让人理解，如web化、图形化等。">
+
+
+<meta itemprop="datePublished" content="2014-01-22T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-01-22T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="6408">
+
+
+
+<meta itemprop="keywords" content="opentsdb,hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="All Things OpenTSDB"/>
+<meta name="twitter:description" content="OpenTSDB用HBase存储所有的时序（无须采样）来构建一个分布式、可伸缩的时间序列数据库。它支持秒级数据采集所有metrics，支持永久存储，可以做容量规划，并很容易的接入到现有的报警系统里。OpenTSDB可以从大规模的集群（包括集群中的网络设备、操作系统、应用程序）中获取相应的metrics并进行存储、索引以及服务，从而使得这些数据更容易让人理解，如web化、图形化等。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">All Things OpenTSDB</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-01-22 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 6408 字 </span>
+          <span class="more-meta"> 预计阅读 13 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-opentsdb介绍">1. OpenTSDB介绍</a></li>
+<li><a href="#2-安装opentsdb">2. 安装OpenTSDB</a>
+<ul>
+<li><a href="#2-1-依赖">2.1 依赖</a></li>
+<li><a href="#2-2-下载并编译源代码">2.2 下载并编译源代码</a></li>
+<li><a href="#2-3-安装">2.3 安装</a></li>
+</ul></li>
+<li><a href="#3-使用向导">3. 使用向导</a>
+<ul>
+<li><a href="#3-1-配置">3.1 配置</a></li>
+<li><a href="#3-2-基本概念">3.2 基本概念</a></li>
+<li><a href="#3-3-数据存储方式">3.3 数据存储方式</a>
+<ul>
+<li><a href="#3-3-1-data-table-schema">3.3.1 Data Table Schema</a></li>
+<li><a href="#3-3-2-uid-table-schema">3.3.2 UID Table Schema</a></li>
+<li><a href="#3-3-3-meta-table-schema">3.3.3 Meta Table Schema</a></li>
+<li><a href="#3-3-4-tree-table-schema">3.3.4 Tree Table Schema</a></li>
+</ul></li>
+<li><a href="#3-4-如何写数据">3.4 如何写数据</a></li>
+<li><a href="#3-5-如何查询数据">3.5 如何查询数据</a></li>
+<li><a href="#3-6-cli-tools">3.6 CLI Tools</a></li>
+<li><a href="#3-11-utilities">3.11 Utilities</a></li>
+<li><a href="#3-12-logging">3.12 Logging</a></li>
+</ul></li>
+<li><a href="#4-http-api">4. HTTP API</a></li>
+<li><a href="#5-谁在用opentsdb">5. 谁在用OpenTSDB</a></li>
+<li><a href="#6-kairosdb">6. KairosDB</a></li>
+<li><a href="#7-参考资料">7. 参考资料</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-01-22T08:00:00" title="January 22, 2014">January 22, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<h1 id="1-opentsdb介绍">1. OpenTSDB介绍</h1>
+
+<p><a href="http://opentsdb.net/index.html">OpenTSDB</a>用HBase存储所有的时序（无须采样）来构建一个<strong>分布式、可伸缩的时间序列数据库</strong>。它支持秒级数据采集所有metrics，支持永久存储，可以做容量规划，并很容易的接入到现有的报警系统里。OpenTSDB可以从大规模的集群（包括集群中的网络设备、操作系统、应用程序）中获取相应的metrics并进行存储、索引以及服务，从而使得这些数据更容易让人理解，如web化、图形化等。</p>
+
+<p>对于运维工程师而言，OpenTSDB可以获取基础设施和服务的实时状态信息，展示集群的各种软硬件错误，性能变化以及性能瓶颈。对于管理者而言，OpenTSDB可以衡量系统的SLA，理解复杂系统间的相互作用，展示资源消耗情况。集群的整体作业情况，可以用以辅助预算和集群资源协调。对于开发者而言，OpenTSDB可以展示集群的主要性能瓶颈，经常出现的错误，从而可以着力重点解决重要问题。</p>
+
+<p>OpenTSDB使用LGPLv2.1+开源协议,目前版本为2.X。</p>
+
+<ul>
+<li>官网地址：<a href="http://opentsdb.net/">http://opentsdb.net/</a></li>
+<li>源代码：<a href="https://github.com/OpenTSDB/opentsdb/">https://github.com/OpenTSDB/opentsdb/</a></li>
+</ul>
+
+<h1 id="2-安装opentsdb">2. 安装OpenTSDB</h1>
+
+<h2 id="2-1-依赖">2.1 依赖</h2>
+
+<p>OpenTSDB依赖jdk和<a href="http://www.gnuplot.info/">Gnuplot</a>，Gnuplot需要提前安装，版本要求为最小4.2,最大4.4,执行以下命令安装即可：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install gnuplot autoconf
+apt-get install gnuplot</pre></td></tr></table>
+</div>
+</div>
+<p>OpenTSDB是用java编写的，但是项目构建不是用的java的方式而是使用的C、C++程序员构建项目的方式。运行时依赖：</p>
+
+<ul>
+<li>JDK 1.6</li>
+<li><a href="http://github.com/OpenTSDB/asynchbase">asynchbase</a> 1.3.0 (BSD)</li>
+<li><a href="http://code.google.com/p/guava-libraries/">Guava</a> 12.0 (ASLv2)</li>
+<li><a href="http://logback.qos.ch/">logback</a> 1.0 (LGPLv2.1 / EPL)</li>
+<li><a href="http://jboss.org/netty">Netty</a> 3.4 (ASLv2)</li>
+<li><a href="http://slf4j.org/">SLF4J</a> 1.6 (MIT) with Log4J and JCL adapters</li>
+<li><a href="http://github.com/OpenTSDB/async">suasync</a> 1.2 (BSD)</li>
+<li><a href="http://hadoop.apache.org/zookeeper/">ZooKeeper</a> 3.3 (ASLv2)</li>
+</ul>
+
+<p>可选的编译时依赖：</p>
+
+<ul>
+<li><a href="http://gwt.google.com/">GWT</a> 2.4 (ASLv2)</li>
+</ul>
+
+<p>可选的单元测试依赖：</p>
+
+<ul>
+<li><a href="http://www.javassist.org/">Javassist</a> 3.15 (MPL / LGPL)</li>
+<li><a href="http://www.junit.org/">JUnit</a> 4.10 (CPL)</li>
+<li><a href="http://mockito.org/">Mockito</a> 1.9 (MIT)</li>
+<li><a href="http://code.google.com/p/powermock/">PowerMock</a> 1.4 (ASLv2)</li>
+</ul>
+
+<h2 id="2-2-下载并编译源代码">2.2 下载并编译源代码</h2>
+
+<p>首先安装必要依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install gnuplot automake autoconf git -y</pre></td></tr></table>
+</div>
+</div>
+<p>下载源代码，可以指定最新版本或者手动checkout</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">git clone git://github.com/OpenTSDB/opentsdb.git
+cd opentsdb
+./build.sh</pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-3-安装">2.3 安装</h2>
+
+<ul>
+<li>1. 首先安装一个单节点或者多节点集群的hbase环境，hbase版本要求为0.94</li>
+<li>2. 设置环境变量并创建opentsdb使用的表，需要设置的环境变量为<code>COMPRESSION</code>和<code>HBASE_HOME</code>，前者设置是否启用压缩，或者设置hbase home目录。如果使用压缩，则还需要安装lzo</li>
+<li>3. 执行建表语句<code>src/create_table.sh</code></li>
+
+<li><ol>
+<li><p>启动TSD</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tsdtmp=${TMPDIR-&#39;/tmp&#39;}/tsd    # For best performance, make sure
+mkdir -p &#34;$tsdtmp&#34;             # your temporary directory uses tmpfs
+./build/tsdb tsd --port=4242 --staticroot=build/staticroot --cachedir=&#34;$tsdtmp&#34; --auto-metric</pre></td></tr></table>
+</div>
+</div></li>
+</ol></li>
+</ul>
+
+<p>如果你使用的是hbase集群，则你还需要设置<code>--zkquorum</code>，<code>--cachedir</code>对应的目录会产生一些临时文件，你可以设置cron定时任务进行删除。添加<code>--auto-metric</code>，则当新的数据被搜集时自动创建指标。</p>
+
+<p>你可以将这些参数编写到配置文件中，然后通过<code>--config</code>指定该文件所在路径。</p>
+
+<ul>
+<li>5. 启动成功之后，你可以通过<a href="http://127.0.0.1:4242">127.0.0.1:4242</a>进行访问。</li>
+</ul>
+
+<p>从源代码安装gnuplot、autoconf、opentsdb以及tcollector，可以参考：<a href="http://www.adintellig.com/blog/14">OpenTSDB &amp; tcollector 安装部署（Installation and Deployment）</a></p>
+
+<h1 id="3-使用向导">3. 使用向导</h1>
+
+<h2 id="3-1-配置">3.1 配置</h2>
+
+<p>OpenTSDB的配置参数可以在命令行指定，也可以在配置文件中指定。配置文件使用的是java的properties文件，文件中key为小写，支持逗号连接字符串但是不能有空格。所有的OpenTSDB属性都以tsdb开头，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># List of Zookeeper hosts that manage the HBase cluster
+tsd.storage.hbase.zk_quorum = 192.168.1.100</pre></td></tr></table>
+</div>
+</div>
+<p>配置参数优先级：</p>
+
+<p>命令行参数 &gt; 配置文件 &gt; 默认值</p>
+
+<p>你可以在命令行中通过<code>--config</code>指定配置文件所在路径，如果没有指定，OpenTSDB会从以下路径寻找配置文件：</p>
+
+<ul>
+<li>./opentsdb.conf</li>
+<li>/etc/opentsdb.conf</li>
+<li>/etc/opentsdb/opentsdb.conf</li>
+<li>/opt/opentsdb/opentsdb.conf</li>
+</ul>
+
+<p>如果一个合法的配置文件没有找到并且一些必须参数没有设置，TSD进程将不会启动。</p>
+
+<p>配置文件中可配置的属性请参考：<a href="http://opentsdb.net/docs/build/html/user_guide/configuration.html#properties">Properties</a></p>
+
+<h2 id="3-2-基本概念">3.2 基本概念</h2>
+
+<p>在深入理解OpenTSDB之前，需要了解一些基本概念。</p>
+
+<ul>
+<li><p><strong>Cardinality</strong>。基数，在数学中定义为一个集合中的一些元素，在数据库中定义为一个索引的一些唯一元素，在OpenTSDB定义为：</p></li>
+
+<li><p>一个给定指标的一些唯一时间序列</p></li>
+
+<li><p>和一个标签名称相关联的一些唯一标签值</p></li>
+</ul>
+
+<p>在OpenTSDB中拥有高基数的指标在查询过程中返回的值要多于低基数的指标，这样花费的时间也就越多。</p>
+
+<p><strong>Compaction</strong>。在OpenTSDB中，会将多列合并到一列之中以减少磁盘占用空间，这和hbase中的Compaction不一样。这个过程会在TSD写数据或者查询过程中不定期的发生。</p>
+
+<p><strong>Data Point</strong>。每一个指标可以被记录为某一个时间点的一个数值。Data Point包括以下部分：</p>
+
+<ul>
+<li>一个指标：metric</li>
+<li>一个数值</li>
+<li>这个数值被记录的时间戳</li>
+<li>多个标签</li>
+</ul>
+
+<p><strong>Metric</strong>。一个可测量的单位的标称。<code>metric</code>不包括一个数值或一个时间，其仅仅是一个标签，包含数值和时间的叫<code>datapoints</code>，metric是用逗号连接的不允许有空格，例如：</p>
+
+<ul>
+<li>hours.worked</li>
+<li>webserver.downloads</li>
+<li>accumulation.snow</li>
+</ul>
+
+<p><strong>Tags</strong>。一个metric应该描述什么东西被测量，在OpenTSDB中，其不应该定义的太简单。通常，更好的做法是用Tags来描述具有相同维度的metric。Tags由tagk和tagv组成，前者表示一个分组，后者表示一个特定的项。</p>
+
+<p><strong>Time Series</strong>。一个metric的带有多个tag的data point集合。</p>
+
+<p><strong>Timestamp</strong>。一个绝对时间，用来描述一个数值或者一个给定的metric是在什么时候定义的。</p>
+
+<p><strong>Value</strong>。一个Value表示一个metric的实际数值。</p>
+
+<p><strong>UID</strong>。在OpenTSDB中，每一个metric、tagk或者tagv在创建的时候被分配一个唯一标识叫做UID，他们组合在一起可以创建一个序列的UID或者<code>TSUID</code>。在OpenTSDB的存储中，对于每一个metric、tagk或者tagv都存在从0开始的计数器，每来一个新的metric、tagk或者tagv，对应的计数器就会加1。当data point写到TSD时，UID是自动分配的。你也可以手动分配UID，前提是<code>auto metric</code>被设置为true。默认地，UID被编码为3Bytes，每一种UID类型最多可以有16,777,215个UID。你也可以修改源代码改为4Bytes。UID的展示有几种方式，最常见的方式是通过http api访问时，3 bytes的UID被编码为16进制的字符串。例如，UID为1的写为二进制的形式为<code>000000000000000000000001</code>，最为一个无符号的byte数组，其可以表示为<code>[0,0,1]</code>，编码为16进制字符串为<code>000001</code>,其中每一位左边都被补上0,如果其不足两位。故，UID为255的会显示为<code>[0,0,255]</code>和<code>0000FF</code>。</p>
+
+<blockquote>
+<p>关于为什么使用UID而不使用hashes，可以参考：<a href="http://opentsdb.net/docs/build/html/user_guide/uids.html#why-uids">why-uids</a></p>
+</blockquote>
+
+<p><strong>TSUID</strong>。当一个data point被写到OpenTSDB时，其row key格式为：<code>&lt;metric_UID&gt;&lt;timestamp&gt;&lt;tagk1_UID&gt;&lt;tagv1_UID&gt;[...&lt;tagkN_UID&gt;&lt;tagvN_UID&gt;]</code>，不考虑时间戳的话，将其余部分都转换为UID，然后拼在一起，就可以组成为TSUID。</p>
+
+<p><strong>Metadata</strong>。主要用于记录data point的一些附加的信息，方便搜索和跟踪，分为UIDMeta和TSMeta。</p>
+
+<p>每一个UID都有一个metadata记录保存在<code>tsdb-uid</code>表中，每一个UID包括一些不可变的字段，如<code>uid</code>、<code>type</code>、<code>name</code>和<code>created</code>字段表示什么时候被创建，还可以有一些额外字段，如<code>description</code>、<code>notes</code>、<code>displayName</code>和一些<code>custom</code> key/value对，详细信息，可以查看<a href="http://opentsdb.net/docs/build/html/api_http/uid/uidmeta.html"> /api/uid/uidmeta</a></p>
+
+<p>同样，每一个TSUID可以对应一个TSMeta，记录在<code>tsdb-uid</code>中，其包括的字段有<code>tsuid</code>、<code>metric</code>、<code>tags</code>、<code>lastReceived</code>和<code>created</code>，可选的字段有<code>description</code>, <code>notes</code>，详细信息，可以查看<a href="http://opentsdb.net/docs/build/html/api_http/uid/tsmeta.html">/api/uid/tsmeta</a></p>
+
+<p>开启Metadata有以下几个参数：</p>
+
+<ul>
+<li><code>tsd.core.meta.enable_realtime_uid</code></li>
+<li><code>tsd.core.meta.enable_tsuid_tracking</code></li>
+<li><code>tsd.core.meta.enable_tsuid_incrementing</code></li>
+<li><code>tsd.core.meta.enable_realtime_ts</code></li>
+</ul>
+
+<p>metadata的另外一个形式是<code>Annotations</code>，详细说明，请参考<a href="http://opentsdb.net/docs/build/html/user_guide/metadata.html#annotations">annotations</a></p>
+
+<p><strong>Tree</strong></p>
+
+<h2 id="3-3-数据存储方式">3.3 数据存储方式</h2>
+
+<p>OpenTSDB使用HBase作为后端存储，在安装OpenTSDB之前，需要先启动一个hbase节点或者集群，然后再执行建表语句<code>src/create_table.sh</code>创建hbase表。建表语句如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">create &#39;$UID_TABLE&#39;,
+  {NAME =&gt; &#39;id&#39;, COMPRESSION =&gt; &#39;$COMPRESSION&#39;, BLOOMFILTER =&gt; &#39;$BLOOMFILTER&#39;},
+  {NAME =&gt; &#39;name&#39;, COMPRESSION =&gt; &#39;$COMPRESSION&#39;, BLOOMFILTER =&gt; &#39;$BLOOMFILTER&#39;}
+
+create &#39;$TSDB_TABLE&#39;,
+  {NAME =&gt; &#39;t&#39;, VERSIONS =&gt; 1, COMPRESSION =&gt; &#39;$COMPRESSION&#39;, BLOOMFILTER =&gt; &#39;$BLOOMFILTER&#39;}
+  
+create &#39;$TREE_TABLE&#39;,
+  {NAME =&gt; &#39;t&#39;, VERSIONS =&gt; 1, COMPRESSION =&gt; &#39;$COMPRESSION&#39;, BLOOMFILTER =&gt; &#39;$BLOOMFILTER&#39;}
+  
+create &#39;$META_TABLE&#39;,
+  {NAME =&gt; &#39;name&#39;, COMPRESSION =&gt; &#39;$COMPRESSION&#39;, BLOOMFILTER =&gt; &#39;$BLOOMFILTER&#39;}</pre></td></tr></table>
+</div>
+</div>
+<p>从上面可以看出一共创建了4张表，并且可以设置是否压缩、是否启用布隆过滤、保存版本号等等，如果追求hbase读写性能，还可以预建分区。</p>
+
+<h3 id="3-3-1-data-table-schema">3.3.1 Data Table Schema</h3>
+
+<p>在OpenTSDB中，所有数据存储在一张叫做<code>tsdb</code>的表中，这是为了充分利用hbase有序和region分布式的特点。所有的值都保存在列族<code>t</code>中。</p>
+
+<p>rowkey为<code>&lt;metric_uid&gt;&lt;timestamp&gt;&lt;tagk1&gt;&lt;tagv1&gt;[...&lt;tagkN&gt;&lt;tagvN&gt;]</code>，UID默认编码为3 Bytes，而时间戳会编码为4 Bytes</p>
+
+<p>OpenTSDB的tsdb启动之后，会监控指定的socket端口（默认为4242），接收到监控数据，包括指标、时间戳、数据、tag标签，tag标签包括tag名称ID和tag值ID。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">myservice.latency.avg 1292148123 42 reqtype=foo host=web42</pre></td></tr></table>
+</div>
+</div>
+<p>对于指标myservice.latency.avg的ID为：[0, 0, -69],reqtype标签名称的ID为：[0, 0, 1], foo标签值的ID为：[0, 1, 11], 标签名称的ID为：[0, 0, 2] web42标签值的ID为：[0, -7, 42]，他们组成rowkey：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[0, 0, -69, 77, 4, -99, 32, 0, 0, 1, 0, 1, 11, 0, 0, 2, 0, -7, 42]
+ `-------&#39;  `------------&#39;  `-----&#39;  `------&#39;  `-----&#39;  `-------&#39;
+ metric ID  base timestamp  name ID  value ID  name ID  value ID
+                            `---------------&#39;  `---------------&#39;
+                                first tag         second tag</pre></td></tr></table>
+</div>
+</div>
+<p>row表示格式为： 每个数字对应1 byte</p>
+
+<ul>
+<li>[0, 0, -69] metric ID</li>
+<li>[77, 4, -99, 32] base timestamp = 1292148000. timestamps in the row key are rounded down to a 60 minute boundary。也就是说对于同一个小时的metric + tags相同的数据都会存放在一个row下面</li>
+<li>[0, 0, 1] &ldquo;reqtype&rdquo; index</li>
+<li>[0, 1, 11] &ldquo;foo&rdquo; index</li>
+<li>[0, 0, 2] &ldquo;host&rdquo; index</li>
+<li>[0, -7, 42] &ldquo;web42&rdquo; index</li>
+</ul>
+
+<p><strong>NOTE</strong>：可以看到，对于metric + tags相同的数据都会连续存放，且metic相同的数据也会连续存放，这样对于scan以及做aggregation都非常有帮助</p>
+
+<p><strong>column qualifier</strong> 占用2 bytes或者4 bytes，占用2 bytes时表示以秒为单位的偏移，格式为：</p>
+
+<ul>
+<li>12 bits:相对row表示的小时的delta, 最多2^ 12 = 4096 &gt; 3600因此没有问题</li>
+<li>4 bits:format flags
+
+<ul>
+<li>1 bit: an integer or floating point</li>
+<li>3 bits: 标明数据的长度，其长度必须是1、2、4、8。<code>000</code>表示1个byte,<code>010</code>表示2byte，<code>011</code>表示4byte，<code>100</code>表示8byte</li>
+</ul></li>
+</ul>
+
+<p>占用4 bytes时表示以毫秒为单位的偏移，格式为：</p>
+
+<ul>
+<li>4 bits：十六进制的<code>1</code>或者<code>F</code></li>
+<li>22 bits:毫秒偏移</li>
+<li>2 bit:保留</li>
+<li>4 bits: format flags
+
+<ul>
+<li>1 bit: an integer or floating point，0表示整数,1表示浮点数</li>
+<li>3 bits: 标明数据的长度，其长度必须是1、2、4、8。<code>000</code>表示1个byte,<code>010</code>表示2byte，<code>011</code>表示4byte，<code>100</code>表示8byte</li>
+</ul></li>
+</ul>
+
+<p><strong>举例：</strong></p>
+
+<p>对于时间戳为1292148123的数据点来说，其转换为以小时为单位的基准时间(去掉小时后的秒）为129214800,偏移为123,转换为二进制为<code>1111011</code>，因为该值为整数且长度为8位（对应为2byte，故最后3bit为<code>100</code>）,故其对应的列族名为：<code>0000011110110100</code>，将其转换为十六进制为<code>07B4</code></p>
+
+<p><strong>value</strong> 使用8bytes存储，既可以存储long,也可以存储double。</p>
+
+<p>总结一下，<code>tsdb</code>表结构如下：</p>
+
+<p><img src="/images/opentsdb-tsdb-schema.png" alt="opentsdb-tsdb-schema" /></p>
+
+<h3 id="3-3-2-uid-table-schema">3.3.2 UID Table Schema</h3>
+
+<p>一个单独的较小的表叫做<code>tsdb-uid</code>用来存储UID映射，包括正向的和反向的。存在两列族，一列族叫做<code>name</code>用来将一个UID映射到一个字符串，另一个列族叫做<code>id</code>，用来将字符串映射到UID。列族的每一行都至少有以下三列中的一个：</p>
+
+<ul>
+<li><code>metrics</code> 将metric的名称映射到UID</li>
+<li><code>tagk</code> 将tag名称映射到UID</li>
+<li><code>tagv</code> 将tag的值映射到UID</li>
+</ul>
+
+<p>如果配置了metadata，则<code>name</code>列族还可以包括额外的metatata列。</p>
+
+<ul>
+<li><strong>id 列族</strong></li>
+</ul>
+
+<p><strong>Row Key</strong> - 将会是一个分配到UID的字符串，例如，对于一个指标可能有一个值为<code>sys.cpu.user</code>或者对于一个标签其值可能为<code>42</code></p>
+
+<p><strong>Column Qualifiers</strong> - 上面三种列类型中一种。</p>
+
+<p><strong>Column Value</strong> - 一个无符号的整数，默认被编码为3个byte，其值为UID。</p>
+
+<p>例如以下几行数据是从<code>tsdb-uid</code>表中查询出来的数据，第一个列为row key，第二列为&rdquo;列族:列名&rdquo;，第三列为值，对应为UID</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">proc.stat.cpu id:metrics \x00\x00\x01
+host id:tagk \x00\x00\x01
+cdh1 id:tagv \x00\x00\x01</pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li><strong>name 列族</strong></li>
+</ul>
+
+<p><strong>Row Key</strong> - 为UID</p>
+
+<p><strong>Column Qualifiers</strong> - 上面三种列类型中一种或者为<code>metrics_meta</code>、<code>tagk_meta</code>、<code>tagv_meta</code></p>
+
+<p><strong>Column Value</strong> - 与UID对应的字符串，对于一个<code>*_meta</code>列，其值将会是一个UTF-8编码的JSON格式字符串。不要在OpenTSDB外部去修改该值，其中的字段顺序会影响<code>CAS</code>调用。</p>
+
+<p>例如,以下几行数据是从<code>tsdb-uid</code>表中查询出来的数据，第一个列为row key，第二列为&rdquo;列族:列名&rdquo;，第三列为值，对应为UID</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">\x00\x00\x01 name:metrics proc.stat.cpu
+\x00\x00\x01 name:tagk host
+\x00\x00\x01 name:tagv cdh1
+\x00\x00\x01 name:tagk_meta {&#34;uid&#34;:&#34;000001&#34;,&#34;type&#34;:&#34;TAGK&#34;,&#34;name&#34;:&#34;host&#34;,&#34;description&#34;:&#34;&#34;,&#34;notes&#34;:&#34;&#34;,&#34;created&#34;:1395213193,&#34;custom&#34;:null,&#34;displayName&#34;:&#34;&#34;}
+\x00\x00\x01 name:tagv_meta {&#34;uid&#34;:&#34;000001&#34;,&#34;type&#34;:&#34;TAGV&#34;,&#34;name&#34;:&#34;cdh1&#34;,&#34;description&#34;:&#34;&#34;,&#34;notes&#34;:&#34;&#34;,&#34;created&#34;:1395213193,&#34;custom&#34;:null,&#34;displayName&#34;:&#34;&#34;}
+\x00\x00\x01 name:metric_meta {&#34;uid&#34;:&#34;000001&#34;,&#34;type&#34;:&#34;METRIC&#34;,&#34;name&#34;:&#34;metrics proc.stat.cpu&#34;,&#34;description&#34;:&#34;&#34;,&#34;notes&#34;:&#34;&#34;,&#34;created&#34;:1395213193,&#34;custom&#34;:null,&#34;displayName&#34;:&#34;&#34;}</pre></td></tr></table>
+</div>
+</div>
+<p>总结一下，<code>tsdb-uid</code>表结构如下：</p>
+
+<p><img src="/images/opentsdb-tsdb-uid-schema.png" alt="opentsdb-tsdb-uid-schema" /></p>
+
+<p>上图对应的一个datapoint如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">proc.stat.cpu 1292148123 80 host=cdh1</pre></td></tr></table>
+</div>
+</div>
+<p>从上图可以看出<code>tsdb-uid</code>的表结构以及数据存储方式，对于一个data point来说，其被保存到opentsdb之前，会对<code>metrics</code>、<code>tagk</code>、<code>tagv</code>、<code>metric_meta</code>、<code>tagk_meta</code>、<code>tagv_meta</code>生成一个UID（如上图中的<code>000001</code>）,然后将其插入hbase表中，rowkey为UID，同时会存储多行记录，分别保存<code>metrics</code>、<code>tagk</code>、<code>tagv</code>、<code>metric_meta</code>、<code>tagk_meta</code>、<code>tagv_meta</code>到UID的映射。</p>
+
+<h3 id="3-3-3-meta-table-schema">3.3.3 Meta Table Schema</h3>
+
+<p>这个表是OpenTSDB中不同时间序列的一个索引，可以用来存储一些额外的信息。这个表名称叫做<code>tsdb-meta</code>，该表只有一个列族<code>name</code>，两个列，分别为<code>ts_meta</code>、<code>ts_ctr</code>，该表中数据如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">\x00\x00\x01\x00\x00\x01\x00\x00\x01 name:ts_ctr \x00\x00\x00\x00\x00\x00\x00p
+\x00\x00\x01\x00\x00\x01\x00\x00\x01 name:ts_meta {&#34;tsuid&#34;:&#34;000001000001000001&#34;,&#34;displayName&#34;:&#34;&#34;,&#34;description&#34;:&#34;&#34;,&#34;notes&#34;:&#34;&#34;,&#34;created&#34;:1395213196,&#34;custom&#34;:null,&#34;units&#34;:&#34;&#34;,&#34;dataType&#34;:&#34;&#34;,&#34;retention&#34;:0,&#34;max&#34;:&#34;NaN&#34;,&#34;min&#34;:&#34;NaN&#34;}
+
+\x00\x00\x02\x00\x00\x01\x00\x00\x01 name:ts_ctr \x00\x00\x00\x00\x00\x00\x00p
+\x00\x00\x02\x00\x00\x01\x00\x00\x01 name:ts_meta {&#34;tsuid&#34;:&#34;000002000001000001&#34;,&#34;displayName&#34;:&#34;&#34;,&#34;description&#34;:&#34;&#34;,&#34;notes&#34;:&#34;&#34;,&#34;created&#34;:1395213196,&#34;custom&#34;:null,&#34;units&#34;:&#34;&#34;,&#34;dataType&#34;:&#34;&#34;,&#34;retention&#34;:0,&#34;max&#34;:&#34;NaN&#34;,&#34;min&#34;:&#34;NaN&#34;}</pre></td></tr></table>
+</div>
+</div>
+<p><strong>Row Key</strong> 和<code>tsdb</code>表一样，其中不包含时间戳，<code>&lt;metric_uid&gt;&lt;tagk1&gt;&lt;tagv1&gt;[...&lt;tagkN&gt;&lt;tagvN&gt;]</code></p>
+
+<p><strong>TSMeta Column</strong> 和UIDMeta相似，其为UTF-8编码的JSON格式字符串</p>
+
+<p><strong>ts_ctr Column</strong> 计数器，用来记录一个时间序列中存储的数据个数，其列名为<code>ts_ctr</code>，为8位有符号的整数。</p>
+
+<h3 id="3-3-4-tree-table-schema">3.3.4 Tree Table Schema</h3>
+
+<p>索引表，用于展示树状结构的，类似于文件系统，以方便其他系统使用，例如：<code>Graphite</code></p>
+
+<h2 id="3-4-如何写数据">3.4 如何写数据</h2>
+
+<h2 id="3-5-如何查询数据">3.5 如何查询数据</h2>
+
+<h2 id="3-6-cli-tools">3.6 CLI Tools</h2>
+
+<p>tsdb支持以下参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@cdh1 build]# ./tsdb 
+usage: tsdb &lt;command&gt; [args]
+Valid commands: fsck, import, mkmetric, query, tsd, scan, uid</pre></td></tr></table>
+</div>
+</div>
+<p>通过以下命令创建指标：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">./tsdb mkmetric mysql.bytes_received mysql.bytes_sent</pre></td></tr></table>
+</div>
+</div>
+<p>执行上述命令的结果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">metrics mysql.bytes_received: [0, 0, -93]
+metrics mysql.bytes_sent: [0, 0, -92]</pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-11-utilities">3.11 Utilities</h2>
+
+<h2 id="3-12-logging">3.12 Logging</h2>
+
+<h1 id="4-http-api">4. HTTP API</h1>
+
+<h1 id="5-谁在用opentsdb">5. 谁在用OpenTSDB</h1>
+
+<ul>
+<li><a href="http://www.stumbleupon.com/">StumbleUpon</a> StumbleUpon is the easiest way to find cool new websites, videos, photos and images from across the Web</li>
+<li><a href="https://www.box.com/">box</a> Box simplifies online file storage, replaces FTP and connects teams in online workspaces.</li>
+<li><a href="http://www.tumblr.com/">tumblr</a> 一个轻量级博客，用户可以跟进其他的会员并在自己的页面上看到跟进会员发表的文章，还可以转发他人在Tumblr上的文章</li>
+</ul>
+
+<h1 id="6-kairosdb">6. KairosDB</h1>
+
+<blockquote>
+<p>KairosDB是一个快速可靠的分布式时间序列数据库，主要用于Cassandra当然也可以适用与HBase。KairosDB是在OpenTSDB基础上重写的，他不仅可以在HBase上存储数据还支持Cassandra。</p>
+</blockquote>
+
+<p>KairosDB主页：<a href="https://code.google.com/p/kairosdb/">https://code.google.com/p/kairosdb/</a></p>
+
+<h1 id="7-参考资料">7. 参考资料</h1>
+
+<ul>
+<li><a href="http://luoshi0801.iteye.com/blog/1938835">tlog数据存储</a></li>
+<li><a href="http://blog.csdn.net/bingjie1217/article/category/1751285">OpenTSDB源码分析系列文章</a></li>
+<li><a href="http://www.binospace.com/index.php/opentsdb-design-road/">OpenTSDB的设计之道</a></li>
+<li><a href="http://dirlt.com/opentsdb.html">opentsdb</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-01-22
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/opentsdb/">opentsdb</a>
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/01/24/how-to-install-nagios-on-rhel6/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">在RHEL系统上安装Nagios</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/01/18/bash-problem-when-ssh-access/">
+            <span class="next-text nav-default">SSH远程连接时环境变量问题</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

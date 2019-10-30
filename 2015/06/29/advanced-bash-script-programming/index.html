@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>高级Bash脚本编程入门 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="最近在看《Advanced Bash Scripting Guide》这本书，第二章举了一个清除日志的例子，来讲述如何使用Bash进行编程并聊到了一些编程规范。本文主要是基于这部分内容记录我的读书笔记并整理一些相关知识点。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2015/06/29/advanced-bash-script-programming/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="高级Bash脚本编程入门" />
+<meta property="og:description" content="最近在看《Advanced Bash Scripting Guide》这本书，第二章举了一个清除日志的例子，来讲述如何使用Bash进行编程并聊到了一些编程规范。本文主要是基于这部分内容记录我的读书笔记并整理一些相关知识点。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2015/06/29/advanced-bash-script-programming/" />
+<meta property="article:published_time" content="2015-06-29T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-06-29T08:00:00+08:00" />
+<meta itemprop="name" content="高级Bash脚本编程入门">
+<meta itemprop="description" content="最近在看《Advanced Bash Scripting Guide》这本书，第二章举了一个清除日志的例子，来讲述如何使用Bash进行编程并聊到了一些编程规范。本文主要是基于这部分内容记录我的读书笔记并整理一些相关知识点。">
+
+
+<meta itemprop="datePublished" content="2015-06-29T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-06-29T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1617">
+
+
+
+<meta itemprop="keywords" content="bash," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="高级Bash脚本编程入门"/>
+<meta name="twitter:description" content="最近在看《Advanced Bash Scripting Guide》这本书，第二章举了一个清除日志的例子，来讲述如何使用Bash进行编程并聊到了一些编程规范。本文主要是基于这部分内容记录我的读书笔记并整理一些相关知识点。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">高级Bash脚本编程入门</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-06-29 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 1617 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2015-06-29T08:00:00" title="June 29, 2015">June 29, 2015</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>最近在看《Advanced Bash Scripting Guide》这本书，第二章举了一个清除日志的例子，来讲述如何使用Bash进行编程并聊到了一些编程规范。本文主要是基于这部分内容记录我的读书笔记并整理一些相关知识点。</p>
+
+<p>说到清除日志，你可以使用下面命令来完成清除/var/log下的log文件这件事情：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /var/log
+cat /dev/null &gt; messages 
+cat /dev/null &gt; wtmp
+<span class="nb">echo</span> <span class="s2">&#34;Logs cleaned up.&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>更简单的清除日志方法是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="s2">&#34;&#34;</span> &gt;messages 
+<span class="c1">#或者</span>
+&gt;messages </code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：
+/var/log/messages 记录系统报错信息
+/var/log/wtmp 记录系统登录信息</p>
+</blockquote>
+
+<p>在Bash编程时，脚本通常都是放到一个文件里面，该文件可以有后缀名也可以没有，例如，你可以将该文件命名为cleanlog，然后在文件头声明一个命令解释器，这里是<code>#!/bin/bash</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span><span class="nv">LOG_DIR</span><span class="o">=</span>/var/log
+<span class="nb">cd</span> <span class="nv">$LOG_DIR</span>
+cat /dev/null &gt; messages
+cat /dev/null &gt; wtmp
+<span class="nb">echo</span> <span class="s2">&#34;Logs cleaned up.&#34;</span>
+exit</code></pre></td></tr></table>
+</div>
+</div>
+<p>当然，还可以使用其他的命令行解释器，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/sh
+</span><span class="cp"></span><span class="c1">#!/bin/bash</span>
+<span class="c1">#!/usr/bin/perl</span> 
+<span class="c1">#!/usr/bin/tcl</span> 
+<span class="c1">#!/bin/sed -f</span>
+<span class="c1">#!/usr/awk -f</span>
+
+<span class="c1">#自删除脚本</span>
+<span class="c1">#!/bin/rm</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>说明：</p>
+
+<ul>
+<li><code>#!</code> 后面的路径必须真实存在，否则运行时会提示<code>Command not found的错误</code>。</li>
+<li>在UNIX系统中，在<code>!</code>后边需要一个空格。</li>
+<li>如果脚本中还包含有其他的<code>#!</code>行，那么bash将会把它看成是一个一般的注释行。</li>
+</ul>
+
+<p>上面代码将/var/log定义为变量，这样会比把代码写死好很多，因为如果你可能想修改为其他目录，只需要修改变量的值就可以。</p>
+
+<p>对于/var/log目录，一般用户没有访问权限，故需要使用root用户来运行上面脚本，另外，用户不一定有修改目录的权限，所以需要增强代码，做一些判断。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="nv">LOG_DIR</span><span class="o">=</span>/var/log
+<span class="nv">ROOT_UID</span><span class="o">=</span><span class="m">0</span>
+<span class="nv">LINES</span><span class="o">=</span><span class="m">50</span>
+<span class="nv">E_XCD</span><span class="o">=</span><span class="m">66</span>
+<span class="nv">E_NOTROOT</span><span class="o">=</span><span class="m">67</span>
+
+<span class="c1"># 当然要使用root 用户来运行.</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$UID</span><span class="s2">&#34;</span> -ne <span class="s2">&#34;</span><span class="nv">$ROOT_UID</span><span class="s2">&#34;</span> <span class="o">]</span>
+<span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;Must be root to run this script.&#34;</span>
+    <span class="nb">exit</span> <span class="nv">$E_NOTROOT</span>
+<span class="k">fi</span>
+
+<span class="nb">cd</span> <span class="nv">$LOG_DIR</span>
+
+<span class="k">if</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$PWD</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$LOG_DIR</span><span class="s2">&#34;</span> <span class="o">]</span>
+<span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;Can&#39;t change to </span><span class="nv">$LOG_DIR</span><span class="s2">.&#34;</span>
+    <span class="nb">exit</span> <span class="nv">$E_XCD</span>
+<span class="k">fi</span>
+
+cat /dev/null &gt; messages
+cat /dev/null &gt; wtmp
+<span class="nb">echo</span> <span class="s2">&#34;Logs cleaned up.&#34;</span>
+
+<span class="c1">#返回0表示成功</span>
+<span class="nb">exit</span> <span class="m">0</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上面代码一样定义了一些变量，然后加了两个判断，去检查脚本运行中可能出现的错误并打印错误说明。如果脚本运行错误，则程序会退出并返回一个错误码，不同类型的错误对应的错误码不一样，这样便于识别错误原因；如果脚本运行正常，则正常退出，默认返回码为0。</p>
+
+<p>对于<code>cd $LOG_DIR</code>操作判断是否执行成功，更有效的做法是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用或操作替代if else判断</span>
+<span class="nb">cd</span> /var/log <span class="o">||</span> <span class="o">{</span>
+    <span class="nb">echo</span> <span class="s2">&#34;Cannot change to necessary directory.&#34;</span> &gt;<span class="p">&amp;</span><span class="m">2</span>
+    <span class="nb">exit</span> <span class="nv">$E_XCD</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>通常，我们可能不想全部清除日志，而是保留最后几行日志，这样就需要给脚本传入参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="nv">LOG_DIR</span><span class="o">=</span>/var/log
+<span class="nv">ROOT_UID</span><span class="o">=</span><span class="m">0</span>
+<span class="nv">LINES</span><span class="o">=</span><span class="m">50</span>
+<span class="nv">E_XCD</span><span class="o">=</span><span class="m">66</span>
+<span class="nv">E_NOTROOT</span><span class="o">=</span><span class="m">67</span>
+
+<span class="c1"># 当然要使用root 用户来运行.</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$UID</span><span class="s2">&#34;</span> -ne <span class="s2">&#34;</span><span class="nv">$ROOT_UID</span><span class="s2">&#34;</span> <span class="o">]</span>
+<span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;Must be root to run this script.&#34;</span>
+    <span class="nb">exit</span> <span class="nv">$E_NOTROOT</span>
+<span class="k">fi</span>
+
+<span class="nb">cd</span> <span class="nv">$LOG_DIR</span>
+
+<span class="k">if</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$PWD</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$LOG_DIR</span><span class="s2">&#34;</span> <span class="o">]</span>
+<span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;Can&#39;t change to </span><span class="nv">$LOG_DIR</span><span class="s2">.&#34;</span>
+    <span class="nb">exit</span> <span class="nv">$E_XCD</span>
+<span class="k">fi</span>
+
+<span class="c1"># 测试是否有命令行参数，非空判断</span>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> <span class="o">]</span>
+<span class="k">then</span>
+    <span class="nv">lines</span><span class="o">=</span><span class="nv">$1</span>
+<span class="k">else</span>
+    <span class="nv">lines</span><span class="o">=</span><span class="nv">$LINES</span> <span class="c1"># 默认，如果不在命令行中指定</span>
+<span class="k">fi</span>
+
+<span class="c1"># 保存log file消息的最后部分</span>
+tail -<span class="nv">$lines</span> messages &gt; mesg.temp
+mv mesg.temp messages
+
+cat /dev/null &gt; wtmp
+<span class="nb">echo</span> <span class="s2">&#34;Logs cleaned up.&#34;</span>
+
+<span class="c1">#返回0表示成功</span>
+<span class="nb">exit</span> <span class="m">0</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上面使用if else来判断是否有输入参数，一个更好的检测命令行参数的方式是使用正则表达式做判断，以检查输入参数的合法性：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">E_WRONGARGS</span><span class="o">=</span><span class="m">65</span> <span class="c1"># 非数值参数(错误的参数格式)</span>
+
+<span class="k">case</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> in
+    <span class="s2">&#34;&#34;</span> <span class="o">)</span> <span class="nv">lines</span><span class="o">=</span><span class="m">50</span><span class="p">;;</span>
+    *<span class="o">[</span>!0-9<span class="o">]</span>*<span class="o">)</span> <span class="nb">echo</span> <span class="s2">&#34;Usage: `basename </span><span class="nv">$0</span><span class="s2">` file-to-cleanup&#34;</span><span class="p">;</span> <span class="nb">exit</span> <span class="nv">$E_WRONGARGS</span><span class="p">;;</span> 
+    * <span class="o">)</span> <span class="nv">lines</span><span class="o">=</span><span class="nv">$1</span><span class="p">;;</span>
+<span class="k">esac</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>编写完脚本之后，你可以使用<code>sh scriptname</code>或者<code>bash scriptname</code>来调用这个脚本。不推荐使用<code>sh &lt;scriptname</code>，因为这禁用了脚本从stdin中读数据的功能。更方便的方法是让脚本本身就具有 可执行权限，通过<code>chmod</code>命令可以修改。比如:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chmod <span class="m">555</span> scriptname  <span class="c1">#允许任何人都具有可读和执行权限</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>或者：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chmod +rx scriptname <span class="c1">#允许任何人都具有可读和执行权限</span> 
+chmod u+rx scriptname <span class="c1">#只给脚本的所有者可读和执行权限</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>既然脚本已经具有了可执行权限，现在你可以使用<code>./scriptname</code>来测试这个脚本了。如果这个脚本以一个<code>#!</code>行开头，那么脚本将会调用合适的命令解释器来运行。</p>
+
+<p>这样一个简单的脚本就编写完成并能运行了，从这个例子中，我们可以学到bash编程的一些代码规范：</p>
+
+<ul>
+<li>使用变量</li>
+<li>脚本运行中，需要做一些异常判断</li>
+</ul>
+
+<p>除此之外，google公司还定义了一份<a href="https://google-styleguide.googlecode.com/svn/trunk/shell.xml">Shell Style Guide</a>，可以仔细阅读并约束自己去遵循这些规范。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="http://blog.javachen.com/static/doc/abs-guide/html/index.html">高级Bash脚本编程指南-中文版</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-06-29
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/bash/">bash</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/07/06/bash-special-characters/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Bash中的特殊字符</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/06/26/spark-shell-command/">
+            <span class="next-text nav-default">spark-shell脚本分析</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

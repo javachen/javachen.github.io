@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>YARN配置Kerberos认证 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="记录 CDH Hadoop 集群上配置 YARN 集成 Kerberos 的过程，包括 Kerberos 的安装和 YARN 相关配置修改说明。" /><meta name="keywords" content="Hugo, theme, even" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2014/11/05/config-kerberos-in-cdh-yarn/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="YARN配置Kerberos认证" />
+<meta property="og:description" content="记录 CDH Hadoop 集群上配置 YARN 集成 Kerberos 的过程，包括 Kerberos 的安装和 YARN 相关配置修改说明。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2014/11/05/config-kerberos-in-cdh-yarn/" />
+<meta property="article:published_time" content="2014-11-05T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-11-05T08:00:00+08:00" />
+<meta itemprop="name" content="YARN配置Kerberos认证">
+<meta itemprop="description" content="记录 CDH Hadoop 集群上配置 YARN 集成 Kerberos 的过程，包括 Kerberos 的安装和 YARN 相关配置修改说明。">
+
+
+<meta itemprop="datePublished" content="2014-11-05T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-11-05T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2040">
+
+
+
+<meta itemprop="keywords" content="kerberos,yarn," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="YARN配置Kerberos认证"/>
+<meta name="twitter:description" content="记录 CDH Hadoop 集群上配置 YARN 集成 Kerberos 的过程，包括 Kerberos 的安装和 YARN 相关配置修改说明。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">YARN配置Kerberos认证</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-11-05 </span>
+        <div class="post-category">
+            <a href="/categories/mapreduce/"> mapreduce </a>
+            </div>
+          <span class="more-meta"> 约 2040 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-环境说明">1. 环境说明</a></li>
+<li><a href="#2-生成-keytab">2. 生成 keytab</a></li>
+<li><a href="#3-修改-yarn-配置文件">3. 修改 YARN 配置文件</a></li>
+<li><a href="#4-启动服务">4. 启动服务</a>
+<ul>
+<li><a href="#启动-resourcemanager">启动 ResourceManager</a></li>
+<li><a href="#启动-nodemanager">启动 NodeManager</a></li>
+<li><a href="#启动-mapreduce-job-history-server">启动 MapReduce Job History Server</a></li>
+</ul></li>
+<li><a href="#5-测试">5. 测试</a></li>
+<li><a href="#6-相关文章">6. 相关文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+  <div class="post-outdated">
+    <div class="warn">
+      <p>【注意】最后更新于 <span class="timeago" datetime="2014-11-05T08:00:00" title="November 5, 2014">November 5, 2014</span>，文中内容可能已过时，请谨慎使用。</p>
+    </div>
+  </div>
+    <div class="post-content">
+      
+
+<p>关于 Kerberos 的安装和 HDFS 配置 kerberos 认证，请参考 <a href="/2014/11/04/config-kerberos-in-cdh-hdfs.html">HDFS配置kerberos认证</a>。</p>
+
+<h1 id="1-环境说明">1. 环境说明</h1>
+
+<p>系统环境：</p>
+
+<ul>
+<li>操作系统：CentOs 6.6</li>
+<li>Hadoop版本：<code>CDH5.4</code></li>
+<li>JDK版本：<code>1.7.0_71</code></li>
+<li>运行用户：root</li>
+</ul>
+
+<p>集群各节点角色规划为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+192.168.56.122        cdh2     DataNode、SecondaryNameNode、NodeManager、HBase、Hive Server2、Impala Server
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hive Server2、Impala Server</pre></td></tr></table>
+</div>
+</div>
+<p>cdh1作为master节点，其他节点作为slave节点，hostname 请使用小写，要不然在集成 kerberos 时会出现一些错误。</p>
+
+<h1 id="2-生成-keytab">2. 生成 keytab</h1>
+
+<p>在 cdh1 节点，即 KDC server 节点上执行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /var/kerberos/krb5kdc/
+
+kadmin.local -q <span class="s2">&#34;addprinc -randkey yarn/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey yarn/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey yarn/cdh3@JAVACHEN.COM &#34;</span>
+
+kadmin.local -q <span class="s2">&#34;addprinc -randkey mapred/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey mapred/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey mapred/cdh3@JAVACHEN.COM &#34;</span>
+
+kadmin.local -q <span class="s2">&#34;xst  -k yarn.keytab  yarn/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k yarn.keytab  yarn/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k yarn.keytab  yarn/cdh3@JAVACHEN.COM &#34;</span>
+
+kadmin.local -q <span class="s2">&#34;xst  -k mapred.keytab  mapred/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k mapred.keytab  mapred/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k mapred.keytab  mapred/cdh3@JAVACHEN.COM &#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>拷贝 yarn.keytab 和 mapred.keytab 文件到其他节点的 <code>/etc/hadoop/conf</code> 目录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ scp yarn.keytab mapred.keytab cdh1:/etc/hadoop/conf
+$ scp yarn.keytab mapred.keytab cdh2:/etc/hadoop/conf
+$ scp yarn.keytab mapred.keytab cdh3:/etc/hadoop/conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>并设置权限，分别在 cdh1、cdh2、cdh3 上执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s2">&#34;cd /etc/hadoop/conf/;chown yarn:hadoop yarn.keytab;chown mapred:hadoop mapred.keytab ;chmod 400 *.keytab&#34;</span>
+$ ssh cdh2 <span class="s2">&#34;cd /etc/hadoop/conf/;chown yarn:hadoop yarn.keytab;chown mapred:hadoop mapred.keytab ;chmod 400 *.keytab&#34;</span>
+$ ssh cdh3 <span class="s2">&#34;cd /etc/hadoop/conf/;chown yarn:hadoop yarn.keytab;chown mapred:hadoop mapred.keytab ;chmod 400 *.keytab&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>由于 keytab 相当于有了永久凭证，不需要提供密码(如果修改 kdc 中的 principal 的密码，则该 keytab 就会失效)，所以其他用户如果对该文件有读权限，就可以冒充 keytab 中指定的用户身份访问 hadoop，所以 keytab 文件需要确保只对 owner 有读权限(<code>0400</code>)</p>
+
+<h1 id="3-修改-yarn-配置文件">3. 修改 YARN 配置文件</h1>
+
+<p>修改 yarn-site.xml，添加下面配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.keytab<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/yarn.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.principal<span class="nt">&lt;/name&gt;</span> 
+  <span class="nt">&lt;value&gt;</span>yarn/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.nodemanager.keytab<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/yarn.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.nodemanager.principal<span class="nt">&lt;/name&gt;</span> 
+  <span class="nt">&lt;value&gt;</span>yarn/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span> 
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.nodemanager.container-executor.class<span class="nt">&lt;/name&gt;</span>  
+  <span class="nt">&lt;value&gt;</span>org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span> 
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.nodemanager.linux-container-executor.group<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>yarn<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果想要 YARN 开启 SSL，则添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.http.policy<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTPS_ONLY<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 mapred-site.xml，添加如下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.keytab<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/mapred.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span> 
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.principal<span class="nt">&lt;/name&gt;</span> 
+  <span class="nt">&lt;value&gt;</span>mapred/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果想要 mapreduce jobhistory 开启 SSL，则添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.http.policy<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTPS_ONLY<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在 <code>/etc/hadoop/conf</code> 目录下创建 container-executor.cfg 文件，内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">#configured value of yarn.nodemanager.linux-container-executor.group
+yarn.nodemanager.linux-container-executor.group=yarn
+#comma separated list of users who can not run applications
+banned.users=bin
+#Prevent other super-users
+min.user.id=0
+#comma separated list of system users who CAN run applications
+allowed.system.users=root,nobody,impala,hive,hdfs,yarn</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置该文件权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ chown root:yarn container-executor.cfg
+$ chmod <span class="m">400</span> container-executor.cfg
+
+$ ll container-executor.cfg
+-r-------- <span class="m">1</span> root yarn <span class="m">354</span> <span class="m">11</span>-05 <span class="m">14</span>:14 container-executor.cfg</code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>注意：</strong></p>
+
+<ul>
+<li><code>container-executor.cfg</code> 文件读写权限需设置为 <code>400</code>，所有者为 <code>root:yarn</code>。</li>
+<li><code>yarn.nodemanager.linux-container-executor.group</code> 要同时配置在 yarn-site.xml 和 container-executor.cfg，且其值需要为运行 NodeManager 的用户所在的组，这里为 yarn。</li>
+<li><code>banned.users</code> 不能为空，默认值为 <code>hfds,yarn,mapred,bin</code></li>
+<li><code>min.user.id</code> 默认值为 1000，在有些 centos 系统中，用户最小 id 为500，则需要修改该值</li>
+<li>确保 <code>yarn.nodemanager.local-dirs</code> 和 <code>yarn.nodemanager.log-dirs</code> 对应的目录权限为 <code>755</code> 。</li>
+</ul>
+
+<p>设置 /usr/lib/hadoop-yarn/bin/container-executor 读写权限为 <code>6050</code> 如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ chown root:yarn /usr/lib/hadoop-yarn/bin/container-executor
+$ chmod <span class="m">6050</span> /usr/lib/hadoop-yarn/bin/container-executor
+
+$ ll /usr/lib/hadoop-yarn/bin/container-executor
+---Sr-s--- <span class="m">1</span> root yarn <span class="m">333</span> <span class="m">11</span>-04 <span class="m">19</span>:11 container-executor</code></pre></td></tr></table>
+</div>
+</div>
+<p>测试是否配置正确：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ /usr/lib/hadoop-yarn/bin/container-executor --checksetup</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果提示错误，则查看 NodeManger 的日志，然后对照 <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_sg_other_hadoop_security.html?scroll=topic_18_unique_2">YARN ONLY: Container-executor Error Codes</a> 查看错误对应的问题说明。</p>
+
+<p>关于 LinuxContainerExecutor 的详细说明，可以参考 <a href="http://hadoop.apache.org/docs/r2.5.0/hadoop-project-dist/hadoop-common/SecureMode.html#LinuxContainerExecutor">http://hadoop.apache.org/docs/r2.5.0/hadoop-project-dist/hadoop-common/SecureMode.html#LinuxContainerExecutor</a>。</p>
+
+<p>记住将修改的上面文件同步到其他节点：cdh2、cdh3，并再次一一检查权限是否正确。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> /etc/hadoop/conf/
+
+$ scp yarn-site.xml mapred-site.xml container-executor.cfg  cdh2:/etc/hadoop/conf/
+$ scp yarn-site.xml mapred-site.xml container-executor.cfg  cdh3:/etc/hadoop/conf/
+
+$ ssh cdh2 <span class="s2">&#34;cd /etc/hadoop/conf/; chown root:yarn container-executor.cfg ; chmod 400 container-executor.cfg&#34;</span>
+$ ssh cdh3 <span class="s2">&#34;cd /etc/hadoop/conf/; chown root:yarn container-executor.cfg ; chmod 400 container-executor.cfg&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="4-启动服务">4. 启动服务</h1>
+
+<h2 id="启动-resourcemanager">启动 ResourceManager</h2>
+
+<p>resourcemanager 是通过 yarn 用户启动的，故在 cdh1 上先获取 yarn 用户的 ticket 再启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/yarn.keytab yarn/cdh1@JAVACHEN.COM
+$ service hadoop-yarn-resourcemanager start</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后查看日志，确认是否启动成功。</p>
+
+<h2 id="启动-nodemanager">启动 NodeManager</h2>
+
+<p>resourcemanager 是通过 yarn 用户启动的，故在 cdh2 和 cdh3 上先获取 yarn 用户的 ticket 再启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh2 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/yarn.keytab yarn/cdh2@JAVACHEN.COM ;service hadoop-yarn-nodemanager start&#34;</span>
+$ ssh cdh3 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/yarn.keytab yarn/cdh3@JAVACHEN.COM ;service hadoop-yarn-nodemanager start&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="启动-mapreduce-job-history-server">启动 MapReduce Job History Server</h2>
+
+<p>resourcemanager 是通过 mapred 用户启动的，故在 cdh1 上先获取 mapred 用户的 ticket 再启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/mapred.keytab mapred/cdh1@JAVACHEN.COM
+$ service hadoop-mapreduce-historyserver start</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="5-测试">5. 测试</h1>
+
+<p>检查 web 页面是否可以访问：<a href="http://cdh1:8088/cluster">http://cdh1:8088/cluster</a></p>
+
+<p>运行一个 mapreduce 的例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ klist
+  Ticket cache: FILE:/tmp/krb5cc_1002
+  Default principal: yarn/cdh1@JAVACHEN.COM
+
+  Valid starting     Expires            Service principal
+  11/10/14 11:18:55  11/11/14 11:18:55  krbtgt/cdh1@JAVACHEN.COM
+    renew until 11/17/14 11:18:55
+
+
+  Kerberos 4 ticket cache: /tmp/tkt1002
+  klist: You have no tickets cached
+
+$ hadoop jar /usr/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar pi 10 10000</pre></td></tr></table>
+</div>
+</div>
+<p>如果没有报错，则说明配置成功。最后运行的结果为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">Job Finished in <span class="m">54</span>.56 seconds
+Estimated value of Pi is <span class="m">3</span>.14120000000000000000</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果出现下面错误，请检查环境变量中 <code>HADOOP_YARN_HOME</code> 是否设置正确，并和 <code>yarn.application.classpath</code> 中的保持一致。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">14</span>/11/13 <span class="m">11</span>:41:02 INFO mapreduce.Job: Job job_1415849491982_0003 failed with state FAILED due to: Application application_1415849491982_0003 failed <span class="m">2</span> <span class="nb">times</span> due to AM Container <span class="k">for</span> appattempt_1415849491982_0003_000002 exited with  exitCode: <span class="m">1</span> due to: Exception from container-launch.
+Container id: container_1415849491982_0003_02_000001
+Exit code: <span class="m">1</span>
+Stack trace: ExitCodeException <span class="nv">exitCode</span><span class="o">=</span><span class="m">1</span>:
+  at org.apache.hadoop.util.Shell.runCommand<span class="o">(</span>Shell.java:538<span class="o">)</span>
+  at org.apache.hadoop.util.Shell.run<span class="o">(</span>Shell.java:455<span class="o">)</span>
+  at org.apache.hadoop.util.Shell<span class="nv">$ShellCommandExecutor</span>.execute<span class="o">(</span>Shell.java:702<span class="o">)</span>
+  at org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor.launchContainer<span class="o">(</span>LinuxContainerExecutor.java:281<span class="o">)</span>
+  at org.apache.hadoop.yarn.server.nodemanager.containermanager.launcher.ContainerLaunch.call<span class="o">(</span>ContainerLaunch.java:299<span class="o">)</span>
+  at org.apache.hadoop.yarn.server.nodemanager.containermanager.launcher.ContainerLaunch.call<span class="o">(</span>ContainerLaunch.java:81<span class="o">)</span>
+  at java.util.concurrent.FutureTask<span class="nv">$Sync</span>.innerRun<span class="o">(</span>FutureTask.java:303<span class="o">)</span>
+  at java.util.concurrent.FutureTask.run<span class="o">(</span>FutureTask.java:138<span class="o">)</span>
+  at java.util.concurrent.ThreadPoolExecutor<span class="nv">$Worker</span>.runTask<span class="o">(</span>ThreadPoolExecutor.java:886<span class="o">)</span>
+  at java.util.concurrent.ThreadPoolExecutor<span class="nv">$Worker</span>.run<span class="o">(</span>ThreadPoolExecutor.java:908<span class="o">)</span>
+  at java.lang.Thread.run<span class="o">(</span>Thread.java:662<span class="o">)</span>
+
+Shell output: main : <span class="nb">command</span> provided <span class="m">1</span>
+main : user is yarn
+main : requested yarn user is yarn
+
+
+Container exited with a non-zero <span class="nb">exit</span> code <span class="m">1</span>
+.Failing this attempt.. Failing the application.
+<span class="m">14</span>/11/13 <span class="m">11</span>:41:02 INFO mapreduce.Job: Counters: <span class="m">0</span>
+Job Finished in <span class="m">13</span>.428 seconds
+java.io.FileNotFoundException: File does not exist: hdfs://cdh1:8020/user/yarn/QuasiMonteCarlo_1415850045475_708291630/out/reduce-out</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-相关文章">6. 相关文章</h1>
+
+<ul>
+<li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
+<li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-hive">Hive配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-impala">Impala配置Kerberos认证</a></li>
+<li><a href="/2014/11/18/config-kerberos-in-cdh-zookeeper.">Zookeeper配置Kerberos认证</a></li>
+<li><a href="/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop">Hadoop配置LDAP集成Kerberos</a></li>
+<li><a href="/2014/11/14/config-secured-hive-with-sentry">配置安全的Hive集群集成Sentry</a></li>
+<li><a href="/2014/11/14/config-secured-impala-with-sentry">配置安全的Impala集群集成Sentry</a></li>
+<li><a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop">Hadoop集群部署权限总结</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-11-05
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/images/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kerberos/">kerberos</a>
+          <a href="/tags/yarn/">yarn</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/11/06/config-kerberos-in-cdh-impala/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Impala配置Kerberos认证</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/11/04/config-kerberos-in-cdh-hdfs/">
+            <span class="next-text nav-default">HDFS配置Kerberos认证</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen-blog-theme"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://localhost:1313" class="iconfont icon-stack-overflow" title="stack-overflow"></a>
+      <a href="http://localhost:1313" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="http://localhost:1313" class="iconfont icon-facebook" title="facebook"></a>
+      <a href="http://localhost:1313" class="iconfont icon-linkedin" title="linkedin"></a>
+      <a href="http://localhost:1313" class="iconfont icon-google" title="google"></a>
+      <a href="http://github.com/javacehn" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="http://localhost:1313" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="http://localhost:1313" class="iconfont icon-douban" title="douban"></a>
+      <a href="http://localhost:1313" class="iconfont icon-pocket" title="pocket"></a>
+      <a href="http://localhost:1313" class="iconfont icon-tumblr" title="tumblr"></a>
+      <a href="http://localhost:1313" class="iconfont icon-instagram" title="instagram"></a>
+      <a href="http://localhost:1313" class="iconfont icon-gitlab" title="gitlab"></a>
+      <a href="http://localhost:1313" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.min.js" integrity="sha256-jwCP0NAdCBloaIWTWHmW4i3snUNMHUNO+jr9rYd2iOI=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@3.0.2/dist/timeago.locales.min.js" integrity="sha256-ZwofwC1Lf/faQCzN7nZtfijVV6hSwxjQMwXL4gn9qU8=" crossorigin="anonymous"></script>
+  <script><!-- NOTE: timeago.js uses the language code format like "zh_CN" (underscore and case sensitive) -->
+    var languageCode = "en".replace(/-/g, '_').replace(/_(.*)/, function ($0, $1) {return $0.replace($1, $1.toUpperCase());});
+    timeago().render(document.querySelectorAll('.timeago'), languageCode);
+    timeago.cancel();  
+  </script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>
