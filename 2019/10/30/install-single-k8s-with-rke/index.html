@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4031">
+<meta itemprop="wordCount" content="4227">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4031 字 </span>
+          <span class="more-meta"> 约 4227 字 </span>
           <span class="more-meta"> 预计阅读 9 分钟 </span>
         
       </div>
@@ -192,10 +192,11 @@
 <li><a href="#设置bash自动完成">设置Bash自动完成</a></li>
 <li><a href="#查看集群状态">查看集群状态</a></li>
 <li><a href="#隔离主节点">隔离主节点</a></li>
+</ul></li>
 <li><a href="#集群调优">集群调优</a></li>
 <li><a href="#删除集群">删除集群</a></li>
+<li><a href="#升级k8s">升级K8S</a></li>
 <li><a href="#原生k8s参数">原生K8S参数</a></li>
-</ul></li>
 <li><a href="#总结">总结</a></li>
 </ul>
 </nav>
@@ -842,7 +843,7 @@ sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">wget https://github.com/rancher/rke/releases/download/v0.3.1/rke_linux-amd64 -O /usr/local/bin/rke
+<pre class="chroma"><code class="language-bash" data-lang="bash">wget https://github.com/rancher/rke/releases/download/v0.3.2/rke_linux-amd64 -O /usr/local/bin/rke
 sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
 </div>
 </div>
@@ -955,10 +956,10 @@ expect eof</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">1rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
 </div>
 </div>
-<p>创建RKE配置文件cluster.yml</p>
+<p>切换到普通用户chenzj，创建RKE配置文件cluster.yml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -988,13 +989,17 @@ expect eof</code></pre></td></tr></table>
 </span><span class="lnt">25
 </span><span class="lnt">26
 </span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u <span class="nv">$USER</span> cat &gt; /home/<span class="nv">$USER</span>/cluster.yml <span class="s">&lt;&lt;EOF
+<pre class="chroma"><code class="language-bash" data-lang="bash">su - <span class="nv">$USER</span>
+
+mkdir -p install/k8s
+cat &gt; cluster.yml <span class="s">&lt;&lt;EOF
 </span><span class="s">nodes:
 </span><span class="s">  - address: 192.168.56.111
 </span><span class="s">    user: $USER
-</span><span class="s">    port: 22
 </span><span class="s">    role: [controlplane,etcd,worker]
 </span><span class="s">
 </span><span class="s">services:
@@ -1027,30 +1032,15 @@ expect eof</code></pre></td></tr></table>
 <li>RKE支持Kubernetes集群HA方式部署，您可以在cluster.yml文件中指定多个controlplane节点。RKE将在这些节点上部署master组件，并且kubelet配置为默认连接127.0.0.1:6443，这是nginx-proxy代理向所有主节点请求的服务的地址</li>
 </ul>
 
-<p>设置文件权限</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">chown <span class="nv">$USER</span>:<span class="nv">$USER</span> /home/<span class="nv">$USER</span>/cluster.yml
-chmod <span class="m">777</span> /home/<span class="nv">$USER</span>/cluster.yml</code></pre></td></tr></table>
-</div>
-</div>
 <h2 id="创建集群">创建集群</h2>
 
-<p>切换到普通用户chenzj，在创建集群</p>
+<p>在创建集群</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">su - <span class="nv">$USER</span>
-
-rke up --config cluster.yml</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke up --config cluster.yml</code></pre></td></tr></table>
 </div>
 </div>
 <p>在安装过程中，RKE会自动生成一个kube_config_cluster.yml与RKE二进制文件位于同一目录中的配置文件。此文件很重要，它可以在Rancher Server故障时，利用kubectl通过此配置文件管理Kubernetes集群。复制此文件将其备份到安全位置。</p>
@@ -1159,18 +1149,18 @@ apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: DATA+OMITTED
-    server: https://192.168.56.111:6443
-  name: k8s-test-cluster
+    server: https://192.168.1.113:6443
+  name: k8s-test
 contexts:
 - context:
-    cluster: k8s-test-cluster
-    user: kube-admin-k8s-test-cluster
-  name: k8s-test-cluster
-current-context: k8s-test-cluster
+    cluster: k8s-test
+    user: kube-admin-k8s-test
+  name: k8s-test
+current-context: k8s-test
 kind: Config
 preferences: <span class="o">{}</span>
 users:
-- name: kube-admin-k8s-test-cluster
+- name: kube-admin-k8s-test
   user:
     client-certificate-data: REDACTED
     client-key-data: REDACTED</code></pre></td></tr></table>
@@ -1279,11 +1269,11 @@ kubectl describe pod -n ingress-nginx nginx-ingress-controller-xlr9f </code></pr
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl taint nodes --all node-role.kubernetes.io/master-</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="集群调优">集群调优</h2>
+<h1 id="集群调优">集群调优</h1>
 
 <p>参考 <a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/best-practices/">https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/best-practices/</a></p>
 
-<h2 id="删除集群">删除集群</h2>
+<h1 id="删除集群">删除集群</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -1347,23 +1337,25 @@ kubectl describe pod -n ingress-nginx nginx-ingress-controller-xlr9f </code></pr
 </span><span class="lnt">59
 </span><span class="lnt">60
 </span><span class="lnt">61
+</span><span class="lnt">62
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">rke remove
 
-<span class="c1"># 删除所有容器</span>
-docker rm -f <span class="k">$(</span>docker ps -qa<span class="k">)</span>
+<span class="c1"># 删除每个节点所有容器</span>
+docker rm -f <span class="sb">`</span>docker ps -qa<span class="sb">`</span>
 
-<span class="c1"># 删除所有容器卷</span>
-docker volume rm <span class="k">$(</span>docker volume ls -q<span class="k">)</span>
+<span class="c1"># 删除每个节点所有容器卷</span>
+docker volume rm <span class="sb">`</span>docker volume ls -q<span class="sb">`</span>
+<span class="c1">#cmd.sh &#39;docker volume rm `docker volume ls -q`&#39;</span>
 
-<span class="c1"># 卸载mount目录</span>
-<span class="k">for</span> mount in <span class="k">$(</span>mount <span class="p">|</span> grep tmpfs <span class="p">|</span> grep <span class="s1">&#39;/var/lib/kubelet&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3 }&#39;</span><span class="k">)</span> 
-	/var/lib/kubelet /var/lib/rancher<span class="p">;</span> <span class="k">do</span> umount <span class="nv">$mount</span><span class="p">;</span> 
+<span class="c1"># 卸载每个节点mount目录</span>
+<span class="k">for</span> mount in <span class="k">$(</span>mount <span class="p">|</span> grep tmpfs <span class="p">|</span> grep <span class="s1">&#39;/var/lib/kubelet&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3 }&#39;</span><span class="k">)</span> <span class="p">;</span> <span class="k">do</span> 
+	sudo umount <span class="nv">$mount</span><span class="p">;</span> 
 <span class="k">done</span>
  
 <span class="c1"># 删除残留路径</span>
-rm -rf /etc/cni <span class="se">\
+sudo rm -rf /etc/cni <span class="se">\
 </span><span class="se"></span>  /opt/cni <span class="se">\
 </span><span class="se"></span>  /run/secrets/kubernetes.io <span class="se">\
 </span><span class="se"></span>  /run/calico <span class="se">\
@@ -1375,7 +1367,7 @@ rm -rf /etc/cni <span class="se">\
 </span><span class="se"></span>  /var/log/pods <span class="se">\
 </span><span class="se"></span>  /var/run/calico
 
-  <span class="c1"># 清理网络接口</span>
+<span class="c1"># 清理网络接口</span>
   <span class="nv">network_interface</span><span class="o">=</span><span class="sb">`</span>ls /sys/class/net<span class="sb">`</span>
   <span class="k">for</span> net_inter in <span class="nv">$network_interface</span><span class="p">;</span>
   <span class="k">do</span>
@@ -1384,21 +1376,21 @@ rm -rf /etc/cni <span class="se">\
     <span class="k">fi</span>
   <span class="k">done</span>
 
-  <span class="c1"># 清理残留进程</span>
-  <span class="nv">port_list</span><span class="o">=</span><span class="s1">&#39;80 443 6443 2376 2379 2380 8472 9099 10250 10254&#39;</span>
+<span class="c1"># 清理残留进程</span>
+<span class="nv">port_list</span><span class="o">=</span><span class="s1">&#39;80 443 6443 2376 2379 2380 8472 9099 10250 10254&#39;</span>
 
 <span class="k">for</span> port in <span class="nv">$port_list</span>
 <span class="k">do</span>
 <span class="nv">pid</span><span class="o">=</span><span class="sb">`</span>netstat -atlnup<span class="p">|</span>grep <span class="nv">$port</span><span class="p">|</span>awk <span class="s1">&#39;{print $7}&#39;</span><span class="p">|</span>awk -F <span class="s1">&#39;/&#39;</span> <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>grep -v -<span class="p">|</span>sort -rnk2<span class="p">|</span>uniq<span class="sb">`</span>
 	<span class="k">if</span> <span class="o">[[</span> -n <span class="nv">$pid</span> <span class="o">]]</span><span class="p">;</span><span class="k">then</span>
-		<span class="nb">kill</span> -9 <span class="nv">$pid</span>
+		sudo <span class="nb">kill</span> -9 <span class="nv">$pid</span>
 	<span class="k">fi</span>
 <span class="k">done</span>
 
 <span class="nv">pro_pid</span><span class="o">=</span><span class="sb">`</span>ps -ef <span class="p">|</span>grep -v grep <span class="p">|</span>grep kube<span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span>
 
 <span class="k">if</span> <span class="o">[[</span> -n <span class="nv">$pro_pid</span> <span class="o">]]</span><span class="p">;</span><span class="k">then</span>
-	<span class="nb">kill</span> -9 <span class="nv">$pro_pid</span>
+	sudo <span class="nb">kill</span> -9 <span class="nv">$pro_pid</span>
 <span class="k">fi</span>
 
 <span class="c1"># 清理Iptables表</span>
@@ -1412,7 +1404,72 @@ sudo iptables --table filter --delete-chain
 systemctl restart docker </code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="原生k8s参数">原生K8S参数</h2>
+<p>另外，清理docker镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除虚悬镜像</span>
+docker image prune --force
+
+<span class="c1">#删除Rancher中指定版本的镜像</span>
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;v0.1.42|v2.2.8|v2.3.1|v2.3.0|v3.4.0|v3.7.4|v0.10.0|v0.11.0|v1.15.3-rancher1|v3.3.10-rancher1&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep rancher<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.6.1|1.9.1|1.10.0-rc2&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep gitea<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.9.0&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep harbor<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.3.1&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep drone<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep -E <span class="s1">&#39;hello-world|minio-minio|wordpress|postgresq|tomcat|maven|dev/ads|tiller&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>删除自动创建的pvc的rbd块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rbd list k8s
+
+<span class="c1">#rbd rm k8s/kubernetes-dynamic-pvc-2bca2c25-549d-4512-846d-167052bfed75</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="升级k8s">升级K8S</h1>
+
+<p>修改cluster.yml文件，然后执行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke up --config cluster.yml</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="原生k8s参数">原生K8S参数</h1>
 
 <p>参考 <a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/k8s-parameter/">https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/k8s-parameter/</a></p>
 
