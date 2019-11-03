@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4227">
+<meta itemprop="wordCount" content="4156">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4227 字 </span>
+          <span class="more-meta"> 约 4156 字 </span>
           <span class="more-meta"> 预计阅读 9 分钟 </span>
         
       </div>
@@ -177,8 +177,9 @@
 <ul>
 <li><a href="#更新yum源">更新yum源</a></li>
 <li><a href="#安装docker-ce">安装Docker-ce</a></li>
+<li><a href="#启动docker">启动Docker</a></li>
 <li><a href="#修改配置文件">修改配置文件</a></li>
-<li><a href="#启动">启动</a></li>
+<li><a href="#重新加载配置">重新加载配置</a></li>
 </ul></li>
 <li><a href="#安装k8s">安装k8s</a>
 <ul>
@@ -191,7 +192,6 @@
 <li><a href="#与kubernetes集群的交互">与Kubernetes集群的交互</a></li>
 <li><a href="#设置bash自动完成">设置Bash自动完成</a></li>
 <li><a href="#查看集群状态">查看集群状态</a></li>
-<li><a href="#隔离主节点">隔离主节点</a></li>
 </ul></li>
 <li><a href="#集群调优">集群调优</a></li>
 <li><a href="#删除集群">删除集群</a></li>
@@ -719,25 +719,19 @@ grub2-mkconfig -o /boot/grub2/grub</code></pre></td></tr></table>
 </span><span class="lnt"> 9
 </span><span class="lnt">10
 </span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-4.el7.elrepo.noarch.rpm
-sudo yum --enablerepo<span class="o">=</span>elrepo-kernel install -y kernel-lt
+sudo yum --enablerepo<span class="o">=</span>elrepo-kernel install -y kernel-lt kernel-lt-devel kernel-lt-headers
 sudo awk -F<span class="se">\&#39;</span> <span class="s1">&#39;$1==&#34;menuentry &#34; {print i++ &#34; : &#34; $2}&#39;</span> /etc/grub2.cfg
 sudo grub2-set-default <span class="m">0</span>
 sudo sed -i <span class="s1">&#39;s/GRUB_DEFAULT=saved/GRUB_DEFAULT=0/g&#39;</span> /etc/default/grub
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 reboot
 
-<span class="c1">#重启后，删除3.10内核，安装内核4</span>
-sudo rpm -qa <span class="p">|</span> grep kernel
-sudo yum remove kernel*-3.10*
-
-sudo yum --enablerepo<span class="o">=</span>elrepo-kernel install kernel-lt-devel-<span class="k">$(</span>uname -r<span class="k">)</span> <span class="se">\
-</span><span class="se"></span>	kernel-lt-headers-<span class="k">$(</span>uname -r<span class="k">)</span></code></pre></td></tr></table>
+<span class="c1">#重启后，删除3.10内核</span>
+<span class="c1">#sudo rpm -qa | grep kernel</span>
+<span class="c1">#sudo yum remove kernel*-3.10*</span></code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="安装docker">安装docker</h1>
@@ -760,6 +754,15 @@ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/d
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">yum install docker-ce -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="启动docker">启动Docker</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl <span class="nb">enable</span> docker <span class="o">&amp;&amp;</span> systemctl start docker</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="修改配置文件">修改配置文件</h2>
@@ -788,11 +791,9 @@ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/d
 </span><span class="lnt">21
 </span><span class="lnt">22
 </span><span class="lnt">23
-</span><span class="lnt">24
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir /etc/docke
-cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
 </span><span class="s">{
 </span><span class="s">    &#34;oom-score-adjust&#34;: -1000,
 </span><span class="s">    &#34;log-driver&#34;: &#34;json-file&#34;,
@@ -803,7 +804,7 @@ cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
 </span><span class="s">    &#34;max-concurrent-downloads&#34;: 10,
 </span><span class="s">    &#34;max-concurrent-uploads&#34;: 10,
 </span><span class="s">    &#34;bip&#34;: &#34;172.17.10.1/24&#34;,
-</span><span class="s">    &#34;registry-mirrors&#34;: [&#34;https://docker.mirrors.ustc.edu.cn&#34;, &#34;http://hub-mirror.c.163.com&#34;],
+</span><span class="s">    &#34;registry-mirrors&#34;: [&#34;https://hub.daocloud.io&#34;],
 </span><span class="s">    &#34;insecure-registries&#34;:[&#34;https://harbor.javachen.com&#34;],
 </span><span class="s">    &#34;exec-opts&#34;: [&#34;native.cgroupdriver=systemd&#34;],
 </span><span class="s">    &#34;storage-driver&#34;: &#34;overlay2&#34;,
@@ -823,27 +824,31 @@ sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H
 <li><a href="https://harbor.javachen.com">https://harbor.javachen.com</a> 是将来要配置的harbor镜像的域名。</li>
 </ul>
 
-<h2 id="启动">启动</h2>
+<h2 id="重新加载配置">重新加载配置</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl daemon-reload <span class="o">&amp;&amp;</span> systemctl <span class="nb">enable</span> docker <span class="o">&amp;&amp;</span> systemctl restart docker</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl daemon-reload <span class="o">&amp;&amp;</span> systemctl restart docker</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="安装k8s">安装k8s</h1>
 
 <h2 id="下载rke">下载RKE</h2>
 
-<p>rke当前发布列表 <a href="https://github.com/rancher/rke/releases，这里下载最新的">https://github.com/rancher/rke/releases，这里下载最新的</a></p>
+<p>rke当前发布列表 <a href="https://github.com/rancher/rke/releases">https://github.com/rancher/rke/releases</a> ，这里下载最新的</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">wget https://github.com/rancher/rke/releases/download/v0.3.2/rke_linux-amd64 -O /usr/local/bin/rke
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s -L -o /usr/local/bin/rke <span class="se">\
+</span><span class="se"></span>	https://github.com/rancher/rke/releases/download/v0.3.2/rke_linux-amd64
+
 sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
 </div>
 </div>
@@ -995,7 +1000,7 @@ expect eof</code></pre></td></tr></table>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">su - <span class="nv">$USER</span>
 
-mkdir -p install/k8s
+mkdir -p install/k8s <span class="o">&amp;&amp;</span> <span class="nb">cd</span> install/k8s
 cat &gt; cluster.yml <span class="s">&lt;&lt;EOF
 </span><span class="s">nodes:
 </span><span class="s">  - address: 192.168.56.111
@@ -1065,7 +1070,7 @@ cat &gt; cluster.yml <span class="s">&lt;&lt;EOF
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># sudo 没权限，手动创建</span>
-sudo cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
 </span><span class="s">[kubernetes]
 </span><span class="s">name=Kubernetes
 </span><span class="s">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
@@ -1075,7 +1080,7 @@ sudo cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
 </span><span class="s">  http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 </span><span class="s">EOF</span>
 
-sudo yum install kubectl -y</code></pre></td></tr></table>
+yum install kubectl -y</code></pre></td></tr></table>
 </div>
 </div>
 <p>RKE会在配置文件所在的目录下部署一个本地文件，该文件中包含kube配置信息以连接到新生成的群集。默认情况下，kube配置文件被称为kube_config_cluster.yml。将这个文件复制到你的本地~/.kube/config，就可以在本地使用kubectl了。</p>
@@ -1085,8 +1090,8 @@ sudo yum install kubectl -y</code></pre></td></tr></table>
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">1mkdir ~/.kube/
-2cp kube_config_cluster.yml ~/.kube/config</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir ~/.kube/
+cp kube_config_cluster.yml ~/.kube/config</code></pre></td></tr></table>
 </div>
 </div>
 <p>需要注意的是，部署的本地kube配置名称是和集群配置文件相关的。例如，如果您使用名为mycluster.yml的配置文件，则本地kube配置将被命名为.kube_config_mycluster.yml。</p>
@@ -1256,17 +1261,6 @@ kube-system     rke-network-plugin-deploy-job-88nnb        <span class="m">0</sp
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe pod -n ingress-nginx default-http-backend-67cf578fc4-d9mrp 
 kubectl describe pod -n ingress-nginx nginx-ingress-controller-xlr9f </code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="隔离主节点">隔离主节点</h2>
-
-<p>因为是单节点，要想部署pod，需要执行下面命令：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl taint nodes --all node-role.kubernetes.io/master-</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="集群调优">集群调优</h1>
@@ -1537,14 +1531,6 @@ docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep -
   
 
   
-    <script src="https://utteranc.es/client.js"
-            repo="javachen/javachen.github.io"
-            issue-term="pathname"
-            theme="github-light"
-            crossorigin="anonymous"
-            async>
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
 
       </div>
     </main>
