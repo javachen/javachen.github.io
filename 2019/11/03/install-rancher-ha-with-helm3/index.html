@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-03T23:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-03T23:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="5097">
+<meta itemprop="wordCount" content="4834">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 5097 字 </span>
-          <span class="more-meta"> 预计阅读 11 分钟 </span>
+          <span class="more-meta"> 约 4834 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
         
       </div>
     </header>
@@ -147,10 +147,19 @@
 <li><a href="#添加chart仓库地址">添加Chart仓库地址</a></li>
 <li><a href="#ssl证书配置">SSL证书配置</a>
 <ul>
-<li><a href="#安装cert-manager">安装cert-manager</a></li>
+<li><a href="#安装cert-manager">安装cert-manager</a>
+<ul>
+<li><a href="#使用kubectl安装">使用kubectl安装</a></li>
+<li><a href="#使用helm安装">使用helm安装</a></li>
+<li><a href="#查看状态">查看状态</a></li>
+</ul></li>
 <li><a href="#使用rancher生成证书">使用Rancher生成证书</a></li>
 <li><a href="#let-s-encrypt生成证书">Let’s Encrypt生成证书</a></li>
-<li><a href="#从文件生成证书">从文件生成证书</a></li>
+<li><a href="#从文件生成证书">从文件生成证书</a>
+<ul>
+<li><a href="#使用权威证书安装">使用权威证书安装</a></li>
+<li><a href="#使用自签名证书安装">使用自签名证书安装</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#rancher-ha安装部署">Rancher HA安装部署</a>
 <ul>
@@ -158,24 +167,16 @@
 <li><a href="#安装nginx">安装Nginx</a></li>
 <li><a href="#四层负载均衡部署">四层负载均衡部署</a>
 <ul>
-<li><a href="#从文件生成证书-1">从文件生成证书</a>
+<li><a href="#配置nginx">配置Nginx</a></li>
+<li><a href="#安装rancher">安装Rancher</a></li>
+</ul></li>
+<li><a href="#七层负载均衡部署">七层负载均衡部署`</a>
 <ul>
-<li><a href="#使用权威证书安装">使用权威证书安装</a></li>
-<li><a href="#使用自签名证书安装">使用自签名证书安装</a></li>
-</ul></li>
-<li><a href="#创建四层负载均衡">创建四层负载均衡</a></li>
-</ul></li>
-<li><a href="#七层负载均衡部署">七层负载均衡部署</a>
-<ul>
-<li><a href="#从文件生成证书-2">从文件生成证书</a>
-<ul>
-<li><a href="#使用权威ca机构颁发的证书">使用权威CA机构颁发的证书</a></li>
-<li><a href="#使用自签名ssl证书">使用自签名ssl证书</a></li>
-</ul></li>
-<li><a href="#创建七层负载均衡">创建七层负载均衡</a></li>
+<li><a href="#配置nginx-1">配置Nginx</a></li>
+<li><a href="#安装rancher-1">安装Rancher</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#查看状态">查看状态</a></li>
+<li><a href="#查看状态-1">查看状态</a></li>
 <li><a href="#添加主机映射">添加主机映射</a></li>
 <li><a href="#卸载重装">卸载重装</a></li>
 <li><a href="#升级版本">升级版本</a></li>
@@ -303,13 +304,15 @@
 
 <h1 id="添加chart仓库地址">添加Chart仓库地址</h1>
 
+<p>chart对应的源码地址：<a href="https://github.com/rancher/rancher/tree/master/chart">https://github.com/rancher/rancher/tree/master/chart</a></p>
+
 <p>添加仓库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">helm repo add rancher-latest https://releases.rancher.com/server-charts/latest</pre></td></tr></table>
+<pre class="chroma">helm repo add rancher-stable https://releases.rancher.com/server-charts/stable</pre></td></tr></table>
 </div>
 </div>
 <p>检查rancher chart仓库可用</p>
@@ -363,7 +366,18 @@
 
 <h2 id="安装cert-manager">安装cert-manager</h2>
 
-<p>当ingress.tls.source值为rancher或者letsEncrypt时，需要安装cert-manager：</p>
+<p>当ingress.tls.source值为rancher或者letsEncrypt时，需要安装cert-manager</p>
+
+<h3 id="使用kubectl安装">使用kubectl安装</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="使用helm安装">使用helm安装</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -384,30 +398,35 @@
 </span><span class="lnt">16
 </span><span class="lnt">17
 </span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#建议安装0.9版本，暂时不要用最新的版本 https://github.com/rancher/rancher/issues/20049</span>
-kubectl apply -f https://github.com/jetstack/cert-manager/blob/master/deploy/manifests/00-crds.yaml
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Install the CustomResourceDefinition resources separately</span>
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/deploy/manifests/00-crds.yaml
 
+<span class="c1"># Create the namespace for cert-manager</span>
 kubectl create namespace cert-manager
-kubectl label namespace cert-manager certmanager.k8s.io/disable-validation<span class="o">=</span><span class="nb">true</span>
+
+<span class="c1"># Add the Jetstack Helm repository</span>
 helm repo add jetstack https://charts.jetstack.io
+
+<span class="c1"># Update your local Helm chart repository cache</span>
 helm repo update
 
+<span class="c1"># Install the cert-manager Helm chart</span>
 helm install <span class="se">\
 </span><span class="se"></span>  --name cert-manager <span class="se">\
 </span><span class="se"></span>  --namespace cert-manager <span class="se">\
-</span><span class="se"></span>  --version v0.9.1 <span class="se">\
-</span><span class="se"></span>  jetstack/cert-manager
-
-kubectl -n cert-manager rollout status deploy/cert-manager
-kubectl get pods --namespace cert-manager
-NAME                                            READY   STATUS      RESTARTS   AGE
-cert-manager-7cbdc48784-rpgnt                   <span class="m">1</span>/1     Running     <span class="m">0</span>          3m
-cert-manager-webhook-5b5dd6999-kst4x            <span class="m">1</span>/1     Running     <span class="m">0</span>          3m
-cert-manager-cainjector-3ba5cd2bcd-de332x       <span class="m">1</span>/1     Running     <span class="m">0</span>          3m  </code></pre></td></tr></table>
+</span><span class="se"></span>  --version v0.11.0 <span class="se">\
+</span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="查看状态">查看状态</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get pods --namespace cert-manager</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="使用rancher生成证书">使用Rancher生成证书</h2>
@@ -420,13 +439,15 @@ cert-manager-cainjector-3ba5cd2bcd-de332x       <span class="m">1</span>/1     R
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-stable/rancher <span class="se">\
 </span><span class="se"></span>  --name rancher <span class="se">\
 </span><span class="se"></span>  --version v2.3.2  <span class="se">\
 </span><span class="se"></span>  --namespace cattle-system <span class="se">\
 </span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com</code></pre></td></tr></table>
 </div>
 </div>
+<p>默认，tls=ingress，当ingress.tls.source=rancher，就会创建一个CA类型的Issuer，一个Secret tls-rancher。</p>
+
 <h2 id="let-s-encrypt生成证书">Let’s Encrypt生成证书</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -439,16 +460,77 @@ cert-manager-cainjector-3ba5cd2bcd-de332x       <span class="m">1</span>/1     R
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-stable/rancher <span class="se">\
 </span><span class="se"></span>  --name rancher <span class="se">\
 </span><span class="se"></span>  --version v2.3.2  <span class="se">\
 </span><span class="se"></span>  --namespace cattle-system <span class="se">\
 </span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
 </span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>letsEncrypt <span class="se">\
-</span><span class="se"></span>  --set letsEncrypt.email<span class="o">=</span>me@example.org</code></pre></td></tr></table>
+</span><span class="se"></span>  --set letsEncrypt.email<span class="o">=</span>junecloud@163.com</code></pre></td></tr></table>
 </div>
 </div>
+<p>默认，tls=ingress，当ingress.tls.source=letsEncrypt，就会创建一个ACME类型的Issuer，并且采用http-01校验。</p>
+
 <h2 id="从文件生成证书">从文件生成证书</h2>
+
+<h3 id="使用权威证书安装">使用权威证书安装</h3>
+
+<p>1、获取权威证书：</p>
+
+<ul>
+<li>购买付费的</li>
+<li>在云服务商创建的免费的证书，数量有限，不支持泛域名</li>
+<li>使用 Let’s Encrypt 创建证书，可以使用 <a href="https://github.com/Neilpang/acme.sh/wiki/dns-manual-mode">acme.sh 脚本</a> 。</li>
+</ul>
+
+<p>得到证书之后，将服务证书和 CA 中间证书链合并到 tls.crt，将私钥复制到或者重命名为 tls.key；在证书所在目录执行下面命令，以acme.sh生成的证书为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> ~/.acme.sh/javachen.com
+
+<span class="c1">#将服务证书和 CA 中间证书链合并到 tls.crt</span>
+cp fullchain.cer tls.crt
+
+<span class="c1">#将私钥复制到或者重命名为 tls.key</span>
+cp javachen.com.key tls.key
+
+<span class="c1">#验证证书</span> 
+openssl verify -CAfile ca.cer tls.crt  
+
+openssl x509 -in  wesine.com.cn.cer -noout -text
+openssl x509 -in  ca.cer -noout -text
+<span class="c1">#不加CA证书验证</span>
+openssl s_client -connect rancher.test.wesine.com.cn:443 -servername rancher.test.wesine.com.cn
+
+<span class="c1">#加CA证书验证</span>
+openssl s_client -connect rancher.test.wesine.com.cn:443 -servername rancher.test.wesine.com.cn -CAfile fullchain.cer</code></pre></td></tr></table>
+</div>
+</div>
+<p>2、使用<code>kubectl</code>创建<code>tls</code>类型的<code>secrets</code>；</p>
+
+<blockquote>
+<p>注意：证书、私钥名称必须是tls.crt、tls.key。</p>
+</blockquote>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -459,15 +541,99 @@ cert-manager-cainjector-3ba5cd2bcd-de332x       <span class="m">1</span>/1     R
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cattle-system
+
+kubectl -n cattle-system create <span class="se">\
+</span><span class="se"></span>    secret tls tls-rancher-ingress <span class="se">\
+</span><span class="se"></span>    --cert<span class="o">=</span>./tls.crt <span class="se">\
+</span><span class="se"></span>    --key<span class="o">=</span>./tls.key</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、安装rancher</p>
+
+<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-stable/rancher <span class="se">\
 </span><span class="se"></span>  --name rancher <span class="se">\
 </span><span class="se"></span>  --version v2.3.2  <span class="se">\
 </span><span class="se"></span>  --namespace cattle-system <span class="se">\
 </span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
-</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret</code></pre></td></tr></table>
+</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret </code></pre></td></tr></table>
 </div>
 </div>
-<p>如果不是权威证书，是自签名证书，添加参数 <strong>&ndash;set privateCA=true</strong></p>
+<h3 id="使用自签名证书安装">使用自签名证书安装</h3>
+
+<p>1、如果没有自签名ssl证书，可以参考 <a href="https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；">https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；</a></p>
+
+<p>2、一键生成ssl自签名证书脚本将自动生成tls.crt、tls.key、cacerts.pem三个文件，文件名称不能修改。如果使用您自己生成的自签名ssl证书，则需要将服务证书和CA中间证书链合并到tls.crt文件中,将私钥复制到或者重命名为tls.key文件，将CA证书复制到或者重命名为cacerts.pem。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cp server.pem tls.crt
+cp server-key.pem tls.key
+cp ca.pem cacerts.pem</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、使用kubectl在命名空间cattle-system中创建tls-ca和tls-rancher-ingress两个secret</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建命名空间</span>
+kubectl  create namespace cattle-system
+<span class="c1"># 服务证书和私钥密文</span>
+kubectl -n cattle-system create secret tls tls-rancher-ingress --cert<span class="o">=</span>./tls.crt --key<span class="o">=</span>./tls.key
+<span class="c1"># ca证书密文</span>
+kubectl -n cattle-system create secret generic tls-ca --from-file<span class="o">=</span>cacerts.pem</code></pre></td></tr></table>
+</div>
+</div>
+<p>4、安装rancher</p>
+
+<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --name rancher <span class="se">\
+</span><span class="se"></span>  --version v2.3.2  <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
+</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">privateCA</span><span class="o">=</span><span class="nb">true</span> </code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li><p>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></p></li>
+
+<li><p>privateCA=true 设置使用私有证书</p></li>
+</ul>
 
 <h1 id="rancher-ha安装部署">Rancher HA安装部署</h1>
 
@@ -561,128 +727,13 @@ enabled=1</pre></td></tr></table>
 </div>
 <h2 id="四层负载均衡部署">四层负载均衡部署</h2>
 
-<h3 id="从文件生成证书-1">从文件生成证书</h3>
-
-<h4 id="使用权威证书安装">使用权威证书安装</h4>
-
-<p>1、将服务证书和CA中间证书链合并到tls.crt,将私钥复制到或者重命名为tls.key；</p>
-
-<p>2、使用<code>kubectl</code>创建<code>tls</code>类型的<code>secrets</code>；</p>
-
-<blockquote>
-<p>注意：证书、私钥名称必须是tls.crt、tls.key。</p>
-</blockquote>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cattle-system
-kubectl -n cattle-system create <span class="se">\
-</span><span class="se"></span>    secret tls tls-rancher-ingress <span class="se">\
-</span><span class="se"></span>    --cert<span class="o">=</span>./tls.crt <span class="se">\
-</span><span class="se"></span>    --key<span class="o">=</span>./tls.key</code></pre></td></tr></table>
-</div>
-</div>
-<p>3、安装rancher</p>
-
-<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
-</span><span class="se"></span>  --name rancher <span class="se">\
-</span><span class="se"></span>  --version v2.3.2  <span class="se">\
-</span><span class="se"></span>  --namespace cattle-system <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
-</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret </code></pre></td></tr></table>
-</div>
-</div>
-<p>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></p>
-
-<h4 id="使用自签名证书安装">使用自签名证书安装</h4>
-
-<p>1、如果没有自签名ssl证书，可以参考 <a href="https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；">https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；</a></p>
-
-<p>2、一键生成ssl自签名证书脚本将自动生成tls.crt、tls.key、cacerts.pem三个文件，文件名称不能修改。如果使用您自己生成的自签名ssl证书，则需要将服务证书和CA中间证书链合并到tls.crt文件中,将私钥复制到或者重命名为tls.key文件，将CA证书复制到或者重命名为cacerts.pem。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cp server.pem tls.crt
-cp server-key.pem tls.key
-cp ca.pem cacerts.pem</code></pre></td></tr></table>
-</div>
-</div>
-<p>3、使用kubectl在命名空间cattle-system中创建tls-ca和tls-rancher-ingress两个secret</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建命名空间</span>
-kubectl  create namespace cattle-system
-<span class="c1"># 服务证书和私钥密文</span>
-kubectl -n cattle-system create secret tls tls-rancher-ingress --cert<span class="o">=</span>./tls.crt --key<span class="o">=</span>./tls.key
-<span class="c1"># ca证书密文</span>
-kubectl -n cattle-system create secret generic tls-ca --from-file<span class="o">=</span>cacerts.pem</code></pre></td></tr></table>
-</div>
-</div>
-<p>4、安装rancher</p>
-
-<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
-</span><span class="se"></span>  --name rancher <span class="se">\
-</span><span class="se"></span>  --version v2.3.1  <span class="se">\
-</span><span class="se"></span>  --namespace cattle-system <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
-</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">privateCA</span><span class="o">=</span><span class="nb">true</span> </code></pre></td></tr></table>
-</div>
-</div>
-<ul>
-<li><p>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></p></li>
-
-<li><p>privateCA=true 设置使用私有证书</p></li>
-</ul>
-
-<h3 id="创建四层负载均衡">创建四层负载均衡</h3>
-
-<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1572254993869-5026c490-bba5-4909-b3b0-50b2d399125e.png" alt="image.png" /></p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ls3rnky4j30yc0elwgf.jpg" alt="image.png" /></p>
 
 <p>我们将使用NGINX作为第4层负载均衡器(TCP)，NGINX会将所有连接转发到您的Rancher节点之一。</p>
 
 <p>本方案中，所有的流量都通过外部负载均衡转发到后端ingress服务上。因为外部负载均衡为四层TCP模式，无法设置域名转发，所以需要把域名转发的功能设置在后端的ingress服务上，让ingress作为ssl终止后，ingress到后端的Rancher Server将采用非加密的http模式。此方案中，Rancher Server无法与外部直接通信，需通过ingress代理进入。因为ingress采用了ssl加密，所以此部署架构的安全性相对较高，但多次转发也将会导致网络性能减弱。</p>
+
+<h3 id="配置nginx">配置Nginx</h3>
 
 <p>1、选一台不是集群的机器，安装nginx</p>
 
@@ -766,106 +817,24 @@ stream {
 </div>
 <p>4、将域名解析到nginx机器IP，然后浏览器访问 <a href="https://rancher.javachen.com">https://rancher.javachen.com</a> 即可访问管理平台，稍等片刻就好了。</p>
 
-<h2 id="七层负载均衡部署">七层负载均衡部署</h2>
+<h3 id="安装rancher">安装Rancher</h3>
 
-<h3 id="从文件生成证书-2">从文件生成证书</h3>
-
-<h4 id="使用权威ca机构颁发的证书">使用权威CA机构颁发的证书</h4>
-
-<p>1、根据<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/installation/ha-install/helm-rancher/https-l7/#二-配置负载均衡器-以nginx为例">配置负载均衡器</a>配置服务证书和私钥</p>
-
-<p>2、安装rancher</p>
-
-<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
+<p>主要是设置使用外部的负载均衡：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
-</span><span class="se"></span>  --name rancher <span class="se">\
-</span><span class="se"></span>  --version v2.3.2  <span class="se">\
-</span><span class="se"></span>  --namespace cattle-system <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
-</span><span class="se"></span>  --set <span class="nv">tls</span><span class="o">=</span>external</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span>helm install rancher-latest/rancher <span class="se">\ </span> --name rancher <span class="se">\ </span> --version v2.3.1  <span class="se">\ </span> --namespace cattle-system <span class="se">\ </span> --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\ </span> --set <span class="nv">tls</span><span class="o">=</span>external<span class="se">\ </span> --set <span class="nv">privateCA</span><span class="o">=</span><span class="nb">true</span><span class="sb">`</span></code></pre></td></tr></table>
 </div>
 </div>
-<ul>
-<li>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></li>
-</ul>
+<h2 id="七层负载均衡部署">七层负载均衡部署`</h2>
 
-<h4 id="使用自签名ssl证书">使用自签名ssl证书</h4>
-
-<p>1、如果没有自签名ssl证书，可以参考 <a href="https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；">https://www.yuque.com/javachen/micoservice/mtfme4，一键生成ssl证书；</a></p>
-
-<p>2、一键生成ssl自签名证书脚本将自动生成tls.crt、tls.key、cacerts.pem三个文件，文件名称不能修改。如果使用您自己生成的自签名ssl证书，则需要将服务证书和CA中间证书链合并到tls.crt文件中,将私钥复制到或者重命名为tls.key文件，将CA证书复制到或者重命名为cacerts.pem。</p>
-
-<p>3、根据<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/installation/ha-install/helm-rancher/https-l7/#二-配置负载均衡器-以nginx为例">配置负载均衡器</a>配置服务证书和私钥</p>
-
-<p>4、使用kubectl在命名空间cattle-system中创建tls-ca和tls-rancher-ingress两个secret</p>
-
-<blockquote>
-<p><strong>注意：</strong></p>
-
-<p><code>ca</code>文件名称必须是<code>cacerts.pem</code>。</p>
-</blockquote>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建命名空间</span>
-kubectl  create namespace cattle-system
-
-<span class="c1"># ca证书密文</span>
-kubectl -n cattle-system create secret <span class="se">\
-</span><span class="se"></span>    generic tls-ca <span class="se">\
-</span><span class="se"></span>    --from-file<span class="o">=</span>cacerts.pem</code></pre></td></tr></table>
-</div>
-</div>
-<p>5、安装rancher</p>
-
-<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\
-</span><span class="se"></span>  --name rancher <span class="se">\
-</span><span class="se"></span>  --version v2.3.1  <span class="se">\
-</span><span class="se"></span>  --namespace cattle-system <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
-</span><span class="se"></span>  --set <span class="nv">tls</span><span class="o">=</span>external<span class="se">\
-</span><span class="se"></span>  --set <span class="nv">privateCA</span><span class="o">=</span>true</code></pre></td></tr></table>
-</div>
-</div>
-<ul>
-<li>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></li>
-</ul>
-
-<h3 id="创建七层负载均衡">创建七层负载均衡</h3>
-
-<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1572256366784-99f52556-adb9-461e-a31f-80910087d5c4.png" alt="image.png" /></p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ls3vv8jcj30yc0elmyy.jpg" alt="image.png" /></p>
 
 <p>默认情况下，rancher容器会将80端口上的请求重定向到443端口上。如果Rancher Server通过负载均衡器来代理，这个时候请求是通过负载均衡器发送给Rancher Server，而并非客户端直接访问Rancher Server。在非全局<code>https</code>的环境中，如果以外部负载均衡器作为ssl终止，这个时候通过负载均衡器的<code>https</code>请求将需要被反向代理到Rancher Server http(80)上。在负载均衡器上配置<code>X-Forwarded-Proto: https</code>参数，Rancher Server http(80)上收到负载均衡器的请求后，就不会再重定向到https(443)上。</p>
+
+<h3 id="配置nginx-1">配置Nginx</h3>
 
 <p>负载均衡器或代理必须支持以下参数:</p>
 
@@ -1047,22 +1016,37 @@ gzip_types
   image/x-icon image/png image/jpeg;</pre></td></tr></table>
 </div>
 </div>
-<h1 id="查看状态">查看状态</h1>
+<h3 id="安装rancher-1">安装Rancher</h3>
+
+<p>主要是设置使用Ingress，默认 tls=ingress。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --name rancher <span class="se">\
+</span><span class="se"></span>  --version v2.3.2  <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com<span class="se">\
+</span><span class="se"></span>  --set <span class="nv">tls</span><span class="o">=</span>ingress</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="查看状态-1">查看状态</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n cattle-system rollout status deploy/rancher
@@ -1071,17 +1055,9 @@ kubectl -n cattle-system get deploy rancher
 
 kubectl get all -n cattle-system
 
-kubectl get secret -n cattle-system
-NAME                  TYPE                                  DATA   AGE
-default-token-zsj4w   kubernetes.io/service-account-token   <span class="m">3</span>      145m
-rancher-token-ds64w   kubernetes.io/service-account-token   <span class="m">3</span>      4m1s
-tls-rancher           kubernetes.io/tls                     <span class="m">2</span>      6m39s
-
-kubectl get ingress -n cattle-system</code></pre></td></tr></table>
+kubectl get secret,ingress -n cattle-system</code></pre></td></tr></table>
 </div>
 </div>
-<p>通过查看pod可以发现 rancher已经以pod形式启动</p>
-
 <h1 id="添加主机映射">添加主机映射</h1>
 
 <p>由于我们通过hosts文件来添加映射，所以需要为Agent Pod添加主机别名(/etc/hosts)：</p>
@@ -1160,12 +1136,16 @@ kubectl -n cattle-system patch daemonsets cattle-node-agent --patch <span class=
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del --purge cert-manager
 helm del --purge rancher
 
-kubectl delete secret -n cattle-system tls-rancher-ingress tls-ca</code></pre></td></tr></table>
+kubectl delete pod,service,deploy,ingress,secret,pvc,replicaset,daemonset --all -n cattle-system
+
+kubectl delete ServiceAccount,ClusterRoleBinding,Role rancher -n cattle-system</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="升级版本">升级版本</h1>
@@ -1179,8 +1159,8 @@ kubectl delete secret -n cattle-system tls-rancher-ingress tls-ca</code></pre></
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用rancher-latest镜像仓库</span>
-helm upgrade rancher rancher-latest/rancher <span class="se">\
-</span><span class="se"></span> --version v2.3.1 <span class="se">\
+helm upgrade rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span> --version v2.3.2 <span class="se">\
 </span><span class="se"></span> --namespace cattle-system <span class="se">\
 </span><span class="se"></span> --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.com</code></pre></td></tr></table>
 </div>
@@ -1243,7 +1223,11 @@ kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
           <a href="/tags/rancher/">rancher</a>
           </div>
       <nav class="post-nav">
-        
+        <a class="prev" href="/2019/11/04/using-cert-manager-with-nginx-ingress/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用Cert Manager配置Let’s Encrypt证书</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
         <a class="next" href="/2019/11/01/install-gitea-and-drone-with-helm3/">
             <span class="next-text nav-default">使用Helm3安装Gitea和Drone</span>
             <span class="next-text nav-mobile">下一篇</span>

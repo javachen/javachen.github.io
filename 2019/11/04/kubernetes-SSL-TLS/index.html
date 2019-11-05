@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Kubernetes SSL证书管理 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="HTTP over SSL 要保证Web浏览器到服务器的安全连接，HTTPS几乎是唯一选择。HTTPS其实就是HTTP over SSL，也就是让HTTP连接建立在SSL安" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2019/11/04/kubernetes-SSL-TLS/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Kubernetes SSL证书管理" />
+<meta property="og:description" content="HTTP over SSL 要保证Web浏览器到服务器的安全连接，HTTPS几乎是唯一选择。HTTPS其实就是HTTP over SSL，也就是让HTTP连接建立在SSL安" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2019/11/04/kubernetes-SSL-TLS/" />
+<meta property="article:published_time" content="2019-11-04T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-04T08:00:00+08:00" />
+<meta itemprop="name" content="Kubernetes SSL证书管理">
+<meta itemprop="description" content="HTTP over SSL 要保证Web浏览器到服务器的安全连接，HTTPS几乎是唯一选择。HTTPS其实就是HTTP over SSL，也就是让HTTP连接建立在SSL安">
+
+
+<meta itemprop="datePublished" content="2019-11-04T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-04T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="5511">
+
+
+
+<meta itemprop="keywords" content="kubernetes,SSL," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes SSL证书管理"/>
+<meta name="twitter:description" content="HTTP over SSL 要保证Web浏览器到服务器的安全连接，HTTPS几乎是唯一选择。HTTPS其实就是HTTP over SSL，也就是让HTTP连接建立在SSL安"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Kubernetes SSL证书管理</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-04 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 5511 字 </span>
+          <span class="more-meta"> 预计阅读 11 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#http-over-ssl">HTTP over SSL</a></li>
+<li><a href="#数字证书">数字证书</a>
+<ul>
+<li><a href="#优点">优点</a></li>
+<li><a href="#证书类型">证书类型</a></li>
+<li><a href="#扩展名">扩展名</a></li>
+</ul></li>
+<li><a href="#自签名证书及自签名类型">自签名证书及自签名类型</a></li>
+<li><a href="#集群相关证书类型">集群相关证书类型</a></li>
+<li><a href="#生成自签名证书">生成自签名证书</a>
+<ul>
+<li><a href="#openssl">Openssl</a></li>
+<li><a href="#cfssl">CFSSL</a>
+<ul>
+<li><a href="#安装">安装</a></li>
+<li><a href="#创建ca配置文件">创建CA配置文件</a></li>
+<li><a href="#创建ca证书签名请求">创建CA证书签名请求</a></li>
+<li><a href="#生成ca和私钥">生成CA和私钥</a></li>
+<li><a href="#生成服务器证书">生成服务器证书</a></li>
+</ul></li>
+<li><a href="#cert-manager">Cert-Manager</a>
+<ul>
+<li><a href="#架构">架构</a></li>
+<li><a href="#部署">部署</a></li>
+<li><a href="#letsencrypt-证书颁发者"><code>Letsencrypt</code>证书颁发者</a></li>
+<li><a href="#ca-证书颁发者"><code>CA</code>证书颁发者</a>
+<ul>
+<li><a href="#创建issuer资源">创建Issuer资源</a></li>
+<li><a href="#创建certificate资源">创建Certificate资源</a></li>
+<li><a href="#使用建议">使用建议</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="http-over-ssl">HTTP over SSL</h1>
+
+<p>要保证Web浏览器到服务器的安全连接，HTTPS几乎是唯一选择。HTTPS其实就是HTTP over SSL，也就是让HTTP连接建立在SSL安全连接之上。</p>
+
+<p>SSL使用证书来创建安全连接。有两种验证模式:</p>
+
+<ol>
+<li>仅客户端验证服务器的证书，客户端自己不提供证书；</li>
+<li>客户端和服务器都互相验证对方的证书。</li>
+</ol>
+
+<p>一般第二种方式用于网上银行等安全性要求较高的网站，普通的Web网站只采用第一种方式。</p>
+
+<p>客户端如何验证服务器的证书呢？</p>
+
+<p>服务器自己的证书必须经过某“权威”证书的签名，而这个“权威”证书又可能经过更权威的证书签名，这么一级一级追溯上去，最顶层那个最权威的证书就称为根证书。根证书直接内置在浏览器中，这样，浏览器就可以利用自己自带的根证书去验证某个服务器的证书是否有效。如果要提供一个有效的证书，服务器的证书必须从<code>VeriSign</code>这样的证书颁发机构签名。这样，浏览器就可以验证通过，否则，浏览器给出一个证书无效的警告。一般安全要求较高的内网环境，可以通过创建自签名SSL证书来加密通信。</p>
+
+<h1 id="数字证书">数字证书</h1>
+
+<p>在HTTPS的传输过程中，有一个非常关键的角色–<code>数字证书</code>，那什么是数字证书？又有什么作用呢？</p>
+
+<p>所谓数字证书，是一种用于电脑的身份识别机制。由数字证书颁发机构(CA)对使用私钥创建的签名请求文件做的签名(盖章)，表示CA结构对证书持有者的认可。</p>
+
+<h2 id="优点">优点</h2>
+
+<ul>
+<li>使用数字证书能够提高用户的可信度；</li>
+<li>数字证书中的公钥，能够与服务端的私钥配对使用，实现数据传输过程中的加密和解密；</li>
+<li>在证认使用者身份期间，使用者的敏感个人数据并不会被传输至证书持有者的网络系统上。</li>
+</ul>
+
+<h2 id="证书类型">证书类型</h2>
+
+<p>x509的证书编码格式有两种：</p>
+
+<ol>
+<li>PEM(Privacy-enhanced Electronic Mail)是明文格式的，以 <code>—–BEGIN CERTIFICATE—–</code>开头，已<code>—–END CERTIFICATE</code>—–结尾。中间是经过base64编码的内容，apache需要的证书就是这类编码的证书。查看这类证书的信息的命令为： <code>openssl x509 -noout -text -in server.pem</code>。其实PEM就是把DER的内容进行了一次base64编码。</li>
+<li>DER是二进制格式的证书，查看这类证书的信息的命令为：<code>openssl x509 -noout -text -inform der -in server.der</code></li>
+</ol>
+
+<h2 id="扩展名">扩展名</h2>
+
+<ul>
+<li>.crt证书文件，可以是DER(二进制)编码的，也可以是PEM(ASCII (Base64))编码的)，在类unix系统中比较常见；</li>
+<li>.cer也是证书，常见于Windows系统。编码类型同样可以是DER或者PEM的，windows下有工具可以转换crt到cer；</li>
+<li>.csr证书签名请求文件，一般是生成请求以后发送给CA，然后CA会给您签名并发回证书；</li>
+<li>.key一般公钥或者密钥都会用这种扩展名，可以是DER编码的或者是PEM编码的。查看DER编码的(公钥或者密钥)的文件的命令为：<code>openssl rsa -inform DER -noout -text -in xxx.key</code>。查看PEM编码的(公钥或者密钥)的文件的命令为: <code>openssl rsa -inform PEM -noout -text -in xxx.key</code>;</li>
+<li>.p12证书文件，包含一个X509证书和一个被密码保护的私钥。</li>
+</ul>
+
+<h1 id="自签名证书及自签名类型">自签名证书及自签名类型</h1>
+
+<p>当由于某种原因(如：不想通过CA购买证书，或者仅是用于测试等情况)，无法正常获取CA签发的证书。这时可以生成一个自签名证书。使用这个自签名证书的时候，会在客户端浏览器报一个错误，签名证书授权未知或不可信(signing certificate authority is unknown and not trusted.)。</p>
+
+<p>自签名类型：</p>
+
+<ul>
+<li>自签名证书</li>
+<li>私有CA签名证书</li>
+</ul>
+
+<blockquote>
+<p>自签名证书的<code>Issuer</code>和<code>Subject</code>是相同的。</p>
+</blockquote>
+
+<ul>
+<li>区别:
+
+<ul>
+<li>自签名的证书无法被吊销，私有CA签名的证书可以被吊销。</li>
+<li>如果您的规划需要创建多个证书，那么使用私有CA签名的方法比较合适，因为只要给所有的客户端都安装相同的CA证书，那么以该CA证书签名过的证书，客户端都是信任的，也就只需要安装一次就够了。</li>
+<li>如果您使用用自签名证书，您需要给所有的客户端安装该证书才会被信任。如果您需要第二个证书，则需要给所有客户端安装第二个CA证书才会被信任。</li>
+</ul></li>
+</ul>
+
+<h1 id="集群相关证书类型">集群相关证书类型</h1>
+
+<p><strong>client certificate</strong>：用于服务端认证客户端,例如etcdctl、etcd proxy、fleetctl、docker客户端</p>
+
+<p><strong>server certificate</strong>: 服务端使用，客户端以此验证服务端身份,例如docker服务端、kube-apiserver</p>
+
+<p><strong>peer certificate</strong>: 双向证书，用于etcd集群成员间通信</p>
+
+<p>根据认证对象可以将证书分成三类：服务器证书<code>server cert</code>，客户端证书<code>client cert</code>，对等证书<code>peer cert</code>(表示既是<code>server cert</code>又是<code>client cert</code>)</p>
+
+<p>在kubernetes 集群中需要的证书种类如下：</p>
+
+<ul>
+<li><code>etcd</code> 节点需要标识自己服务的server cert，也需要client cert与etcd集群其他节点交互，当然可以分别指定2个证书，也可以使用一个对等证书</li>
+<li><code>master</code> 节点需要标识 apiserver服务的server cert，也需要client cert连接etcd集群，这里也使用一个对等证书</li>
+<li><code>kubectl</code> <code>calico</code> <code>kube-proxy</code> 只需要<code>client cert</code>，因此证书请求中 hosts 字段可以为空</li>
+<li><code>kubelet</code>证书比较特殊，不是手动生成，它由node节点<code>TLS BootStrap</code>向<code>apiserver</code>请求，由<code>master</code>节点的<code>controller-manager</code> 自动签发，包含一个<code>client cert</code> 和一个<code>server cert</code></li>
+</ul>
+
+<h1 id="生成自签名证书">生成自签名证书</h1>
+
+<h2 id="openssl">Openssl</h2>
+
+<p>参考<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/self-signed-ssl/#四-生成自签名证书">生成自签名证书</a> ，使用脚 本create_self-signed-cert.sh 一键生成ssl自签名证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span><span class="lnt">139
+</span><span class="lnt">140
+</span><span class="lnt">141
+</span><span class="lnt">142
+</span><span class="lnt">143
+</span><span class="lnt">144
+</span><span class="lnt">145
+</span><span class="lnt">146
+</span><span class="lnt">147
+</span><span class="lnt">148
+</span><span class="lnt">149
+</span><span class="lnt">150
+</span><span class="lnt">151
+</span><span class="lnt">152
+</span><span class="lnt">153
+</span><span class="lnt">154
+</span><span class="lnt">155
+</span><span class="lnt">156
+</span><span class="lnt">157
+</span><span class="lnt">158
+</span><span class="lnt">159
+</span><span class="lnt">160
+</span><span class="lnt">161
+</span><span class="lnt">162
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash -e
+</span><span class="cp"></span>
+<span class="nb">help</span> <span class="o">()</span>
+<span class="o">{</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; ================================================================ &#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-domain: 生成ssl证书需要的主域名，如不指定则默认为www.rancher.local，如果是ip访问服务，则可忽略；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-trusted-ip: 一般ssl证书只信任域名的访问请求，有时候需要使用ip去访问server，那么需要给ssl证书添加扩展IP，多个IP用逗号隔开；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-trusted-domain: 如果想多个域名访问，则添加扩展域名（SSL_TRUSTED_DOMAIN）,多个扩展域名用逗号隔开；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-size: ssl加密位数，默认2048；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-date: ssl有效期，默认10年；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ca-date: ca有效期，默认10年；&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-cn: 国家代码(2个字母的代号),默认CN;&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; 使用示例:&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; ./create_self-signed-cert.sh --ssl-domain=www.test.com --ssl-trusted-domain=www.test2.com \ &#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; --ssl-trusted-ip=1.1.1.1,2.2.2.2,3.3.3.3 --ssl-size=2048 --ssl-date=3650&#39;</span>
+    <span class="nb">echo</span>  <span class="s1">&#39; ================================================================&#39;</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> in
+    -h<span class="p">|</span>--help<span class="o">)</span> help<span class="p">;</span> exit<span class="p">;;</span>
+<span class="k">esac</span>
+
+<span class="k">if</span> <span class="o">[[</span> <span class="nv">$1</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="o">]]</span><span class="p">;</span><span class="k">then</span>
+    help<span class="p">;</span>
+    exit<span class="p">;</span>
+<span class="k">fi</span>
+
+<span class="nv">CMDOPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$*</span><span class="s2">&#34;</span>
+<span class="k">for</span> OPTS in <span class="nv">$CMDOPTS</span><span class="p">;</span>
+<span class="k">do</span>
+    <span class="nv">key</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="si">${</span><span class="nv">OPTS</span><span class="si">}</span> <span class="p">|</span> awk -F<span class="s2">&#34;=&#34;</span> <span class="s1">&#39;{print $1}&#39;</span> <span class="k">)</span>
+    <span class="nv">value</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="si">${</span><span class="nv">OPTS</span><span class="si">}</span> <span class="p">|</span> awk -F<span class="s2">&#34;=&#34;</span> <span class="s1">&#39;{print $2}&#39;</span> <span class="k">)</span>
+    <span class="k">case</span> <span class="s2">&#34;</span><span class="nv">$key</span><span class="s2">&#34;</span> in
+        --ssl-domain<span class="o">)</span> <span class="nv">SSL_DOMAIN</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ssl-trusted-ip<span class="o">)</span> <span class="nv">SSL_TRUSTED_IP</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ssl-trusted-domain<span class="o">)</span> <span class="nv">SSL_TRUSTED_DOMAIN</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ssl-size<span class="o">)</span> <span class="nv">SSL_SIZE</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ssl-date<span class="o">)</span> <span class="nv">SSL_DATE</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ca-date<span class="o">)</span> <span class="nv">CA_DATE</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+        --ssl-cn<span class="o">)</span> <span class="nv">CN</span><span class="o">=</span><span class="nv">$value</span> <span class="p">;;</span>
+    <span class="k">esac</span>
+<span class="k">done</span>
+
+<span class="c1"># CA相关配置</span>
+<span class="nv">CA_DATE</span><span class="o">=</span><span class="si">${</span><span class="nv">CA_DATE</span><span class="k">:-</span><span class="nv">3650</span><span class="si">}</span>
+<span class="nv">CA_KEY</span><span class="o">=</span><span class="si">${</span><span class="nv">CA_KEY</span><span class="k">:-</span><span class="nv">cakey</span><span class="p">.pem</span><span class="si">}</span>
+<span class="nv">CA_CERT</span><span class="o">=</span><span class="si">${</span><span class="nv">CA_CERT</span><span class="k">:-</span><span class="nv">cacerts</span><span class="p">.pem</span><span class="si">}</span>
+<span class="nv">CA_DOMAIN</span><span class="o">=</span>cattle-ca
+
+<span class="c1"># ssl相关配置</span>
+<span class="nv">SSL_CONFIG</span><span class="o">=</span><span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="k">:-</span><span class="nv">$PWD</span><span class="p">/openssl.cnf</span><span class="si">}</span>
+<span class="nv">SSL_DOMAIN</span><span class="o">=</span><span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="k">:-</span><span class="s1">&#39;www.rancher.local&#39;</span><span class="si">}</span>
+<span class="nv">SSL_DATE</span><span class="o">=</span><span class="si">${</span><span class="nv">SSL_DATE</span><span class="k">:-</span><span class="nv">3650</span><span class="si">}</span>
+<span class="nv">SSL_SIZE</span><span class="o">=</span><span class="si">${</span><span class="nv">SSL_SIZE</span><span class="k">:-</span><span class="nv">2048</span><span class="si">}</span>
+
+<span class="c1">## 国家代码(2个字母的代号),默认CN;</span>
+<span class="nv">CN</span><span class="o">=</span><span class="si">${</span><span class="nv">CN</span><span class="k">:-</span><span class="nv">CN</span><span class="si">}</span>
+
+<span class="nv">SSL_KEY</span><span class="o">=</span><span class="nv">$SSL_DOMAIN</span>.key
+<span class="nv">SSL_CSR</span><span class="o">=</span><span class="nv">$SSL_DOMAIN</span>.csr
+<span class="nv">SSL_CERT</span><span class="o">=</span><span class="nv">$SSL_DOMAIN</span>.crt
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ---------------------------- \033[0m&#34;</span>
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m       | 生成 SSL Cert |       \033[0m&#34;</span>
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ---------------------------- \033[0m&#34;</span>
+
+<span class="k">if</span> <span class="o">[[</span> -e ./<span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 1. 发现已存在CA私钥，备份&#34;</span><span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span><span class="s2">&#34;为&#34;</span><span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span><span class="s2">&#34;-bak，然后重新创建 \033[0m&#34;</span>
+    mv <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span><span class="s2">&#34;</span>-bak
+    openssl genrsa -out <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> <span class="si">${</span><span class="nv">SSL_SIZE</span><span class="si">}</span>
+<span class="k">else</span>
+    <span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 1. 生成新的CA私钥 </span><span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+    openssl genrsa -out <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> <span class="si">${</span><span class="nv">SSL_SIZE</span><span class="si">}</span>
+<span class="k">fi</span>
+
+<span class="k">if</span> <span class="o">[[</span> -e ./<span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 2. 发现已存在CA证书，先备份&#34;</span><span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span><span class="s2">&#34;为&#34;</span><span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span><span class="s2">&#34;-bak，然后重新创建 \033[0m&#34;</span>
+    mv <span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span><span class="s2">&#34;</span>-bak
+    openssl req -x509 -sha256 -new -nodes -key <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> -days <span class="si">${</span><span class="nv">CA_DATE</span><span class="si">}</span> <span class="se">\
+</span><span class="se"></span>    	-out <span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> -subj <span class="s2">&#34;/C=</span><span class="si">${</span><span class="nv">CN</span><span class="si">}</span><span class="s2">/CN=</span><span class="si">${</span><span class="nv">CA_DOMAIN</span><span class="si">}</span><span class="s2">&#34;</span>
+<span class="k">else</span>
+    <span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 2. 生成新的CA证书 </span><span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+    openssl req -x509 -sha256 -new -nodes -key <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> -days <span class="si">${</span><span class="nv">CA_DATE</span><span class="si">}</span> <span class="se">\
+</span><span class="se"></span>    	-out <span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> -subj <span class="s2">&#34;/C=</span><span class="si">${</span><span class="nv">CN</span><span class="si">}</span><span class="s2">/CN=</span><span class="si">${</span><span class="nv">CA_DOMAIN</span><span class="si">}</span><span class="s2">&#34;</span>
+<span class="k">fi</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 3. 生成Openssl配置文件 </span><span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+cat &gt; <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span> <span class="s">&lt;&lt;EOM
+</span><span class="s">[req]
+</span><span class="s">req_extensions = v3_req
+</span><span class="s">distinguished_name = req_distinguished_name
+</span><span class="s">[req_distinguished_name]
+</span><span class="s">[ v3_req ]
+</span><span class="s">basicConstraints = CA:FALSE
+</span><span class="s">keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+</span><span class="s">extendedKeyUsage = clientAuth, serverAuth
+</span><span class="s">EOM</span>
+
+<span class="k">if</span> <span class="o">[[</span> -n <span class="si">${</span><span class="nv">SSL_TRUSTED_IP</span><span class="si">}</span> <span class="o">||</span> -n <span class="si">${</span><span class="nv">SSL_TRUSTED_DOMAIN</span><span class="si">}</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+    cat &gt;&gt; <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span> <span class="s">&lt;&lt;EOM
+</span><span class="s">subjectAltName = @alt_names
+</span><span class="s">[alt_names]
+</span><span class="s">EOM</span>
+    <span class="nv">IFS</span><span class="o">=</span><span class="s2">&#34;,&#34;</span>
+    <span class="nv">dns</span><span class="o">=(</span><span class="si">${</span><span class="nv">SSL_TRUSTED_DOMAIN</span><span class="si">}</span><span class="o">)</span>
+    <span class="nv">dns</span><span class="o">+=(</span><span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span><span class="o">)</span>
+    <span class="k">for</span> i in <span class="s2">&#34;</span><span class="si">${</span><span class="p">!dns[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+      <span class="nb">echo</span> DNS.<span class="k">$((</span>i+1<span class="k">))</span> <span class="o">=</span> <span class="si">${</span><span class="nv">dns</span><span class="p">[</span><span class="nv">$i</span><span class="p">]</span><span class="si">}</span> &gt;&gt; <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span>
+    <span class="k">done</span>
+
+    <span class="k">if</span> <span class="o">[[</span> -n <span class="si">${</span><span class="nv">SSL_TRUSTED_IP</span><span class="si">}</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+        <span class="nv">ip</span><span class="o">=(</span><span class="si">${</span><span class="nv">SSL_TRUSTED_IP</span><span class="si">}</span><span class="o">)</span>
+        <span class="k">for</span> i in <span class="s2">&#34;</span><span class="si">${</span><span class="p">!ip[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+          <span class="nb">echo</span> IP.<span class="k">$((</span>i+1<span class="k">))</span> <span class="o">=</span> <span class="si">${</span><span class="nv">ip</span><span class="p">[</span><span class="nv">$i</span><span class="p">]</span><span class="si">}</span> &gt;&gt; <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span>
+        <span class="k">done</span>
+    <span class="k">fi</span>
+<span class="k">fi</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 4. 生成服务SSL KEY </span><span class="si">${</span><span class="nv">SSL_KEY</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+openssl genrsa -out <span class="si">${</span><span class="nv">SSL_KEY</span><span class="si">}</span> <span class="si">${</span><span class="nv">SSL_SIZE</span><span class="si">}</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 5. 生成服务SSL CSR </span><span class="si">${</span><span class="nv">SSL_CSR</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+openssl req -sha256 -new -key <span class="si">${</span><span class="nv">SSL_KEY</span><span class="si">}</span> -out <span class="si">${</span><span class="nv">SSL_CSR</span><span class="si">}</span> -subj <span class="se">\
+</span><span class="se"></span>	<span class="s2">&#34;/C=</span><span class="si">${</span><span class="nv">CN</span><span class="si">}</span><span class="s2">/CN=</span><span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span><span class="s2">&#34;</span> -config <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 6. 生成服务SSL CERT </span><span class="si">${</span><span class="nv">SSL_CERT</span><span class="si">}</span><span class="s2"> \033[0m&#34;</span>
+openssl x509 -sha256 -req -in <span class="si">${</span><span class="nv">SSL_CSR</span><span class="si">}</span> -CA <span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> <span class="se">\
+</span><span class="se"></span>    -CAkey <span class="si">${</span><span class="nv">CA_KEY</span><span class="si">}</span> -CAcreateserial -out <span class="si">${</span><span class="nv">SSL_CERT</span><span class="si">}</span> <span class="se">\
+</span><span class="se"></span>    -days <span class="si">${</span><span class="nv">SSL_DATE</span><span class="si">}</span> -extensions v3_req <span class="se">\
+</span><span class="se"></span>    -extfile <span class="si">${</span><span class="nv">SSL_CONFIG</span><span class="si">}</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 7. 证书制作完成 \033[0m&#34;</span>
+<span class="nb">echo</span>
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 8. 以YAML格式输出结果 \033[0m&#34;</span>
+<span class="nb">echo</span> <span class="s2">&#34;----------------------------------------------------------&#34;</span>
+<span class="nb">echo</span> <span class="s2">&#34;ca_key: |&#34;</span>
+cat <span class="nv">$CA_KEY</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+<span class="nb">echo</span> <span class="s2">&#34;ca_cert: |&#34;</span>
+cat <span class="nv">$CA_CERT</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+<span class="nb">echo</span> <span class="s2">&#34;ssl_key: |&#34;</span>
+cat <span class="nv">$SSL_KEY</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+<span class="nb">echo</span> <span class="s2">&#34;ssl_csr: |&#34;</span>
+cat <span class="nv">$SSL_CSR</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+<span class="nb">echo</span> <span class="s2">&#34;ssl_cert: |&#34;</span>
+cat <span class="nv">$SSL_CERT</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 9. 附加CA证书到Cert文件 \033[0m&#34;</span>
+cat <span class="si">${</span><span class="nv">CA_CERT</span><span class="si">}</span> &gt;&gt; <span class="si">${</span><span class="nv">SSL_CERT</span><span class="si">}</span>
+<span class="nb">echo</span> <span class="s2">&#34;ssl_cert: |&#34;</span>
+cat <span class="nv">$SSL_CERT</span> <span class="p">|</span> sed <span class="s1">&#39;s/^/  /&#39;</span>
+<span class="nb">echo</span>
+
+<span class="nb">echo</span> -e <span class="s2">&#34;\033[32m ====&gt; 10. 重命名服务证书 \033[0m&#34;</span>
+<span class="nb">echo</span> <span class="s2">&#34;cp </span><span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span><span class="s2">.key tls.key&#34;</span>
+cp <span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span>.key tls.key
+<span class="nb">echo</span> <span class="s2">&#34;cp </span><span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span><span class="s2">.crt tls.crt&#34;</span>
+cp <span class="si">${</span><span class="nv">SSL_DOMAIN</span><span class="si">}</span>.crt tls.crt</code></pre></td></tr></table>
+</div>
+</div>
+<p>生成证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">./create_self-signed-cert.sh --ssl-domain<span class="o">=</span>javachen.com <span class="se">\
+</span><span class="se"></span>--ssl-trusted-domain<span class="o">=</span>javachen.com,*.javachen.com --ssl-size<span class="o">=</span><span class="m">2048</span> --ssl-date<span class="o">=</span><span class="m">3650</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>校验证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#验证证书</span> 
+openssl verify -CAfile cacerts.pem tls.crt  
+
+<span class="c1">#查看证书细节</span>
+openssl x509 -in cacerts.pem -noout -text
+openssl x509 -in tls.crt -noout -text
+
+<span class="c1">#不加CA证书验证</span>
+openssl s_client -connect rancher.javachen.com:443 -servername rancher.javachen.com
+
+<span class="c1">#加CA证书验证</span>
+openssl s_client -connect rancher.javachen.com:443 -servername rancher.javachen.com -CAfile server-ca.crt</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="cfssl">CFSSL</h2>
+
+<p>CFSSL是CloudFlare开源的一款PKI/TLS工具。 CFSSL 包含一个命令行工具 和一个用于 签名，验证并且捆绑TLS证书的 HTTP API 服务。 使用Go语言编写。</p>
+
+<p>Github 地址： <a href="https://github.com/cloudflare/cfssl">https://github.com/cloudflare/cfssl</a></p>
+
+<p>官网地址： <a href="https://pkg.cfssl.org/">https://pkg.cfssl.org/</a></p>
+
+<p>参考地址：<a href="http://blog.51cto.com/liuzhengwei521/2120535?utm_source=oschina-app">liuzhengwei521</a></p>
+
+<h3 id="安装">安装</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo curl -s -L -o /usr/bin/cfssl https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
+sudo curl -s -L -o /usr/bin/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+sudo curl -s -L -o /usr/bin/cfssl-certinfo https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64
+sudo chmod +x /usr/bin/cfssl*</pre></td></tr></table>
+</div>
+</div>
+<h3 id="创建ca配置文件">创建CA配置文件</h3>
+
+<p>配置证书生成策略，规定CA可以颁发那种类型的证书</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; ca-config.json
+</span><span class="s">{
+</span><span class="s">  &#34;signing&#34;: {
+</span><span class="s">    &#34;default&#34;: {
+</span><span class="s">      &#34;expiry&#34;: &#34;87600h&#34;
+</span><span class="s">    },
+</span><span class="s">    &#34;profiles&#34;: {
+</span><span class="s">      &#34;javachen.com&#34;: {
+</span><span class="s">        &#34;usages&#34;: [
+</span><span class="s">            &#34;signing&#34;,
+</span><span class="s">            &#34;key encipherment&#34;,
+</span><span class="s">            &#34;server auth&#34;,
+</span><span class="s">            &#34;client auth&#34;
+</span><span class="s">        ],
+</span><span class="s">        &#34;expiry&#34;: &#34;87600h&#34;
+</span><span class="s">      }
+</span><span class="s">    }
+</span><span class="s">  }
+</span><span class="s">}
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="创建ca证书签名请求">创建CA证书签名请求</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; ca-csr.json
+</span><span class="s">{
+</span><span class="s">	&#34;CN&#34;: &#34;Self Signed Ca&#34;,
+</span><span class="s">	&#34;key&#34;: {
+</span><span class="s">    	&#34;algo&#34;: &#34;rsa&#34;,
+</span><span class="s">    	&#34;size&#34;: 2048
+</span><span class="s">	},
+</span><span class="s">	&#34;names&#34;: [
+</span><span class="s">	{
+</span><span class="s">        	&#34;C&#34;: &#34;CN&#34;,
+</span><span class="s">        	&#34;ST&#34;: &#34;HuBei&#34;,    
+</span><span class="s">        	&#34;L&#34;: &#34;WuHan&#34;,
+</span><span class="s">        	&#34;O&#34;: &#34;my self signed certificate&#34;,
+</span><span class="s">        	&#34;OU&#34;: &#34;ops&#34;
+</span><span class="s">    }]
+</span><span class="s">}
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="生成ca和私钥">生成CA和私钥</h3>
+
+<p>生成CA所必需的文件ca-key.pem（私钥）和ca.pem（证书），还会生成ca.csr（证书签名请求），用于交叉签名或重新签名。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">cfssl gencert -initca ca-csr.json | cfssljson -bare ca</pre></td></tr></table>
+</div>
+</div>
+<h3 id="生成服务器证书">生成服务器证书</h3>
+
+<p>编辑server-csr.json，内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; server-csr.json
+</span><span class="s">{
+</span><span class="s">    &#34;CN&#34;: &#34;javachen.com&#34;,
+</span><span class="s">    &#34;hosts&#34;: [
+</span><span class="s">        &#34;127.0.0.1&#34;,
+</span><span class="s">        &#34;*.javachen.com&#34;
+</span><span class="s">    ],
+</span><span class="s">    &#34;key&#34;: {
+</span><span class="s">        &#34;algo&#34;: &#34;rsa&#34;,
+</span><span class="s">        &#34;size&#34;: 2048
+</span><span class="s">    },
+</span><span class="s">    &#34;names&#34;: [
+</span><span class="s">        {
+</span><span class="s">            &#34;C&#34;: &#34;CN&#34;,
+</span><span class="s">            &#34;ST&#34;: &#34;HuBei&#34;,
+</span><span class="s">            &#34;L&#34;: &#34;WuHan&#34;,
+</span><span class="s">            &#34;O&#34;: &#34;my self signed certificate&#34;,
+</span><span class="s">            &#34;OU&#34;: &#34;self signed&#34;
+</span><span class="s">        }
+</span><span class="s">    ]
+</span><span class="s">}
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>执行以下命令，生成服务器证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">cfssl gencert -ca=ca.pem -ca-key=ca-key.pem --config=ca-config.json -profile=javachen.com 
+ server-csr.json | cfssljson -bare server</pre></td></tr></table>
+</div>
+</div>
+<p>这样就得到<code>ca.pem</code>，<code>server-key.pem</code>，<code>server.pem</code>三个证书文件，其中<code>ca.pem</code>是ca的证书，<code>server-key.pem</code>是服务器证书的密钥，<code>server.pem</code>是服务器证书。</p>
+
+<p>用Keychain Access打开ca.pem文件，然后修改设置，信任该CA</p>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1572161434190-395f5223-8fcf-48b1-8382-2c736992338e.png" alt="image.png" /></p>
+
+<h2 id="cert-manager">Cert-Manager</h2>
+
+<p>用cfssl之类的工具手动生成TLS证书，主要有以下几点缺陷：</p>
+
+<ol>
+<li>如果k8s集群上部署的应用较多，要为每个应用的不同域名生成https证书，操作太麻烦。</li>
+<li>上述这些手动操作没有跟k8s的deployment描述文件放在一起记录下来，很容易遗忘。</li>
+<li>证书过期后，又得手动执行命令重新生成证书。</li>
+</ol>
+
+<h3 id="架构">架构</h3>
+
+<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1572161992146-735d1889-3e18-42de-9213-085dad062c4c.png" alt="img" /></p>
+
+<p>上面是官方给出的架构图，可以看到cert-manager在k8s中定义了两个自定义类型资源：<code>Issuer</code>和<code>Certificate</code>。</p>
+
+<p>其中<code>Issuer</code>代表的是证书颁发者，可以定义各种提供者的证书颁发者，当前支持基于<code>Letsencrypt</code>、<code>vault</code>和<code>CA</code>的证书颁发者，还可以定义不同环境下的证书颁发者。</p>
+
+<p>而<code>Certificate</code>代表的是生成证书的请求，一般其中存入生成证书的元信息，如域名等等。</p>
+
+<p>一旦在k8s中定义了上述两类资源，部署的<code>cert-manager</code>则会根据<code>Issuer</code>和<code>Certificate</code>生成TLS证书，并将证书保存进k8s的<code>Secret</code>资源中，然后在<code>Ingress</code>资源中就可以引用到这些生成的<code>Secret</code>资源。对于已经生成的证书，还是定期检查证书的有效期，如即将超过有效期，还会自动续期。</p>
+
+<h3 id="部署">部署</h3>
+
+<p>参考 <a href="https://docs.cert-manager.io/en/release-0.11/">https://docs.cert-manager.io/en/release-0.11/</a></p>
+
+<p>部署cert-manager还是比较简单的，直接用kubectl部署就可以了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get Issuers,ClusterIssuers,Certificates,CertificateRequests,Orders,Challenges --all-namespaces</code></pre></td></tr></table>
+</div>
+</div>
+<p>卸载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="letsencrypt-证书颁发者"><code>Letsencrypt</code>证书颁发者</h3>
+
+<p>k8s中使用cert-manager玩转证书 <a href="https://jeremy-xu.oschina.io/2018/08/k8s中使用cert-manager玩转证书/">https://jeremy-xu.oschina.io/2018/08/k8s%E4%B8%AD%E4%BD%BF%E7%94%A8cert-manager%E7%8E%A9%E8%BD%AC%E8%AF%81%E4%B9%A6/</a></p>
+
+<h3 id="ca-证书颁发者"><code>CA</code>证书颁发者</h3>
+
+<h4 id="创建issuer资源">创建Issuer资源</h4>
+
+<p>由于我试验环境是个人电脑，不能被外网访问，因此无法试验<code>Letsencrypt</code>类型的证书颁发者，而<code>vault</code>貌似部署起来很是麻烦，所以还是创建一个简单的CA类型Issuer资源。</p>
+
+<p>我们需要先创建一个签发机构，cert-manager 给我们提供了 Issuer 和 ClusterIssuer 这两种用于创建签发机构的自定义资源对象，Issuer 只能用来签发自己所在 namespace 下的证书，ClusterIssuer 可以签发任意 namespace 下的证书，这里以 <code>ClusterIssuer</code> 为例。关于<code>ClusterIssuer</code>与<code>Issuer</code>的区别可以查阅<a href="https://cert-manager.readthedocs.io/en/latest/getting-started/3-configuring-first-issuer.html">这里</a>。</p>
+
+<p>首先将根CA的key及证书文件存入一个secret中：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret tls ca-secret-tls <span class="se">\
+</span><span class="se"></span>   --cert<span class="o">=</span>ca.pem <span class="se">\
+</span><span class="se"></span>   --key<span class="o">=</span>ca-key.pem </code></pre></td></tr></table>
+</div>
+</div>
+<p>上述操作中的ca.pem、ca-key.pem文件还是用<code>cfssl</code>命令生成的。</p>
+
+<p>然后创建Issuer资源：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: ca-issuer
+</span><span class="s">spec:
+</span><span class="s">  ca:
+</span><span class="s">    secretName: ca-secret-tls
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="创建certificate资源">创建Certificate资源</h4>
+
+<p>有了签发机构，接下来我们就可以生成免费证书了，cert-manager 给我们提供了 Certificate 这个用于生成证书的自定义资源对象，它必须局限在某一个 namespace 下，证书最终会在这个 namespace 下以 Secret 的资源对象存储，创建一个 Certificate 对象：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: javachen-com
+</span><span class="s">spec:
+</span><span class="s">  secretName: javachen-secret-tls
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: ca-issuer
+</span><span class="s">    # We can reference ClusterIssuers by changing the kind here.
+</span><span class="s">    # The default value is Issuer (i.e. a locally namespaced Issuer)
+</span><span class="s">    kind: ClusterIssuer
+</span><span class="s">  commonName: javachen.com
+</span><span class="s">  organization:
+</span><span class="s">  - CA
+</span><span class="s">  dnsNames:
+</span><span class="s">  - javachen.com
+</span><span class="s">  - www.javachen.com
+</span><span class="s">  - *.javachen.com
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>稍等一会儿，就可以查询到cert-manager生成的证书secret：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl describe secret javachen-secret-tls -n cert-manager </pre></td></tr></table>
+</div>
+</div>
+<h4 id="使用建议">使用建议</h4>
+
+<p>实际生产环境中使用cert-manager可以考虑以下建议：</p>
+
+<ol>
+<li>将CA的<code>Secret</code>及<code>Issuer</code>放在某个独立的命名空间中，与其它业务的命名空间隔离起来。</li>
+<li>如果是CA类型的<code>Issuer</code>，要记得定期更新根CA证书。</li>
+<li>如果服务可被公网访问，同时又不想花钱买域名证书，可以采用<code>Letsencrypt</code>类型的<code>Issuer</code>，目前支持两种方式验证域名的所有权，基于<a href="https://cert-manager.readthedocs.io/en/latest/tutorials/acme/dns-validation.html">DNS记录的验证方案</a>和基于<a href="https://cert-manager.readthedocs.io/en/latest/tutorials/acme/http-validation.html">文件的HTTP验证方案</a>。</li>
+<li><code>cert-manager</code>还提供<code>ingress-shim</code>方式，自动为<code>Ingress</code>资源生成证书，只需要在<code>Ingress</code>资源上打上一些标签即可，很方便有木有，详细可参考<a href="https://cert-manager.readthedocs.io/en/latest/reference/ingress-shim.html">这里</a>。</li>
+</ol>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-04
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          <a href="/tags/SSL/">SSL</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/11/05/using-acme-sh-with-nginx-ingress/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">kubernetes使用acme.sh生成letsencrypt证书</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/11/04/using-cert-manager-with-nginx-ingress/">
+            <span class="next-text nav-default">使用Cert Manager配置Let’s Encrypt证书</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
