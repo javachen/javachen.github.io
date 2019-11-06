@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持 Let’s Encrypt、CA、HashiCorp Vault 这些免费证书的签发" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持从 Let’s Encrypt 、HashiCorp Vault 、Venafi、自签名keypai" /><meta name="keywords" content="Java, Hadoop, Docker" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
@@ -40,25 +40,25 @@
 
 
 <meta property="og:title" content="使用Cert Manager配置Let’s Encrypt证书" />
-<meta property="og:description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持 Let’s Encrypt、CA、HashiCorp Vault 这些免费证书的签发" />
+<meta property="og:description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持从 Let’s Encrypt 、HashiCorp Vault 、Venafi、自签名keypai" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://localhost:1313/2019/11/04/using-cert-manager-with-nginx-ingress/" />
 <meta property="article:published_time" content="2019-11-04T08:00:00+08:00" />
 <meta property="article:modified_time" content="2019-11-04T08:00:00+08:00" />
 <meta itemprop="name" content="使用Cert Manager配置Let’s Encrypt证书">
-<meta itemprop="description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持 Let’s Encrypt、CA、HashiCorp Vault 这些免费证书的签发">
+<meta itemprop="description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持从 Let’s Encrypt 、HashiCorp Vault 、Venafi、自签名keypai">
 
 
 <meta itemprop="datePublished" content="2019-11-04T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-04T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3583">
+<meta itemprop="wordCount" content="4753">
 
 
 
 <meta itemprop="keywords" content="kubernetes,ingress,SSL," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用Cert Manager配置Let’s Encrypt证书"/>
-<meta name="twitter:description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持 Let’s Encrypt、CA、HashiCorp Vault 这些免费证书的签发"/>
+<meta name="twitter:description" content="在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持从 Let’s Encrypt 、HashiCorp Vault 、Venafi、自签名keypai"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 3583 字 </span>
-          <span class="more-meta"> 预计阅读 8 分钟 </span>
+          <span class="more-meta"> 约 4753 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
         
       </div>
     </header>
@@ -153,7 +153,12 @@
 </ul></li>
 <li><a href="#部署nginx-ingress-controller">部署NGINX Ingress Controller</a></li>
 <li><a href="#部署一个服务">部署一个服务</a></li>
-<li><a href="#配置-let-s-encrypt-类型的issuer">配置 Let’s Encrypt 类型的Issuer</a>
+<li><a href="#配置-acme-类型的issuer">配置 ACME 类型的Issuer</a>
+<ul>
+<li>
+<ul>
+<li><a href="#使用http校验的acme证书">使用HTTP校验的ACME证书</a></li>
+<li><a href="#使用dns校验的acme证书">使用DNS校验的ACME证书</a>
 <ul>
 <li><a href="#安装cert-manager-webhook-dnspod">安装cert-manager-webhook-dnspod</a></li>
 <li><a href="#创建签发机构">创建签发机构</a>
@@ -162,18 +167,22 @@
 <li><a href="#production-issuer">production issuer</a></li>
 <li><a href="#查看状态-1">查看状态</a></li>
 </ul></li>
-<li><a href="#测试自动创建证书">测试自动创建证书</a>
+<li><a href="#测试手动创建证书">测试手动创建证书</a>
 <ul>
+<li><a href="#创建证书">创建证书</a></li>
 <li><a href="#创建ingress">创建Ingress</a></li>
 <li><a href="#查看状态-2">查看状态</a></li>
+<li><a href="#访问浏览器">访问浏览器</a></li>
 </ul></li>
-<li><a href="#手动创建证书">手动创建证书</a>
+<li><a href="#测试自动创建证书">测试自动创建证书</a>
 <ul>
-<li><a href="#手动创建证书-1">手动创建证书</a></li>
 <li><a href="#创建ingress-1">创建Ingress</a></li>
 <li><a href="#查看状态-3">查看状态</a></li>
 </ul></li>
 <li><a href="#卸载-1">卸载</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#使用acme-dns校验">使用ACME-DNS校验</a></li>
 </ul></li>
 <li><a href="#配置ca类型的issuer">配置CA类型的Issuer</a>
 <ul>
@@ -184,6 +193,7 @@
 <li><a href="#手动创建certificate">手动创建Certificate</a></li>
 <li><a href="#卸载-2">卸载</a></li>
 </ul></li>
+<li><a href="#总结">总结</a></li>
 <li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
@@ -192,28 +202,36 @@
     <div class="post-content">
       
 
-<p>在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持 Let’s Encrypt、CA、HashiCorp Vault 这些免费证书的签发。</p>
+<p>在 Kubernetes 集群中，可以使用Cert-Manager创建 HTTPS 证书并自动续期，支持从 <a href="https://letsencrypt.org/">Let’s Encrypt</a> 、<a href="https://www.vaultproject.io/">HashiCorp Vault</a> 、<a href="https://www.venafi.com/">Venafi</a>、自签名keypair、自签名文件生成证书。</p>
 
-<p>本文主要记录一下使用Cert-Manager创建Let’s Encrypt和CA类型证书的过程。</p>
+<p>本文主要记录使用 <a href="https://letsencrypt.org/">Let’s Encrypt</a> 自动生成证书的过程。</p>
 
-<p>本文参考：<a href="https://docs.cert-manager.io/en/latest/tutorials/acme/quick-start/index.html#">https://docs.cert-manager.io/en/latest/tutorials/acme/quick-start/index.html#</a> ，做了一些精简和改动。</p>
+<blockquote>
+<p>注意：</p>
+
+<p>本文参考 <a href="https://docs.cert-manager.io/en/latest/tutorials/acme/quick-start/index.html#">Quick-Start using Cert-Manager with NGINX Ingress</a> 进行测试，并且对其中的例子做了一些改动。</p>
+</blockquote>
 
 <h1 id="安装-cert-manager">安装 Cert Manager</h1>
 
 <blockquote>
-<p>注意：0.11.0版本，API从 certmanager.k8s.io/v1alpha1 改为 cert-manager.io/v1alpha2</p>
+<p>注意：目前Cert Manager最新版本为0.11.0，相对于之前的版本，做了一些改动，例如：API从 certmanager.k8s.io/v1alpha1 改为 cert-manager.io/v1alpha2。</p>
 </blockquote>
 
 <h2 id="使用kubectl安装">使用kubectl安装</h2>
+
+<p>本文建议安装0.9.0版本，因为需要用到其他的Helm Chart，它是使用的Cert Manager 0.9.0版本。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.9.0/cert-manager.yaml</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="使用helm安装">使用helm安装</h2>
+
+<p>使用helm安装0.9.1版本：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -233,11 +251,10 @@
 </span><span class="lnt">15
 </span><span class="lnt">16
 </span><span class="lnt">17
-</span><span class="lnt">18
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Install the CustomResourceDefinition resources separately</span>
-kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/deploy/manifests/00-crds.yaml
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
 
 <span class="c1"># Create the namespace for cert-manager</span>
 kubectl create namespace cert-manager
@@ -249,10 +266,9 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 <span class="c1"># Install the cert-manager Helm chart</span>
-helm install <span class="se">\
-</span><span class="se"></span>  --name cert-manager <span class="se">\
+helm install --name cert-manager <span class="se">\
 </span><span class="se"></span>  --namespace cert-manager <span class="se">\
-</span><span class="se"></span>  --version v0.11.0 <span class="se">\
+</span><span class="se"></span>  --version v0.9.1 <span class="se">\
 </span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
 </div>
 </div>
@@ -338,14 +354,37 @@ kubectl describe certificate -n cert-manager-test</code></pre></td></tr></table>
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete Certificate,Issuer --all -n cert-manager-test
-kubectl delete ns cert-manager-test</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除测试用的</span>
+kubectl delete Certificate,Issuer --all -n cert-manager-test
+kubectl delete ns cert-manager-test
+
+<span class="c1">#通过kubectl删除</span>
+kubectl delete -f https://github.com/jetstack/cert-manager/releases/download/v0.9.0/cert-manager.yaml
+
+<span class="c1">#通过helm删除</span>
+helm del --purge cert-manager</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="部署nginx-ingress-controller">部署NGINX Ingress Controller</h1>
 
+<p>查看集群是否安装了Ingress Controller：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -A <span class="p">|</span>grep ingress-controller</code></pre></td></tr></table>
+</div>
+</div>
 <p>如果没有安装Ingress Controller，则安装nginx-ingress：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -360,31 +399,21 @@ kubectl delete ns cert-manager-test</code></pre></td></tr></table>
 
 helm repo update
 
-helm install quickstart stable/nginx-ingress</code></pre></td></tr></table>
+helm install nginx-ingress --namespace ingress-nginx stable/nginx-ingress</code></pre></td></tr></table>
 </div>
 </div>
 <p>查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get svc
-NAME                                       TYPE           CLUSTER-IP     EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>                      AGE
-kubernetes                                 ClusterIP      <span class="m">10</span>.43.0.1      &lt;none&gt;        <span class="m">443</span>/TCP                      29h
-quickstart-nginx-ingress-controller        LoadBalancer   <span class="m">10</span>.43.233.6    &lt;pending&gt;     <span class="m">80</span>:32174/TCP,443:30023/TCP   25s
-quickstart-nginx-ingress-default-backend   ClusterIP      <span class="m">10</span>.43.14.206   &lt;none&gt;        <span class="m">80</span>/TCP                       25s</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get svc</code></pre></td></tr></table>
 </div>
 </div>
-<p>可以看到 quickstart-nginx-ingress-controller 是pending状态</p>
-
 <h1 id="部署一个服务">部署一个服务</h1>
 
-<p>参考 <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/deployment.yaml">deployment.yaml</a> 我做了一点修改，把镜像改成了tomcat：</p>
+<p>参考 <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/deployment.yaml">deployment.yaml</a> 我做了一点修改，原镜像 gcr.io/kuar-demo/kuard-amd64:1 下载慢，所以把镜像改成了tomcat：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
@@ -554,63 +583,160 @@ kuard   kuard.javachen.com   192.168.56.111   80      91s</pre></td></tr></table
 </div>
 <p>#DNS解析</p>
 
-<p>因为是测试环境，所以没有域名配置不了dns，这里配置本地的hosts文件，添加映射。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 kuard.javachen.com</code></pre></td></tr></table>
-</div>
-</div>
-<p>测试浏览器：<a href="http://kuard.javachen.com/">http://kuard.javachen.com/</a> ，可以看到tomcat主页。</p>
+<p>需要注册域名并配置DNS解析，让域名映射到外网地址，否则后面的操作无法进行。</p>
 
-<h1 id="配置-let-s-encrypt-类型的issuer">配置 Let’s Encrypt 类型的Issuer</h1>
+<p>浏览器访问 <a href="http://kuard.javachen.com/">http://kuard.javachen.com/</a> ，可以看到tomcat主页。</p>
+
+<h1 id="配置-acme-类型的issuer">配置 ACME 类型的Issuer</h1>
+
+<p>Let’s Encrypt目前支持ACME和CA方式的Issuer，而ACME又分DNS/HTTP两种DNS校验方式。下面基于ACME的方式创建issuer。</p>
 
 <p>我们需要先创建一个签发机构，cert-manager 给我们提供了 Issuer 和 ClusterIssuer 这两种用于创建签发机构的自定义资源对象，Issuer 只能用来签发自己所在 namespace 下的证书，ClusterIssuer 可以签发任意 namespace 下的证书，这里以 Issuer 为例创建一个签发机构。</p>
 
-<p>目前Issuer支持ACME跟CA方式，而ACME又分DNS/HTTP两种。下面给予ACME的方式创建issuer。</p>
+<h3 id="使用http校验的acme证书">使用HTTP校验的ACME证书</h3>
 
-<h2 id="安装cert-manager-webhook-dnspod">安装cert-manager-webhook-dnspod</h2>
+<p>http 方式需要在你的网站根目录下放置一个文件，来验证你的域名所有权完成验证，然后就可以生成证书了。</p>
 
-<p>使用dns-01验证，需要通过webhook。</p>
+<p>创建一个Issuer：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#0.10之前的版本</span>
+certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: letsencrypt-staging
+  namespace: default
+spec:
+  acme:
+    <span class="c1"># The ACME server URL</span>
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    <span class="c1"># Email address used for ACME registration</span>
+    email: user@example.com
+    <span class="c1"># Name of a secret used to store the ACME account private key</span>
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    <span class="c1"># Enable the HTTP-01 challenge provider</span>
+    solvers:
+    <span class="c1"># An empty &#39;selector&#39; means that this solver matches all domains</span>
+    - selector: <span class="o">{}</span>
+      http01:
+        ingress:
+          class: nginx</code></pre></td></tr></table>
+</div>
+</div>
+<p>这种方式，需要在服务器上启动一个web服务，并防置文件，再进行校验，比较麻烦，所以本文不作测试。</p>
 
-<p>我的域名托管在腾讯云，需要先安装一个dnspod的cert-manager-webhook，源码参考： <a href="https://github.com/qqshfox/cert-manager-webhook-dnspod.git">https://github.com/qqshfox/cert-manager-webhook-dnspod.git</a> 。</p>
+<h3 id="使用dns校验的acme证书">使用DNS校验的ACME证书</h3>
 
-<p>因为我使用的cert-manager是0.11.0，所以我修改了原来代码中的API版本，下载chart：</p>
+<p>我使用的域名是在腾讯云上购买的，对应DNS解析商是NDSPOD，Cert Manager目前支持的DNS01服务商如下：</p>
+
+<ul>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/acme-dns.html">ACME-DNS</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/akamai.html">Akamai FastDNS</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/azuredns.html">AzureDNS</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/cloudflare.html">Cloudflare</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/google.html">Google CloudDNS</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/route53.html">Amazon Route53</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/digitalocean.html">DigitalOcean</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/rfc2136.html">RFC-2136</a></li>
+</ul>
+
+<p>可以看到，上面不包括阿里云、DNSPOD等等，所以只能用webhook的方式，可以查看目前支持的webhookl的提供商：<a href="https://github.com/jetstack/cert-manager/blob/37e201244651311f9ec87616a780f76796ac636f/docs/tasks/issuers/setup-acme/dns01/webhook.rst">Webhook</a></p>
+
+<ul>
+<li><p><a href="https://github.com/pragkent/alidns-webhook">alidns-webhook</a></p></li>
+
+<li><p><a href="https://github.com/qqshfox/cert-manager-webhook-dnspod">cert-manager-webhook-dnspod</a></p></li>
+
+<li><p><a href="https://github.com/selectel/cert-manager-webhook-selectel">cert-manager-webhook-selectel</a></p></li>
+
+<li><p><a href="https://github.com/cgroschupp/cert-manager-webhook-softlayer">cert-manager-webhook-softlayer</a></p></li>
+</ul>
+
+<h4 id="安装cert-manager-webhook-dnspod">安装cert-manager-webhook-dnspod</h4>
+
+<p>1、安装cert-manager-webhook-dnspod</p>
+
+<p>下载源代码</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/javachen/charts</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/qqshfox/cert-manager-webhook-dnspod.git</code></pre></td></tr></table>
 </div>
 </div>
-<p>安装cert-manager-webhook-dnspod：</p>
+<p>进入目录，安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> charts/cert-manager-webhook-dnspod
-helm install --name cert-manager-webhook-dnspod --namespace cert-manager ./deploy/example-webhook</code></pre></td></tr></table>
-</div>
-</div>
-<p>获取id、token，参考 <a href="https://support.dnspod.cn/Kb/showarticle/tsid/227/">https://support.dnspod.cn/Kb/showarticle/tsid/227/</a></p>
 
-<p>创建一个secret存储token：</p>
+<span class="c1">#版本修改</span>
+sed -i <span class="s1">&#39;s/apps\/v1beta2/apps\/v1/g&#39;</span> ./deploy/example-webhook/templates/deployment.yaml
+
+helm install --name cert-manager-webhook-dnspod --namespace cert-manager <span class="se">\
+</span><span class="se"></span>	--set <span class="nv">groupName</span><span class="o">=</span>acme.javachen.com <span class="se">\
+</span><span class="se"></span>	./deploy/example-webhook</code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：必须设置 groupName 参数，其对应一个域名，必须是唯一的</p>
+</blockquote>
+
+<p>2、获取DNSPOD的id、token</p>
+
+<p>参考 <a href="https://support.dnspod.cn/Kb/showarticle/tsid/227/">https://support.dnspod.cn/Kb/showarticle/tsid/227/</a></p>
+
+<p>3、创建一个secret存储token</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl --namespace cert-manager create secret generic <span class="se">\
-</span><span class="se"></span>    dnspod-credentials --from-literal<span class="o">=</span>api-token<span class="o">=</span><span class="s1">&#39;a028d574e4e390f259b97e4c3f4cb861&#39;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#将获取的token填入</span>
+kubectl --namespace cert-manager create secret generic <span class="se">\
+</span><span class="se"></span>    dnspod-credentials --from-literal<span class="o">=</span>api-token<span class="o">=</span><span class="s1">&#39;XXXXX&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>创建service-account</p>
+<p>4、创建service-account</p>
+
+<p>这一步主要是授权cert-manager-webhook-dnspod对dnspod-credentials的访问权限。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -649,7 +775,7 @@ helm install --name cert-manager-webhook-dnspod --namespace cert-manager ./deplo
 </span><span class="s">- apiGroups: [&#34;&#34;]
 </span><span class="s">  resources: [&#34;secrets&#34;]
 </span><span class="s">  resourceNames: [&#34;dnspod-credentials&#34;]
-</span><span class="s">  verbs: [&#34;get&#34;, &#34;create&#34;,&#34;watch&#34;]
+</span><span class="s">  verbs: [&#34;get&#34;, &#34;watch&#34;]
 </span><span class="s">---
 </span><span class="s">apiVersion: rbac.authorization.k8s.io/v1beta1
 </span><span class="s">kind: ClusterRoleBinding
@@ -667,7 +793,7 @@ helm install --name cert-manager-webhook-dnspod --namespace cert-manager ./deplo
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>查看状态：</p>
+<p>5、查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -680,9 +806,9 @@ helm install --name cert-manager-webhook-dnspod --namespace cert-manager ./deplo
 kubectl get secret -n cert-manager</pre></td></tr></table>
 </div>
 </div>
-<h2 id="创建签发机构">创建签发机构</h2>
+<h4 id="创建签发机构">创建签发机构</h4>
 
-<h3 id="staging-issuer">staging issuer</h3>
+<h5 id="staging-issuer">staging issuer</h5>
 
 <p>创建 staging issuer，参考 <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/staging-issuer.yaml">staging-issuer.yaml</a> ，改为dns-01方式，修改 email：</p>
 <div class="highlight"><div class="chroma">
@@ -712,12 +838,10 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 </span><span class="lnt">23
 </span><span class="lnt">24
 </span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>cert-manager.io/v1alpha2<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-staging<span class="w">
@@ -730,15 +854,13 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 </span><span class="w">    </span>solvers<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>selector<span class="p">:</span><span class="w">
 </span><span class="w">        </span>dnsNames<span class="p">:</span><span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>kuard.wesine.com.cn<span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>wesine.com.cn<span class="w">
-</span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.wesine.com.cn&#39;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.javachen.com&#39;</span><span class="w">
 </span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
 </span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
-</span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.wesine.com.cn<span class="w"> 
+</span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.javachen.com<span class="w"> 
 </span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
 </span><span class="w">          </span>config<span class="p">:</span><span class="w">
-</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w"> 
+</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w">  </span><span class="c">#DNSPOD 的 apiID，注意替换</span><span class="w">
 </span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
 </span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
 </span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials<span class="w">
@@ -754,12 +876,363 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 <li>spec.acme.privateKeySecretRef 指示此签发机构的私钥将要存储到哪个 Secret 对象中，名称不重要</li>
 </ul>
 
-<h3 id="production-issuer">production issuer</h3>
+<h5 id="production-issuer">production issuer</h5>
 
 <p>创建 production issuer: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/production-issuer.yaml">production-issuer.yaml</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: letsencrypt-prod
+</span><span class="s">spec:
+</span><span class="s">  acme:
+</span><span class="s">    server: https://acme-v02.api.letsencrypt.org/directory
+</span><span class="s">    email: junecloud@163.com
+</span><span class="s">    privateKeySecretRef:
+</span><span class="s">      name: letsencrypt-prod
+</span><span class="s">    solvers:
+</span><span class="s">    - selector:
+</span><span class="s">        dnsNames:
+</span><span class="s">        - &#39;*.javachen.com&#39;
+</span><span class="s">      dns01:
+</span><span class="s">        webhook:
+</span><span class="s">          groupName: javachen.com 
+</span><span class="s">          solverName: dnspod
+</span><span class="s">          config:
+</span><span class="s">            apiID: 123438 #DNSPOD 的 apiID，注意替换
+</span><span class="s">            apiTokenSecretRef:
+</span><span class="s">              key: api-token
+</span><span class="s">              name: dnspod-credentials
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h5 id="查看状态-1">查看状态</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get ClusterIssuer
+kubectl describe ClusterIssuer letsencrypt-staging
+kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
+</div>
+</div>
+<h4 id="测试手动创建证书">测试手动创建证书</h4>
+
+<p>cert-manager 给我们提供了 Certificate 这个用于生成证书的自定义资源对象，它必须局限在某一个 namespace 下，证书最终会在这个 namespace 下以 Secret 的资源对象存储，创建一个 Certificate 对象。</p>
+
+<h5 id="创建证书">创建证书</h5>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -   
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: wildcard-javachen-com-cn
+</span><span class="s">spec:
+</span><span class="s">  secretName: wildcard-javachen-com-cn
+</span><span class="s">  renewBefore: 240h
+</span><span class="s">  groupName: acme.javachen.com 
+</span><span class="s">  dnsNames:
+</span><span class="s">  - &#34;*.javachen.com&#34;
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: letsencrypt-prod
+</span><span class="s">    kind: ClusterIssuer
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h5 id="创建ingress">创建Ingress</h5>
+
+<p>先删除直接创建的ingress：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete ing kuard</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建 prod 环境下的 ingress tls：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>extensions/v1beta1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Ingress<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>kuard<span class="w">
+</span><span class="w">  </span>annotations<span class="p">:</span><span class="w">
+</span><span class="w">    </span>kubernetes.io/ingress.class<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx&#34;</span><span class="w">    
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>tls<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>kuard.javachen.com<span class="w">
+</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-javachen-com-cn<span class="w">
+</span><span class="w">  </span>rules<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.javachen.com<span class="w">
+</span><span class="w">    </span>http<span class="p">:</span><span class="w">
+</span><span class="w">      </span>paths<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">        </span>backend<span class="p">:</span><span class="w">
+</span><span class="w">          </span>serviceName<span class="p">:</span><span class="w"> </span>kuard<span class="w">
+</span><span class="w">          </span>servicePort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</div>
+</div>
+<h5 id="查看状态-2">查看状态</h5>
+
+<p>查看secret中tls.crt、tls.key是否有值</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret
+kubectl describe secret wildcard-javachen-com-cn</code></pre></td></tr></table>
+</div>
+</div>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8oltiwu2hj30sk0eognh.jpg" alt="image-20191106204345933" /></p>
+
+<p>查看详细日志，排查错误：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate
+kubectl describe certificate wildcard-javachen-com-cn
+
+kubectl get certificate wildcard-javachen-com-cn -o yaml
+
+kubectl describe order wildcard-javachen-com-cn-443602410
+
+kubectl describe Challenge wildcard-javachen-com-cn-443602410-0
+
+kubectl get ing</code></pre></td></tr></table>
+</div>
+</div>
+<h5 id="访问浏览器">访问浏览器</h5>
+
+<p>访问浏览器，查看证书是否被信任。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8olv0bzwcj30ws0ic0x0.jpg" alt="image-20191106204512144" /></p>
+
+<h4 id="测试自动创建证书">测试自动创建证书</h4>
+
+<h5 id="创建ingress-1">创建Ingress</h5>
+
+<p>先删除直接创建的ingress：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete ing kuard</code></pre></td></tr></table>
+</div>
+</div>
+<p>删除手动创建的证书和secret：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete secret wildcard-javachen-com-cn
+kubectl delete certificate wildcard-javachen-com-cn</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建 prod 环境下的 ingress tls</p>
+
+<blockquote>
+<p>注意：kubernetes添加了一行 <code>certmanager.k8s.io/cluster-issuer: &quot;letsencrypt-prod&quot;</code></p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>extensions/v1beta1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Ingress<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>kuard<span class="w">
+</span><span class="w">  </span>annotations<span class="p">:</span><span class="w">
+</span><span class="w">    </span>kubernetes.io/ingress.class<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx&#34;</span><span class="w">    
+</span><span class="w">    </span>certmanager.k8s.io/cluster-issuer<span class="p">:</span><span class="w"> </span><span class="s2">&#34;letsencrypt-prod&#34;</span><span class="w"> </span><span class="c">#添加，用于标注自动创建证书</span><span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>tls<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>kuard.javachen.com<span class="w">
+</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-javachen-com-cn<span class="w">
+</span><span class="w">  </span>rules<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.javachen.com<span class="w">
+</span><span class="w">    </span>http<span class="p">:</span><span class="w">
+</span><span class="w">      </span>paths<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">        </span>backend<span class="p">:</span><span class="w">
+</span><span class="w">          </span>serviceName<span class="p">:</span><span class="w"> </span>kuard<span class="w">
+</span><span class="w">          </span>servicePort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</div>
+</div>
+<h5 id="查看状态-3">查看状态</h5>
+
+<p>查看有没有自动生成secret：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl get secret
+kubectl describe secret wildcard-javachen-com-cn
+kubectl get secret wildcard-javachen-com-cn -o yaml</pre></td></tr></table>
+</div>
+</div>
+<p>查看有没有自动生成证书以及状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get certificate
+NAME                                  READY   SECRET                                    AGE
+wildcard-javachen-com-cn                 False  wildcard-javachen-com-cn                    21s</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看详细信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe certificate wildcard-javachen-com-cn
+
+kubectl get certificate wildcard-javachen-com-cn -o yaml
+
+kubectl describe order wildcard-javachen-com-cn-443602410
+
+kubectl describe Challenge wildcard-javachen-com-cn-443602410-0</code></pre></td></tr></table>
+</div>
+</div>
+<p>描述order资源信息，可以看到提示 kuard.javachen.com 域名没有被配置</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8olyuvjl9j31e60au0va.jpg" alt="image-20191106204853562" /></p>
+
+<p>说明自动创建证书不支持泛域名配置，需要在Issuer中单独配置域名kuard.javachen.com：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -787,142 +1260,35 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 </span><span class="lnt">26
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>cert-manager.io/v1alpha2<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-prod<span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>acme<span class="p">:</span><span class="w">
-</span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme-v02.api.letsencrypt.org/directory<span class="w">
-</span><span class="w">    </span>email<span class="p">:</span><span class="w"> </span>junecloud@<span class="m">163.</span>com<span class="w">
-</span><span class="w">    </span>privateKeySecretRef<span class="p">:</span><span class="w">
-</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-prod<span class="w">
-</span><span class="w">    </span>solvers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>selector<span class="p">:</span><span class="w">
-</span><span class="w">        </span>dnsNames<span class="p">:</span><span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>wesine.com.cn<span class="w">
-</span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.wesine.com.cn&#39;</span><span class="w">
-</span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
-</span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
-</span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>wesine.com.cn<span class="w"> 
-</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
-</span><span class="w">          </span>config<span class="p">:</span><span class="w">
-</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w"> 
-</span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials<span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: letsencrypt-prod
+</span><span class="s">spec:
+</span><span class="s">  acme:
+</span><span class="s">    server: https://acme-v02.api.letsencrypt.org/directory
+</span><span class="s">    email: junecloud@163.com
+</span><span class="s">    privateKeySecretRef:
+</span><span class="s">      name: letsencrypt-prod
+</span><span class="s">    solvers:
+</span><span class="s">    - selector:
+</span><span class="s">        dnsNames:
+</span><span class="s">        - kuard.javachen.com
+</span><span class="s">        - &#39;*.javachen.com&#39;
+</span><span class="s">      dns01:
+</span><span class="s">        webhook:
+</span><span class="s">          groupName: javachen.com 
+</span><span class="s">          solverName: dnspod
+</span><span class="s">          config:
+</span><span class="s">            apiID: 123438 #DNSPOD 的 apiID，注意替换
+</span><span class="s">            apiTokenSecretRef:
+</span><span class="s">              key: api-token
+</span><span class="s">              name: dnspod-credentials
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<h3 id="查看状态-1">查看状态</h3>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get ClusterIssuer
-kubectl describe ClusterIssuer letsencrypt-staging
-kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="测试自动创建证书">测试自动创建证书</h2>
-
-<h3 id="创建ingress">创建Ingress</h3>
-
-<p>先删除直接创建的ingress：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete ing kuard</code></pre></td></tr></table>
-</div>
-</div>
-<p>创建 staging 环境下的 ingress tls: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/ingress-tls.yaml">ingress-tls.yaml</a></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>extensions/v1beta1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Ingress<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>kuard<span class="w">
-</span><span class="w">  </span>annotations<span class="p">:</span><span class="w">
-</span><span class="w">    </span>kubernetes.io/ingress.class<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx&#34;</span><span class="w">    
-</span><span class="w">    </span>cert-manager.io/cluster-issuer<span class="p">:</span><span class="w"> </span><span class="s2">&#34;letsencrypt-staging&#34;</span><span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>tls<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>kuard.wesine.com.cn<span class="w">
-</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-wesine-com-cn<span class="w">
-</span><span class="w">  </span>rules<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.wesine.com.cn<span class="w">
-</span><span class="w">    </span>http<span class="p">:</span><span class="w">
-</span><span class="w">      </span>paths<span class="p">:</span><span class="w">
-</span><span class="w">      </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
-</span><span class="w">        </span>backend<span class="p">:</span><span class="w">
-</span><span class="w">          </span>serviceName<span class="p">:</span><span class="w"> </span>kuard<span class="w">
-</span><span class="w">          </span>servicePort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
-</div>
-</div>
-<p>上面的yaml文件配置了 <code>cert-manager.io/cluster-issuer: &quot;letsencrypt-staging&quot;</code>，cert-manager会自动帮我们生成证书。</p>
-
-<h3 id="查看状态-2">查看状态</h3>
-
-<p>查看有没有自动生成secret：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">kubectl get secret
-kubectl describe secret wildcard-wesine-com-cn
-kubectl get secret wildcard-wesine-com-cn -o yaml</pre></td></tr></table>
-</div>
-</div>
-<p>查看有没有自动生成证书以及状态：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get certificate
-NAME                                  READY   SECRET                                    AGE
-wildcard-wesine-com-cn                 False  wildcard-wesine-com-cn                    21s</code></pre></td></tr></table>
-</div>
-</div>
-<p>查看详细信息：</p>
+<h4 id="卸载-1">卸载</h4>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -932,85 +1298,83 @@ wildcard-wesine-com-cn                 False  wildcard-wesine-com-cn            
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
+</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe certificate wildcard-wesine-com-cn
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete Role,RoleBinding,ClusterRole,ClusterRoleBinding cert-manager-webhook-dnspod:secret-reader
 
-kubectl get certificate wildcard-wesine-com-cn -o yaml
+kubectl delete ClusterIssuer letsencrypt-staging letsencrypt-prod
 
-kubectl describe order wildcard-wesine-com-cn-1179441345
+kubectl delete secret wildcard-javachen-com-cn
+kubectl delete certificate wildcard-javachen-com-cn
 
-kubectl describe Challenge wildcard-wesine-com-cn-1179441345-0</code></pre></td></tr></table>
+kubectl delete ing,pod,svc kuard</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="手动创建证书">手动创建证书</h2>
+<h2 id="使用acme-dns校验">使用ACME-DNS校验</h2>
 
-<h3 id="手动创建证书-1">手动创建证书</h3>
-
-<p>cert-manager 给我们提供了 Certificate 这个用于生成证书的自定义资源对象，它必须局限在某一个 namespace 下，证书最终会在这个 namespace 下以 Secret 的资源对象存储，创建一个 Certificate 对象：</p>
-
-<p>这里使用 letsencrypt-staging</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
-</span><span class="s">apiVersion: cert-manager.io/v1alpha2
-</span><span class="s">kind: Certificate
-</span><span class="s">metadata:
-</span><span class="s">  name: wildcard-wesine-com-cn
-</span><span class="s">spec:
-</span><span class="s">  secretName: wildcard-wesine-com-cn
-</span><span class="s">  renewBefore: 240h
-</span><span class="s">  commonName: wesine.com.cn
-</span><span class="s">  dnsNames:
-</span><span class="s">  - wesine.com.cn
-</span><span class="s">  - &#39;*.wesine.com.cn&#39;
-</span><span class="s">  issuerRef:
-</span><span class="s">    name: letsencrypt-prod
-</span><span class="s">    kind: ClusterIssuer
-</span><span class="s">EOF</span></code></pre></td></tr></table>
-</div>
-</div>
-<p>说明：</p>
+<p>参考：</p>
 
 <ul>
-<li>spec.secretName 指示证书最终存到哪个 Secret 中</li>
-<li>spec.issuerRef.kind 值为 ClusterIssuer 说明签发机构不在本 namespace 下，而是在全局</li>
-<li>spec.issuerRef.name 我们创建的签发机构的名称 (ClusterIssuer.metadata.name)</li>
-<li>spec.dnsNames 指示该证书的可以用于哪些域名</li>
-<li>spec.acme.config.http01.ingress.class 使用 HTTP-01 方式校验该域名和机器时，cert-manager 会尝试创建Ingress 对象来实现该校验，如果指定该值，会给创建的 Ingress 加上 kubernetes.io/ingress.class 这个 annotation，如果我们的 Ingress Controller 是 traefik Ingress Controller，指定这个字段可以让创建的 Ingress 被 traefik Ingress Controller 处理。</li>
-<li>spec.acme.config.http01.domains 指示该证书的可以用于哪些域名</li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/acme-dns.html">ACME-DNS</a></li>
+<li><a href="https://blog.csdn.net/xichenguan/article/details/100709830">https://blog.csdn.net/xichenguan/article/details/100709830</a></li>
 </ul>
 
-<h3 id="创建ingress-1">创建Ingress</h3>
+<p>大概过程：</p>
 
-<p>先删除直接创建的ingress：</p>
+<p>1、先在 <a href="https://auth.acme-dns.io">https://auth.acme-dns.io</a> 注册</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">curl -X POST https://auth.acme-dns.io/register</pre></td></tr></table>
+</div>
+</div>
+<p>2、将返回值保持到acmedns.json，并设置域名，可以设置多个。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;javachen.com&#34;</span><span class="p">:</span> <span class="p">{</span>
+	<span class="nt">&#34;username&#34;</span><span class="p">:</span> <span class="s2">&#34;3fac21d2-0454-4ae5-bac9-4b29763224e4&#34;</span><span class="p">,</span>
+	<span class="nt">&#34;password&#34;</span><span class="p">:</span> <span class="s2">&#34;b2DlnR09pTuRaKf_wyqfb1QWJ7GCtVWWy9_-BF6y&#34;</span><span class="p">,</span>
+	<span class="nt">&#34;fulldomain&#34;</span><span class="p">:</span> <span class="s2">&#34;f515beaa-4e3c-454b-b2b0-f6173b44024f.auth.acme-dns.io&#34;</span><span class="p">,</span>
+	<span class="nt">&#34;subdomain&#34;</span><span class="p">:</span> <span class="s2">&#34;f515beaa-4e3c-454b-b2b0-f6173b44024f&#34;</span><span class="p">,</span>
+	<span class="nt">&#34;allowfrom&#34;</span><span class="p">:</span> <span class="p">[]</span>
+	<span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>3、添加一个txt记录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">_acme-challenge.javachen.com CNAME 515beaa-4e3c-454b-b2b0-f6173b44024f.auth.acme-dns.io</pre></td></tr></table>
+</div>
+</div>
+<p>4、创建一个secret</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete ing kuard</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic acme-dns --from-file acmedns.json</code></pre></td></tr></table>
 </div>
 </div>
-<p>创建 staging 环境下的 ingress tls: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/ingress-tls.yaml">ingress-tls.yaml</a></p>
+<p>5、创建Issuer</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
@@ -1027,82 +1391,26 @@ kubectl describe Challenge wildcard-wesine-com-cn-1179441345-0</code></pre></td>
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>extensions/v1beta1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Ingress<span class="w">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Issuer<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>kuard<span class="w">
-</span><span class="w">  </span>annotations<span class="p">:</span><span class="w">
-</span><span class="w">    </span>kubernetes.io/ingress.class<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx&#34;</span><span class="w">    
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example-issuer<span class="w">
 </span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>tls<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>kuard.wesine.com.cn<span class="w">
-</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-wesine-com-cn<span class="w">
-</span><span class="w">  </span>rules<span class="p">:</span><span class="w">
-</span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.wesine.com.cn<span class="w">
-</span><span class="w">    </span>http<span class="p">:</span><span class="w">
-</span><span class="w">      </span>paths<span class="p">:</span><span class="w">
-</span><span class="w">      </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
-</span><span class="w">        </span>backend<span class="p">:</span><span class="w">
-</span><span class="w">          </span>serviceName<span class="p">:</span><span class="w"> </span>kuard<span class="w">
-</span><span class="w">          </span>servicePort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</span><span class="w">  </span>acme<span class="p">:</span><span class="w">
+</span><span class="w">    </span>...<span class="w">
+</span><span class="w">    </span>solvers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>dns01<span class="p">:</span><span class="w">
+</span><span class="w">        </span>acmedns<span class="p">:</span><span class="w">
+</span><span class="w">          </span>host<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme.example.com<span class="w">
+</span><span class="w">          </span>accountSecretRef<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span>acme-dns<span class="w">
+</span><span class="w">            </span>key<span class="p">:</span><span class="w"> </span>acmedns.json</code></pre></td></tr></table>
 </div>
 </div>
-<h3 id="查看状态-3">查看状态</h3>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret
-kubectl describe secret wildcard-wesine-com-cn
+<p>6、测试</p>
 
-kubectl get certificate
-kubectl describe certificate wildcard-wesine-com-cn
-
-
-kubectl describe ServiceAccount cert-manager-webhook-dnspod -n cert-manager
-
-kubectl get ing</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="卸载-1">卸载</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete secret wildcard-wesine-com-cn
-kubectl delete certificate wildcard-wesine-com-cn
-kubectl delete ClusterIssuer letsencrypt-staging letsencrypt-prod
-
-kubectl delete ClusterRole,ClusterRoleBinding,Role,RoleBinding cert-manager-webhook-dnspod:secret-reader</code></pre></td></tr></table>
-</div>
-</div>
 <h1 id="配置ca类型的issuer">配置CA类型的Issuer</h1>
 
 <p>前面配置了ACME类型的Issuer，接下来创建CA类型的Issuer。</p>
@@ -1154,8 +1462,8 @@ openssl req -x509 -new -nodes -key tls.key -subj <span class="s2">&#34;/CN=kuard
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>cert-manager.io/v1alpha2<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Issuer<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>ca-issuer<span class="w">
 </span><span class="w"></span>spec<span class="p">:</span><span class="w">
@@ -1210,7 +1518,7 @@ openssl req -x509 -new -nodes -key tls.key -subj <span class="s2">&#34;/CN=kuard
 </span><span class="s">  name: kuard
 </span><span class="s">  annotations:
 </span><span class="s">    kubernetes.io/ingress.class: &#34;nginx&#34;  
-</span><span class="s">    cert-manager.io/issuer: &#34;ca-issuer&#34;  #区别
+</span><span class="s">    certmanager.k8s.io/cluster-issuer: &#34;ca-issuer&#34;  #区别
 </span><span class="s">
 </span><span class="s">spec:
 </span><span class="s">  tls:
@@ -1231,35 +1539,13 @@ openssl req -x509 -new -nodes -key tls.key -subj <span class="s2">&#34;/CN=kuard
 <p>查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span><span class="lnt">27
-</span><span class="lnt">28
-</span><span class="lnt">29
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get Certificate,ing,Issuer,secret 
@@ -1268,29 +1554,7 @@ kubectl describe Certificate
 
 
 <span class="c1">#检查 ca.crt、tls.crt、tls.key是否有值</span>
-$ kubectl get secret example-com-tls -o yaml
-apiVersion: v1
-data:
-  ca.crt: &lt;.....&gt;
-  tls.crt: &lt;.....&gt;
-  tls.key: &lt;.....&gt;
-kind: Secret
-metadata:
-  annotations:
-    cert-manager.io/alt-names: kuard.javachen.com
-    cert-manager.io/certificate-name: example-com-tls
-    cert-manager.io/common-name: <span class="s2">&#34;&#34;</span>
-    cert-manager.io/ip-sans: <span class="s2">&#34;&#34;</span>
-    cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: ca-issuer
-    cert-manager.io/uri-sans: <span class="s2">&#34;&#34;</span>
-  creationTimestamp: <span class="s2">&#34;2019-11-05T07:58:48Z&#34;</span>
-  name: example-com-tls
-  namespace: default
-  resourceVersion: <span class="s2">&#34;244116&#34;</span>
-  selfLink: /api/v1/namespaces/default/secrets/example-com-tls
-  uid: 66e5ba7a-0b58-4a89-a2d7-ed86d4cc7cc8
-type: kubernetes.io/tls</code></pre></td></tr></table>
+$ kubectl get secret example-com-tls -o yaml</code></pre></td></tr></table>
 </div>
 </div>
 <p>访问浏览器，可以看到证书不被chrome浏览器信任。在系统里，手动设置信任证书，然后可以看到证书签发者是cert-manager：</p>
@@ -1323,7 +1587,7 @@ type: kubernetes.io/tls</code></pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>cert-manager.io/v1alpha2<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Certificate<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example-com<span class="w">
@@ -1340,15 +1604,6 @@ type: kubernetes.io/tls</code></pre></td></tr></table>
 </span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
 </div>
-<p>然后，需要在ingress里面去掉：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">cert-manager.io/issuer: &#34;ca-issuer&#34;</pre></td></tr></table>
-</div>
-</div>
 <h2 id="卸载-2">卸载</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1362,11 +1617,17 @@ kubectl delete secret example-com-tls ca-key-pair
 kubectl delete Certificate example-com</pre></td></tr></table>
 </div>
 </div>
+<h1 id="总结">总结</h1>
+
+<p>本文主要是基于Cert Manager v0.9.0版本对Ingress创建Let’s Encrypt免费证书，如果你使用高版本的Cert Manager，请注意修改 API：API从 <code>certmanager.k8s.io/v1alpha1</code> 改为 <code>cert-manager.io/v1alpha2</code>。</p>
+
 <h1 id="参考文章">参考文章</h1>
 
 <ul>
 <li><a href="[http://idcsec.com/2019/07/11/%E4%BD%BF%E7%94%A8-letsencrypt%E9%85%8D%E7%BD%AEkubernetes-ingress-nginx%E5%85%8D%E8%B4%B9https%E8%AF%81%E4%B9%A6/](http://idcsec.com/2019/07/11/使用-letsencrypt配置kubernetes-ingress-nginx免费https证书/)">使用 LetsEncrypt配置kubernetes ingress-nginx免费HTTPS证书</a></li>
 <li><a href="https://www.cnblogs.com/blackmood/p/11425366.html">cert-manager管理k8s集群证书</a></li>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/acme-dns.html">ACME-DNS</a></li>
+<li><a href="https://blog.csdn.net/xichenguan/article/details/100709830">https://blog.csdn.net/xichenguan/article/details/100709830</a></li>
 </ul>
 
     </div>
