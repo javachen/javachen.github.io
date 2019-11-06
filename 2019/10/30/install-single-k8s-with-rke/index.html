@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4158">
+<meta itemprop="wordCount" content="4237">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4158 字 </span>
+          <span class="more-meta"> 约 4237 字 </span>
           <span class="more-meta"> 预计阅读 9 分钟 </span>
         
       </div>
@@ -966,6 +966,57 @@ expect eof</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
 </div>
 </div>
+<p>可以查看某一个k8s版本依赖的系统镜像，然后手动下载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ rke config --system-images --version v1.16.2-rancher1-1
+rancher/coreos-etcd:v3.3.15-rancher1
+rancher/rke-tools:v0.1.50
+rancher/k8s-dns-kube-dns:1.15.0
+rancher/k8s-dns-dnsmasq-nanny:1.15.0
+rancher/k8s-dns-sidecar:1.15.0
+rancher/cluster-proportional-autoscaler:1.7.1
+rancher/coredns-coredns:1.6.2
+rancher/hyperkube:v1.16.2-rancher1
+rancher/coreos-flannel:v0.11.0-rancher1
+rancher/flannel-cni:v0.3.0-rancher5
+rancher/calico-node:v3.8.1
+rancher/calico-cni:v3.8.1
+rancher/calico-kube-controllers:v3.8.1
+rancher/calico-pod2daemon-flexvol:v3.8.1
+rancher/coreos-flannel:v0.11.0
+weaveworks/weave-kube:2.5.2
+weaveworks/weave-npc:2.5.2
+rancher/pause:3.1
+rancher/nginx-ingress-controller:nginx-0.25.1-rancher1
+rancher/nginx-ingress-controller-defaultbackend:1.5-rancher1
+rancher/metrics-server:v0.3.4</code></pre></td></tr></table>
+</div>
+</div>
 <p>切换到普通用户chenzj，创建RKE配置文件cluster.yml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1346,12 +1397,12 @@ docker volume rm <span class="sb">`</span>docker volume ls -q<span class="sb">`<
 <span class="c1">#cmd.sh &#39;docker volume rm `docker volume ls -q`&#39;</span>
 
 <span class="c1"># 卸载每个节点mount目录</span>
-<span class="k">for</span> mount in <span class="k">$(</span>mount <span class="p">|</span> grep tmpfs <span class="p">|</span> grep <span class="s1">&#39;/var/lib/kubelet&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3 }&#39;</span><span class="k">)</span> <span class="p">;</span> <span class="k">do</span> 
-	sudo umount <span class="nv">$mount</span><span class="p">;</span> 
+<span class="k">for</span> mount in <span class="k">$(</span>sudo mount <span class="p">|</span> grep tmpfs <span class="p">|</span> grep <span class="s1">&#39;/var/lib/kubelet&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3 }&#39;</span><span class="k">)</span> <span class="p">;</span> <span class="k">do</span> 
+sudo umount <span class="nv">$mount</span><span class="p">;</span> 
 <span class="k">done</span>
  
 <span class="c1"># 删除残留路径</span>
-sudo rm -rf /etc/cni <span class="se">\
+sudo rm -rf ~/.kube/ /etc/cni <span class="se">\
 </span><span class="se"></span>  /opt/cni <span class="se">\
 </span><span class="se"></span>  /run/secrets/kubernetes.io <span class="se">\
 </span><span class="se"></span>  /run/calico <span class="se">\
@@ -1364,13 +1415,13 @@ sudo rm -rf /etc/cni <span class="se">\
 </span><span class="se"></span>  /var/run/calico
 
 <span class="c1"># 清理网络接口</span>
-  <span class="nv">network_interface</span><span class="o">=</span><span class="sb">`</span>ls /sys/class/net<span class="sb">`</span>
-  <span class="k">for</span> net_inter in <span class="nv">$network_interface</span><span class="p">;</span>
-  <span class="k">do</span>
-    <span class="k">if</span> ! <span class="nb">echo</span> <span class="nv">$net_inter</span> <span class="p">|</span> grep -qiE <span class="s1">&#39;lo|docker0|eth*|ens*&#39;</span><span class="p">;</span><span class="k">then</span>
-      ip link delete <span class="nv">$net_inter</span>
-    <span class="k">fi</span>
-  <span class="k">done</span>
+<span class="nv">network_interface</span><span class="o">=</span><span class="sb">`</span>ls /sys/class/net<span class="sb">`</span>
+<span class="k">for</span> net_inter in <span class="nv">$network_interface</span><span class="p">;</span>
+<span class="k">do</span>
+	<span class="k">if</span> ! <span class="nb">echo</span> <span class="nv">$net_inter</span> <span class="p">|</span> grep -qiE <span class="s1">&#39;lo|docker0|eth*|ens*&#39;</span><span class="p">;</span><span class="k">then</span>
+		sudo ip link delete <span class="nv">$net_inter</span>
+	<span class="k">fi</span>
+<span class="k">done</span>
 
 <span class="c1"># 清理残留进程</span>
 <span class="nv">port_list</span><span class="o">=</span><span class="s1">&#39;80 443 6443 2376 2379 2380 8472 9099 10250 10254&#39;</span>
