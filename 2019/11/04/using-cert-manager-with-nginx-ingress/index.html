@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-04T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-04T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4753">
+<meta itemprop="wordCount" content="4936">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4753 字 </span>
+          <span class="more-meta"> 约 4936 字 </span>
           <span class="more-meta"> 预计阅读 10 分钟 </span>
         
       </div>
@@ -155,8 +155,6 @@
 <li><a href="#部署一个服务">部署一个服务</a></li>
 <li><a href="#配置-acme-类型的issuer">配置 ACME 类型的Issuer</a>
 <ul>
-<li>
-<ul>
 <li><a href="#使用http校验的acme证书">使用HTTP校验的ACME证书</a></li>
 <li><a href="#使用dns校验的acme证书">使用DNS校验的ACME证书</a>
 <ul>
@@ -173,6 +171,7 @@
 <li><a href="#创建ingress">创建Ingress</a></li>
 <li><a href="#查看状态-2">查看状态</a></li>
 <li><a href="#访问浏览器">访问浏览器</a></li>
+<li><a href="#image-20191106204512144-https-tva1-sinaimg-cn-large-006y8mn6ly1g8olv0bzwcj30ws0ic0x0-jpg"><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8olv0bzwcj30ws0ic0x0.jpg" alt="image-20191106204512144" /></a></li>
 </ul></li>
 <li><a href="#测试自动创建证书">测试自动创建证书</a>
 <ul>
@@ -180,7 +179,6 @@
 <li><a href="#查看状态-3">查看状态</a></li>
 </ul></li>
 <li><a href="#卸载-1">卸载</a></li>
-</ul></li>
 </ul></li>
 <li><a href="#使用acme-dns校验">使用ACME-DNS校验</a></li>
 </ul></li>
@@ -282,6 +280,8 @@ helm install --name cert-manager <span class="se">\
 </div>
 </div>
 <h2 id="验证证书">验证证书</h2>
+
+<p>参考<strong><a href="https://github.com/qqshfox/cert-manager-webhook-dnspod">cert-manager-webhook-dnspod</a></strong>创建自签名的证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -309,6 +309,39 @@ helm install --name cert-manager <span class="se">\
 </span><span class="lnt">23
 </span><span class="lnt">24
 </span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
@@ -316,26 +349,59 @@ helm install --name cert-manager <span class="se">\
 </span><span class="s">kind: Namespace
 </span><span class="s">metadata:
 </span><span class="s">  name: cert-manager-test
+</span><span class="s">  
 </span><span class="s">---
-</span><span class="s">apiVersion: cert-manager.io/v1alpha2
-</span><span class="s">kind: Issuer
+</span><span class="s"># Create a selfsigned Issuer
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: ClusterIssuer
 </span><span class="s">metadata:
-</span><span class="s">  name: test-selfsigned
+</span><span class="s">  name: test-issuer-selfsigned
 </span><span class="s">  namespace: cert-manager-test
 </span><span class="s">spec:
 </span><span class="s">  selfSigned: {}
+</span><span class="s">  
 </span><span class="s">---
-</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s"># Generate a CA Certificate 
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
 </span><span class="s">kind: Certificate
 </span><span class="s">metadata:
-</span><span class="s">  name: selfsigned-cert
+</span><span class="s">  name: test-cert-ca
 </span><span class="s">  namespace: cert-manager-test
 </span><span class="s">spec:
-</span><span class="s">  commonName: example.com
-</span><span class="s">  secretName: selfsigned-cert-tls
+</span><span class="s">  commonName: acme.example.com
+</span><span class="s">  secretName: test-issuer-selfsigned-tls
+</span><span class="s">  duration: 43800h # 5y
 </span><span class="s">  issuerRef:
-</span><span class="s">    name: test-selfsigned
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">    name: test-issuer-selfsigned
+</span><span class="s">  isCA: true  
+</span><span class="s">  
+</span><span class="s">---
+</span><span class="s"># Create an Issuer that uses the above generated CA certificate to issue certs
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: test-issuer-ca
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  ca:
+</span><span class="s">    secretName: test-cert-ca
+</span><span class="s">EOF</span>
+
+---
+<span class="c1"># Finally, generate a serving certificate for *.example.com</span>
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: test-cert-webhook
+  namespace: cert-manager-test
+spec:
+  commonName: acme.example.com
+  secretName: test-issuer-webhook-tls
+  duration: 43800h <span class="c1"># 5y</span>
+  issuerRef:
+    name: test-cert-ca
+  dnsNames:
+  - <span class="s2">&#34;*.example.com&#34;</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>查看状态：</p>
@@ -345,26 +411,28 @@ helm install --name cert-manager <span class="se">\
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate  -n cert-manager-test
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate,ClusterIssuer,secret -n cert-manager-test
 kubectl describe certificate -n cert-manager-test</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="卸载">卸载</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span><span class="lnt">9
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除测试用的</span>
-kubectl delete Certificate,Issuer --all -n cert-manager-test
+kubectl delete Certificate,secret --all -n cert-manager-test
+kubectl delete ClusterIssuer test-issuer-selfsigned test-issuer-ca
 kubectl delete ns cert-manager-test
 
 <span class="c1">#通过kubectl删除</span>
@@ -399,7 +467,7 @@ helm del --purge cert-manager</code></pre></td></tr></table>
 
 helm repo update
 
-helm install nginx-ingress --namespace ingress-nginx stable/nginx-ingress</code></pre></td></tr></table>
+helm install --name nginx-ingress --namespace ingress-nginx stable/nginx-ingress</code></pre></td></tr></table>
 </div>
 </div>
 <p>查看状态：</p>
@@ -593,7 +661,7 @@ kuard   kuard.javachen.com   192.168.56.111   80      91s</pre></td></tr></table
 
 <p>我们需要先创建一个签发机构，cert-manager 给我们提供了 Issuer 和 ClusterIssuer 这两种用于创建签发机构的自定义资源对象，Issuer 只能用来签发自己所在 namespace 下的证书，ClusterIssuer 可以签发任意 namespace 下的证书，这里以 Issuer 为例创建一个签发机构。</p>
 
-<h3 id="使用http校验的acme证书">使用HTTP校验的ACME证书</h3>
+<h2 id="使用http校验的acme证书">使用HTTP校验的ACME证书</h2>
 
 <p>http 方式需要在你的网站根目录下放置一个文件，来验证你的域名所有权完成验证，然后就可以生成证书了。</p>
 
@@ -650,7 +718,7 @@ spec:
 </div>
 <p>这种方式，需要在服务器上启动一个web服务，并防置文件，再进行校验，比较麻烦，所以本文不作测试。</p>
 
-<h3 id="使用dns校验的acme证书">使用DNS校验的ACME证书</h3>
+<h2 id="使用dns校验的acme证书">使用DNS校验的ACME证书</h2>
 
 <p>我使用的域名是在腾讯云上购买的，对应DNS解析商是NDSPOD，Cert Manager目前支持的DNS01服务商如下：</p>
 
@@ -677,7 +745,7 @@ spec:
 <li><p><a href="https://github.com/cgroschupp/cert-manager-webhook-softlayer">cert-manager-webhook-softlayer</a></p></li>
 </ul>
 
-<h4 id="安装cert-manager-webhook-dnspod">安装cert-manager-webhook-dnspod</h4>
+<h3 id="安装cert-manager-webhook-dnspod">安装cert-manager-webhook-dnspod</h3>
 
 <p>1、安装cert-manager-webhook-dnspod</p>
 
@@ -806,9 +874,9 @@ kubectl --namespace cert-manager create secret generic <span class="se">\
 kubectl get secret -n cert-manager</pre></td></tr></table>
 </div>
 </div>
-<h4 id="创建签发机构">创建签发机构</h4>
+<h3 id="创建签发机构">创建签发机构</h3>
 
-<h5 id="staging-issuer">staging issuer</h5>
+<h4 id="staging-issuer">staging issuer</h4>
 
 <p>创建 staging issuer，参考 <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/staging-issuer.yaml">staging-issuer.yaml</a> ，改为dns-01方式，修改 email：</p>
 <div class="highlight"><div class="chroma">
@@ -876,7 +944,7 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 <li>spec.acme.privateKeySecretRef 指示此签发机构的私钥将要存储到哪个 Secret 对象中，名称不重要</li>
 </ul>
 
-<h5 id="production-issuer">production issuer</h5>
+<h4 id="production-issuer">production issuer</h4>
 
 <p>创建 production issuer: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/production-issuer.yaml">production-issuer.yaml</a></p>
 <div class="highlight"><div class="chroma">
@@ -935,7 +1003,7 @@ kubectl get secret -n cert-manager</pre></td></tr></table>
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<h5 id="查看状态-1">查看状态</h5>
+<h4 id="查看状态-1">查看状态</h4>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -948,11 +1016,11 @@ kubectl describe ClusterIssuer letsencrypt-staging
 kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
 </div>
 </div>
-<h4 id="测试手动创建证书">测试手动创建证书</h4>
+<h3 id="测试手动创建证书">测试手动创建证书</h3>
 
 <p>cert-manager 给我们提供了 Certificate 这个用于生成证书的自定义资源对象，它必须局限在某一个 namespace 下，证书最终会在这个 namespace 下以 Secret 的资源对象存储，创建一个 Certificate 对象。</p>
 
-<h5 id="创建证书">创建证书</h5>
+<h4 id="创建证书">创建证书</h4>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -976,9 +1044,9 @@ kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
 </span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
 </span><span class="s">kind: Certificate
 </span><span class="s">metadata:
-</span><span class="s">  name: wildcard-javachen-com-cn
+</span><span class="s">  name: wildcard-cert-prod
 </span><span class="s">spec:
-</span><span class="s">  secretName: wildcard-javachen-com-cn
+</span><span class="s">  secretName: wildcard-cert-prod-tls
 </span><span class="s">  renewBefore: 240h
 </span><span class="s">  groupName: acme.javachen.com 
 </span><span class="s">  dnsNames:
@@ -989,7 +1057,7 @@ kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<h5 id="创建ingress">创建Ingress</h5>
+<h4 id="创建ingress">创建Ingress</h4>
 
 <p>先删除直接创建的ingress：</p>
 <div class="highlight"><div class="chroma">
@@ -1037,7 +1105,7 @@ kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
 </span><span class="w">  </span>tls<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>kuard.javachen.com<span class="w">
-</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-javachen-com-cn<span class="w">
+</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-cert-prod-tls<span class="w">
 </span><span class="w">  </span>rules<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.javachen.com<span class="w">
 </span><span class="w">    </span>http<span class="p">:</span><span class="w">
@@ -1049,7 +1117,7 @@ kubectl describe ClusterIssuer letsencrypt-prod</code></pre></td></tr></table>
 </span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
 </div>
-<h5 id="查看状态-2">查看状态</h5>
+<h4 id="查看状态-2">查看状态</h4>
 
 <p>查看secret中tls.crt、tls.key是否有值</p>
 <div class="highlight"><div class="chroma">
@@ -1077,29 +1145,31 @@ kubectl describe secret wildcard-javachen-com-cn</code></pre></td></tr></table>
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
+</span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate
-kubectl describe certificate wildcard-javachen-com-cn
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate,secret
 
-kubectl get certificate wildcard-javachen-com-cn -o yaml
+kubectl describe certificate wildcard-cert-prod
 
-kubectl describe order wildcard-javachen-com-cn-443602410
+kubectl get certificate wildcard-cert-prod -o yaml
 
-kubectl describe Challenge wildcard-javachen-com-cn-443602410-0
+kubectl describe order wildcard-cert-prod-443602410
+
+kubectl describe Challenge wildcard-cert-prod-443602410-0
 
 kubectl get ing</code></pre></td></tr></table>
 </div>
 </div>
-<h5 id="访问浏览器">访问浏览器</h5>
+<h4 id="访问浏览器">访问浏览器</h4>
 
 <p>访问浏览器，查看证书是否被信任。</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8olv0bzwcj30ws0ic0x0.jpg" alt="image-20191106204512144" /></p>
+<h4 id="image-20191106204512144-https-tva1-sinaimg-cn-large-006y8mn6ly1g8olv0bzwcj30ws0ic0x0-jpg"><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8olv0bzwcj30ws0ic0x0.jpg" alt="image-20191106204512144" /></h4>
 
-<h4 id="测试自动创建证书">测试自动创建证书</h4>
+<h3 id="测试自动创建证书">测试自动创建证书</h3>
 
-<h5 id="创建ingress-1">创建Ingress</h5>
+<h4 id="创建ingress-1">创建Ingress</h4>
 
 <p>先删除直接创建的ingress：</p>
 <div class="highlight"><div class="chroma">
@@ -1117,8 +1187,8 @@ kubectl get ing</code></pre></td></tr></table>
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete secret wildcard-javachen-com-cn
-kubectl delete certificate wildcard-javachen-com-cn</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete secret wildcard-cert-prod
+kubectl delete certificate wildcard-cert-prod</code></pre></td></tr></table>
 </div>
 </div>
 <p>创建 prod 环境下的 ingress tls</p>
@@ -1164,7 +1234,7 @@ kubectl delete certificate wildcard-javachen-com-cn</code></pre></td></tr></tabl
 </span><span class="w">  </span>tls<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>hosts<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>kuard.javachen.com<span class="w">
-</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-javachen-com-cn<span class="w">
+</span><span class="w">    </span>secretName<span class="p">:</span><span class="w"> </span>wildcard-cert-prod-tls<span class="w">
 </span><span class="w">  </span>rules<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>host<span class="p">:</span><span class="w"> </span>kuard.javachen.com<span class="w">
 </span><span class="w">    </span>http<span class="p">:</span><span class="w">
@@ -1176,7 +1246,7 @@ kubectl delete certificate wildcard-javachen-com-cn</code></pre></td></tr></tabl
 </span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
 </div>
-<h5 id="查看状态-3">查看状态</h5>
+<h4 id="查看状态-3">查看状态</h4>
 
 <p>查看有没有自动生成secret：</p>
 <div class="highlight"><div class="chroma">
@@ -1187,8 +1257,8 @@ kubectl delete certificate wildcard-javachen-com-cn</code></pre></td></tr></tabl
 </span></pre></td>
 <td class="lntd">
 <pre class="chroma">kubectl get secret
-kubectl describe secret wildcard-javachen-com-cn
-kubectl get secret wildcard-javachen-com-cn -o yaml</pre></td></tr></table>
+kubectl describe secret wildcard-cert-prod-tls
+kubectl get secret wildcard-cert-prod-tls -o yaml</pre></td></tr></table>
 </div>
 </div>
 <p>查看有没有自动生成证书以及状态：</p>
@@ -1200,8 +1270,8 @@ kubectl get secret wildcard-javachen-com-cn -o yaml</pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get certificate
-NAME                                  READY   SECRET                                    AGE
-wildcard-javachen-com-cn                 False  wildcard-javachen-com-cn                    21s</code></pre></td></tr></table>
+NAME                              READY   SECRET                                    AGE
+wildcard-cert-prod			                False  wildcard-javachen-com-cn                    21s</code></pre></td></tr></table>
 </div>
 </div>
 <p>查看详细信息：</p>
@@ -1216,13 +1286,13 @@ wildcard-javachen-com-cn                 False  wildcard-javachen-com-cn        
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe certificate wildcard-javachen-com-cn
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe certificate wildcard-cert-prod	
 
-kubectl get certificate wildcard-javachen-com-cn -o yaml
+kubectl get certificate wildcard-cert-prod	-o yaml
 
-kubectl describe order wildcard-javachen-com-cn-443602410
+kubectl describe order wildcard-cert-prod-443602410
 
-kubectl describe Challenge wildcard-javachen-com-cn-443602410-0</code></pre></td></tr></table>
+kubectl describe Challenge wildcard-cert-prod-443602410-0</code></pre></td></tr></table>
 </div>
 </div>
 <p>描述order资源信息，可以看到提示 kuard.javachen.com 域名没有被配置</p>
@@ -1288,7 +1358,7 @@ kubectl describe Challenge wildcard-javachen-com-cn-443602410-0</code></pre></td
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<h4 id="卸载-1">卸载</h4>
+<h3 id="卸载-1">卸载</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1299,16 +1369,18 @@ kubectl describe Challenge wildcard-javachen-com-cn-443602410-0</code></pre></td
 </span><span class="lnt">6
 </span><span class="lnt">7
 </span><span class="lnt">8
+</span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete Role,RoleBinding,ClusterRole,ClusterRoleBinding cert-manager-webhook-dnspod:secret-reader
 
 kubectl delete ClusterIssuer letsencrypt-staging letsencrypt-prod
 
-kubectl delete secret wildcard-javachen-com-cn
-kubectl delete certificate wildcard-javachen-com-cn
+kubectl delete secret wildcard-cert-prod-tls
+kubectl delete certificate wildcard-cert-prod
 
-kubectl delete ing,pod,svc kuard</code></pre></td></tr></table>
+helm del --purge nginx-ingress
+kubectl delete pod,svc kuard</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="使用acme-dns校验">使用ACME-DNS校验</h2>
@@ -1413,7 +1485,7 @@ kubectl delete ing,pod,svc kuard</code></pre></td></tr></table>
 
 <h1 id="配置ca类型的issuer">配置CA类型的Issuer</h1>
 
-<p>前面配置了ACME类型的Issuer，接下来创建CA类型的Issuer。</p>
+<p>前面配置了ACME类型的Issuer，接下来创建CA类型的Issuer。可以参考前面的章节。</p>
 
 <h2 id="生成ca签名密钥对">生成CA签名密钥对</h2>
 <div class="highlight"><div class="chroma">
@@ -1628,6 +1700,7 @@ kubectl delete Certificate example-com</pre></td></tr></table>
 <li><a href="https://www.cnblogs.com/blackmood/p/11425366.html">cert-manager管理k8s集群证书</a></li>
 <li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/acme-dns.html">ACME-DNS</a></li>
 <li><a href="https://blog.csdn.net/xichenguan/article/details/100709830">https://blog.csdn.net/xichenguan/article/details/100709830</a></li>
+<li><a href="[https://github.com/findsec-cn/k201/tree/master/4.Kubernetes%E5%AE%B9%E5%99%A8%E7%BD%91%E7%BB%9C/config/cert-manager](https://github.com/findsec-cn/k201/tree/master/4.Kubernetes容器网络/config/cert-manager)">阿里云DNS配置Cert Manager Webhook</a></li>
 </ul>
 
     </div>

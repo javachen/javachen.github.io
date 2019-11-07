@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-31T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-31T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1460">
+<meta itemprop="wordCount" content="1603">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1460 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
+          <span class="more-meta"> 约 1603 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
         
       </div>
     </header>
@@ -155,10 +155,11 @@
 <li><a href="#配置证书">配置证书</a>
 <ul>
 <li><a href="#使用harbor自带的证书">使用Harbor自带的证书</a></li>
-<li><a href="#使用证书文件">使用证书文件</a></li>
+<li><a href="#使用letsencrypt生成证书文件">使用letsencrypt生成证书文件</a></li>
 </ul></li>
 <li><a href="#查看状态">查看状态</a></li>
 <li><a href="#浏览器访问服务">浏览器访问服务</a></li>
+<li><a href="#docker-login登陆验证"><strong>docker login登陆验证</strong></a></li>
 <li><a href="#上传下载测试">上传下载测试</a></li>
 <li><a href="#卸载">卸载</a></li>
 </ul>
@@ -452,11 +453,11 @@ kubectl get secret -n harbor harbor-secret-tls <span class="se">\
 </span><span class="se"></span>	<span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.HARBOR_ADMIN_PASSWORD}&#34;</span> <span class="p">|</span> base64 --decode</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="使用证书文件">使用证书文件</h2>
+<h2 id="使用letsencrypt生成证书文件">使用letsencrypt生成证书文件</h2>
 
-<p>可以用权威证书，或者是自签名证书，然后创建harbor-secret-tls。</p>
+<p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> ，先要创建一个ClusterIssuer：wildcard-letsencrypt-prod。</p>
 
-<p>helm安装：</p>
+<p>因为证书是有命名空间的，所以需要在harbor命名空间创建证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -472,21 +473,62 @@ kubectl get secret -n harbor harbor-secret-tls <span class="se">\
 </span><span class="lnt">11
 </span><span class="lnt">12
 </span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -   
+</span><span class="s">apiVersion: certmanager.k8s.io/v1alpha1
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: harbor-cert-prod
+</span><span class="s">  namespace: harbor
+</span><span class="s">spec:
+</span><span class="s">  secretName: harbor-cert-prod-tls
+</span><span class="s">  renewBefore: 240h
+</span><span class="s">  groupName: acme.wesine.com.cn 
+</span><span class="s">  dnsNames:
+</span><span class="s">  - &#34;*.javachen.com&#34;
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: wildcard-letsencrypt-prod
+</span><span class="s">    kind: ClusterIssuer
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使用harbor-cert-prod-tls证书，通过helm安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name harbor harbor/harbor --namespace harbor --debug<span class="se">\
-</span><span class="se"></span>	--set <span class="nv">externalURL</span><span class="o">=</span>https://harbor.javachen.com  <span class="se">\
-</span><span class="se"></span>  --set expose.tls.secretName<span class="o">=</span><span class="s2">&#34;harbor-secret-tls&#34;</span> <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">externalURL</span><span class="o">=</span>https://harbor.javachen.com  <span class="se">\
+</span><span class="se"></span>  --set expose.tls.secretName<span class="o">=</span><span class="s2">&#34;harbor-cert-prod-tls&#34;</span> <span class="se">\
+</span><span class="se"></span>  --set expose.tls.notarySecretName<span class="o">=</span><span class="s2">&#34;harbor-cert-prod-tls&#34;</span> <span class="se">\
 </span><span class="se"></span>  --set expose.ingress.hosts.core<span class="o">=</span>harbor.javachen.com <span class="se">\
-</span><span class="se"></span>  --set expose.ingress.hosts.notary<span class="o">=</span>harbor.javachen.com <span class="se">\
+</span><span class="se"></span>  --set expose.ingress.hosts.notary<span class="o">=</span>notary.javachen.com <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.registry.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.registry.size<span class="o">=</span>50Gi <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.chartmuseum.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.jobservice.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
-</span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.size<span class="o">=</span>2Gi <span class="se">\
+</span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.size<span class="o">=</span>5Gi <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.redis.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123456 </code></pre></td></tr></table>
+</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="查看状态">查看状态</h1>
@@ -542,31 +584,11 @@ kubernetes-dynamic-pvc-f9b96d83-3859-4942-8c25-c72c515bb997</code></pre></td></t
 </div>
 <p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ipnpnmxuj316a0gmgoc.jpg" alt="image-20191101182311225" /></p>
 
-<p>helm list查不到结果，可能是helm3的bug？</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm list
-NAME	NAMESPACE	REVISION	UPDATED	STATUS	CHART	APP VERSION</code></pre></td></tr></table>
-</div>
-</div>
 <h1 id="浏览器访问服务">浏览器访问服务</h1>
 
-<p>在本地配置hosts文件到ingress对应的任意一个节点：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">192.168.56.111 harbor.javachen.com</pre></td></tr></table>
-</div>
-</div>
-<p>浏览器访问harbor：<a href="https://harbor.javachen.com/">https://harbor.javachen.com/</a> ，用户名和密码：admin/admin123</p>
+<p>浏览器访问harbor：<a href="https://harbor.javachen.com/">https://harbor.javachen.com/</a> ，用户名和密码：admin/admin123，可以看到证书是被浏览器信任的。</p>
 
-<p><strong>docker login登陆验证</strong></p>
+<h1 id="docker-login登陆验证"><strong>docker login登陆验证</strong></h1>
 
 <p>docker登陆：</p>
 <div class="highlight"><div class="chroma">
@@ -627,10 +649,12 @@ Password:</code></pre></td></tr></table>
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ docker images
 rancher/pause     <span class="m">3</span>.1       da86e6ba6ca1        <span class="m">21</span> months ago       742kB
+
 
 docker tag rancher/pause:3.1 harbor.javachen.com/soft/pause:3.2
 
@@ -657,23 +681,33 @@ docker push harbor.javachen.com/soft/pause:3.2 </code></pre></td></tr></table>
 </span><span class="lnt">13
 </span><span class="lnt">14
 </span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete pod,service,deploy,statefulset,ingress,secret,pvc,replicaset,daemonset,ConfigMap <span class="se">\
-</span><span class="se"></span>	--all -n harbor
-
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除release</span>
 helm del --purge harbor
 
-kubectl delete secret harbor-secret-tls -n harbor
-kubectl delete pvc -n harbor harbor-harbor-chartmuseum <span class="se">\
-</span><span class="se"></span>	data-harbor-harbor-redis-0 <span class="se">\
+<span class="c1">#删除pvc</span>
+kubectl delete pvc -n harbor data-harbor-harbor-redis-0 <span class="se">\
 </span><span class="se"></span>	database-data-harbor-harbor-database-0 <span class="se">\
-</span><span class="se"></span>  harbor-harbor-jobservice <span class="se">\
+</span><span class="se"></span>  harbor-harbor-chartmuseum <span class="se">\
+</span><span class="se"></span>  harbor-harbor-jobservice<span class="se">\
 </span><span class="se"></span>  harbor-harbor-registry
 
+
+kubectl delete pod,service,deploy,statefulset,ingress,secret,pvc,replicaset,<span class="se">\
+</span><span class="se"></span>	daemonset,ConfigMap --all -n harbor
+
+<span class="c1">#删除证书</span>
+kubectl delete Certificate harbor-cert-prod -n harbor
+kubectl delete secret harbor-cert-prod-tls -n harbor
+
 <span class="c1">#还要删除rbd上的块</span>
-rbd list k8s
-  </code></pre></td></tr></table>
+rbd list k8s</code></pre></td></tr></table>
 </div>
 </div>
     </div>

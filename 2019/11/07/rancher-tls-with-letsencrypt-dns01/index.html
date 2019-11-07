@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Rancher使用letsEncrypt生成证书并做DNS01校验 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/2019/11/07/rancher-tls-with-letsencrypt-dns01/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Rancher使用letsEncrypt生成证书并做DNS01校验" />
+<meta property="og:description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/2019/11/07/rancher-tls-with-letsencrypt-dns01/" />
+<meta property="article:published_time" content="2019-11-07T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-07T08:00:00+08:00" />
+<meta itemprop="name" content="Rancher使用letsEncrypt生成证书并做DNS01校验">
+<meta itemprop="description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的">
+
+
+<meta itemprop="datePublished" content="2019-11-07T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-07T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1696">
+
+
+
+<meta itemprop="keywords" content="kubernetes,rancher,tls," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Rancher使用letsEncrypt生成证书并做DNS01校验"/>
+<meta name="twitter:description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Rancher使用letsEncrypt生成证书并做DNS01校验</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-07 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 1696 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#rancher-chart源码">Rancher Chart源码</a></li>
+<li><a href="#添加dns01校验">添加DNS01校验</a></li>
+<li><a href="#修改rancher-chart源码">修改Rancher Chart源码</a></li>
+<li><a href="#安装rancher">安装Rancher</a></li>
+<li><a href="#卸载">卸载</a></li>
+<li><a href="#总结">总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>前面<a href="/2019/11/03/install-rancher-ha-with-helm/">使用Helm安装Rancher HA集群</a>，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的证书在浏览器不被信任。当时，也测试过通过letsEncrypt来生成，但是没有配置成功。把Rancher的Chart源码阅读之后，将源码修改了，增加了DNS01校验方式，最后测试成功。</p>
+
+<p>在阅读本文章之前，先阅读以下两篇文章：</p>
+
+<ul>
+<li><p><a href="/2019/11/03/install-rancher-ha-with-helm/">使用Helm安装Rancher HA集群</a></p></li>
+
+<li><p><a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a></p></li>
+</ul>
+
+<h1 id="rancher-chart源码">Rancher Chart源码</h1>
+
+<p>Rancher Chart源码在 <a href="https://github.com/rancher/rancher">https://github.com/rancher/rancher</a> ，可以看下<a href="https://github.com/rancher/rancher/blob/master/chart/templates/issuer-letsEncrypt.yaml">创建Issuer的源码</a>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">{{-<span class="w"> </span>if<span class="w"> </span>eq<span class="w"> </span>.Values.tls<span class="w"> </span><span class="s2">&#34;ingress&#34;</span><span class="w"> </span>-}}<span class="w">
+</span><span class="w">  </span>{{-<span class="w"> </span>if<span class="w"> </span>eq<span class="w"> </span>.Values.ingress.tls.source<span class="w"> </span><span class="s2">&#34;letsEncrypt&#34;</span><span class="w"> </span>-}}<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Issuer<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>template<span class="w"> </span><span class="s2">&#34;rancher.fullname&#34;</span><span class="w"> </span>.<span class="w"> </span>}}<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>template<span class="w"> </span><span class="s2">&#34;rancher.fullname&#34;</span><span class="w"> </span>.<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>chart<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>.Chart.Name<span class="w"> </span>}}-{{<span class="w"> </span>.Chart.Version<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>heritage<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>.Release.Service<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>release<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>.Release.Name<span class="w"> </span>}}<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>acme<span class="p">:</span><span class="w">
+</span><span class="w">    </span>{{-<span class="w"> </span>if<span class="w"> </span>eq<span class="w"> </span>.Values.letsEncrypt.environment<span class="w"> </span><span class="s2">&#34;production&#34;</span><span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme-v02.api.letsencrypt.org/directory<span class="w">
+</span><span class="w">    </span>{{-<span class="w"> </span>end<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>{{-<span class="w"> </span>if<span class="w"> </span>eq<span class="w"> </span>.Values.letsEncrypt.environment<span class="w"> </span><span class="s2">&#34;staging&#34;</span><span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme-staging-v02.api.letsencrypt.org/directory<span class="w">
+</span><span class="w">    </span>{{-<span class="w"> </span>end<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>email<span class="p">:</span><span class="w"> </span>{{<span class="w"> </span>.Values.letsEncrypt.email<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>privateKeySecretRef<span class="p">:</span><span class="w">
+</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-{{<span class="w"> </span>.Values.letsEncrypt.environment<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>http01<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">  </span>{{-<span class="w"> </span>end<span class="w"> </span>-}}<span class="w">
+</span><span class="w"></span>{{-<span class="w"> </span>end<span class="w"> </span>-}}</code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到letsEncrypt使用的是http01校验，因为服务器上没有配置web服务器，所以用该方式校验比较麻烦，故乡改为dns01方式校验。</p>
+
+<h1 id="添加dns01校验">添加DNS01校验</h1>
+
+<p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> 这篇完整，我们可以利用 <a href="https://github.com/qqshfox/cert-manager-webhook-dnspod">cert-manager-webhook-dnspod</a> 通过webhook的方式进行dns01校验。</p>
+
+<p>其创建issuer代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>certmanager.k8s.io/v1alpha1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-staging<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>acme<span class="p">:</span><span class="w">
+</span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme-staging-v02.api.letsencrypt.org/directory<span class="w">
+</span><span class="w">    </span>email<span class="p">:</span><span class="w"> </span>junecloud@<span class="m">163.</span>com<span class="w">
+</span><span class="w">    </span>privateKeySecretRef<span class="p">:</span><span class="w">
+</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-staging<span class="w">
+</span><span class="w">    </span>solvers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">        </span>dnsNames<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.javachen.com&#39;</span><span class="w">
+</span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
+</span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
+</span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.javachen.com<span class="w"> 
+</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
+</span><span class="w">          </span>config<span class="p">:</span><span class="w">
+</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w">  </span><span class="c">#DNSPOD 的 apiID，注意替换</span><span class="w">
+</span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials</code></pre></td></tr></table>
+</div>
+</div>
+<p>对比上面两个yaml文件，我们修改Rancher Chart源码，将http01改为solvers：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="w">	</span>solvers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">        </span>dnsNames<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.javachen.com&#39;</span><span class="w">
+</span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
+</span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
+</span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.javachen.com<span class="w"> 
+</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
+</span><span class="w">          </span>config<span class="p">:</span><span class="w">
+</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w">  </span><span class="c">#DNSPOD 的 apiID，注意替换</span><span class="w">
+</span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="修改rancher-chart源码">修改Rancher Chart源码</h1>
+
+<p>查看Rancher Chart：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ helm search rancher
+NAME                  	CHART VERSION	APP VERSION	DESCRIPTION
+rancher-stable/rancher	<span class="m">2</span>.3.2        	v2.3.2     	Install Rancher Server to manage Kubernetes clusters acro...</code></pre></td></tr></table>
+</div>
+</div>
+<p>下载chart：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm fetch rancher-stable/rancher
+tar zxvf rancher-2.3.2.tgz</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改rancher/templates/issuer-letsEncrypt.yaml，将<code>http01: {}</code>改为如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">{{-<span class="w"> </span>if<span class="w"> </span>.Values.letsEncrypt.solvers<span class="w">  </span>}}<span class="w">   
+</span><span class="w">    </span>solvers<span class="p">:</span><span class="w">  
+</span><span class="w"></span>{{<span class="w"> </span>toYaml<span class="w"> </span>.Values.letsEncrypt.solvers<span class="w"> </span>|<span class="w"> </span>indent<span class="w"> </span><span class="m">4</span><span class="w"> </span>}}<span class="w">
+</span><span class="w"></span>{{-<span class="w"> </span>else<span class="w"> </span>}}<span class="w">
+</span><span class="w">    </span>http01<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w"></span>{{-<span class="w"> </span>end<span class="w"> </span>}}<span class="w">  </span></code></pre></td></tr></table>
+</div>
+</div>
+<p>修改后的完整代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">{{</span>- <span class="k">if</span> eq .Values.tls <span class="s2">&#34;ingress&#34;</span> -<span class="o">}}</span>
+  <span class="o">{{</span>- <span class="k">if</span> eq .Values.ingress.tls.source <span class="s2">&#34;letsEncrypt&#34;</span> -<span class="o">}}</span>
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: <span class="o">{{</span> template <span class="s2">&#34;rancher.fullname&#34;</span> . <span class="o">}}</span>-letsencrypt-<span class="o">{{</span> .Values.letsEncrypt.environment <span class="o">}}</span>
+  labels:
+    app: <span class="o">{{</span> template <span class="s2">&#34;rancher.fullname&#34;</span> . <span class="o">}}</span>
+    chart: <span class="o">{{</span> .Chart.Name <span class="o">}}</span>-<span class="o">{{</span> .Chart.Version <span class="o">}}</span>
+    heritage: <span class="o">{{</span> .Release.Service <span class="o">}}</span>
+    release: <span class="o">{{</span> .Release.Name <span class="o">}}</span>
+spec:
+  acme:
+    <span class="o">{{</span>- <span class="k">if</span> eq .Values.letsEncrypt.environment <span class="s2">&#34;prod&#34;</span> <span class="o">}}</span>
+    server: https://acme-v02.api.letsencrypt.org/directory
+    <span class="o">{{</span>- end <span class="o">}}</span>
+    <span class="o">{{</span>- <span class="k">if</span> eq .Values.letsEncrypt.environment <span class="s2">&#34;staging&#34;</span> <span class="o">}}</span>
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    <span class="o">{{</span>- end <span class="o">}}</span>
+    email: <span class="o">{{</span> .Values.letsEncrypt.email <span class="o">}}</span>
+    privateKeySecretRef:
+      name: <span class="o">{{</span> template <span class="s2">&#34;rancher.fullname&#34;</span> . <span class="o">}}</span>-letsencrypt-<span class="o">{{</span> .Values.letsEncrypt.environment <span class="o">}}</span>
+<span class="o">{{</span>- <span class="k">if</span> .Values.letsEncrypt.solvers  <span class="o">}}</span>   
+    solvers:  
+<span class="o">{{</span> toYaml .Values.letsEncrypt.solvers <span class="p">|</span> indent <span class="m">4</span> <span class="o">}}</span>
+<span class="o">{{</span>- <span class="k">else</span> <span class="o">}}</span>
+    http01: <span class="o">{}</span>
+<span class="o">{{</span>- end <span class="o">}}</span>    
+  <span class="o">{{</span>- end -<span class="o">}}</span>
+<span class="o">{{</span>- end -<span class="o">}}</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：</p>
+
+<p>1、这里连带把production改为了prod</p>
+
+<p>2、将Issuer修改为ClusterIssuer</p>
+
+<p>3、将metadata的name修改为<code>{{ template &quot;rancher.fullname&quot; . }}-letsencrypt-{{ .Values.letsEncrypt.environment }}</code></p>
+
+<p>4、privateKeySecretRef的name修改为<code>{{ template &quot;rancher.fullname&quot; . }}-letsencrypt-{{ .Values.letsEncrypt.environment }}</code></p>
+</blockquote>
+
+<p>因为将Issuer修改为ClusterIssuer，所以也需要修改Ingress中注释：</p>
+
+<ul>
+<li>将<code>certmanager.k8s.io/issuer</code>改为<code>certmanager.k8s.io/cluster-issuer</code></li>
+<li>将<code>certmanager.k8s.io/cluster-issuer</code>的值改为<code>{{ template &quot;rancher.fullname&quot; . }}-letsencrypt-{{ .Values.letsEncrypt.environment }}</code></li>
+</ul>
+
+<p>对应rancher/templates/ingress.yaml代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">  <span class="o">{{</span>- <span class="k">if</span> ne .Values.ingress.tls.source <span class="s2">&#34;secret&#34;</span> <span class="o">}}</span>
+    certmanager.k8s.io/cluster-issuer: <span class="o">{{</span> template <span class="s2">&#34;rancher.fullname&#34;</span> . <span class="o">}}</span>-letsencrypt-<span class="o">{{</span> .Values.letsEncrypt.environment <span class="o">}}</span>
+  <span class="o">{{</span>- end <span class="o">}}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>修改rancher/values.yaml，在environment下面添加<code>solvers: []</code>，这里连带把production改为了prod</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">letsEncrypt:
+  # email: none@example.com
+  environment: prod
+  solvers: []</pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装rancher">安装Rancher</h1>
+
+<p>创建rancher-values.yaml：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF &gt; rancher-values.yaml
+</span><span class="s">hostname: rancher.javachen.com
+</span><span class="s">ingress:
+</span><span class="s">  tls:
+</span><span class="s">    source: letsEncrypt
+</span><span class="s">letsEncrypt:
+</span><span class="s">  email: junecloud@163.com
+</span><span class="s">  environment: prod
+</span><span class="s">  solvers: 
+</span><span class="s">  - selector:
+</span><span class="s">      dnsNames:
+</span><span class="s">      - &#39;rancher.test.wesine.com.cn&#39;
+</span><span class="s">    dns01:
+</span><span class="s">      webhook:
+</span><span class="s">        groupName: acme.javachen.com
+</span><span class="s">        solverName: dnspod
+</span><span class="s">        config:
+</span><span class="s">          apiID: 123438  #DNSPOD 的 apiID，注意替换
+</span><span class="s">          apiTokenSecretRef:
+</span><span class="s">            key: api-token
+</span><span class="s">            name: dnspod-credentials 
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>从本地chart文件安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name rancher --namespace cattle-system <span class="se">\
+</span><span class="se"></span>	./rancher --version v2.3.2 -f rancher-values.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl get secret,certificate,ClusterIssuer -n cattle-system</pre></td></tr></table>
+</div>
+</div>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pgjs66xzj315w0dggnz.jpg" alt="image-20191107142658262" /></p>
+
+<p>可以看到letsEncrypt自动创建了证书 rancher-letsencrypt-prod ，查看证书状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl describe certificate tls-rancher-ingress -n cattle-system
+
+kubectl describe order tls-rancher-ingress-3789524060 -n cattle-system
+
+kubectl describe Challenge tls-rancher-ingress-3789524060-0 -n cattle-system</pre></td></tr></table>
+</div>
+</div>
+<p>当tls-rancher-ingress状态为true时候，证书就创建成功了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate tls-rancher-ingress -n cattle-system
+NAME                  READY   SECRET                AGE
+tls-rancher-ingress   True    tls-rancher-ingress   35m</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果出错，根据日志提示进行排查原因。</p>
+
+<p>查看rancher状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl -n cattle-system rollout status deploy/rancher
+
+kubectl -n cattle-system get deploy rancher</pre></td></tr></table>
+</div>
+</div>
+<h1 id="卸载">卸载</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm del --purge rancher
+
+kubectl delete -n cattle-system secret tls-rancher tls-rancher-ingress</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="总结">总结</h1>
+
+<p>我将修改后的rancher chart源代码提交到了 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> ，</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-07
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          <a href="/tags/rancher/">rancher</a>
+          <a href="/tags/tls/">tls</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2019/11/05/using-acme-sh-with-nginx-ingress/">
+            <span class="next-text nav-default">kubernetes使用acme.sh生成letsencrypt证书</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
