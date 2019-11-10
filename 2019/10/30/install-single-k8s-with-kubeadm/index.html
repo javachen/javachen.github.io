@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3237">
+<meta itemprop="wordCount" content="3402">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 3237 字 </span>
+          <span class="more-meta"> 约 3402 字 </span>
           <span class="more-meta"> 预计阅读 7 分钟 </span>
         
       </div>
@@ -152,13 +152,14 @@
 <li><a href="#查看和拉取镜像">查看和拉取镜像</a></li>
 <li><a href="#初始化master节点">初始化master节点</a></li>
 <li><a href="#配置-kubectl">配置 kubectl</a></li>
-<li><a href="#隔离主节点">隔离主节点</a></li>
+<li><a href="#使master-node参与工作负载">使master node参与工作负载</a></li>
 <li><a href="#安装网络插件">安装网络插件</a></li>
 <li><a href="#验证是否成功">验证是否成功</a>
 <ul>
 <li><a href="#检查组件运行状态">检查组件运行状态</a></li>
 <li><a href="#检查-master-状态">检查 Master 状态</a></li>
 <li><a href="#检查-nodes-状态">检查 Nodes 状态</a></li>
+<li><a href="#测试dns">测试DNS</a></li>
 </ul></li>
 <li><a href="#kube-proxy-开启-ipvs">kube-proxy 开启 ipvs</a></li>
 <li><a href="#配置-node-节点">配置 Node 节点</a>
@@ -173,6 +174,7 @@
 </ul></li>
 <li><a href="#重置集群">重置集群</a></li>
 <li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
   </div>
@@ -524,9 +526,9 @@ sudo cp -f /etc/kubernetes/admin.conf <span class="nv">$HOME</span>/.kube/config
 sudo chown <span class="k">$(</span>id -u<span class="k">)</span>:<span class="k">$(</span>id -g<span class="k">)</span> <span class="nv">$HOME</span>/.kube/config</code></pre></td></tr></table>
 </div>
 </div>
-<h1 id="隔离主节点">隔离主节点</h1>
+<h1 id="使master-node参与工作负载">使master node参与工作负载</h1>
 
-<p>在集群模式，不会在master上运行pod，如果你想在主节点上运行pod，比如 说一个单机的kubernetes集群，运行：</p>
+<p>使用kubeadm初始化的集群，出于安全考虑master node不参与工作负载，也就是说我们无法在master node上运行服务。 这里搭建的环境目前只有一个master node，可以使用下面的命令使master node参与工作负载。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -659,6 +661,33 @@ k8s-kube-node1   Ready    master   13h   v1.16.2</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>root@k8s-kube-node1 ~<span class="o">]</span><span class="c1"># kubectl get nodes -o wide</span>
 NAME    STATUS   ROLES    AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION              CONTAINER-RUNTIME
 k8s-kube-node1   Ready    master   3m23s   v1.16.2   <span class="m">192</span>.168.56.120   &lt;none&gt;        CentOS Linux <span class="m">7</span> <span class="o">(</span>Core<span class="o">)</span>   <span class="m">3</span>.10.0-957.5.1.el7.x86_64   docker://1.13.1</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="测试dns">测试DNS</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl run curl --image<span class="o">=</span>radial/busyboxplus:curl -i --tty</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入后执行nslookup kubernetes.default确认解析正常。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span> root@curl-2421989462-vldmp:/ <span class="o">]</span>$ nslookup kubernetes.default</code></pre></td></tr></table>
+</div>
+</div>
+<p>测试OK后，删除掉curl这个Pod。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete deploy curl</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="kube-proxy-开启-ipvs">kube-proxy 开启 ipvs</h1>
@@ -909,6 +938,15 @@ ip link delete tunl0</code></pre></td></tr></table>
 <p>以上是使用RKE安装单节点k8s的记录，其实稍加修改配置文件，就可以安装集群。</p>
 
 <p>这里，我把上面的所有命令整理了一下，提交到了 <a href="https://github.com/javachen/vagrant/tree/master/k8s-kube-single">github</a>，供大家参考。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://docs.docker.com/engine/installation/linux/centos/">Install Docker on CentOS</a></li>
+<li><a href="https://kubernetes.io/docs/getting-started-guides/kubeadm/">Installing Kubernetes on Linux with kubeadm</a></li>
+<li><a href="https://kubernetes.io/docs/admin/kubeadm/">kubeadm reference</a></li>
+<li><a href="https://kubernetes.io/docs/admin/addons/">Installing Addons</a></li>
+</ul>
 
     </div>
 
