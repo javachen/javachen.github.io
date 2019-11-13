@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4248">
+<meta itemprop="wordCount" content="4489">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4248 字 </span>
+          <span class="more-meta"> 约 4489 字 </span>
           <span class="more-meta"> 预计阅读 9 分钟 </span>
         
       </div>
@@ -178,7 +178,10 @@
 <li><a href="#更新yum源">更新yum源</a></li>
 <li><a href="#安装docker-ce">安装Docker-ce</a></li>
 <li><a href="#启动docker">启动Docker</a></li>
-<li><a href="#修改配置文件">修改配置文件</a></li>
+<li><a href="#修改配置文件">修改配置文件</a>
+<ul>
+<li><a href="#修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</a></li>
+</ul></li>
 <li><a href="#重新加载配置">重新加载配置</a></li>
 </ul></li>
 <li><a href="#安装k8s">安装k8s</a>
@@ -190,8 +193,9 @@
 <li><a href="#创建rke配置文件">创建RKE配置文件</a></li>
 <li><a href="#创建集群">创建集群</a></li>
 <li><a href="#与kubernetes集群的交互">与Kubernetes集群的交互</a></li>
-<li><a href="#设置bash自动完成">设置Bash自动完成</a></li>
 <li><a href="#查看集群状态">查看集群状态</a></li>
+<li><a href="#测试集群dns是否可用">测试集群DNS是否可用</a></li>
+<li><a href="#设置bash自动完成">设置Bash自动完成</a></li>
 </ul></li>
 <li><a href="#集群调优">集群调优</a></li>
 <li><a href="#删除集群">删除集群</a></li>
@@ -766,7 +770,24 @@ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/d
 </div>
 </div>
 <h2 id="修改配置文件">修改配置文件</h2>
+
+<h3 id="修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</h3>
+
+<p>根据文档<a href="https://kubernetes.io/docs/setup/cri/">CRI installation</a>中的内容，对于使用systemd作为init system的Linux的发行版，使用systemd作为docker的cgroup driver可以确保服务器节点在资源紧张的情况更加稳定，因此这里修改各个节点上docker的cgroup driver为systemd。</p>
+
+<p>创建或修改<code>/etc/docker/daemon.json</code>：</p>
 <div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;exec-opts&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;native.cgroupdriver=systemd&#34;</span><span class="p">]</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
@@ -791,7 +812,6 @@ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/d
 </span><span class="lnt">21
 </span><span class="lnt">22
 </span><span class="lnt">23
-</span><span class="lnt">24
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
@@ -806,7 +826,6 @@ yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/d
 </span><span class="s">    &#34;max-concurrent-uploads&#34;: 10,
 </span><span class="s">    &#34;bip&#34;: &#34;172.17.10.1/24&#34;,
 </span><span class="s">    &#34;registry-mirrors&#34;: [&#34;https://hub.daocloud.io&#34;],
-</span><span class="s">    &#34;insecure-registries&#34;:[&#34;https://harbor.javachen.com&#34;],
 </span><span class="s">    &#34;graph&#34;:&#34;/data/docker&#34;,
 </span><span class="s">    &#34;exec-opts&#34;: [&#34;native.cgroupdriver=systemd&#34;],
 </span><span class="s">    &#34;storage-driver&#34;: &#34;overlay2&#34;,
@@ -820,12 +839,6 @@ sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H
 </span><span class="se"></span>	/usr/lib/systemd/system/docker.service</code></pre></td></tr></table>
 </div>
 </div>
-<p>注意：</p>
-
-<ul>
-<li><a href="https://harbor.javachen.com">https://harbor.javachen.com</a> 是将来要配置的harbor镜像的域名。</li>
-</ul>
-
 <h2 id="重新加载配置">重新加载配置</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -849,7 +862,7 @@ sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">curl -s -L -o /usr/local/bin/rke <span class="se">\
-</span><span class="se"></span>	https://github.com/rancher/rke/releases/download/v0.3.2/rke_linux-amd64
+</span><span class="se"></span>	https://github.com/rancher/rke/releases/latest/download/rke_linux-amd64
 
 sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
 </div>
@@ -1149,27 +1162,6 @@ cp kube_config_cluster.yml ~/.kube/config</code></pre></td></tr></table>
 </div>
 <p>需要注意的是，部署的本地kube配置名称是和集群配置文件相关的。例如，如果您使用名为mycluster.yml的配置文件，则本地kube配置将被命名为.kube_config_mycluster.yml。</p>
 
-<h2 id="设置bash自动完成">设置Bash自动完成</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y bash-completion 
-
-<span class="nb">echo</span> <span class="s2">&#34;Configure Kubectl to autocomplete&#34;</span>
-
-<span class="nb">source</span> /usr/share/bash-completion/bash_completion
-<span class="nb">source</span> &lt;<span class="o">(</span>kubectl completion bash<span class="o">)</span> #
-<span class="nb">echo</span> <span class="s1">&#39;source &lt;(kubectl completion bash)&#39;</span> &gt;&gt; ~/.bashrc</code></pre></td></tr></table>
-</div>
-</div>
 <h2 id="查看集群状态">查看集群状态</h2>
 
 <p>查看集群上下文：</p>
@@ -1322,6 +1314,45 @@ kube-system     rke-network-plugin-deploy-job-88nnb        <span class="m">0</sp
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe pod -n ingress-nginx default-http-backend-67cf578fc4-d9mrp 
 kubectl describe pod -n ingress-nginx nginx-ingress-controller-xlr9f </code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="测试集群dns是否可用">测试集群DNS是否可用</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl run curl --image<span class="o">=</span>radial/busyboxplus:curl -it</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入后执行<code>nslookup kubernetes.default</code>确认解析正常:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">nslookup kubernetes.default</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="设置bash自动完成">设置Bash自动完成</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y bash-completion 
+
+<span class="nb">echo</span> <span class="s2">&#34;Configure Kubectl to autocomplete&#34;</span>
+
+<span class="nb">source</span> /usr/share/bash-completion/bash_completion
+<span class="nb">source</span> &lt;<span class="o">(</span>kubectl completion bash<span class="o">)</span> #
+<span class="nb">echo</span> <span class="s1">&#39;source &lt;(kubectl completion bash)&#39;</span> &gt;&gt; ~/.bashrc</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="集群调优">集群调优</h1>

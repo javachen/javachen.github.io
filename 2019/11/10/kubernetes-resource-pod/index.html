@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-10T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-10T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="12617">
+<meta itemprop="wordCount" content="12270">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 12617 字 </span>
-          <span class="more-meta"> 预计阅读 26 分钟 </span>
+          <span class="more-meta"> 约 12270 字 </span>
+          <span class="more-meta"> 预计阅读 25 分钟 </span>
         
       </div>
     </header>
@@ -155,13 +155,17 @@
 <li><a href="#资源限制">资源限制</a></li>
 <li><a href="#健康检查">健康检查</a></li>
 <li><a href="#pod的生命周期">Pod的生命周期</a></li>
-<li><a href="#卷-volumes">卷（Volumes）</a></li>
+<li><a href="#volume">Volume</a>
+<ul>
+<li><a href="#emptrydir">emptryDir</a></li>
+<li><a href="#hostpath">hostPath</a></li>
+</ul></li>
 <li><a href="#projected-volumes">Projected Volumes</a></li>
 <li><a href="#为pod添加hosts">为Pod添加hosts</a></li>
-<li><a href="#共享宿主机的network-ipc-和-pidnamespace">共享宿主机的Network、IPC 和 PIDNamespace</a></li>
+<li><a href="#共享宿主机的网络">共享宿主机的网络</a></li>
 <li><a href="#将pod调度到特定节点上">将Pod调度到特定节点上</a></li>
 <li><a href="#亲和性和反亲和性">亲和性和反亲和性</a></li>
-<li><a href="#污点和容忍污点-taint-和-toleration">污点和容忍污点（Taint 和 toleration）</a></li>
+<li><a href="#污点和容忍污点">污点和容忍污点</a></li>
 <li><a href="#podpreset">PodPreset</a>
 <ul>
 <li><a href="#启用pod-preset">启用Pod Preset</a></li>
@@ -339,7 +343,7 @@
 <p>示例（2.pod-init-containers.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -368,37 +372,37 @@
 </span><span class="lnt">27
 </span><span class="lnt">28
 </span><span class="lnt">29
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - name: workdir
-      mountPath: /usr/share/nginx/html
-  initContainers:
-  - name: install
-    image: busybox
-    command:
-    - wget
-    - &#34;-O&#34;
-    - &#34;/work-dir/index.html&#34;
-    - http://kubernetes.io
-    volumeMounts:
-    - name: workdir
-      mountPath: &#34;/work-dir&#34;
-  volumes:
-  - name: workdir
-    emptyDir: {}</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent<span class="w">
+</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>workdir<span class="w">
+</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span>/usr/share/nginx/html<span class="w">
+</span><span class="w">  </span>initContainers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>install<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>command<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>wget<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span><span class="s2">&#34;-O&#34;</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span><span class="s2">&#34;/work-dir/index.html&#34;</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>http<span class="p">:</span>//kubernetes.io<span class="w">
+</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>workdir<span class="w">
+</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/work-dir&#34;</span><span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>workdir<span class="w">
+</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}</code></pre></td></tr></table>
 </div>
 </div>
 <p>我们在这里定义了一个volumes，它是一个共享卷，我们可以将它挂载到initContainers，也可以挂载到nginx容器。我们这里使用的是<code>emptyDir:{}</code>，Kubernetes会帮我们在宿主机上创建一个临时目录，生命周期等同于Pod的生命周期，当这个Pod被销毁的时候会同时删除这个临时目录。 初始化容器帮我们下载一个index.html文件，当初始化容器执行完后，index.html文件会被存储到临时目录里，当Nginx容器启动后会将这个目录挂载到/usr/share/nginx/html目录下，这样Nginx就能够访问到这个index.html文件了。</p>
@@ -439,7 +443,7 @@ spec:
 <p>示例（3.pod-lifecycle.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -457,26 +461,26 @@ spec:
 </span><span class="lnt">16
 </span><span class="lnt">17
 </span><span class="lnt">18
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    lifecycle:
-      postStart:
-        exec:
-          command: [&#34;/bin/sh&#34;, &#34;-c&#34;, &#34;echo Hello from the postStart handler &gt; /usr/share/message&#34;]
-      preStop:
-        exec:
-          command: [&#34;/usr/sbin/nginx&#34;,&#34;-s&#34;,&#34;quit&#34;]</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>lifecycle<span class="p">:</span><span class="w">
+</span><span class="w">      </span>postStart<span class="p">:</span><span class="w">
+</span><span class="w">        </span>exec<span class="p">:</span><span class="w">
+</span><span class="w">          </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;echo Hello from the postStart handler &gt; /usr/share/message&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">      </span>preStop<span class="p">:</span><span class="w">
+</span><span class="w">        </span>exec<span class="p">:</span><span class="w">
+</span><span class="w">          </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;/usr/sbin/nginx&#34;</span><span class="p">,</span><span class="s2">&#34;-s&#34;</span><span class="p">,</span><span class="s2">&#34;quit&#34;</span><span class="p">]</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>先说postStart指的是在容器启动后立刻执行一个指定的操作。需要明确的是postStart定义的操作虽然是在Docker容器ENTRYPOINT执行之后，但它并不严格保证顺序。也就是说在postStart启动时，ENTRYPOINT有可能还没有结束。 当然，如果postStart执行超时或者错误，Kubernetes会在该Pod的Events中报出该容器启动失败的错误信息，同时导致Pod也处于失败的状态。 而类似的，preStop发生的时机则是容器被杀死之前。preStop操作的执行是同步的。所以，它会阻塞当前的容器杀死流程，直到这个钩子定义操作完成之后，才允许容器被杀死，这跟postStart不一样。 所以，在这个例子中，我们在容器成功启动之后，在 /usr/share/message里写入了一句“欢迎信息”。而在这个容器被删除之前，我们则先调用了 nginx的退出指令，从而实现了容器的“优雅退出”。</p>
@@ -526,7 +530,7 @@ Hello from the postStart handler</pre></td></tr></table>
 <p>示例（4.pod-resources.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -544,26 +548,26 @@ Hello from the postStart handler</pre></td></tr></table>
 </span><span class="lnt">16
 </span><span class="lnt">17
 </span><span class="lnt">18
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    resources:
-      limits:
-        cpu: 500m
-        memory: 0.5Gi
-      requests:
-        cpu: 0
-        memory: 0.5Gi</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">      </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">        </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">        </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">      </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">        </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">        </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi</code></pre></td></tr></table>
 </div>
 </div>
 <p>部署配置清单：</p>
@@ -600,7 +604,7 @@ spec:
 <p>示例（5.pod-liveness.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -621,29 +625,29 @@ spec:
 </span><span class="lnt">19
 </span><span class="lnt">20
 </span><span class="lnt">21
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    test: liveness
-  name: liveness-exec
-spec:
-  containers:
-  - name: liveness
-    image: busybox
-    args:
-    - /bin/sh
-    - -c
-    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
-    livenessProbe:
-      exec:
-        command:
-        - cat
-        - /tmp/healthy
-      initialDelaySeconds: 5
-      periodSeconds: 5</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>test<span class="p">:</span><span class="w"> </span>liveness<span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>liveness-exec<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>liveness<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>args<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>/bin/sh<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>-c<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>touch<span class="w"> </span>/tmp/healthy;<span class="w"> </span>sleep<span class="w"> </span><span class="m">30</span>;<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>/tmp/healthy;<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span><span class="w">
+</span><span class="w">    </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">      </span>exec<span class="p">:</span><span class="w">
+</span><span class="w">        </span>command<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>cat<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>/tmp/healthy<span class="w">
+</span><span class="w">      </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>当Pod启动之后做的第一件事情就是在/tmp目录下创建了一个healthy文件，容器启动5s后（initialDelaySeconds: 5）开始执行检查操作，每5s执行一次，如果/tmp/healthy存在，则cat命令正常退出，说明容器健康，30s后/tmp/healthy被删除，cat命令异常退出，说明容器不健康，这时容器会被重启。</p>
@@ -688,7 +692,7 @@ liveness-exec   1/1   Running   2     2m50s</pre></td></tr></table>
 <p>当一个Pod不断重启的时候，我们可以通过查看Pod的详情信息里面的事件日志和状态来排查问题。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -699,19 +703,19 @@ liveness-exec   1/1   Running   2     2m50s</pre></td></tr></table>
 </span><span class="lnt"> 9
 </span><span class="lnt">10
 </span><span class="lnt">11
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ kubectl describe pod liveness-exec
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl describe pod liveness-exec
 Events:
   Type     Reason     Age                   From                             Message
   ----     ------     ----                  ----                             -------
   Normal   Scheduled  5m15s                 default-scheduler                Successfully assigned default/liveness-exec to k8s-worker-0
-  Normal   Pulled     2m26s (x3 over 5m6s)  kubelet, k8s-worker-0  Successfully pulled image &#34;busybox&#34;
-  Normal   Created    2m26s (x3 over 5m6s)  kubelet, k8s-worker-0  Created container liveness
-  Normal   Started    2m26s (x3 over 5m5s)  kubelet, k8s-worker-0  Started container liveness
-  Warning  Unhealthy  102s (x9 over 4m32s)  kubelet, k8s-worker-0  Liveness probe failed: cat: can&#39;t open &#39;/tmp/healthy&#39;: No such file or directory
-  Normal   Killing    102s (x3 over 4m22s)  kubelet, k8s-worker-0  Container liveness failed liveness probe, will be restarted
-  Normal   Pulling    72s (x4 over 5m13s)   kubelet, k8s-worker-0  Pulling image &#34;busybox&#34;</pre></td></tr></table>
+  Normal   Pulled     2m26s <span class="o">(</span>x3 over 5m6s<span class="o">)</span>  kubelet, k8s-worker-0  Successfully pulled image <span class="s2">&#34;busybox&#34;</span>
+  Normal   Created    2m26s <span class="o">(</span>x3 over 5m6s<span class="o">)</span>  kubelet, k8s-worker-0  Created container liveness
+  Normal   Started    2m26s <span class="o">(</span>x3 over 5m5s<span class="o">)</span>  kubelet, k8s-worker-0  Started container liveness
+  Warning  Unhealthy  102s <span class="o">(</span>x9 over 4m32s<span class="o">)</span>  kubelet, k8s-worker-0  Liveness probe failed: cat: can<span class="s1">&#39;t open &#39;</span>/tmp/healthy<span class="err">&#39;</span>: No such file or directory
+  Normal   Killing    102s <span class="o">(</span>x3 over 4m22s<span class="o">)</span>  kubelet, k8s-worker-0  Container liveness failed liveness probe, will be restarted
+  Normal   Pulling    72s <span class="o">(</span>x4 over 5m13s<span class="o">)</span>   kubelet, k8s-worker-0  Pulling image <span class="s2">&#34;busybox&#34;</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>从上面的Events日志里可以看到liveness探针失败了（Liveness probe failed），容器要被重启了。这个探针是和重启策略（restartPolicy）配合使用的。这个功能就是Kubernetes里的Pod恢复机制，也叫restartPolicy。pod.spec.restartPolicy的默认值是Always，即：任何时候这个容器发生了异常，它一定会被重新创建。但一定要强调的是，Pod的恢复过程，永远都是发生在当前节点上，而不会跑到别的节点上去。事实上，一旦一个Pod与一个节点（Node）绑定，除非这个绑定发生了变化（pod.spec.node字段被修改），否则它永远都不会离开这个节点。这也就意味着，如果这个宿主机宕机了，这个Pod也不会主动迁移到其他节点上去。当节点出现问题时如果你想让Pod出现在其他的可用节点上，就必须使用Deployment这样的“控制器”来管理Pod，哪怕你只需要一个Pod副本。后面我们会详细介绍Deployment对象。</p>
@@ -729,7 +733,7 @@ Events:
 <p>除了在容器中执行命令外，livenessProbe也可以定义为发起HTTP或者TCP请，定义格式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -745,24 +749,24 @@ Events:
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">...
-livenessProbe:
-  httpGet:
-    path: /healthz
-    port: 8080
-    httpHeaders:
-    - name: X-Custom-Header
-      value: Awesome
-    initialDelaySeconds: 3
-    periodSeconds: 3
-...
-livenessProbe:
-  tcpSocket:
-    port: 8080
-  initialDelaySeconds: 15
-  periodSeconds: 20</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">...<span class="w">
+</span><span class="w"></span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">  </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">    </span>path<span class="p">:</span><span class="w"> </span>/healthz<span class="w">
+</span><span class="w">    </span>port<span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">    </span>httpHeaders<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>X-Custom-Header<span class="w">
+</span><span class="w">      </span>value<span class="p">:</span><span class="w"> </span>Awesome<span class="w">
+</span><span class="w">    </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span><span class="w">    </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">3</span><span class="w">
+</span><span class="w"></span>...<span class="w">
+</span><span class="w"></span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">  </span>tcpSocket<span class="p">:</span><span class="w">
+</span><span class="w">    </span>port<span class="p">:</span><span class="w"> </span><span class="m">8080</span><span class="w">
+</span><span class="w">  </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">  </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">20</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>你的应用可以暴露一个健康检查的URL（比如 /healthz），或者直接让健康检查去检测应用的监听端口。这两种配置方法，在Web服务类的应用中非常常用。</p>
@@ -772,7 +776,7 @@ livenessProbe:
 <p>示例（6.pod-readiness.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -800,36 +804,36 @@ livenessProbe:
 </span><span class="lnt">26
 </span><span class="lnt">27
 </span><span class="lnt">28
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    livenessProbe:
-      tcpSocket:
-        port: 80
-      initialDelaySeconds: 5
-      periodSeconds: 5
-      timeoutSeconds: 10
-      successThreshold: 1
-      failureThreshold: 2
-    readinessProbe:
-      httpGet:
-        path: /
-        port: 80
-      initialDelaySeconds: 5
-      periodSeconds: 5
-      timeoutSeconds: 5
-      successThreshold: 1
-      failureThreshold: 2</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">      </span>tcpSocket<span class="p">:</span><span class="w">
+</span><span class="w">        </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">      </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">10</span><span class="w">
+</span><span class="w">      </span>successThreshold<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">      </span>failureThreshold<span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">    </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">      </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">        </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">        </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">      </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>successThreshold<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">      </span>failureThreshold<span class="p">:</span><span class="w"> </span><span class="m">2</span></code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="pod的生命周期">Pod的生命周期</h2>
@@ -848,14 +852,82 @@ spec:
 
 <p>Pod的Status状态，还可以再细分出一组Conditions。这些细分状态的值包括：PodScheduled、Ready、Initialized，以及Unschedulable。它们主要用于描述造成当前Status的具体原因是什么。比如，Pod当前的Status是Pending，对应的Condition是Unschedulable，这就意味着它的调度出现了问题。而其中，Ready这个细分状态非常值得我们关注：它意味着Pod不仅已经正常启动（Running 状态），而且已经可以对外提供服务了。</p>
 
-<h2 id="卷-volumes">卷（Volumes）</h2>
+<h2 id="volume">Volume</h2>
 
 <p>有时候我们需要挂载宿主机的某个目录，比如一个共享的日志目录，应用容器会将日志写到这个宿主机目录下，这样便于在宿主机下统一收集日志。我们可以通过volumes实现这个需求。</p>
+
+<p>Kubernetes提供了许多Volume类型：</p>
+
+<ul>
+<li>emptyDir</li>
+<li>hostPath</li>
+<li>gcePersistentDisk</li>
+<li>awsElasticBlockStore</li>
+<li>nfs</li>
+<li>iscsi</li>
+<li>flocker</li>
+<li>glusterfs</li>
+<li>rbd</li>
+<li>cephfs</li>
+<li>gitRepo</li>
+<li>secret</li>
+<li>persistentVolumeClaim</li>
+<li>downwardAPI</li>
+<li>azureFileVolume</li>
+<li>azureDisk</li>
+<li>vsphereVolume</li>
+<li>Quobyte</li>
+</ul>
+
+<p>这里先来熟悉emptyDir和hostPath。</p>
+
+<h3 id="emptrydir">emptryDir</h3>
+
+<p>emptyDir类型的Volume在Pod分配到Node上时被创建，Kubernetes会在Node上自动分配一个目录，因此无需指定宿主机Node上对应的目录文件。 这个目录的初始内容为空，当Pod从Node上移除时，emptyDir中的数据会被永久删除。</p>
+
+<p>emptyDir Volume主要用于某些应用程序无需永久保存的临时目录，多个容器的共享目录等。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>mountPath<span class="p">:</span><span class="w"> </span>/cache<span class="w">
+</span><span class="w">      </span>name<span class="p">:</span><span class="w"> </span>cache-volume<span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>cache-volume<span class="w">
+</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="hostpath">hostPath</h3>
+
+<p>hostPath Volume为Pod挂载宿主机上的目录或文件。 hostPath Volume的使得容器可以使用宿主机的高速文件系统进行存储。</p>
 
 <p>示例（7.pod-volume.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -873,26 +945,26 @@ spec:
 </span><span class="lnt">16
 </span><span class="lnt">17
 </span><span class="lnt">18
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    volumeMounts:
-    - name: logs
-      mountPath: /var/log/nginx
-  volumes:
-  - name: logs
-    hostPath:
-      path: /data1/logs</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>logs<span class="w">
+</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span>/var/log/nginx<span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>logs<span class="w">
+</span><span class="w">    </span>hostPath<span class="p">:</span><span class="w">
+</span><span class="w">      </span>path<span class="p">:</span><span class="w"> </span>/data1/logs</code></pre></td></tr></table>
 </div>
 </div>
 <p>本示例会将宿主机的/data1/logs挂载到nginx容器的/data/logs目录下，然后nginx在容器/data/logs目录下写日志，日志实际会希尔宿主机的/data1/logs目录下，然后我们就可在宿主机上启动一个日志收集程序来收集日志了。如果你不关心宿主机挂载的目录，只是在容器间共享存储卷来交换数据，也可以使用emptyDir: {}，这个在代码共享那个示例里已经讲过了。</p>
@@ -915,7 +987,7 @@ spec:
 <p>示例（8.pod-projected-secret.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -938,31 +1010,31 @@ spec:
 </span><span class="lnt">21
 </span><span class="lnt">22
 </span><span class="lnt">23
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: projected-volume
-spec:
-  containers:
-  - name: secret-volume
-    image: busybox
-    args:
-    - sleep
-    - &#34;86400&#34;
-    volumeMounts:
-    - name: cred
-      mountPath: &#34;/projected-volume&#34;
-      readOnly: true
-  volumes:
-  - name: cred
-    projected:
-      sources:
-      - secret:
-          name: user
-      - secret:
-          name: pass</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>projected-volume<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>secret-volume<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>args<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>sleep<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span><span class="s2">&#34;86400&#34;</span><span class="w">
+</span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>cred<span class="w">
+</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/projected-volume&#34;</span><span class="w">
+</span><span class="w">      </span>readOnly<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>cred<span class="w">
+</span><span class="w">    </span>projected<span class="p">:</span><span class="w">
+</span><span class="w">      </span>sources<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>secret<span class="p">:</span><span class="w">
+</span><span class="w">          </span>name<span class="p">:</span><span class="w"> </span>user<span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>secret<span class="p">:</span><span class="w">
+</span><span class="w">          </span>name<span class="p">:</span><span class="w"> </span>pass</code></pre></td></tr></table>
 </div>
 </div>
 <p>在这个Pod中，它声明挂载的Volume，并不是常见的emptyDir或者hostPath类型，而是projected类型。而这个Volume的数据来源Secret对象，分别对应的是用户名和密码。</p>
@@ -970,43 +1042,62 @@ spec:
 <p>这里用到的数据库的用户名、密码，正是以Secret对象的方式交给Kubernetes保存的。完成这个操作的指令，如下所示：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ cat ./user.txt
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ cat ./user.txt
 admin
 $ cat ./pass.txt
 password
 
-$ kubectl create secret generic user --from-file=./user.txt
-$ kubectl create secret generic pass --from-file=./pass.txt</pre></td></tr></table>
+$ kubectl create secret generic user --from-file<span class="o">=</span>./user.txt
+$ kubectl create secret generic pass --from-file<span class="o">=</span>./pass.txt</code></pre></td></tr></table>
 </div>
 </div>
 <p>其中user.txt和pass.txt文件里，存放的就是用户名和密码；而user和pass，则是我为Secret对象指定的名字。我们可以通过kubectl get命令来查看Secret对象：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ kubectl get secrets
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get secrets
 NAME           TYPE                                DATA      AGE
-user          Opaque                                1         31s
-pass          Opaque                                1         31s</pre></td></tr></table>
+user          Opaque                                <span class="m">1</span>         31s
+pass          Opaque                                <span class="m">1</span>         31s</code></pre></td></tr></table>
 </div>
 </div>
 <p>当然，除了使用<code>kubectl create secret</code>命令外，我也可以直接通过编写YAML文件的方式来创建这个Secret对象，比如：</p>
-
-<p>apiVersion: v1 kind: Secret metadata: name: mysecret type: Opaque data: user: YWRtaW4= pass: cGFzc3dvcmQK</p>
-
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w"> 
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Secret<span class="w"> 
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w"> 
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>mysecret<span class="w"> 
+</span><span class="w"></span>type<span class="p">:</span><span class="w"> </span>Opaque<span class="w"> 
+</span><span class="w"></span>data<span class="p">:</span><span class="w"> 
+</span><span class="w">  </span>user<span class="p">:</span><span class="w"> </span>YWRtaW4=<span class="w"> 
+</span><span class="w">  </span>pass<span class="p">:</span><span class="w"> </span>cGFzc3dvcmQK</code></pre></td></tr></table>
+</div>
+</div>
 <blockquote>
 <p>注意: Secret对象要求这些数据必须是经过Base64转码的，以免出现明文密码的安全隐患。</p>
 </blockquote>
@@ -1014,16 +1105,16 @@ pass          Opaque                                1         31s</pre></td></tr
 <p>转码操作也很简单，比如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ echo -n &#39;admin&#39; | base64
-YWRtaW4=
-$ echo -n &#39;password&#39; | base64
-cGFzc3dvcmQK</pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> -n <span class="s1">&#39;admin&#39;</span> <span class="p">|</span> base64
+<span class="nv">YWRtaW4</span><span class="o">=</span>
+$ <span class="nb">echo</span> -n <span class="s1">&#39;password&#39;</span> <span class="p">|</span> base64
+cGFzc3dvcmQK</code></pre></td></tr></table>
 </div>
 </div>
 <p>这里需要注意的是，像这样创建的Secret对象，它里面的内容仅仅是经过了转码，而并没有被加密。在真正的生产环境中，你需要在Kubernetes中开启 Secret的加密插件，增强数据的安全性。</p>
@@ -1035,7 +1126,7 @@ cGFzc3dvcmQK</pre></td></tr></table>
 <p>示例（9.pod-projected-downwardapi.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1066,39 +1157,39 @@ cGFzc3dvcmQK</pre></td></tr></table>
 </span><span class="lnt">29
 </span><span class="lnt">30
 </span><span class="lnt">31
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: downwardapi
-  labels:
-    zone: cn-beijing
-    cluster: k8s
-spec:
-  containers:
-    - name: client-container
-      image: busybox
-      command: [&#34;sh&#34;, &#34;-c&#34;]
-      args:
-      - while true; do
-          if [[ -e /etc/podinfo/labels ]]; then
-            echo -en &#39;\n\n&#39;; cat /etc/podinfo/labels; fi;
-          sleep 5;
-        done;
-      volumeMounts:
-      - name: podinfo
-        mountPath: /etc/podinfo
-        readOnly: false
-  volumes:
-    - name: podinfo
-      projected:
-        sources:
-        - downwardAPI:
-            items:
-            - path: &#34;labels&#34;
-              fieldRef:
-                fieldPath: metadata.labels</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>downwardapi<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>zone<span class="p">:</span><span class="w"> </span>cn-beijing<span class="w">
+</span><span class="w">    </span>cluster<span class="p">:</span><span class="w"> </span>k8s<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>client-container<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">]</span><span class="w">
+</span><span class="w">      </span>args<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>while<span class="w"> </span><span class="kc">true</span>;<span class="w"> </span>do<span class="w">
+</span><span class="w">          </span>if<span class="w"> </span><span class="p">[[</span><span class="w"> </span>-e<span class="w"> </span>/etc/podinfo/labels<span class="w"> </span><span class="p">]]</span>;<span class="w"> </span>then<span class="w">
+</span><span class="w">            </span>echo<span class="w"> </span>-en<span class="w"> </span><span class="s1">&#39;\n\n&#39;</span>;<span class="w"> </span>cat<span class="w"> </span>/etc/podinfo/labels;<span class="w"> </span>fi;<span class="w">
+</span><span class="w">          </span>sleep<span class="w"> </span><span class="m">5</span>;<span class="w">
+</span><span class="w">        </span>done;<span class="w">
+</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>podinfo<span class="w">
+</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/podinfo<span class="w">
+</span><span class="w">        </span>readOnly<span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>podinfo<span class="w">
+</span><span class="w">      </span>projected<span class="p">:</span><span class="w">
+</span><span class="w">        </span>sources<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>downwardAPI<span class="p">:</span><span class="w">
+</span><span class="w">            </span>items<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;labels&#34;</span><span class="w">
+</span><span class="w">              </span>fieldRef<span class="p">:</span><span class="w">
+</span><span class="w">                </span>fieldPath<span class="p">:</span><span class="w"> </span>metadata.labels</code></pre></td></tr></table>
 </div>
 </div>
 <p>在这个Pod的YAML文件中，我定义了一个简单的容器，声明了一个projected类型的Volume。只不过这次Volume的数据来源，变成了Downward API。而这个Downward API Volume，则声明了要暴露Pod的metadata.labels信息给容器。</p>
@@ -1162,7 +1253,7 @@ memory request</pre></td></tr></table>
 <p>示例（10.pod-hostaliases.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1178,36 +1269,36 @@ memory request</pre></td></tr></table>
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  hostAliases:
-  - ip: 1.1.1.1
-    hostnames:
-    - foo.hipstershop.cn
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>hostAliases<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>ip<span class="p">:</span><span class="w"> </span><span class="m">1.1.1.1</span><span class="w">
+</span><span class="w">    </span>hostnames<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>foo.hipstershop.cn<span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent</code></pre></td></tr></table>
 </div>
 </div>
 <blockquote>
 <p>如果需要为Pod中的容器添加hosts不能手动添加，如果手动添加，Pod重建后hosts会丢失。</p>
 </blockquote>
 
-<h2 id="共享宿主机的network-ipc-和-pidnamespace">共享宿主机的Network、IPC 和 PIDNamespace</h2>
+<h2 id="共享宿主机的网络">共享宿主机的网络</h2>
 
 <p>示例（11.pod-namespace.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1224,25 +1315,25 @@ spec:
 </span><span class="lnt">15
 </span><span class="lnt">16
 </span><span class="lnt">17
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  hostNetwork: true
-  hostIPC: true
-  hostPID: true
-  containers:
-  - name: busybox
-    image: busybox
-    args:
-    - sleep
-    - &#34;600&#34;</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>hostNetwork<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">  </span>hostIPC<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">  </span>hostPID<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>args<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>sleep<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span><span class="s2">&#34;600&#34;</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>在这个Pod中，我定义了共享宿主机的Network、IPC和PID Namespace。这就意味着，这个Pod里的所有容器，会直接使用宿主机的网络、直接与宿主机进行IPC通信、能够看到宿主机里正在运行的所有进程。</p>
@@ -1252,14 +1343,14 @@ spec:
 <p>首先为Node添加标签</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ kubectl get nodes
-$ kubectl label nodes &lt;your-node-name&gt; role=web
-$ kubectl get nodes --show-labels</pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get nodes
+$ kubectl label nodes &lt;your-node-name&gt; <span class="nv">role</span><span class="o">=</span>web
+$ kubectl get nodes --show-labels</code></pre></td></tr></table>
 </div>
 </div>
 <p>在Kubernetes 1.4版本中，内置了如下标签：</p>
@@ -1275,7 +1366,7 @@ $ kubectl get nodes --show-labels</pre></td></tr></table>
 <p>示例（12.pod-nodeselector.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1289,22 +1380,22 @@ $ kubectl get nodes --show-labels</pre></td></tr></table>
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  nodeSelector:
-    role: web
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>nodeSelector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>role<span class="p">:</span><span class="w"> </span>web<span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="亲和性和反亲和性">亲和性和反亲和性</h2>
@@ -1322,7 +1413,7 @@ spec:
 <p>示例（13.pod-nodeaffinity.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1343,29 +1434,29 @@ spec:
 </span><span class="lnt">19
 </span><span class="lnt">20
 </span><span class="lnt">21
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: role
-            operator: In
-            values:
-            - web
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>affinity<span class="p">:</span><span class="w">
+</span><span class="w">    </span>nodeAffinity<span class="p">:</span><span class="w">
+</span><span class="w">      </span>requiredDuringSchedulingIgnoredDuringExecution<span class="p">:</span><span class="w">
+</span><span class="w">        </span>nodeSelectorTerms<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>matchExpressions<span class="p">:</span><span class="w">
+</span><span class="w">          </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>role<span class="w">
+</span><span class="w">            </span>operator<span class="p">:</span><span class="w"> </span>In<span class="w">
+</span><span class="w">            </span>values<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>web<span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent</code></pre></td></tr></table>
 </div>
 </div>
 <blockquote>
@@ -1379,7 +1470,7 @@ spec:
 <p>示例（14.pod-podaffinity.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1412,46 +1503,46 @@ spec:
 </span><span class="lnt">31
 </span><span class="lnt">32
 </span><span class="lnt">33
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  affinity:
-    podAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-          - key: security
-            operator: In
-            values:
-            - S1
-        topologyKey: kubernetes.io/hostname
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-            - key: security
-              operator: In
-              values:
-              - S2
-          topologyKey: kubernetes.io/hostname
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>affinity<span class="p">:</span><span class="w">
+</span><span class="w">    </span>podAffinity<span class="p">:</span><span class="w">
+</span><span class="w">      </span>requiredDuringSchedulingIgnoredDuringExecution<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>labelSelector<span class="p">:</span><span class="w">
+</span><span class="w">          </span>matchExpressions<span class="p">:</span><span class="w">
+</span><span class="w">          </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>security<span class="w">
+</span><span class="w">            </span>operator<span class="p">:</span><span class="w"> </span>In<span class="w">
+</span><span class="w">            </span>values<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>S1<span class="w">
+</span><span class="w">        </span>topologyKey<span class="p">:</span><span class="w"> </span>kubernetes.io/hostname<span class="w">
+</span><span class="w">    </span>podAntiAffinity<span class="p">:</span><span class="w">
+</span><span class="w">      </span>preferredDuringSchedulingIgnoredDuringExecution<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>weight<span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span><span class="w">        </span>podAffinityTerm<span class="p">:</span><span class="w">
+</span><span class="w">          </span>labelSelector<span class="p">:</span><span class="w">
+</span><span class="w">            </span>matchExpressions<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>security<span class="w">
+</span><span class="w">              </span>operator<span class="p">:</span><span class="w"> </span>In<span class="w">
+</span><span class="w">              </span>values<span class="p">:</span><span class="w">
+</span><span class="w">              </span>-<span class="w"> </span>S2<span class="w">
+</span><span class="w">          </span>topologyKey<span class="p">:</span><span class="w"> </span>kubernetes.io/hostname<span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent</code></pre></td></tr></table>
 </div>
 </div>
 <p>对应Pod的亲和性和反亲和性，出于性能和安全性原因topologyKey不允许为空，需要指定一个拓扑范围。在这个示例中，podAffinity使用的是 requiredDuringSchedulingIgnoredDuringExecution，是一个“硬性”限制，Pod的调度必须满足这个条件，即在可用区范围内（kubernetes.io/hostname），这个Pod要和加了标签<code>security=S1</code>的Pod运行在一起；并且在宿主机范围内（kubernetes.io/hostname）最好不要（podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution）和加了标签<code>security=S2</code>的Pod运行在一起。</p>
 
-<h2 id="污点和容忍污点-taint-和-toleration">污点和容忍污点（Taint 和 toleration）</h2>
+<h2 id="污点和容忍污点">污点和容忍污点</h2>
 
 <p>Node亲和性是将pod吸引到一个node节点上。Taint则刚好相反&ndash;它们允许一个node排斥一些pod。如果我们不想让Pod调度某些节点上，可以给这个节点设置污点（Taint），这样只有容忍（toleration ）这个污点的Pod才会被调度到此Node上，但是不强制调度到这些节点上。</p>
 
@@ -1478,7 +1569,7 @@ spec:
 <p>示例（15.pod-toleration.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1497,27 +1588,27 @@ spec:
 </span><span class="lnt">17
 </span><span class="lnt">18
 </span><span class="lnt">19
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example
-  namespace: default
-  labels:
-    app: example
-spec:
-  tolerations:
-    - key: &#34;role&#34;
-      operator: &#34;Equal&#34;
-      value: &#34;job&#34;
-      effect: &#34;NoSchedule&#34;
-  nodeSelector:
-    role: job
-  containers:
-  - name: nginx
-    image: nginx:1.15.12
-    imagePullPolicy: IfNotPresent</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>tolerations<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;role&#34;</span><span class="w">
+</span><span class="w">      </span>operator<span class="p">:</span><span class="w"> </span><span class="s2">&#34;Equal&#34;</span><span class="w">
+</span><span class="w">      </span>value<span class="p">:</span><span class="w"> </span><span class="s2">&#34;job&#34;</span><span class="w">
+</span><span class="w">      </span>effect<span class="p">:</span><span class="w"> </span><span class="s2">&#34;NoSchedule&#34;</span><span class="w">
+</span><span class="w">  </span>nodeSelector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>role<span class="p">:</span><span class="w"> </span>job<span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.15.12</span><span class="w">
+</span><span class="w">    </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>IfNotPresent</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="podpreset">PodPreset</h2>
@@ -1529,8 +1620,8 @@ spec:
 <h3 id="启用pod-preset">启用Pod Preset</h3>
 
 <ul>
-<li>已启用settings.k8s.io/v1alpha1/podpreset API类型。例如，可以通过在API server的 &ndash;runtime-config选项中包含settings.k8s.io/v1alpha1=true来完成此操作。</li>
-<li>已启用PodPreset准入控制器。 可以通过在API server的 &ndash;enable-admission-plugins 选项中包含odPreset。Kubernetes 1.10以上版本可以在/etc/kubernetes/manifests/kube-apiserver.yaml中添加&ndash;enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Priority,ResourceQuota,PodPreset</li>
+<li>已启用settings.k8s.io/v1alpha1/podpreset API类型。例如，可以通过在API server的 &ndash;runtime-config选项中包含<code>settings.k8s.io/v1alpha1=true</code>来完成此操作。</li>
+<li>已启用PodPreset准入控制器。 可以通过在API server的 <code>--enable-admission-plugins</code> 选项中包含odPreset。Kubernetes 1.10以上版本可以在/etc/kubernetes/manifests/kube-apiserver.yaml中添加<code>--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Priority,ResourceQuota,PodPreset</code></li>
 <li>已经在要使用的命名空间中创建PodPreset对象。</li>
 </ul>
 
@@ -1539,7 +1630,7 @@ spec:
 <p>示例（16.pod-perset.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1553,22 +1644,22 @@ spec:
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: settings.k8s.io/v1alpha1
-kind: PodPreset
-metadata:
-  name: cache-pod-perset
-spec:
-  selector:
-    matchLabels:
-      role: web
-  volumeMounts:
-  - mountPath: /cache
-    name: cache-volume
-  volumes:
-  - name: cache-volume
-    emptyDir: {}</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>settings.k8s.io/v1alpha1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>PodPreset<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>cache-pod-perset<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>role<span class="p">:</span><span class="w"> </span>web<span class="w">
+</span><span class="w">  </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>mountPath<span class="p">:</span><span class="w"> </span>/cache<span class="w">
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>cache-volume<span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>cache-volume<span class="w">
+</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}</code></pre></td></tr></table>
 </div>
 </div>
 <p>然后定义一个Pod，在Pod创建时使用上面定义perSet：</p>
@@ -1576,7 +1667,7 @@ spec:
 <p>示例（17.pod-example-perset.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1588,20 +1679,20 @@ spec:
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">apiVersion: v1
-kind: Pod
-metadata:
-  name: example-pod-perset
-  namespace: default
-  labels:
-    app: example
-    role: web
-spec:
-  containers:
-  - name: nginx
-    image: nginx:latest</pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example-pod-perset<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">    </span>role<span class="p">:</span><span class="w"> </span>web<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span>latest</code></pre></td></tr></table>
 </div>
 </div>
 <p>在这个PodPreset的定义中，首先是一个selector，这就意味着后面这些追加的字段只会作用于selector所选中的Pod对象。</p>
@@ -1819,7 +1910,11 @@ spec:
           <a href="/tags/kubernetes/">kubernetes</a>
           </div>
       <nav class="post-nav">
-        
+        <a class="prev" href="/2019/11/11/kubernetes-resource-configmap/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Kubernetes资源对象之ConfigMap</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
         <a class="next" href="/2019/11/10/kubernetes-resource-secret/">
             <span class="next-text nav-default">Kubernetes资源对象之Secret</span>
             <span class="next-text nav-mobile">下一篇</span>
