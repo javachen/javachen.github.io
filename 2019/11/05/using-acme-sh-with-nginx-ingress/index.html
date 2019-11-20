@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而 acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛" /><meta name="keywords" content="Java, Hadoop, Docker" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
@@ -40,25 +40,25 @@
 
 
 <meta property="og:title" content="kubernetes使用acme.sh生成letsencrypt证书" />
-<meta property="og:description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，" />
+<meta property="og:description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而 acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/05/using-acme-sh-with-nginx-ingress/" />
 <meta property="article:published_time" content="2019-11-05T08:00:00+08:00" />
 <meta property="article:modified_time" content="2019-11-05T08:00:00+08:00" />
 <meta itemprop="name" content="kubernetes使用acme.sh生成letsencrypt证书">
-<meta itemprop="description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，">
+<meta itemprop="description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而 acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛">
 
 
 <meta itemprop="datePublished" content="2019-11-05T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-05T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1039">
+<meta itemprop="wordCount" content="1287">
 
 
 
 <meta itemprop="keywords" content="kubernetes,ingress,SSL," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="kubernetes使用acme.sh生成letsencrypt证书"/>
-<meta name="twitter:description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，"/>
+<meta name="twitter:description" content="kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而 acme.sh 实现了 acme 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1039 字 </span>
+          <span class="more-meta"> 约 1287 字 </span>
           <span class="more-meta"> 预计阅读 3 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -143,12 +143,16 @@
   <div class="post-toc-content">
     <nav id="TableOfContents">
 <ul>
-<li><a href="#创建证书">创建证书</a></li>
+<li><a href="#创建证书">创建证书</a>
+<ul>
+<li><a href="#dnspod">dnspod</a></li>
+<li><a href="#godaddy"><strong>godaddy</strong></a></li>
+</ul></li>
 <li><a href="#通过nginx验证证书">通过Nginx验证证书</a></li>
 <li><a href="#配置ingress自签名证书">配置Ingress自签名证书</a>
 <ul>
 <li><a href="#创建服务">创建服务</a></li>
-<li><a href="#创建证书secret">创建证书secret</a></li>
+<li><a href="#创建secret">创建secret</a></li>
 <li><a href="#创建ingress">创建Ingress</a></li>
 <li><a href="#查看状态">查看状态</a></li>
 </ul></li>
@@ -160,15 +164,17 @@
     <div class="post-content">
       
 
-<p>kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而<strong>acme.sh</strong> 实现了 <code>acme</code> 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛域名的证书。</p>
+<p>kubernetes中很多地方都要配置SSL证书，权威的证书要钱，免费的证书数量有限，而 <a href="https://github.com/Neilpang/acme.sh">acme.sh</a> 实现了 <code>acme</code> 协议，可以从 letsencrypt 生成免费的证书，而且还支持泛域名的证书。</p>
 
 <p>#安装acme.sh</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">curl  https://get.acme.sh <span class="p">|</span> sh</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl  https://get.acme.sh <span class="p">|</span> sh
+<span class="nb">source</span> /home/~/.bashrc</code></pre></td></tr></table>
 </div>
 </div>
 <p>执行成功后，脚本会安装在~/.acme.sh目录下，并且设置了一个定时任务：</p>
@@ -182,7 +188,11 @@
 </div>
 <h1 id="创建证书">创建证书</h1>
 
-<p>我这里使用的是dnspod域名托管商，所以在<a href="https://console.dnspod.cn/account/token">https://console.dnspod.cn/account/token</a> 页面创建一个token：</p>
+<p>参考 acme.sh 文档：<a href="https://github.com/Neilpang/acme.sh/wiki/dnsapi">https://github.com/Neilpang/acme.sh/wiki/dnsapi</a></p>
+
+<h2 id="dnspod">dnspod</h2>
+
+<p>如果使用的是dnspod域名托管商，在<a href="https://console.dnspod.cn/account/token">https://console.dnspod.cn/account/token</a> 页面创建一个token：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -218,26 +228,65 @@
 <p>查看生成的文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> ~/.acme.sh/javachen.space/
+
+$ ll
+总用量 <span class="m">36</span>
+-rw-r--r-- <span class="m">1</span> chenzj docker <span class="m">1648</span> 11月  <span class="m">5</span> <span class="m">10</span>:51 ca.cer
+-rw-r--r-- <span class="m">1</span> chenzj docker <span class="m">3575</span> 11月  <span class="m">5</span> <span class="m">10</span>:51 fullchain.cer
+-rw-r--r-- <span class="m">1</span> chenzj docker <span class="m">1927</span> 11月  <span class="m">5</span> <span class="m">10</span>:51 javachen.space.cer
+-rw-r--r-- <span class="m">1</span> chenzj docker  <span class="m">829</span> 11月  <span class="m">5</span> <span class="m">16</span>:47 javachen.space.conf
+-rw-r--r-- <span class="m">1</span> chenzj docker  <span class="m">997</span> 11月  <span class="m">5</span> <span class="m">10</span>:50 javachen.space.csr
+-rw-r--r-- <span class="m">1</span> chenzj docker  <span class="m">228</span> 11月  <span class="m">5</span> <span class="m">10</span>:50 javachen.space.csr.conf
+-rw-r--r-- <span class="m">1</span> chenzj docker <span class="m">1679</span> 11月  <span class="m">4</span> <span class="m">17</span>:31 javachen.space.key</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="godaddy"><strong>godaddy</strong></h2>
+
+<p>如果使用的是godaddy域名托管商，在 <a href="https://developer.godaddy.com/keys/">https://developer.godaddy.com/keys/</a> 页面创建一个API Key：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g94evuptx2j312a0u0jts.jpg" alt="image-20191120125243081" /></p>
+
+<p>创建证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">总用量 36
--rw-r--r-- 1 chenzj docker 1648 11月  5 10:51 ca.cer
--rw-r--r-- 1 chenzj docker 3575 11月  5 10:51 fullchain.cer
--rw-r--r-- 1 chenzj docker 1927 11月  5 10:51 javachen.space.cer
--rw-r--r-- 1 chenzj docker  829 11月  5 16:47 javachen.space.conf
--rw-r--r-- 1 chenzj docker  997 11月  5 10:50 javachen.space.csr
--rw-r--r-- 1 chenzj docker  228 11月  5 10:50 javachen.space.csr.conf
--rw-r--r-- 1 chenzj docker 1679 11月  4 17:31 javachen.space.key</pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">GD_Key</span><span class="o">=</span><span class="s2">&#34;XXXXXXXXXXXXXXXXXXX&#34;</span>
+<span class="nb">export</span> <span class="nv">GD_Secret</span><span class="o">=</span><span class="s2">&#34;XXXXXXXXXXXXXXXXXXX&#34;</span>
+
+acme.sh --issue --dns dns_gd -d javachen.space -d *.javachen.space --debug</code></pre></td></tr></table>
 </div>
 </div>
+<p>执行过程中，会在dns上创建两条txt记录：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g94f0rmj06j31i80t8gpq.jpg" alt="image-20191120125734413" /></p>
+
+<p>等执行结束，就会生成证书：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g94f2ke84pj31bc0d0jvv.jpg" alt="image-20191120125918364" /></p>
+
+<p>并删除txt记录：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g94f3fotoxj31jw0jetbg.jpg" alt="image-20191120130008126" /></p>
+
 <h1 id="通过nginx验证证书">通过Nginx验证证书</h1>
 
 <p>将证书和密钥拷贝到nginx的目录下面：</p>
@@ -247,18 +296,22 @@
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkdir /etc/nginx/ssl
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install nginx -y
+sudo mkdir /etc/nginx/ssl
 
-cp javachen.space.key /etc/nginx/ssl/javachen.space.key
-cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
+<span class="nb">cd</span> ~/.acme.sh/javachen.space/
+sudo cp javachen.space.key /etc/nginx/ssl/javachen.space.key
+sudo cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 </div>
 </div>
 <p>在nginx配置文件中添加SSL的配置：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -275,25 +328,31 @@ cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 </span><span class="lnt">15
 </span><span class="lnt">16
 </span><span class="lnt">17
-</span></pre></td>
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">server {
-    listen 443;
-    server_name localhost;
-    ssl on;
-    root html;
-    index index.html index.htm;
-    ssl_certificate   /etc/nginx/ssl/fullchain.cer;
-    ssl_certificate_key  /etc/nginx/ssl/javachen.space.key;
-    ssl_session_timeout 5m;
-    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_prefer_server_ciphers on;
-    location / {
-        root html;
-        index index.html index.htm;
-    }
-}</pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; test.conf
+</span><span class="s">server {
+</span><span class="s">    listen 8443 ssl;
+</span><span class="s">    server_name localhost;
+</span><span class="s">    root html;
+</span><span class="s">    index index.html index.htm;
+</span><span class="s">    ssl_certificate   /etc/nginx/ssl/fullchain.cer;
+</span><span class="s">    ssl_certificate_key  /etc/nginx/ssl/javachen.space.key;
+</span><span class="s">    ssl_session_timeout 5m;
+</span><span class="s">    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+</span><span class="s">    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+</span><span class="s">    ssl_prefer_server_ciphers on;
+</span><span class="s">    location / {
+</span><span class="s">        root html;
+</span><span class="s">        index index.html index.htm;
+</span><span class="s">    }
+</span><span class="s">}
+</span><span class="s">EOF</span>
+
+sudo mv test.conf /etc/nginx/conf.d/</code></pre></td></tr></table>
 </div>
 </div>
 <p>重启服务：</p>
@@ -305,19 +364,28 @@ cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl restart nginx</code></pre></td></tr></table>
 </div>
 </div>
-<p>访问浏览器 <a href="https://javachen.space/">https://javachen.space/</a> ，可以看到证书是被浏览器可信任的：</p>
+<p>在本地配置hosts文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 javachen.space</code></pre></td></tr></table>
+</div>
+</div>
+<p>访问浏览器 <a href="https://javachen.space:8443/">https://javachen.space:8443/</a> ，可以看到证书是被浏览器可信任的：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8naiyczg5j30hi0fq75r.jpg" alt="image-20191105172727246" /></p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g94gdz5subj30vw0lyn3m.jpg" alt="image-20191120134452084" /></p>
 
 <p>也能看到签发组织：</p>
 
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8nak40xbhj314w0oowly.jpg" alt="image-20191105172833060" /></p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g94geit3naj31au0nk4b0.jpg" alt="image-20191120134523523" /></p>
 
 <h1 id="配置ingress自签名证书">配置Ingress自签名证书</h1>
 
 <h2 id="创建服务">创建服务</h2>
 
-<p>参考 ，创建服务：</p>
+<p>参考 <a href="http://blog.javachen.space/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> 中的例子，创建服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -358,6 +426,8 @@ cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 </span><span class="lnt">36
 </span><span class="lnt">37
 </span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
@@ -389,10 +459,12 @@ cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 </span><span class="s">  name: kuard
 </span><span class="s">spec:
 </span><span class="s">  ports:
-</span><span class="s">  - port: 80
+</span><span class="s">  - name: http
+</span><span class="s">    port: 80
 </span><span class="s">    targetPort: 8080
 </span><span class="s">    protocol: TCP
-</span><span class="s">  - port: 443 
+</span><span class="s">  - name: https
+</span><span class="s">    port: 443 
 </span><span class="s">    targetPort: 443
 </span><span class="s">    protocol: TCP  
 </span><span class="s">  selector:
@@ -400,9 +472,9 @@ cp fullchain.cer /etc/nginx/ssl/fullchain.cer</code></pre></td></tr></table>
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="创建证书secret">创建证书secret</h2>
+<h2 id="创建secret">创建secret</h2>
 
-<p>安装k8s的要求，<strong>将证书和密钥重命名</strong>：</p>
+<p>按照k8s的要求，<strong>将证书和密钥重命名</strong>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -427,7 +499,7 @@ cp javachen.space.key tls.key</code></pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#一定要是tls.crt、tls.crt</span>
-kubectl create secret tls kuard-secret-tls --cert<span class="o">=</span>tls.crt  --key<span class="o">=</span>tls.crttls.crt</code></pre></td></tr></table>
+kubectl create secret tls kuard-secret-tls --cert<span class="o">=</span>tls.crt  --key<span class="o">=</span>tls.key</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="创建ingress">创建Ingress</h2>
@@ -502,11 +574,22 @@ kubectl get secret kuard-secret-tls
 kubectl get secret kuard-secret-tls -o yaml
 
 $ kubectl get ing 
-NAME    HOSTS                 ADDRESS                                     PORTS     AGE
-kuard   kuard.javachen.space   <span class="m">192</span>.168.1.121,192.168.1.122,192.168.1.123   <span class="m">80</span>, <span class="m">443</span>   8m59s</code></pre></td></tr></table>
+NAME    HOSTS                  ADDRESS   PORTS     AGE
+kuard   kuard.javachen.space             <span class="m">80</span>, <span class="m">443</span>   11s</code></pre></td></tr></table>
+</div>
+</div>
+<p>在本地配置hosts文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 kuard.javachen.space</code></pre></td></tr></table>
 </div>
 </div>
 <p>浏览器访问 <a href="https://kuard.javachen.space/">https://kuard.javachen.space/</a> 可以看到tomcat主页，并且证书是被信任度的。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g94gl6hq7uj31120kitdy.jpg" alt="image-20191120135147708" /></p>
 
 <h1 id="参考文章">参考文章</h1>
 
