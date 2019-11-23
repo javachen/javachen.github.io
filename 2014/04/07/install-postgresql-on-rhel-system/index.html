@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2014-04-07T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-04-07T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="662">
+<meta itemprop="wordCount" content="1318">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/database/"> database </a>
             </div>
-          <span class="more-meta"> 约 662 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
+          <span class="more-meta"> 约 1318 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -149,15 +149,17 @@
 <li><a href="#安装postgresql-9-2">安装postgresql 9.2</a></li>
 <li><a href="#初始化数据">初始化数据</a></li>
 <li><a href="#开机启动">开机启动</a></li>
-<li><a href="#修改配置">修改配置</a></li>
-<li><a href="#重起postgres">重起postgres</a></li>
+<li><a href="#配置数据库">配置数据库</a></li>
 <li><a href="#登陆数据库">登陆数据库</a></li>
 </ul></li>
 <li><a href="#通过postgresql-yum安装">通过PostgreSQL Yum安装</a>
 <ul>
 <li><a href="#安装postgresql-12">安装PostgreSQL 12</a></li>
 <li><a href="#安装postgresql-9-6">安装PostgreSQL 9.6</a></li>
+<li><a href="#配置数据库-1">配置数据库</a></li>
+<li><a href="#创建数据库">创建数据库</a></li>
 </ul></li>
+<li><a href="#自动化运行脚本">自动化运行脚本</a></li>
 <li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
@@ -211,11 +213,9 @@
 systemctl start postgresql.service</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="修改配置">修改配置</h2>
+<h2 id="配置数据库">配置数据库</h2>
 
-<p>配置文件目录在 /usr/share/pgsql</p>
-
-<p>修改 <code>pg_hba.conf</code>，查找路径：</p>
+<p>查找路径：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -223,20 +223,22 @@ systemctl start postgresql.service</code></pre></td></tr></table>
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">find -name pg_hba.conf
-./var/lib/pgsql/data/pg_hba.conf
-./usr/share/pgsql/pg_hba.conf</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">find / -name pg_hba.conf
+/var/lib/pgsql/data/pg_hba.conf
+/usr/share/pgsql/pg_hba.conf</code></pre></td></tr></table>
 </div>
 </div>
-<p>设置远程用户访问权限：</p>
+<p>修改 <code>pg_hba.conf</code>，设置远程用户访问权限：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">local</span>   all             all             				             md5
-host    all             all             <span class="m">0</span>.0.0.0/0            md5</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo sed -i <span class="s2">&#34;s/127.0.0.1\/32/0.0.0.0\/0/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+sudo sed -i <span class="s2">&#34;s/ident/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+sudo sed -i <span class="s2">&#34;s/peer/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf</code></pre></td></tr></table>
 </div>
 </div>
 <ul>
@@ -250,7 +252,7 @@ host    all             all             <span class="m">0</span>.0.0.0/0        
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">listen_addresses</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s2">&#34;s/#listen_addresses = &#39;localhost&#39;/listen_addresses = &#39;*&#39;/&#34;</span> /var/lib/pgsql/data/postgresql.conf</code></pre></td></tr></table>
 </div>
 </div>
 <p>重启数据库：</p>
@@ -262,8 +264,6 @@ host    all             all             <span class="m">0</span>.0.0.0/0        
 <pre class="chroma"><code class="language-bash" data-lang="bash">systemctl restart postgresql.service</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="重起postgres">重起postgres</h2>
-
 <h2 id="登陆数据库">登陆数据库</h2>
 
 <p>使用postgres用户登陆，并修改密码：</p>
@@ -352,6 +352,303 @@ sudo yum install postgresql96 postgresql96-server -y</code></pre></td></tr></tab
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo /usr/pgsql-9.6/bin/postgresql96-setup initdb
 sudo systemctl <span class="nb">enable</span> postgresql-9.6
 sudo systemctl start postgresql-9.6</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置数据库-1">配置数据库</h2>
+
+<p>查找路径：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">find / -name pg_hba.conf
+/var/lib/pgsql/12/data/pg_hba.conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 <code>pg_hba.conf</code>，设置远程用户访问权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo sed -i <span class="s2">&#34;s/127.0.0.1\/32/0.0.0.0\/0/&#34;</span> /var/lib/pgsql/12/data/pg_hba.conf
+sudo sed -i <span class="s2">&#34;s/ident/trust/&#34;</span> /var/lib/pgsql/12/data/pg_hba.conf
+sudo sed -i <span class="s2">&#34;s/peer/trust/&#34;</span> /var/lib/pgsql/12/data/pg_hba.conf</code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>md5并提供加密的密码验证</li>
+<li>trust意思不用密码验证</li>
+</ul>
+
+<p>修改postgresql.conf，配置监听地址：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">CONF_FILE</span><span class="o">=</span>/var/lib/pgsql/12/data/postgresql.conf
+
+sudo sed -i <span class="s2">&#34;s/#port = 5432/port = 5432/&#34;</span> <span class="nv">$CONF_FILE</span>
+sudo sed -i <span class="s2">&#34;s/max_connections = 100/max_connections = 600/&#34;</span> <span class="nv">$CONF_FILE</span>
+sudo sed -i <span class="s2">&#34;s/#listen_addresses = &#39;localhost&#39;/listen_addresses = &#39;*&#39;/&#34;</span> <span class="nv">$CONF_FILE</span>
+sudo sed -i <span class="s2">&#34;s/shared_buffers = 32MB/shared_buffers = 256MB/&#34;</span> <span class="nv">$CONF_FILE</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>重启数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl restart postgresql-12</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建数据库">创建数据库</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">CREATE USER <span class="nb">test</span> WITH PASSWORD <span class="s1">&#39;test&#39;</span><span class="p">;</span>
+CREATE DATABASE dataware <span class="nv">owner</span><span class="o">=</span>test<span class="p">;</span>
+
+GRANT ALL privileges ON DATABASE dataware TO test<span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="自动化运行脚本">自动化运行脚本</h1>
+
+<p>以下是按照hive时，配置hive元数据的数据库时的自动化安装脚本，仅供参考：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="nb">readonly</span> <span class="nv">PROGNAME</span><span class="o">=</span><span class="k">$(</span>basename <span class="nv">$0</span><span class="k">)</span>
+<span class="nb">readonly</span> <span class="nv">PROGDIR</span><span class="o">=</span><span class="k">$(</span>readlink -m <span class="k">$(</span>dirname <span class="nv">$0</span><span class="k">))</span>
+<span class="nb">readonly</span> <span class="nv">ARGS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="sb">`</span>id -u<span class="sb">`</span> -ne <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;must run as root&#34;</span>
+    <span class="nb">exit</span> <span class="m">1</span>
+<span class="k">fi</span>
+
+get_postgresql_major_version<span class="o">(){</span>
+    <span class="nb">local</span> <span class="nv">psql_output</span><span class="o">=</span><span class="sb">`</span>psql --version<span class="sb">`</span>
+    <span class="nb">local</span> <span class="nv">regex</span><span class="o">=</span><span class="s2">&#34;^psql \(PostgreSQL\) ([[:digit:]]+)\..*&#34;</span>
+
+    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$psql_output</span> <span class="o">=</span>~ <span class="nv">$regex</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+      <span class="nb">echo</span> <span class="si">${</span><span class="nv">BASH_REMATCH</span><span class="p">[1]</span><span class="si">}</span>
+    <span class="k">fi</span>
+<span class="o">}</span>
+
+get_standard_conforming_strings<span class="o">(){</span>
+    <span class="nb">local</span> <span class="nv">psql_version</span><span class="o">=</span><span class="k">$(</span>get_postgresql_major_version<span class="k">)</span>
+    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$psql_version</span> -gt <span class="m">8</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+        <span class="nb">echo</span> <span class="s2">&#34;# This is needed to make Hive work with Postgresql 9.1 and above&#34;</span>
+        <span class="nb">echo</span> <span class="s2">&#34;# See OPSAPS-11795&#34;</span>
+        <span class="nb">echo</span> <span class="s2">&#34;standard_conforming_strings=off&#34;</span>
+    <span class="k">fi</span>
+<span class="o">}</span>
+
+check_postgresql_installed<span class="o">(){</span>
+  <span class="nb">echo</span> -e <span class="s2">&#34;Install postgresql-server&#34;</span>
+	<span class="k">if</span> ! rpm -q postgresql-server &gt;/dev/null <span class="p">;</span> <span class="k">then</span>
+	    yum install postgresql-server postgresql-jdbc -y &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+        ln -s /usr/share/java/postgresql-jdbc.jar /usr/lib/hive/lib/postgresql-jdbc.jar
+		chkconfig postgresql on
+	<span class="k">fi</span>
+
+	pkill -9 postgres
+	rm -rf /var/lib/pgsql/data /var/run/postgresql/.s.PGSQL.<span class="nv">$DB_PORT</span>
+
+  <span class="nb">echo</span> -e <span class="s2">&#34;Init postgresql database&#34;</span>
+	postgresql-setup initdb
+<span class="o">}</span>
+
+configure_postgresql_conf<span class="o">(){</span>
+  <span class="nb">echo</span> -e <span class="s2">&#34;Configure postgresql conf&#34;</span>
+
+	sed -i <span class="s2">&#34;s/#port = 5432/port = </span><span class="nv">$DB_PORT</span><span class="s2">/&#34;</span> <span class="nv">$CONF_FILE</span>
+	sed -i <span class="s2">&#34;s/max_connections = 100/max_connections = 600/&#34;</span> <span class="nv">$CONF_FILE</span>
+	sed -i <span class="s2">&#34;s/#listen_addresses = &#39;localhost&#39;/listen_addresses = &#39;*&#39;/&#34;</span> <span class="nv">$CONF_FILE</span>
+	sed -i <span class="s2">&#34;s/shared_buffers = 32MB/shared_buffers = 256MB/&#34;</span> <span class="nv">$CONF_FILE</span>
+
+	<span class="nb">local</span> <span class="nv">SCS</span><span class="o">=</span><span class="k">$(</span>get_standard_conforming_strings<span class="k">)</span>
+	<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$SCS</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+		<span class="nb">echo</span> -e <span class="nv">$SCS</span>
+		sed -i <span class="s2">&#34;s/#standard_conforming_strings = on/standard_conforming_strings = off/&#34;</span> <span class="nv">$CONF_FILE</span>
+	<span class="k">fi</span>
+<span class="o">}</span>
+
+enable_remote_connections<span class="o">(){</span>
+  <span class="nb">echo</span> -e <span class="s2">&#34;Enable remote connections&#34;</span>
+
+	sed -i <span class="s2">&#34;s/127.0.0.1\/32/0.0.0.0\/0/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+	sed -i <span class="s2">&#34;s/ident/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+  sed -i <span class="s2">&#34;s/peer/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+<span class="o">}</span>
+
+create_db<span class="o">(){</span>
+	<span class="nv">DB_NAME</span><span class="o">=</span><span class="nv">$1</span>
+	<span class="nv">DB_USER</span><span class="o">=</span><span class="nv">$2</span>
+	<span class="nv">DB_PASSWORD</span><span class="o">=</span><span class="nv">$3</span>
+
+  <span class="nb">echo</span> -e <span class="s2">&#34;Create database </span><span class="nv">$DB_NAME</span><span class="s2">&#34;</span>
+
+  <span class="nb">cd</span> /var/lib/pgsql/data
+	su -c <span class="s2">&#34;/usr/bin/pg_ctl start -w -m fast -D /var/lib/pgsql/data&#34;</span> postgres
+	su -c <span class="s2">&#34;/usr/bin/psql --command \&#34;CREATE USER </span><span class="nv">$DB_USER</span><span class="s2"> WITH PASSWORD &#39;</span><span class="nv">$DB_PASSWORD</span><span class="s2">&#39;; \&#34; &#34;</span> postgres
+	su -c <span class="s2">&#34;/usr/bin/psql --command \&#34;CREATE DATABASE </span><span class="nv">$DB_NAME</span><span class="s2"> owner=</span><span class="nv">$DB_USER</span><span class="s2">;\&#34; &#34;</span> postgres
+	su -c <span class="s2">&#34;/usr/bin/psql --command \&#34;GRANT ALL privileges ON DATABASE </span><span class="nv">$DB_NAME</span><span class="s2"> TO </span><span class="nv">$DB_USER</span><span class="s2">;\&#34; &#34;</span> postgres
+<span class="o">}</span>
+
+init_hive_metastore<span class="o">(){</span>
+	<span class="nv">DB_NAME</span><span class="o">=</span><span class="nv">$1</span>
+	<span class="nv">DB_USER</span><span class="o">=</span><span class="nv">$2</span>
+	<span class="nv">DB_FILE</span><span class="o">=</span><span class="nv">$3</span>
+
+  <span class="nb">echo</span> -e <span class="s2">&#34;Init hive metastore using </span><span class="nv">$DB_FILE</span><span class="s2">&#34;</span>
+	su -c <span class="s2">&#34;/usr/bin/psql -U </span><span class="nv">$DB_USER</span><span class="s2"> -d </span><span class="nv">$DB_NAME</span><span class="s2"> -f </span><span class="nv">$DB_FILE</span><span class="s2">&#34;</span> postgres
+<span class="o">}</span>
+
+manager_db<span class="o">(){</span>
+  <span class="nb">echo</span> -e <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2"> postgres&#34;</span>
+	su -c <span class="s2">&#34;/usr/bin/pg_ctl </span><span class="nv">$1</span><span class="s2"> -w -m fast -D /var/lib/pgsql/data&#34;</span> postgres
+<span class="o">}</span>
+
+<span class="nb">readonly</span> <span class="nv">DB_HOST</span><span class="o">=</span><span class="k">$(</span>hostname -f<span class="k">)</span>
+<span class="nb">readonly</span> <span class="nv">DB_PORT</span><span class="o">=</span><span class="si">${</span><span class="nv">DB_PORT</span><span class="k">:-</span><span class="nv">5432</span><span class="si">}</span>
+<span class="nb">readonly</span> <span class="nv">DB_HOSTPORT</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$DB_HOST</span><span class="s2">:</span><span class="nv">$DB_PORT</span><span class="s2">&#34;</span>
+<span class="nv">CONF_FILE</span><span class="o">=</span><span class="s2">&#34;/var/lib/pgsql/data/postgresql.conf&#34;</span>
+
+check_postgresql_installed
+configure_postgresql_conf
+enable_remote_connections
+create_db metastore hive hive
+
+manager_db restart
+init_hive_metastore metastore hive <span class="sb">`</span>ls /usr/lib/hive/scripts/metastore/upgrade/postgres/hive-schema-* <span class="p">|</span>tail -n <span class="m">1</span><span class="sb">`</span></code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="参考文章">参考文章</h1>
