@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-07T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-07T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1696">
+<meta itemprop="wordCount" content="1704">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1696 字 </span>
+          <span class="more-meta"> 约 1704 字 </span>
           <span class="more-meta"> 预计阅读 4 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -147,7 +147,9 @@
 <li><a href="#添加dns01校验">添加DNS01校验</a></li>
 <li><a href="#修改rancher-chart源码">修改Rancher Chart源码</a></li>
 <li><a href="#安装rancher">安装Rancher</a></li>
-<li><a href="#卸载">卸载</a></li>
+<li><a href="#浏览器访问">浏览器访问</a></li>
+<li><a href="#卸载重装">卸载重装</a></li>
+<li><a href="#升级版本">升级版本</a></li>
 <li><a href="#总结">总结</a></li>
 </ul>
 </nav>
@@ -225,11 +227,11 @@
 </span><span class="w"></span>{{-<span class="w"> </span>end<span class="w"> </span>-}}</code></pre></td></tr></table>
 </div>
 </div>
-<p>可以看到letsEncrypt使用的是http01校验，因为服务器上没有配置web服务器，所以用该方式校验比较麻烦，故乡改为dns01方式校验。</p>
+<p>可以看到letsEncrypt使用的是http01校验，因为服务器上没有配置web服务器，所以用该方式校验比较麻烦，故改为dns01方式校验。</p>
 
 <h1 id="添加dns01校验">添加DNS01校验</h1>
 
-<p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> 这篇完整，我们可以利用 <a href="https://github.com/qqshfox/cert-manager-webhook-dnspod">cert-manager-webhook-dnspod</a> 通过webhook的方式进行dns01校验。</p>
+<p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> 这篇完整，我们可以利用 <a href="https://github.com/inspectorioinc/cert-manager-webhook-godaddy">cert-manager-webhook-godaddy</a> 通过webhook的方式进行dns01校验。</p>
 
 <p>其创建issuer代码如下：</p>
 <div class="highlight"><div class="chroma">
@@ -276,12 +278,12 @@
 </span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
 </span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
 </span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.javachen.space<span class="w"> 
-</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
+</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>godaddy<span class="w">
 </span><span class="w">          </span>config<span class="p">:</span><span class="w">
-</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w">  </span><span class="c">#DNSPOD 的 apiID，注意替换</span><span class="w">
-</span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials</code></pre></td></tr></table>
+</span><span class="w">            </span>authApiKey<span class="p">:</span><span class="w"> </span>e4hN4QrFgzdo_RHXe1ef2qpBPmiJPD2ZUcW<span class="w">
+</span><span class="w">            </span>authApiSecret<span class="p">:</span><span class="w"> </span>XXXXXXXX<span class="w">
+</span><span class="w">            </span>production<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">            </span>ttl<span class="p">:</span><span class="w"> </span><span class="m">600</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>对比上面两个yaml文件，我们修改Rancher Chart源码，将http01改为solvers：</p>
@@ -306,28 +308,32 @@
 </span><span class="w">    </span>-<span class="w"> </span>selector<span class="p">:</span><span class="w">
 </span><span class="w">        </span>dnsNames<span class="p">:</span><span class="w">
 </span><span class="w">        </span>-<span class="w"> </span><span class="s1">&#39;*.javachen.space&#39;</span><span class="w">
-</span><span class="w">      </span>dns01<span class="p">:</span><span class="w">
+</span><span class="w">			</span>dns01<span class="p">:</span><span class="w">
 </span><span class="w">        </span>webhook<span class="p">:</span><span class="w">
 </span><span class="w">          </span>groupName<span class="p">:</span><span class="w"> </span>acme.javachen.space<span class="w"> 
-</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>dnspod<span class="w">
+</span><span class="w">          </span>solverName<span class="p">:</span><span class="w"> </span>godaddy<span class="w">
 </span><span class="w">          </span>config<span class="p">:</span><span class="w">
-</span><span class="w">            </span>apiID<span class="p">:</span><span class="w"> </span><span class="m">123438</span><span class="w">  </span><span class="c">#DNSPOD 的 apiID，注意替换</span><span class="w">
-</span><span class="w">            </span>apiTokenSecretRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>api-token<span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>dnspod-credentials</code></pre></td></tr></table>
+</span><span class="w">            </span>authApiKey<span class="p">:</span><span class="w"> </span>e4hN4QrFgzdo_RHXe1ef2qpBPmiJPD2ZUcW<span class="w">
+</span><span class="w">            </span>authApiSecret<span class="p">:</span><span class="w"> </span>XXXXXXXX<span class="w">
+</span><span class="w">            </span>production<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">            </span>ttl<span class="p">:</span><span class="w"> </span><span class="m">600</span></code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="修改rancher-chart源码">修改Rancher Chart源码</h1>
 
-<p>查看Rancher Chart：</p>
+<p>查看 Rancher Chart：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ helm search rancher
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+
+$ helm search rancher
 NAME                  	CHART VERSION	APP VERSION	DESCRIPTION
 rancher-stable/rancher	<span class="m">2</span>.3.2        	v2.3.2     	Install Rancher Server to manage Kubernetes clusters acro...</code></pre></td></tr></table>
 </div>
@@ -519,13 +525,13 @@ spec:
 </span><span class="s">      - &#39;rancher.javachen.space&#39;
 </span><span class="s">    dns01:
 </span><span class="s">      webhook:
-</span><span class="s">        groupName: acme.javachen.space
-</span><span class="s">        solverName: dnspod
+</span><span class="s">        groupName: acme.javachen.space 
+</span><span class="s">        solverName: godaddy
 </span><span class="s">        config:
-</span><span class="s">          apiID: 123438  #DNSPOD 的 apiID，注意替换
-</span><span class="s">          apiTokenSecretRef:
-</span><span class="s">            key: api-token
-</span><span class="s">            name: dnspod-credentials 
+</span><span class="s">          authApiKey: e4hN4QrFgzdo_RHXe1ef2qpBPmiJPD2ZUcW
+</span><span class="s">          authApiSecret: QsHuDdnnCbzp5DmEQzq4ts
+</span><span class="s">          production: true
+</span><span class="s">          ttl: 600
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -536,7 +542,7 @@ spec:
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name rancher --namespace cattle-system <span class="se">\
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher --namespace cattle-system <span class="se">\
 </span><span class="se"></span>	./rancher --version v2.3.2 -f rancher-values.yaml</code></pre></td></tr></table>
 </div>
 </div>
@@ -563,9 +569,9 @@ spec:
 <td class="lntd">
 <pre class="chroma">kubectl describe certificate tls-rancher-ingress -n cattle-system
 
-kubectl describe order tls-rancher-ingress-3789524060 -n cattle-system
+kubectl describe order tls-rancher-ingress-393619793 -n cattle-system
 
-kubectl describe Challenge tls-rancher-ingress-3789524060-0 -n cattle-system</pre></td></tr></table>
+kubectl describe Challenge tls-rancher-ingress-393619793-0 -n cattle-system</pre></td></tr></table>
 </div>
 </div>
 <p>当tls-rancher-ingress状态为true时候，证书就创建成功了。</p>
@@ -576,7 +582,7 @@ kubectl describe Challenge tls-rancher-ingress-3789524060-0 -n cattle-system</pr
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate tls-rancher-ingress -n cattle-system
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get certificate tls-rancher-ingress -n cattle-system
 NAME                  READY   SECRET                AGE
 tls-rancher-ingress   True    tls-rancher-ingress   35m</code></pre></td></tr></table>
 </div>
@@ -596,7 +602,60 @@ tls-rancher-ingress   True    tls-rancher-ingress   35m</code></pre></td></tr></
 kubectl -n cattle-system get deploy rancher</pre></td></tr></table>
 </div>
 </div>
-<h1 id="卸载">卸载</h1>
+<h1 id="浏览器访问">浏览器访问</h1>
+
+<p>先在本地配置hosts：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 rancher.javachen.space</code></pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问 <a href="https://rancher.javachen.space/">https://rancher.javachen.space/</a></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g987c68rlwj30z20kojt0.jpg" alt="image-20191123193359459" /></p>
+
+<h1 id="卸载重装">卸载重装</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm del --purge rancher
+
+kubectl delete pod,service,deploy,ingress,secret,pvc,replicaset,daemonset --all -n cattle-system
+
+kubectl delete ServiceAccount,ClusterRoleBinding,Role rancher -n cattle-system</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="升级版本">升级版本</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用rancher-stable镜像仓库</span>
+helm upgrade rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span> --version v2.3.2 <span class="se">\
+</span><span class="se"></span> --namespace cattle-system <span class="se">\
+</span><span class="se"></span> --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space</code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>通过<code>--version</code>指定升级版本，<code>镜像tag</code>不需要指定，会自动根据chart版本获取。</p>
+</blockquote>
+
+<p>查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -604,14 +663,14 @@ kubectl -n cattle-system get deploy rancher</pre></td></tr></table>
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm del --purge rancher
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n cattle-system rollout status deploy/rancher
 
-kubectl delete -n cattle-system secret tls-rancher tls-rancher-ingress</code></pre></td></tr></table>
+kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="总结">总结</h1>
 
-<p>我将修改后的rancher chart源代码提交到了 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> ，</p>
+<p>我将修改后的rancher chart源代码提交到了 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> ，欢迎提意见。</p>
 
     </div>
 
