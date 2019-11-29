@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/08/10/tengine-lua-graphicsMagick-resize-picture/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片" />
+<meta property="og:description" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/08/10/tengine-lua-graphicsMagick-resize-picture/" />
+<meta property="article:published_time" content="2019-08-10T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-08-10T08:00:00+08:00" />
+<meta itemprop="name" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片">
+<meta itemprop="description" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片">
+
+
+<meta itemprop="datePublished" content="2019-08-10T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-08-10T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1193">
+
+
+
+<meta itemprop="keywords" content="tengine,lua," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片"/>
+<meta name="twitter:description" content="Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Tengine&#43;Lua&#43;GraphicsMagick动态裁剪图片</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-08-10 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 1193 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#软件列表">软件列表</a></li>
+<li><a href="#安装lua">安装Lua</a></li>
+<li><a href="#安装luajit">安装luaJIT</a></li>
+<li><a href="#安装tengine">安装tengine</a></li>
+<li><a href="#安装graphicsmagick">安装GraphicsMagick</a></li>
+<li><a href="#配置">配置</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="软件列表">软件列表</h1>
+
+<ul>
+<li>Tengine：<a href="https://github.com/alibaba/tengine">https://github.com/alibaba/tengine</a></li>
+<li>Lua：<a href="http://www.lua.org/ftp/">http://www.lua.org/ftp/</a> ，这里使用 lua-5.3.1.tar.gz</li>
+<li>LuaJIT：<a href="http://luajit.org/download.html">http://luajit.org/download.html</a> ，这里使用 LuaJIT-2.0.4.tar.gz</li>
+<li>GraphicdMagick：<a href="https://sourceforge.net/projects/graphicsmagick/files/graphicsmagick/">https://sourceforge.net/projects/graphicsmagick/files/graphicsmagick/</a> ，这里使用 GraphicsMagick-1.3.18.tar.gz</li>
+</ul>
+
+<h1 id="安装lua">安装Lua</h1>
+
+<p>先安装依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install readline readline-devel -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>解压文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">tar -zxvf lua-5.3.1.tar.gz</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入目录，执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> lua-5.3.1
+make linux <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+</div>
+</div>
+<p>验证安装成功:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">lua -v</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装luajit">安装luaJIT</h1>
+
+<p>解压文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">tar -zxvf LuaJIT-2.0.4.tar.gz</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入目录，执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> LuaJIT-2.0.4
+make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装tengine">安装tengine</h1>
+
+<p>安装依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum -y install pcre-devel openssl openssl-devel</code></pre></td></tr></table>
+</div>
+</div>
+<p>解压文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">unzip tengine-master.zip</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入目录，执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> tengine-master
+
+./configure --prefix<span class="o">=</span>/usr/local/Tengine --dso-path<span class="o">=</span>/usr/local/Tengine/modules --with-http_realip_module --with-http_gzip_static_module <span class="se">\
+</span><span class="se"></span>--with-http_stub_status_module --with-http_concat_module <span class="se">\
+</span><span class="se"></span>--with-http_lua_module  --http-proxy-temp-path<span class="o">=</span>/var/tmp/Tengine/proxy_temp <span class="se">\
+</span><span class="se"></span>--http-fastcgi-temp-path<span class="o">=</span>/var/tmp/Tengine/fastcgi_temp <span class="se">\
+</span><span class="se"></span>--http-uwsgi-temp-path<span class="o">=</span>/var/tmp/Tengine/uwsgi_temp <span class="se">\
+</span><span class="se"></span>--http-scgi-temp-path<span class="o">=</span>/var/tmp/Tengine/cgi_temp <span class="se">\
+</span><span class="se"></span>--http-client-body-temp-path<span class="o">=</span>/var/tmp/Tengine/client_body_temp <span class="se">\
+</span><span class="se"></span>--http-log-path<span class="o">=</span>/var/log/Tengine/access.log <span class="se">\
+</span><span class="se"></span>--error-log-path<span class="o">=</span>/var/log/Tengine/error.log</code></pre></td></tr></table>
+</div>
+</div>
+<p>再执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+</div>
+</div>
+<p>验证安装成功:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ /usr/local/Tengine/sbin/nginx
+/usr/local/Tengine/sbin/nginx: error <span class="k">while</span> loading shared libraries: 
+libluajit-5.1.so.2: cannot open shared object file: No such file or directory</code></pre></td></tr></table>
+</div>
+</div>
+<p>提示找不到文件，配置一个软连接：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ln -s /usr/local/lib/libluajit-5.1.so.2</code></pre></td></tr></table>
+</div>
+</div>
+<p>验证安装成功:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ /usr/local/Tengine/sbin/nginx
+nginx: <span class="o">[</span>emerg<span class="o">]</span> mkdir<span class="o">()</span> <span class="s2">&#34;/var/tmp/Tengine/client_body_temp&#34;</span> failed <span class="o">(</span><span class="m">2</span>: No such file or directory<span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>手动创建该目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">mkdir -p /var/tmp/Tengine/client_body_temp</pre></td></tr></table>
+</div>
+</div>
+<p>然后，访问 <a href="http://192.168.56.100/">http://192.168.56.100/</a> ，可以看到：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">Welcome to tengine!</pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装graphicsmagick">安装GraphicsMagick</h1>
+
+<p>安装依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install libjpeg libjpeg-devel libpng libpng-devel giflib giflib-devel freetype freetype-devel -y</pre></td></tr></table>
+</div>
+</div>
+<p>解压文件</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">tar -zxvf GraphicsMagick-1.3.18.tar.gz</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入目录，执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> GraphicsMagick-1.3.18
+./configure --prefix<span class="o">=</span>/usr/local/GraphicsMagick --enable-shared</code></pre></td></tr></table>
+</div>
+</div>
+<p>再编译安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">make &amp;&amp; make install</pre></td></tr></table>
+</div>
+</div>
+<p>验证安装成功:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/usr/local/GraphicsMagick/bin/gm version</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="配置">配置</h1>
+
+<p>创建 ImageResizer.lua 文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">mkdir /usr/local/Tengine/lua/
+touch /usr/local/Tengine/lua/ImageResizer.lua</pre></td></tr></table>
+</div>
+</div>
+<p>ImageResizer.lua：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-lua" data-lang="lua"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-lua" data-lang="lua"><span class="kd">local</span> <span class="n">command</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/GraphicsMagick/bin/gm convert &#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">request_filepath</span> <span class="err">\</span>
+<span class="o">..</span> <span class="s2">&#34; -resize &#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">width</span> <span class="o">..</span> <span class="s2">&#34;x&#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">height</span> <span class="o">..</span> <span class="err">\</span>
+<span class="s2">&#34; +profile </span><span class="se">\&#34;</span><span class="s2">*</span><span class="se">\&#34;</span><span class="s2"> &#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">request_filepath</span> <span class="o">..</span> <span class="s2">&#34;_&#34;</span> <span class="err">\</span>
+<span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">width</span> <span class="o">..</span> <span class="s2">&#34;x&#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">height</span> <span class="o">..</span> <span class="s2">&#34;.&#34;</span> <span class="o">..</span> <span class="n">ngx.var</span><span class="p">.</span><span class="n">ext</span><span class="p">;</span>
+
+<span class="n">os.execute</span><span class="p">(</span><span class="n">command</span><span class="p">);</span>
+
+<span class="n">ngx.exec</span><span class="p">(</span><span class="n">ngx.var</span><span class="p">.</span><span class="n">request_uri</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 /usr/local/Tengine/conf/nginx.conf：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">user  root;  # 裁剪图片需要root权限
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    server {
+        listen       80;
+        server_name  img.javachen.space;
+        root /data/image/upload;
+
+        location / {
+             root /data/image/upload; # 站点根目录
+             expires 1h;    # 缓存时间
+             add_header Cache-Control max-age=3600; # 缓存时间
+             access_log   /var/log/Tengine/host_access.log;
+        }
+
+        #如果 url 格式如：xxxx.gif_数字x数字.gif
+        location ~* ^(.+\.(jpg|jpeg|gif|png))_(\d+)x(\d+)\.(jpg|jpeg|gif|png)$ {
+           root /data/image/upload;    
+           if (!-f $request_filename) { #如果文件不存在时才需要裁剪
+              #此HTTP Header无实际意义，用于测试
+              add_header X-Powered-By &#39;Lua GraphicsMagick&#39;;  
+              #此 HTTP Header无实际意义，用于测试
+              add_header file-path $request_filename;  
+
+              #在编写外部 Lua脚本时，设置为off Nginx不会缓存 
+              lua_code_cache on;  Lua，方便调试
+              #设置原始图片路径，如：/document_root/1.gif
+              set $request_filepath /data/image/upload$1;  
+              set $width $3;     # 设置裁剪/缩放的宽度
+              set $height $4;    # 设置裁剪/缩放的高度
+              set $ext $5;      # 图片文件格式后缀
+
+              #加载外部 Lua 文件
+              content_by_lua_file /usr/local/Tengine/lua/ImageResizer.lua;  
+            }
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+}</pre></td></tr></table>
+</div>
+</div>
+<p>重新加载配置文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/usr/local/Tengine/sbin/nginx -s reload</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建图片上传目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">mkdir -p  /data/image/upload</pre></td></tr></table>
+</div>
+</div>
+<p>配置hosts：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">192.168.56.100  img.javachen.space</pre></td></tr></table>
+</div>
+</div>
+<p>在 /data/image/upload 下存放一个图片 1.png，然后访问：<a href="http://192.168.56.100/1.png">http://192.168.56.100/1.png</a> ，再访问缩放图片：<a href="http://192.168.56.100/1.png_245x245.png">http://192.168.56.100/1.png_245x245.png</a></p>
+
+<p>查看 /data/image/upload 目录是否有生成新的文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ll /data/image/upload/
+<span class="m">1</span>.png  <span class="m">1</span>.png_145x145.png  <span class="m">1</span>.png_245x245.png  <span class="m">1</span>.png_45x45.png</code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-08-10
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/tengine/">tengine</a>
+          <a href="/tags/lua/">lua</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/08/11/install-redis-cluster-with-docker-compose/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Docker Compose安装Redis集群</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/08/04/docker-with-vagrant/">
+            <span class="next-text nav-default">Vagrant搭建Docker开发环境</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

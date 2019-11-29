@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用Helm安装Rancher HA集群 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录是由Helm来安装Rancher的过程。Rancher是一个企业级多集群Kubernetes管理平台；用户可以在Rancher上" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/11/03/install-rancher-ha-with-helm/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用Helm安装Rancher HA集群" />
+<meta property="og:description" content="本文主要记录是由Helm来安装Rancher的过程。Rancher是一个企业级多集群Kubernetes管理平台；用户可以在Rancher上" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/11/03/install-rancher-ha-with-helm/" />
+<meta property="article:published_time" content="2019-11-03T23:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-03T23:00:00+08:00" />
+<meta itemprop="name" content="使用Helm安装Rancher HA集群">
+<meta itemprop="description" content="本文主要记录是由Helm来安装Rancher的过程。Rancher是一个企业级多集群Kubernetes管理平台；用户可以在Rancher上">
+
+
+<meta itemprop="datePublished" content="2019-11-03T23:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-03T23:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="4706">
+
+
+
+<meta itemprop="keywords" content="kubernetes,helm,rancher," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用Helm安装Rancher HA集群"/>
+<meta name="twitter:description" content="本文主要记录是由Helm来安装Rancher的过程。Rancher是一个企业级多集群Kubernetes管理平台；用户可以在Rancher上"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用Helm安装Rancher HA集群</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-03 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 4706 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#集群规划">集群规划</a></li>
+<li><a href="#添加chart仓库地址">添加Chart仓库地址</a></li>
+<li><a href="#ssl证书配置">SSL证书配置</a>
+<ul>
+<li><a href="#安装cert-manager">安装cert-manager</a></li>
+<li><a href="#使用rancher生成证书">使用Rancher生成证书</a></li>
+<li><a href="#lets-encrypt生成证书">Lets Encrypt生成证书</a></li>
+<li><a href="#从文件生成证书">从文件生成证书</a>
+<ul>
+<li><a href="#使用权威证书安装">使用权威证书安装</a></li>
+<li><a href="#使用自签名证书安装">使用自签名证书安装</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#rancher-ha安装部署">Rancher HA安装部署</a>
+<ul>
+<li><a href="#四层代理与七层代理的区别">四层代理与七层代理的区别</a></li>
+<li><a href="#安装nginx">安装Nginx</a></li>
+<li><a href="#四层负载均衡部署">四层负载均衡部署</a>
+<ul>
+<li><a href="#配置nginx">配置Nginx</a></li>
+<li><a href="#安装rancher">安装Rancher</a></li>
+</ul></li>
+<li><a href="#七层负载均衡部署">七层负载均衡部署</a>
+<ul>
+<li><a href="#配置nginx-1">配置Nginx</a></li>
+<li><a href="#安装rancher-1">安装Rancher</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#查看状态">查看状态</a></li>
+<li><a href="#添加主机映射">添加主机映射</a></li>
+<li><a href="#卸载重装">卸载重装</a></li>
+<li><a href="#升级版本">升级版本</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要记录是由Helm来安装Rancher的过程。Rancher是一个企业级多集群Kubernetes管理平台；用户可以在Rancher上配置和管理公有云(如GKE、EKS、AKS、阿里云、华为云等)上托管的Kubernetes服务，亦可向Rancher中导入已有集群。</p>
+
+<blockquote>
+<p>注意：</p>
+
+<p>Rancher HA安装属于高级安装，部署前先了解以下基本技能：</p>
+
+<ol>
+<li>了解域名与DNS解析基本概念</li>
+<li>了解http七层代理和tcp四层代理基本概念</li>
+<li>了解反向代理的基本原理</li>
+<li>了解SSL证书与域名的关系</li>
+<li>了解Helm的安装使用</li>
+<li>了解kubectl的使用</li>
+<li>熟悉Linux基本操作命令</li>
+<li>熟悉Docker基本操作命令</li>
+</ol>
+</blockquote>
+
+<h1 id="集群规划">集群规划</h1>
+
+<p>k8s集群各个组件版本：</p>
+
+<table>
+<thead>
+<tr>
+<th>软件</th>
+<th>版本</th>
+<th>说明</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>OS</td>
+<td>CentOS Linux release 7.7.1908</td>
+<td>linux内核为4.4</td>
+</tr>
+
+<tr>
+<td>RKE</td>
+<td>v0.3.2</td>
+<td></td>
+</tr>
+
+<tr>
+<td>Docker</td>
+<td>v19.03.4</td>
+<td></td>
+</tr>
+
+<tr>
+<td>Kubernetes</td>
+<td>v1.16.2</td>
+<td></td>
+</tr>
+
+<tr>
+<td>Helm</td>
+<td>v3.0.0</td>
+<td></td>
+</tr>
+
+<tr>
+<td>Ceph</td>
+<td>v14.2.4</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>集群规划：</p>
+
+<table>
+<thead>
+<tr>
+<th>主机</th>
+<th>IP</th>
+<th>角色</th>
+<th>说明</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>k8s-rke-node001</td>
+<td>192.168.56.111</td>
+<td>rke、controlplane、etcd</td>
+<td>rke安装节点</td>
+</tr>
+
+<tr>
+<td>k8s-rke-node002</td>
+<td>192.168.56.112</td>
+<td>etcd、worker</td>
+<td></td>
+</tr>
+
+<tr>
+<td>k8s-rke-node003</td>
+<td>192.168.56.113</td>
+<td>etcd、worker</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>安装用户：chenzj，注意不是root用户，但具有sudo权限</li>
+<li>端口需求：<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/requirements">https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/requirements</a></li>
+<li><strong>以下所有命令在 k8s-rke-node001节点操作。</strong></li>
+</ul>
+
+<p>参考文章：<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/installation/ha-install/rke-ha-install/tcp-l4/">https://www.rancher.cn/docs/rancher/v2.x/cn/installation/ha-install/rke-ha-install/tcp-l4/</a></p>
+
+<h1 id="添加chart仓库地址">添加Chart仓库地址</h1>
+
+<p>chart对应的源码地址：<a href="https://github.com/rancher/rancher/tree/master/chart">https://github.com/rancher/rancher/tree/master/chart</a></p>
+
+<p>添加仓库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">helm repo add rancher-stable https://releases.rancher.com/server-charts/stable</pre></td></tr></table>
+</div>
+</div>
+<p>检查rancher chart仓库可用</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">helm search rancher</pre></td></tr></table>
+</div>
+</div>
+<h1 id="ssl证书配置">SSL证书配置</h1>
+
+<p>Rancher Server设计默认需要开启SSL/TLS配置来保证安全，将ssl证书以Kubernetes Secret卷的形式传递给Rancher Server或Ingress Controller。首先创建证书密文，以便Rancher和Ingress Controller可以使用。</p>
+
+<p>根据ingress.tls.source的值，默认有三种方式 ：</p>
+
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>CHART参数</th>
+<th>描述</th>
+<th>是否需要CERT-MANAGER</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><a href="https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/#rancher-generated-certificates">Rancher Generated Certificates</a></td>
+<td><code>rancher</code></td>
+<td>默认值，使用Rancher自签名的证书</td>
+<td>是</td>
+</tr>
+
+<tr>
+<td><a href="https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/#let-s-encrypt">Let’s Encrypt</a></td>
+<td><code>letsEncrypt</code></td>
+<td>使用 <a href="https://letsencrypt.org/">Let’s Encrypt</a> 签名证书</td>
+<td>是</td>
+</tr>
+
+<tr>
+<td><a href="https://rancher.com/docs/rancher/v2.x/en/installation/ha/helm-rancher/#certificates-from-files">Certificates from Files</a></td>
+<td><code>secret</code></td>
+<td>私有自己签名的证书</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+
+<p>建议使用<code>letsEncrypt</code>方式安装证书，详细内容请参考 <a href="/2019/11/07/rancher-tls-with-letsencrypt-dns01/">Rancher使用letsEncrypt生成证书并做DNS01校验</a></p>
+
+<h2 id="安装cert-manager">安装cert-manager</h2>
+
+<p>使用kubectl安装</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cert-manager
+
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="使用rancher生成证书">使用Rancher生成证书</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space</code></pre></td></tr></table>
+</div>
+</div>
+<p>默认，tls=ingress，当ingress.tls.source=rancher，就会创建一个CA类型的Issuer，一个Secret tls-rancher。</p>
+
+<h2 id="lets-encrypt生成证书">Lets Encrypt生成证书</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\
+</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>letsEncrypt <span class="se">\
+</span><span class="se"></span>  --set letsEncrypt.email<span class="o">=</span>junecloud@163.com</code></pre></td></tr></table>
+</div>
+</div>
+<p>默认，tls=ingress，当ingress.tls.source=letsEncrypt，就会创建一个ACME类型的Issuer，并且采用http-01校验。</p>
+
+<h2 id="从文件生成证书">从文件生成证书</h2>
+
+<h3 id="使用权威证书安装">使用权威证书安装</h3>
+
+<p>1、获取权威证书：</p>
+
+<ul>
+<li>购买付费的</li>
+<li>在云服务商创建的免费的证书，数量有限，不支持泛域名</li>
+<li>使用 Let’s Encrypt 创建证书，可以使用 <a href="https://github.com/Neilpang/acme.sh/wiki/dns-manual-mode">acme.sh 脚本</a> 。</li>
+</ul>
+
+<p>得到证书之后，将服务证书和 CA 中间证书链合并到 tls.crt，将私钥复制到或者重命名为 tls.key；在证书所在目录执行下面命令，以acme.sh生成的证书为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> ~/.acme.sh/javachen.space
+
+<span class="c1">#将服务证书和 CA 中间证书链合并到 tls.crt</span>
+cp fullchain.cer tls.crt
+
+<span class="c1">#将私钥复制到或者重命名为 tls.key</span>
+cp javachen.space.key tls.key
+
+<span class="c1">#验证证书</span> 
+openssl verify -CAfile ca.cer tls.crt  
+
+openssl x509 -in  javachen.space.cer -noout -text
+openssl x509 -in  ca.cer -noout -text
+<span class="c1">#不加CA证书验证</span>
+openssl s_client -connect rancher.javachen.space:443 -servername rancher.javachen.space
+
+<span class="c1">#加CA证书验证</span>
+openssl s_client -connect rancher.javachen.space:443 -servername rancher.javachen.space -CAfile fullchain.cer</code></pre></td></tr></table>
+</div>
+</div>
+<p>2、使用<code>kubectl</code>创建<code>tls</code>类型的<code>secrets</code>；</p>
+
+<blockquote>
+<p>注意：证书、私钥名称必须是tls.crt、tls.key。</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cattle-system
+
+kubectl -n cattle-system create <span class="se">\
+</span><span class="se"></span>    secret tls tls-rancher-ingress <span class="se">\
+</span><span class="se"></span>    --cert<span class="o">=</span>./tls.crt <span class="se">\
+</span><span class="se"></span>    --key<span class="o">=</span>./tls.key
+
+<span class="c1">#如果这个证书有ca，同样需要为ca创建secret</span>
+kubectl -n cattle-system create secret generic tls-ca --from-file<span class="o">=</span>ca.cer</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、安装rancher</p>
+
+<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install  rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\
+</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret </code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="使用自签名证书安装">使用自签名证书安装</h3>
+
+<p>1、如果没有自签名ssl证书，可以参考 <a href="https://www.yuque.com/javachen/micoservice/mtfme4">https://www.yuque.com/javachen/micoservice/mtfme4</a> ，一键生成ssl证书；</p>
+
+<p>2、一键生成ssl自签名证书脚本将自动生成tls.crt、tls.key、cacerts.pem三个文件，文件名称不能修改。如果使用您自己生成的自签名ssl证书，则需要将服务证书和CA中间证书链合并到tls.crt文件中,将私钥复制到或者重命名为tls.key文件，将CA证书复制到或者重命名为cacerts.pem。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cp server.pem tls.crt
+cp server-key.pem tls.key
+cp ca.pem cacerts.pem</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、使用kubectl在命名空间cattle-system中创建tls-ca和tls-rancher-ingress两个secret</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建命名空间</span>
+kubectl  create namespace cattle-system
+<span class="c1"># 服务证书和私钥密文</span>
+kubectl -n cattle-system create secret tls tls-rancher-ingress --cert<span class="o">=</span>./tls.crt --key<span class="o">=</span>./tls.key
+<span class="c1"># ca证书密文</span>
+kubectl -n cattle-system create secret generic tls-ca --from-file<span class="o">=</span>cacerts.pem</code></pre></td></tr></table>
+</div>
+</div>
+<p>4、安装rancher</p>
+
+<p>创建证书对应的域名需要与hostname选项匹配，否则ingress将无法代理访问Rancher</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --version v2.3.2  <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\
+</span><span class="se"></span>  --set ingress.tls.source<span class="o">=</span>secret <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">privateCA</span><span class="o">=</span><span class="nb">true</span> </code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li><p>ingress.tls.source 默认值为rancher，还可以为secret 、<code>letsEncrypt</code></p></li>
+
+<li><p>privateCA=true 设置使用私有证书</p></li>
+</ul>
+
+<h1 id="rancher-ha安装部署">Rancher HA安装部署</h1>
+
+<h2 id="四层代理与七层代理的区别">四层代理与七层代理的区别</h2>
+
+<table>
+<thead>
+<tr>
+<th>OSI中的层</th>
+<th>功能</th>
+<th>TCP/IP协议族</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>应用层</td>
+<td>文件传输，电子邮件，文件服务，虚拟终端</td>
+<td>例如：TFTP、HTTP、HTTPS、SNMP、FTP、SMTP、DNS、RIP、Telnet、SIP、SSH、NFS、RTSP、XMPP、Whois、ENRP</td>
+</tr>
+
+<tr>
+<td>表示层</td>
+<td>数据格式化，代码转换，数据加密</td>
+<td>例如：ASCII、ASN.1、JPEG、MPEG</td>
+</tr>
+
+<tr>
+<td>会话层</td>
+<td>解除或建立与别的接点的联系</td>
+<td>例如：ASAP、TLS、SSH、ISO 8327 / CCITT X.225、RPC、NetBIOS、ASP、Winsock、BSD sockets</td>
+</tr>
+
+<tr>
+<td>传输层</td>
+<td>位<strong>数据段</strong>提供端对端的接口</td>
+<td>例如：TCP，UDP，SPX</td>
+</tr>
+
+<tr>
+<td>网络层</td>
+<td>为<strong>数据包</strong>选择路由，拥塞控制、网际互连</td>
+<td>例如：IP，ICMP，OSPF，BGP，IGMP，ARP，RARP，IPX、RIP、OSPF</td>
+</tr>
+
+<tr>
+<td>数据链路层</td>
+<td>传输有地址的<strong>帧</strong>以及错误检测功能</td>
+<td>例如：SLIP，CSLIP，PPP，MTU，ARP，RARP，SDLC、HDLC、PPP、STP、帧中继</td>
+</tr>
+
+<tr>
+<td>物理层</td>
+<td>以<strong>二进制</strong>数据形式在物理媒体上传输数据</td>
+<td>例如：ISO2110，IEEE802，IEEE802.2，EIA/TIA RS-232、EIA/TIA RS-449、V.35、RJ-45</td>
+</tr>
+</tbody>
+</table>
+
+<p>如图，平时我们说的4层和7层其实就是OSI网络模型中的第四层和第七层。4层代理中主要是TCP协议代理，TCP代理主要基于IP+端口来通信。7层代理中主要是http协议, http协议主要基于URL来通信。</p>
+
+<h2 id="安装nginx">安装Nginx</h2>
+
+<p>这里选择在master节点上安装nginx。</p>
+
+<p>添加nginx源 /etc/yum.repos.d/nginx.repo</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/7/$basearch/
+gpgcheck=0
+enabled=1</pre></td></tr></table>
+</div>
+</div>
+<p>安装nginx</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo yum install nginx-mod-stream.x86_64 nginx.x86_64 -y</pre></td></tr></table>
+</div>
+</div>
+<h2 id="四层负载均衡部署">四层负载均衡部署</h2>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ls3rnky4j30yc0elwgf.jpg" alt="image.png" /></p>
+
+<p>我们将使用NGINX作为第4层负载均衡器(TCP)，NGINX会将所有连接转发到您的Rancher节点之一。</p>
+
+<p>本方案中，所有的流量都通过外部负载均衡转发到后端ingress服务上。因为外部负载均衡为四层TCP模式，无法设置域名转发，所以需要把域名转发的功能设置在后端的ingress服务上，让ingress作为ssl终止后，ingress到后端的Rancher Server将采用非加密的http模式。此方案中，Rancher Server无法与外部直接通信，需通过ingress代理进入。因为ingress采用了ssl加密，所以此部署架构的安全性相对较高，但多次转发也将会导致网络性能减弱。</p>
+
+<h3 id="配置nginx">配置Nginx</h3>
+
+<p>1、选一台不是集群的机器，安装nginx</p>
+
+<p>2、创建配置文件/etc/nginx/nginx.conf</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">user  nginx;
+worker_processes 4;
+worker_rlimit_nofile 40000;
+
+events {
+    worker_connections 8192;
+}
+
+stream {
+    upstream rancher_servers_http {
+        least_conn;
+        server 192.168.56.111:80 max_fails=3 fail_timeout=5s;
+        server 192.168.56.121:80 max_fails=3 fail_timeout=5s;
+        server 192.168.56.113:80 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen     80;
+        proxy_pass rancher_servers_http;
+    }
+
+    upstream rancher_servers_https {
+        least_conn;
+				server 192.168.56.111:443 max_fails=3 fail_timeout=5s;
+        server 192.168.56.112:443 max_fails=3 fail_timeout=5s;
+        server 192.168.56.113:443 max_fails=3 fail_timeout=5s;
+    }
+    server {
+        listen     443;
+        proxy_pass rancher_servers_https;
+    }
+}</pre></td></tr></table>
+</div>
+</div>
+<p>3、重新加载nginx</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">nginx -s reload</pre></td></tr></table>
+</div>
+</div>
+<p>4、将域名解析到nginx机器IP，然后浏览器访问 <a href="https://rancher.javachen.space">https://rancher.javachen.space</a> 即可访问管理平台，稍等片刻就好了。</p>
+
+<h3 id="安装rancher">安装Rancher</h3>
+
+<p>主要是设置使用外部的负载均衡：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\ </span> 
+	--name rancher <span class="se">\ </span> 
+	--version v2.3.2  <span class="se">\ </span> 
+	--namespace cattle-system <span class="se">\ </span> 
+	--set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\ </span> 
+	--set <span class="nv">tls</span><span class="o">=</span>external<span class="se">\ </span> 
+	--set <span class="nv">privateCA</span><span class="o">=</span>true</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="七层负载均衡部署">七层负载均衡部署</h2>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ls3vv8jcj30yc0elmyy.jpg" alt="image.png" /></p>
+
+<p>默认情况下，rancher容器会将80端口上的请求重定向到443端口上。如果Rancher Server通过负载均衡器来代理，这个时候请求是通过负载均衡器发送给Rancher Server，而并非客户端直接访问Rancher Server。在非全局<code>https</code>的环境中，如果以外部负载均衡器作为ssl终止，这个时候通过负载均衡器的<code>https</code>请求将需要被反向代理到Rancher Server http(80)上。在负载均衡器上配置<code>X-Forwarded-Proto: https</code>参数，Rancher Server http(80)上收到负载均衡器的请求后，就不会再重定向到https(443)上。</p>
+
+<h3 id="配置nginx-1">配置Nginx</h3>
+
+<p>负载均衡器或代理必须支持以下参数:</p>
+
+<ul>
+<li><strong>WebSocket</strong> 连接</li>
+<li><strong>SPDY</strong>/<strong>HTTP/2</strong>协议</li>
+<li>传递/设置以下headers:</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Value</th>
+<th>描述</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>Host</code></td>
+<td>传递给Rancher的主机名</td>
+<td>识别客户端请求的主机名。</td>
+</tr>
+
+<tr>
+<td><code>X-Forwarded-Proto</code></td>
+<td><code>https</code></td>
+<td>识别客户端用于连接负载均衡器的协议。<strong>注意：</strong>如果存在此标头，<code>rancher/rancher</code>不会将HTTP重定向到HTTPS。</td>
+</tr>
+
+<tr>
+<td><code>X-Forwarded-Port</code></td>
+<td>Port used to reach Rancher.</td>
+<td>识别客户端用于连接负载均衡器的端口。</td>
+</tr>
+
+<tr>
+<td><code>X-Forwarded-For</code></td>
+<td>IP of the client connection.</td>
+<td>识别客户端的原始IP地址</td>
+</tr>
+</tbody>
+</table>
+
+<p>nginx配置示例</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">worker_processes 4;
+worker_rlimit_nofile 40000;
+events {
+    worker_connections 8192;
+}
+http {
+    upstream rancher {
+        server 192.168.56.111:80;
+        server 192.168.56.112:80;
+        server 192.168.56.113:80;
+    }
+    map $http_upgrade $connection_upgrade {
+        default Upgrade;
+        &#39;&#39;      close;
+    }
+    server {
+        listen 443 ssl http2; # 如果是升级或者全新安装v2.2.2,需要禁止http2，其他版本不需修改。
+        server_name rancher.javachen.space;
+        ssl_certificate &lt;更换证书&gt;;
+        ssl_certificate_key &lt;更换证书私钥&gt;;
+        location / {
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_pass http://rancher;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            # This allows the ability for the execute shell window to remain open for up to 15 minutes. 
+            ## Without this parameter, the default is 1 minute and will automatically close.
+            proxy_read_timeout 900s;
+            proxy_buffering off;
+        }
+    }
+    server {
+        listen 80;
+        server_name rancher.javachen.space;
+        return 301 https://$server_name$request_uri;
+    }
+}</pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>如果没有自己的ssl证书，可访问<a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/self-signed-ssl/">自签名ssl证书</a>一键生成自签名ssl证书。</p>
+
+<p>为了减少网络传输的数据量，可以在七层代理的<code>http</code>定义中添加<code>GZIP</code>功能。</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># Gzip Settings
+gzip on;
+gzip_disable &#34;msie6&#34;;
+gzip_disable &#34;MSIE [1-6]\.(?!.*SV1)&#34;;
+gzip_vary on;
+gzip_static on;
+gzip_proxied any;
+gzip_min_length 0;
+gzip_comp_level 8;
+gzip_buffers 16 8k;
+gzip_http_version 1.1;
+gzip_types
+  text/xml application/xml application/atom+xml application/rss+xml application/xhtml+xml image/svg+xml application/font-woff
+  text/javascript application/javascript application/x-javascript
+  text/x-json application/json application/x-web-app-manifest+json
+  text/css text/plain text/x-component
+  font/opentype application/x-font-ttf application/vnd.ms-fontobject font/woff2
+  image/x-icon image/png image/jpeg;</pre></td></tr></table>
+</div>
+</div>
+<h3 id="安装rancher-1">安装Rancher</h3>
+
+<p>主要是设置使用Ingress，默认 tls=ingress。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span>  --namespace cattle-system <span class="se">\
+</span><span class="se"></span>  --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\
+</span><span class="se"></span>  --set <span class="nv">tls</span><span class="o">=</span>ingress</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="查看状态">查看状态</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n cattle-system rollout status deploy/rancher
+
+kubectl -n cattle-system get deploy rancher
+
+kubectl get all -n cattle-system
+
+kubectl get secret,ingress -n cattle-system</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="添加主机映射">添加主机映射</h1>
+
+<p>由于我们通过hosts文件来添加映射，所以需要为Agent Pod添加主机别名(/etc/hosts)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n cattle-system patch deployments cattle-cluster-agent --patch <span class="s1">&#39;{
+</span><span class="s1"> &#34;spec&#34;: {
+</span><span class="s1">  &#34;template&#34;: {
+</span><span class="s1">  &#34;spec&#34;: {
+</span><span class="s1">       &#34;hostAliases&#34;: [
+</span><span class="s1">          {
+</span><span class="s1">            &#34;hostnames&#34;:[ &#34;rancher.javachen.space&#34;],
+</span><span class="s1">          	&#34;ip&#34;: &#34;192.168.56.111&#34;
+</span><span class="s1">          }
+</span><span class="s1">       ]
+</span><span class="s1">    }
+</span><span class="s1">   }
+</span><span class="s1">   }
+</span><span class="s1">}&#39;</span>
+
+kubectl -n cattle-system patch daemonsets cattle-node-agent --patch <span class="s1">&#39;{
+</span><span class="s1"> &#34;spec&#34;: {
+</span><span class="s1">  &#34;template&#34;: {
+</span><span class="s1">  &#34;spec&#34;: {
+</span><span class="s1">       &#34;hostAliases&#34;: [
+</span><span class="s1">          {
+</span><span class="s1">            &#34;hostnames&#34;:[ &#34;rancher.javachen.space&#34;],
+</span><span class="s1">          	&#34;ip&#34;: &#34;192.168.56.111&#34;
+</span><span class="s1">          }
+</span><span class="s1">      ]
+</span><span class="s1">    }
+</span><span class="s1">   }
+</span><span class="s1">   }
+</span><span class="s1">}&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：这里的192.168.56.111是下文中配置的负载均衡地址，也可以换成一个node的ip</p>
+</blockquote>
+
+<h1 id="卸载重装">卸载重装</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm del --purge cert-manager
+helm del --purge rancher
+
+kubectl delete pod,service,deploy,ingress,secret,pvc,replicaset,daemonset --all -n cattle-system
+
+kubectl delete ServiceAccount,ClusterRoleBinding,Role rancher -n cattle-system</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="升级版本">升级版本</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用rancher-stable镜像仓库</span>
+helm upgrade rancher rancher-stable/rancher <span class="se">\
+</span><span class="se"></span> --version v2.3.2 <span class="se">\
+</span><span class="se"></span> --namespace cattle-system <span class="se">\
+</span><span class="se"></span> --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space</code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>通过<code>--version</code>指定升级版本，<code>镜像tag</code>不需要指定，会自动根据chart版本获取。</p>
+</blockquote>
+
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n cattle-system rollout status deploy/rancher
+
+kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-03
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          <a href="/tags/helm/">helm</a>
+          <a href="/tags/rancher/">rancher</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/11/04/using-cert-manager-with-nginx-ingress/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用Cert Manager配置Let’s Encrypt证书</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/11/02/install-cert-manager/">
+            <span class="next-text nav-default">安装Cert Manager</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

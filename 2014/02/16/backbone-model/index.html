@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Backbone中的模型 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Backbone中的模型是所有Javascript应用程序的核心，包括交互数据及相关的大量逻辑： 转换、验证、计算属性和访问控制。你可以用特定的方法扩展Backbone.Model，模型也提供了一组基本的管理变化的功能。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/02/16/backbone-model/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Backbone中的模型" />
+<meta property="og:description" content="Backbone中的模型是所有Javascript应用程序的核心，包括交互数据及相关的大量逻辑： 转换、验证、计算属性和访问控制。你可以用特定的方法扩展Backbone.Model，模型也提供了一组基本的管理变化的功能。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/02/16/backbone-model/" />
+<meta property="article:published_time" content="2014-02-16T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-02-16T08:00:00+08:00" />
+<meta itemprop="name" content="Backbone中的模型">
+<meta itemprop="description" content="Backbone中的模型是所有Javascript应用程序的核心，包括交互数据及相关的大量逻辑： 转换、验证、计算属性和访问控制。你可以用特定的方法扩展Backbone.Model，模型也提供了一组基本的管理变化的功能。">
+
+
+<meta itemprop="datePublished" content="2014-02-16T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-02-16T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1873">
+
+
+
+<meta itemprop="keywords" content="backbone," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Backbone中的模型"/>
+<meta name="twitter:description" content="Backbone中的模型是所有Javascript应用程序的核心，包括交互数据及相关的大量逻辑： 转换、验证、计算属性和访问控制。你可以用特定的方法扩展Backbone.Model，模型也提供了一组基本的管理变化的功能。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Backbone中的模型</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-02-16 </span>
+        <div class="post-category">
+            <a href="/categories/web/"> web </a>
+            </div>
+          <span class="more-meta"> 约 1873 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#创建model">创建model</a></li>
+<li><a href="#设置属性">设置属性</a></li>
+<li><a href="#获取属性">获取属性</a></li>
+<li><a href="#设置model默认属性">设置model默认属性</a></li>
+<li><a href="#监听model的属性改变">监听model的属性改变</a></li>
+<li><a href="#和服务端交互">和服务端交互</a></li>
+<li><a href="#创建一个新model">创建一个新model</a></li>
+<li><a href="#获取一个model">获取一个model</a></li>
+<li><a href="#更新一个model">更新一个model</a></li>
+<li><a href="#删除一个model">删除一个model</a></li>
+<li><a href="#其他方法">其他方法</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="创建model">创建model</h1>
+
+<p>模型是所有Javascript应用程序的核心，包括交互数据及相关的大量逻辑： 转换、验证、计算属性和访问控制。你可以用特定的方法扩展<code>Backbone.Model</code>，模型也提供了一组基本的管理变化的功能。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="nx">Person</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Welcome to this world&#34;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p>new一个model的实例后就会触发initialize()函数。</p>
+
+<h1 id="设置属性">设置属性</h1>
+
+<p>现在我们想设置一些属性，有两种方式，可以在创建model实例时进行传参，也可以在实例生成后通过<code>model.set(obj)</code>来进行设置。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="nx">Person</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Welcome to this world&#34;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">});</span>
+<span class="c1">// or we can set afterwards, these operations are equivelent
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">();</span>
+<span class="nx">person</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">});</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="获取属性">获取属性</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="nx">Person</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Welcome to this world&#34;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">,</span> <span class="nx">child</span><span class="o">:</span> <span class="s1">&#39;Ryan&#39;</span><span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">age</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;age&#34;</span><span class="p">);</span> <span class="c1">// 67
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">name</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;name&#34;</span><span class="p">);</span> <span class="c1">// &#34;Thomas&#34;
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">child</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;child&#34;</span><span class="p">);</span> <span class="c1">// &#39;Ryan&#39;
+</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="设置model默认属性">设置model默认属性</h1>
+
+<p>有的时候你可能会想让model有默认属性值，只要在进行model声明的时候设置个<code>defaults</code>就行了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="nx">Person</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">defaults</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Fetus&#39;</span><span class="p">,</span>
+        <span class="nx">age</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nx">child</span><span class="o">:</span> <span class="s1">&#39;&#39;</span>
+    <span class="p">},</span>
+    <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Welcome to this world&#34;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">,</span> <span class="nx">child</span><span class="o">:</span> <span class="s1">&#39;Ryan&#39;</span><span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">age</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;age&#34;</span><span class="p">);</span> <span class="c1">// 67
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">name</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;name&#34;</span><span class="p">);</span> <span class="c1">// &#34;Thomas&#34;
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">child</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;child&#34;</span><span class="p">);</span> <span class="c1">// &#39;Ryan&#39;
+</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="监听model的属性改变">监听model的属性改变</h1>
+
+<p>我们可以通过<code>model.bind(event,callback)</code>方法来绑定change事件来监听属性改变。下面的这个例子就是在initialize方法中绑定了一个name属性改变的事件监听。
+如果person的name属性改变了，就会弹出个对话框显示新值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="nx">Person</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">defaults</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Fetus&#39;</span><span class="p">,</span>
+        <span class="nx">age</span><span class="o">:</span> <span class="mi">0</span>
+    <span class="p">},</span>
+    <span class="nx">initialize</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Welcome to this world&#34;</span><span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&#34;change:name&#34;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">model</span><span class="p">){</span>
+            <span class="kd">var</span> <span class="nx">name</span> <span class="o">=</span> <span class="nx">model</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&#34;name&#34;</span><span class="p">);</span> <span class="c1">// &#39;Stewie Griffin&#39;
+</span><span class="c1"></span>            <span class="nx">alert</span><span class="p">(</span><span class="s2">&#34;Changed my name to &#34;</span> <span class="o">+</span> <span class="nx">name</span> <span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">});</span>
+<span class="nx">person</span><span class="p">.</span><span class="nx">set</span><span class="p">({</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Stewie Griffin&#39;</span><span class="p">});</span> <span class="c1">// This triggers a change and will alert()
+</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="和服务端交互">和服务端交互</h1>
+
+<p>服务端实现一个RESTful的url例如/user，可以允许我们通过他与后台交互。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">UserModel</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">urlRoot</span><span class="o">:</span> <span class="s1">&#39;/user&#39;</span><span class="p">,</span>
+    <span class="nx">defaults</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;&#39;</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>model.urlRoot</code>:如果使用的集合外部的模型，通过指定 urlRoot 来设置生成基于模型 id 的 URLs 的默认 url 函数。 &ldquo;/[urlRoot]/id&rdquo;</p>
+
+<h1 id="创建一个新model">创建一个新model</h1>
+
+<p>如果id为null，则会提交一个POST请求到/user。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">UserModel</span> <span class="o">=</span> <span class="nx">Backbone</span><span class="p">.</span><span class="nx">Model</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+    <span class="nx">urlRoot</span><span class="o">:</span> <span class="s1">&#39;/user&#39;</span><span class="p">,</span>
+    <span class="nx">defaults</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;&#39;</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+<span class="kd">var</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Usermodel</span><span class="p">();</span>
+<span class="c1">// Notice that we haven&#39;t set an `id`
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">userDetails</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Thomas&#39;</span><span class="p">,</span>
+    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;thomasalwyndavis@gmail.com&#39;</span>
+<span class="p">};</span>
+<span class="c1">// Because we have not set a `id` the server will call
+</span><span class="c1">// POST /user with a payload of {name:&#39;Thomas&#39;, email: &#39;thomasalwyndavis@gmail.com&#39;}
+</span><span class="c1">// The server should save the data and return a response containing the new `id`
+</span><span class="c1"></span><span class="nx">user</span><span class="p">.</span><span class="nx">save</span><span class="p">(</span><span class="nx">userDetails</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>model.save([attributes], [options])</code>: 通过委托<code>Backbone.sync</code>保存模型到数据库（或可替代的持久层）。 attributes 散列表 (在 set) 应当包含想要改变的属性，不涉及的键不会被修改。 如果模型含有<code>validate</code>方法，并且验证失败，模型不会保存。 如果模型<code>isNew</code>, 保存将采用 &ldquo;create&rdquo; (HTTP POST) 方法, 如果模型已经在服务器存在，保存将采用 &ldquo;update&rdquo; (HTTP PUT) 方法.</p>
+
+<h1 id="获取一个model">获取一个model</h1>
+
+<p>初始化一个model实例并设置其id属性，并调用fetch方法，这样会请求<code>urlRoot + '/id'</code>地址到后台。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="c1">// Here we have set the `id` of the model
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Usermodel</span><span class="p">({</span><span class="nx">id</span><span class="o">:</span> <span class="mi">1</span><span class="p">});</span>
+
+<span class="c1">// The fetch below will perform GET /user/1
+</span><span class="c1">// The server should return the id, name and email from the database
+</span><span class="c1"></span><span class="nx">user</span><span class="p">.</span><span class="nx">fetch</span><span class="p">({</span>
+    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>model.fetch([options])</code>: 从服务器重置模型状态。这对模型尚未填充数据，或者服务器端已有最新状态的情况很有用处。 如果服务器端状态与当前属性不同，则触发<code>change</code>事件。 选项的散列表参数接受<code>success</code>和<code>error</code>回调函数， 回调函数中可以传入<code>(model,response)</code>作为参数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="c1">// 每隔 10 秒从服务器拉取数据以保持模型是最新的
+</span><span class="c1"></span><span class="nx">setInterval</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nx">user</span><span class="p">.</span><span class="nx">fetch</span><span class="p">();</span>
+<span class="p">},</span> <span class="mi">10000</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="更新一个model">更新一个model</h1>
+
+<p>当保存的model对象的id不为空时，则会提交一个PUT请求到urlRoot。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="c1">// Here we have set the `id` of the model
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Usermodel</span><span class="p">({</span>
+    <span class="nx">id</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Thomas&#39;</span><span class="p">,</span>
+    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;thomasalwyndavis@gmail.com&#39;</span>
+<span class="p">});</span>
+
+<span class="c1">// Let&#39;s change the name and update the server
+</span><span class="c1">// Because there is `id` present, Backbone.js will fire
+</span><span class="c1">// PUT /user/1 with a payload of `{name: &#39;Davis&#39;, email: &#39;thomasalwyndavis@gmail.com&#39;}`
+</span><span class="c1"></span><span class="nx">user</span><span class="p">.</span><span class="nx">save</span><span class="p">({</span><span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Davis&#39;</span><span class="p">},</span> <span class="p">{</span>
+    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">model</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="删除一个model">删除一个model</h1>
+
+<p>调用model的destroy方法时，则会提交请求到urlRoot+&ldquo;/id&rdquo;</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="c1">// Here we have set the `id` of the model
+</span><span class="c1"></span><span class="kd">var</span> <span class="nx">user</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Usermodel</span><span class="p">({</span>
+    <span class="nx">id</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;Thomas&#39;</span><span class="p">,</span>
+    <span class="nx">email</span><span class="o">:</span> <span class="s1">&#39;thomasalwyndavis@gmail.com&#39;</span>
+<span class="p">});</span>
+
+<span class="c1">// Because there is `id` present, Backbone.js will fire
+</span><span class="c1">// DELETE /user/1 
+</span><span class="c1"></span><span class="nx">user</span><span class="p">.</span><span class="nx">destroy</span><span class="p">({</span>
+    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Destroyed&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>model.destroy([options])</code>:通过委托<code>HTTP DELETE</code>请求到<code>Backbone.sync</code>销毁服务器上的模型. 接受<code>success</code>和<code>error</code>回调函数作为选项散列表参数。将在模型上触发<code>destroy</code>事件，该事件可以通过任意包含它的集合向上冒泡。</p>
+
+<h1 id="其他方法">其他方法</h1>
+
+<p>model还有一些其他的方法，可以参考api：<a href="http://www.csser.com/tools/backbone/backbone.js.html#manual/Model">Backbone.js API中文文档</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-javascript" data-lang="javascript"><span class="kd">var</span> <span class="nx">person</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Person</span><span class="p">({</span> <span class="nx">name</span><span class="o">:</span> <span class="s2">&#34;Thomas&#34;</span><span class="p">,</span> <span class="nx">age</span><span class="o">:</span> <span class="mi">67</span><span class="p">});</span>
+<span class="kd">var</span> <span class="nx">attributes</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">toJSON</span><span class="p">();</span> <span class="c1">// { name: &#34;Thomas&#34;, age: 67}
+</span><span class="c1"></span><span class="cm">/* This simply returns a copy of the current attributes. */</span>
+
+<span class="kd">var</span> <span class="nx">attributes</span> <span class="o">=</span> <span class="nx">person</span><span class="p">.</span><span class="nx">attributes</span><span class="p">;</span>
+<span class="cm">/* The line above gives a direct reference to the attributes and you should be careful when playing with it.   Best practise would suggest that you use .set() to edit attributes of a model to take advantage of backbone listeners. */</span>
+</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="http://backbonetutorials.com/what-is-a-model/">what-is-a-model</a></li>
+<li><a href="http://www.csser.com/tools/backbone/backbone.js.html">Backbone.js API中文文档</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-02-16
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/backbone/">backbone</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/02/21/install-confluence5-4-2/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Confluence 5.4.2安装</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/01/25/how-to-install-ganglia-on-centos6/">
+            <span class="next-text nav-default">在CentOs6系统上安装Ganglia</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

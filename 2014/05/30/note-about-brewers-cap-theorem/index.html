@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>关于CAP理论的一些笔记 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="CAP原本是一个猜想，2000年PODC大会的时候Brewer提出的，他认为在设计一个大规模可扩放的网络服务时候会遇到三个特性：一致性（Consistency）、可用性（Availability）、分区容错（Tolerance of network Partition）都需要的情景，然而这是不可能都实现的。之后在2002年的时候，Mit的Gilbert和Lynch就正式的证明了这三个特征确实是不可以兼得的。" /><meta name="keywords" content="CAP,最终一致性,可用性,分区容错性" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/05/30/note-about-brewers-cap-theorem/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="关于CAP理论的一些笔记" />
+<meta property="og:description" content="CAP原本是一个猜想，2000年PODC大会的时候Brewer提出的，他认为在设计一个大规模可扩放的网络服务时候会遇到三个特性：一致性（Consistency）、可用性（Availability）、分区容错（Tolerance of network Partition）都需要的情景，然而这是不可能都实现的。之后在2002年的时候，Mit的Gilbert和Lynch就正式的证明了这三个特征确实是不可以兼得的。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/05/30/note-about-brewers-cap-theorem/" />
+<meta property="article:published_time" content="2014-05-30T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-05-30T08:00:00+08:00" />
+<meta itemprop="name" content="关于CAP理论的一些笔记">
+<meta itemprop="description" content="CAP原本是一个猜想，2000年PODC大会的时候Brewer提出的，他认为在设计一个大规模可扩放的网络服务时候会遇到三个特性：一致性（Consistency）、可用性（Availability）、分区容错（Tolerance of network Partition）都需要的情景，然而这是不可能都实现的。之后在2002年的时候，Mit的Gilbert和Lynch就正式的证明了这三个特征确实是不可以兼得的。">
+
+
+<meta itemprop="datePublished" content="2014-05-30T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-05-30T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="3967">
+
+
+
+<meta itemprop="keywords" content="cap,nosql," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="关于CAP理论的一些笔记"/>
+<meta name="twitter:description" content="CAP原本是一个猜想，2000年PODC大会的时候Brewer提出的，他认为在设计一个大规模可扩放的网络服务时候会遇到三个特性：一致性（Consistency）、可用性（Availability）、分区容错（Tolerance of network Partition）都需要的情景，然而这是不可能都实现的。之后在2002年的时候，Mit的Gilbert和Lynch就正式的证明了这三个特征确实是不可以兼得的。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">关于CAP理论的一些笔记</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-05-30 </span>
+        <div class="post-category">
+            <a href="/categories/database/"> database </a>
+            </div>
+          <span class="more-meta"> 约 3967 字 </span>
+          <span class="more-meta"> 预计阅读 8 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#cap的概念">CAP的概念</a></li>
+<li><a href="#基本cap的证明思路">基本CAP的证明思路</a></li>
+<li><a href="#base理论">BASE理论</a></li>
+<li><a href="#cap选择">CAP选择</a>
+<ul>
+<li><a href="#牺牲一致性">牺牲一致性</a></li>
+<li><a href="#异常错误检测和补偿">异常错误检测和补偿</a></li>
+<li><a href="#两阶段提交协议">两阶段提交协议</a></li>
+</ul></li>
+<li><a href="#cap的反对声音">CAP的反对声音</a></li>
+<li><a href="#参考资料">参考资料</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="cap的概念">CAP的概念</h1>
+
+<p>2000年，Eric Brewer 教授在 ACM 分布式计算年会上指出了著名的 CAP 理论：</p>
+
+<blockquote>
+<p>分布式系统不可能同时满足一致性(C: Consistency)，可用性(A: Availability)和分区容错性(P: Tolerance of network Partition)这三个需求。大约两年后，Seth Gilbert 和 Nancy lynch 两人证明了CAP理论的正确性。</p>
+</blockquote>
+
+<p>三者的含义如下：</p>
+
+<ul>
+<li><code>Consistency</code>：一致性，一个服务是一致的完整操作或完全不操作（A service that is consistent operates fully or not at all，精确起见列出原文），也有人将其简称为数据一致性，任何一个读操作总是能读取到之前完成的写操作结果，也就是在分布式环境中，多点的数据是一致的。</li>
+<li><code>Availability</code>：可用性，每一个操作总是能够在确定的时间内返回，也就是系统随时都是可用的。</li>
+<li><code>Tolerance of network Partition</code>：分区容忍性，节点 crash 或者网络分片都不应该导致一个分布式系统停止服务。</li>
+</ul>
+
+<p>关于 CAP 理论的历史和介绍可以参考 <a href="http://www.julianbrowne.com/article/viewer/brewers-cap-theorem">Brewer’s CAP Theorem</a> 和 <a href="http://duanple.blog.163.com/blog/static/7097176720114733655390/">中文翻译</a>。</p>
+
+<h1 id="基本cap的证明思路">基本CAP的证明思路</h1>
+
+<p>CAP 的证明基于 <code>异步网络</code>，异步网络也是反映了真实网络中情况的模型。</p>
+
+<p>真实的网络系统中，<strong>节点之间不可能保持同步，即便是时钟也不可能保持同步，所有的节点依靠获得的消息来进行本地计算和通讯</strong>。这个概念其实是相当强的，<strong>意味着任何超时判断也是不可能的</strong>，因为没有共同的时间标准。之后我们会扩展 CAP 的证明到弱一点的异步网络中，这个网络中时钟不完全一致，但是时钟运行的步调是一致的，这种系统是允许节点做超时判断的。</p>
+
+<p>CAP 的证明很简单，假设两个节点集{G1, G2}，由于网络分片导致 G1 和 G2 之间所有的通讯都断开了，如果在 G1 中写，在 G2 中读刚写的数据， G2 中返回的值不可能是 G1 中的写值。由于 <code>A</code> 的要求，G2 一定要返回这次读请求，由于 <code>P</code> 的存在，导致 <code>C</code>一定是不可满足的。</p>
+
+<p>为什么不能完全保证这个三点了，个人觉得主要是因为一旦进行分区了，就说明了必须节点之间必须进行通信，<strong>涉及到通信，就无法确保在有限的时间内完成指定的行为</strong>，如果要求两个操作之间要完整的进行，肯定会存在某一个时刻只完成一部分的业务操作，在通信完成的这一段时间内，数据就是不一致性的。如果要求保证一致性，那么就必须在通信完成这一段时间内保护数据，使得任何访问这些数据的操作不可用。</p>
+
+<p><strong>如果想保证一致性和可用性，那么数据就不能够分区</strong>。一个简单的理解就是所有的数据就必须存放在一个数据库里面，不能进行数据库拆分。这个对于大数据量，高并发的互联网应用来说，是不可接受的。</p>
+
+<p>这里引用 <a href="http://duanple.blog.163.com/blog/static/7097176720114733655390/">Brewer’s CAP Theorem</a> 中的图和文字来说明。</p>
+
+<p><img src="http://www.julianbrowne.com//attachments/brewers-cap-theorem/images/intro.png" alt="intro" /></p>
+
+<p>上图显示了网络中的两个节点 N1，N2，他们共享同一数据 V，其值为 V0。N1 上有一个算法 A，我们可以认为 A 是安全、无 bug、可预测和可靠的。N2 上有一个类似的算法 B。在这个例子中，A 写入 V 的新值而 B 读取 V 的值。</p>
+
+<p><img src="http://www.julianbrowne.com//attachments/brewers-cap-theorem/images/scenario-1.png" alt="scenario-1" /></p>
+
+<p>正常情况过程如下：</p>
+
+<ul>
+<li>1) A 写入新的 V 值，我们称作 v1。</li>
+<li>2) N1 发送信息给 N2，更新 V 的值。</li>
+<li>3) 现在 B 读取的 V 值将会是 V1。</li>
+</ul>
+
+<p><img src="http://www.julianbrowne.com//attachments/brewers-cap-theorem/images/scenario-2.png" alt="scenario-2" /></p>
+
+<p>如果网络断开，意味着从 N1 无法发送信息到 N2，那么在第3步的时候，N2 就会包含一个步一致的 V 值。</p>
+
+<p>即使将其扩展到几百个事务中，这也会成为一个大问题。如果 M 是一个异步消息，那么 N1 无法知道 N2 是否收到了消息。即使 M 是保证能发送的，N1 也无法知道是否消息由于分区事件的发生而延迟，或 N2 上的其他故障而延迟。即使将 M 作为同步消息也不能解决问题，因为那将会使得 N1 上 A 的写操作和 N1 到 N2 的更新事件成为一个原子操作，而这将导致同样的等待问题。<strong>Gilbert 和Lynch已经证明，使用其他的变种方式，即使是部分同步模型（每个节点上使用安排好的时钟）也无法保证原子性。</strong></p>
+
+<p>因此，CAP 告诉我们，如果想让 A 和 B 是高可用的（例如，以最小的延迟提供服务）并且想让所有的 N1 到 Nn（n的值可以是数百甚至是上千）的节点能够冗余网络的分区（丢失信息，无法传递信息，硬件无法提供服务，处理失败），那么有时我们就得面临这样的情况：某些节点认为 V 的值是 V0 而其他节点会认为 V 的值是 V1。</p>
+
+<p>让我们从事务的角度分析一下。下面的图中 a 是整个过程，要具有一致性的话需要等待 a1 进行 write，然后同步到 a2，然后 a2 再进行 write，只有整个事务完成以后，a2 才能够进行 read。但是这样的话使得整个系统的可用性下降，a2 一直阻塞在那里等待 a1 同步到 a2。这个时候如果对一致性要求不高的话，a2 可以不等待 a1 数据对于 a2 的写同步，直接读取，这样虽然此时的读写不具有一致性，但是在后面可以通过异步的方式使得 a1 和 a2 的数据最终一致，达到 <code>最终一致性</code>。</p>
+
+<p><img src="http://www.julianbrowne.com//attachments/brewers-cap-theorem/images/tx-view.png" alt="tx-view" /></p>
+
+<h1 id="base理论">BASE理论</h1>
+
+<p>BASE 理论是 CAP 理论结合实际的产物。 BASE(Basically Available, Soft-state,Eventuallyconsistent)英文中有碱的意思，这个正好和 ACID 的酸的意义相对，很有意思。BASE 恰好和 ACID 是相对的，BASE 要求牺牲高一致性，获得可用性或可靠性。</p>
+
+<ul>
+<li><code>Basically Availble</code>： 基本可用(支持分区失败)</li>
+<li><code>Soft-state</code>：软状态/柔性事务(无状态连接，支持异步)</li>
+<li><code>Eventual Consistency</code>： 最终一致性(不要求高一致性，只要求最终能够一致)</li>
+</ul>
+
+<p>BASE 理论的核心是：<strong>牺牲高一致性，获得可用性或可靠性</strong>。</p>
+
+<h1 id="cap选择">CAP选择</h1>
+
+<p>当处理 CAP 的问题时，你会有几个选择。最明显的是：</p>
+
+<ul>
+<li><p><code>放弃 Tolerance of network Partition</code>。如果你想避免分区问题发生，你就必须要阻止其发生。一种做法是将所有的东西（与事务相关的）都放到一台机器或者一个机架上。这样还是有可能部分失败，但你不太可能碰到由分区问题带来的负面效果。当然，这个选择会严重影响系统的扩展。</p></li>
+
+<li><p><code>放弃 Availability</code>。相对于放弃 Tolerance of network Partition 来说，其反面就是放弃 Availability。一旦遇到分区事件，受影响的服务需要等待数据一致，因此在等待期间就无法对外提供服务。在多个节点上控制这一点会相当复杂，而且恢复的节点需要处理逻辑，以便平滑地返回服务状态。</p></li>
+
+<li><p><code>放弃 Consistency</code>。放弃一致性，你的系统可能返回不太精确的数据，但系统将会变得“最终一致”，即使是网络发生分区的时候也是如此。</p></li>
+</ul>
+
+<p>下面是一个使用 CAP 理论的生态系统的分布图：</p>
+
+<p><img src="http://hi.csdn.net/attachment/201109/6/0_1315316512jhTH.gif" alt="" /></p>
+
+<blockquote>
+<p>任何架构师在设计分布式的系统的时候，都必须在这三者之间进行取舍。首先就是是否选择分区，由于在一个数据分区内，根据数据库的ACID特性，是可以保证一致性的，不会存在可用性和一致性的问题，唯一需要考虑的就是性能问题。对于可用性和一致性，大多数应用就必须保证可用性，毕竟是互联网应用，牺牲了可用性，相当于间接的影响了用户体验，而唯一可以考虑就是一致性了。</p>
+</blockquote>
+
+<h2 id="牺牲一致性">牺牲一致性</h2>
+
+<p>对于牺牲一致性的情况最多的就是缓存和数据库的数据同步问题，我们把缓存看做一个数据分区节点，数据库看作另外一个节点，这两个节点之间的数据在任何时刻都无法保证一致性的。</p>
+
+<h2 id="异常错误检测和补偿">异常错误检测和补偿</h2>
+
+<p>还有一种牺牲一致性的方法就是通过一种错误补偿机制来进行</p>
+
+<h2 id="两阶段提交协议">两阶段提交协议</h2>
+
+<p>第一阶段和第二阶段之间，数据也可不能是一致性的，也可能出现同样的情况导致异常。</p>
+
+<h1 id="cap的反对声音">CAP的反对声音</h1>
+
+<p>1，2008年9月CTO of atomikos写了一篇文章“A CAP Solution (Proving Brewer Wrong)”，试图达到CAP都得的效果。</p>
+
+<p>这篇文章的核心内容就是放松Gilbert和Lynch证明中的限制：“系统必须同时达到CAP三个属性”，放松到“系统可以不同时达到CAP，而是分时达到”。</p>
+
+<p>他设计的系统如下：</p>
+
+<ul>
+<li>(1)程序如果能够读取数据库的话读取数据库，如果不能的话可以使用缓存代替。</li>
+<li>(2)所有的读取操作使用版本号或者其他可以使用乐观锁的机制。</li>
+<li>(3)客户端的所有更新操作全部放在队列中顺序处理。更新操作中要包括该更新的读取操作时的版本信息。</li>
+<li>(4)当分区数量足够少的时候，可以处理队列中的更新操作。比较简单的方式是建立一个跨越所有分布式副本的事务，对每个副本进行更新操作（其他方式比如quorum等等也可以）。如果该更新的读取操作时的版本信息不是当前数据库中数据的版本信息，则将失败返回给客户端，否则返回成功。</li>
+<li>(5)数据库操作结果（确认或者取消）通过异步的方式发送到客户端，可以通过邮件，消息队列或者其他异步方式。</li>
+</ul>
+
+<p>该系统符合CAP如下：</p>
+
+<ul>
+<li>符合C（高一致性）：读取的数据都是基于快照的，而且错误的更新操作不会执行。</li>
+<li>符合A（高可用性）：读取和更新都会返回数据。</li>
+<li>符合P（高分区容错性）：允许网络或者节点出错。</li>
+</ul>
+
+<p>该设计是符合BASE理论的。</p>
+
+<p>缺点：</p>
+
+<ul>
+<li>1) 读数据可能会不一致，因为之前的写还在排队</li>
+<li>2) partition必须在有限的时间内解决</li>
+<li>3) update操作必须在所有的节点上保持同样的顺序</li>
+</ul>
+
+<p>2， 2011年11月Twitter的首席工程师Nathan Marz写了一篇文章，描述了他是如何试图打败CAP定理的： How to beat the CAP theorem</p>
+
+<p>本文中，作者还是非常尊重CAP定律，并表示不是要“击败”CAP，而是尝试对数据存储系统进行重新设计，以可控的复杂度来实现CAP。</p>
+
+<p>Marz认为一个分布式系统面临CAP难题的两大问题就是：在数据库中如何使用不断变化的数据，如何使用算法来更新数据库中的数据。Marz提出了几个由于云计算的兴起而改变的传统概念：</p>
+
+<ul>
+<li>1) 数据不存在update，只存在append操作。这样就把对数据的处理由CRUD变为CR</li>
+<li>2) 所有的数据的操作就只剩下Create和Read。把Read作为一个Query来处理，而一个Query就是一个对整个数据集执行一个函数操作。</li>
+</ul>
+
+<p>在这样的模型下，我们使用最终一致性的模型来处理数据，可以保证在P的情况下保证A。而所有的不一致性都可以通过重复进行Query去除掉。Martz认为就是因为要不断的更新数据库中的数据，再加上CAP，才导致那些即便使用最终一致性的系统也会变得无比复杂，需要用到向量时钟、读修复这种技术，而如果系统中不存在会改变的数据，所有的更新都作为创建新数据的方式存在，读数据转化为一次请求，这样就可以避免最终一致性的复杂性，转而拥抱CAP。</p>
+
+<h1 id="参考资料">参考资料</h1>
+
+<ul>
+<li>[1] <a href="http://duanple.blog.163.com/blog/static/7097176720114733655390/">Brewer’s CAP Theorem</a></li>
+<li>[2] <a href="http://www.cnblogs.com/mmjx/archive/2011/12/19/2290540.html">CAP理论</a></li>
+<li>[3] <a href="http://blog.csdn.net/godfrey90/article/details/6754884">NoSQL学习笔记(二)之CAP理论</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-05-30
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/cap/">cap</a>
+          <a href="/tags/nosql/">nosql</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/06/03/install_cloudera_search_without_cm/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">不用Cloudera Manager安装Cloudera Search</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/05/24/using-scrapy-to-cralw-data/">
+            <span class="next-text nav-default">使用Scrapy抓取数据</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

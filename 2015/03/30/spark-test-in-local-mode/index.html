@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Spark本地模式运行 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Spark的安装分为几种模式，其中一种是本地运行模式，只需要在单节点上解压即可运行，这种模式不需要依赖Hadoop 环境。在本地运行模式中，master和worker都运行在一个jvm进程中，通过该模式，可以快速的测试Spark的功能。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2015/03/30/spark-test-in-local-mode/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Spark本地模式运行" />
+<meta property="og:description" content="Spark的安装分为几种模式，其中一种是本地运行模式，只需要在单节点上解压即可运行，这种模式不需要依赖Hadoop 环境。在本地运行模式中，master和worker都运行在一个jvm进程中，通过该模式，可以快速的测试Spark的功能。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2015/03/30/spark-test-in-local-mode/" />
+<meta property="article:published_time" content="2015-03-30T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-03-30T08:00:00+08:00" />
+<meta itemprop="name" content="Spark本地模式运行">
+<meta itemprop="description" content="Spark的安装分为几种模式，其中一种是本地运行模式，只需要在单节点上解压即可运行，这种模式不需要依赖Hadoop 环境。在本地运行模式中，master和worker都运行在一个jvm进程中，通过该模式，可以快速的测试Spark的功能。">
+
+
+<meta itemprop="datePublished" content="2015-03-30T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-03-30T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1708">
+
+
+
+<meta itemprop="keywords" content="spark,scala," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Spark本地模式运行"/>
+<meta name="twitter:description" content="Spark的安装分为几种模式，其中一种是本地运行模式，只需要在单节点上解压即可运行，这种模式不需要依赖Hadoop 环境。在本地运行模式中，master和worker都运行在一个jvm进程中，通过该模式，可以快速的测试Spark的功能。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Spark本地模式运行</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-03-30 </span>
+        <div class="post-category">
+            <a href="/categories/spark/"> spark </a>
+            </div>
+          <span class="more-meta"> 约 1708 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#下载-spark">下载 Spark</a></li>
+<li><a href="#运行-spark-shell">运行 spark-shell</a></li>
+<li><a href="#pyspark">pyspark</a></li>
+<li><a href="#spark-submit">spark-submit</a></li>
+<li><a href="#测试-rdd">测试 RDD</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>Spark的安装分为几种模式，其中一种是本地运行模式，只需要在单节点上解压即可运行，这种模式不需要依赖Hadoop 环境。在本地运行模式中，master和worker都运行在一个jvm进程中，通过该模式，可以快速的测试Spark的功能。</p>
+
+<h1 id="下载-spark">下载 Spark</h1>
+
+<p>下载地址为<a href="http:/.apache.org/downloads.html">http:/.apache.org/downloads.html</a>，根据页面提示选择一个合适的版本下载，这里我下载的是 <a href="http://mirror.bit.edu.cn/apache-1.3.0-1.3.0-bin-cdh4.tgz">spark-1.3.0-bin-cdh4.tgz</a>。下载之后解压：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"> <span class="nb">cd</span> ~
+ wget http://mirror.bit.edu.cn/apache-1.3.0-1.3.0-bin-cdh4.tgz
+ tar -xf spark-1.3.0-bin-cdh4.tgz
+ <span class="nb">cd</span> spark-1.3.0-bin-cdh4</code></pre></td></tr></table>
+</div>
+</div>
+<p>下载之后的目录为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">⇒  tree -L 1
+.
+├── CHANGES.txt
+├── LICENSE
+├── NOTICE
+├── README.md
+├── RELEASE
+├── bin
+├── conf
+├── data
+├── ec2
+├── examples
+├── lib
+├── python
+└── sbin</pre></td></tr></table>
+</div>
+</div>
+<h1 id="运行-spark-shell">运行 spark-shell</h1>
+
+<p>本地模式运行spark-shell非常简单，只要运行以下命令即可，假设当前目录是$SPARK_HOME</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nv">MASTER</span><span class="o">=</span><span class="nb">local</span> 
+$ bin-shell</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>MASTER=local</code>就是表明当前运行在单机模式。如果一切顺利，将看到下面的提示信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">Created spark context..
+Spark context available as sc.</pre></td></tr></table>
+</div>
+</div>
+<p>这表明spark-shell中已经内置了Spark context的变量，名称为sc，我们可以直接使用该变量进行后续的操作。</p>
+
+<p>spark-shell 后面设置 master 参数，可以支持更多的模式，请参考 <a href="http:/.apache.org/docs/latest/submitting-applications.html#master-urls">http:/.apache.org/docs/latest/submitting-applications.html#master-urls</a>。</p>
+
+<p>我们在sparkshell中运行一下最简单的例子，统计在README.md中含有Spark的行数有多少，在spark-shell中输入如下代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scala&gt;sc.textFile<span class="o">(</span><span class="s2">&#34;README.md&#34;</span><span class="o">)</span>.filter<span class="o">(</span>_.contains<span class="o">(</span><span class="s2">&#34;Spark&#34;</span><span class="o">))</span>.count</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果你觉得输出的日志太多，你可以从模板文件创建  conf/log4j.properties ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mv conf/log4j.properties.template conf/log4j.properties</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后修改日志输出级别为<code>WARN</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">log4j.rootCategory=WARN, console</pre></td></tr></table>
+</div>
+</div>
+<p>如果你设置的 log4j 日志等级为 INFO，则你可以看到这样的一行日志 <code>INFO SparkUI: Started SparkUI at http://10.9.4.165:4040</code>，意思是 Spark 启动了一个 web 服务器，你可以通过浏览器访问<a href="http://10.9.4.165:4040">http://10.9.4.165:4040</a>来查看 Spark 的任务运行状态等信息。</p>
+
+<h1 id="pyspark">pyspark</h1>
+
+<p>运行 bin/pyspark 的输出为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ bin/pyspark
+Python 2.7.6 (default, Sep  9 2014, 15:04:36)
+[GCC 4.2.1 Compatible Apple LLVM 6.0 (clang-600.0.39)] on darwin
+Type &#34;help&#34;, &#34;copyright&#34;, &#34;credits&#34; or &#34;license&#34; for more information.
+Spark assembly has been built with Hive, including Datanucleus jars on classpath
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+15/03/30 15:19:07 WARN Utils: Your hostname, june-mac resolves to a loopback address: 127.0.0.1; using 10.9.4.165 instead (on interface utun0)
+15/03/30 15:19:07 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+15/03/30 15:19:07 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ / __/  _/
+   /__ / .__/\_,_/_/ /_/\_\   version 1.3.0
+      /_/
+
+Using Python version 2.7.6 (default, Sep  9 2014 15:04:36)
+SparkContext available as sc, HiveContext available as sqlCtx.</pre></td></tr></table>
+</div>
+</div>
+<p>你也可以使用 IPython 来运行 Spark：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">IPYTHON=1  ./bin/pyspark</pre></td></tr></table>
+</div>
+</div>
+<p>如果要使用 IPython NoteBook，则运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">IPYTHON_OPTS=&#34;notebook&#34;  ./bin/pyspark</pre></td></tr></table>
+</div>
+</div>
+<p>从日志可以看到，不管是 bin/pyspark 还是 bin-shell，他们都有两个内置的变量：sc 和 sqlCtx。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="nc">SparkContext</span> <span class="n">available</span> <span class="n">as</span> <span class="n">sc</span><span class="o">,</span> <span class="nc">HiveContext</span> <span class="n">available</span> <span class="n">as</span> <span class="n">sqlCtx</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>sc 代表着 Spark 的上下文，通过该变量可以执行 Spark 的一些操作，而 sqlCtx 代表着 HiveContext 的上下文。</p>
+
+<h1 id="spark-submit">spark-submit</h1>
+
+<p>在Spark1.0之后提供了一个统一的脚本spark-submit来提交任务。</p>
+
+<p>对于 python 程序，我们可以直接使用 spark-submit：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mkdir -p /usr/lib/examples/python
+$ tar zxvf /usr/lib/lib/python.tar.gz -C /usr/lib/examples/python
+
+$ ./bin-submit examples/python/pi.py <span class="m">10</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>对于 Java 程序，我们需要先编译代码然后打包运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ spark-submit --class <span class="s2">&#34;SimpleApp&#34;</span> --master local<span class="o">[</span><span class="m">4</span><span class="o">]</span> simple-project-1.0.jar</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="测试-rdd">测试 RDD</h1>
+
+<p>在 Spark 中，我们操作的集合被称为 RDD，他们被并行拷贝到集群各个节点上。我们可以通过 sc 来创建 RDD 。</p>
+
+<p>创建 RDD 有两种方式：</p>
+
+<ul>
+<li><code>sc.parallelize()</code></li>
+<li><code>sc.textFile()</code></li>
+</ul>
+
+<p>使用 Scala 对 RDD 的一些操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">rdd1</span><span class="k">=</span><span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">3</span><span class="o">))</span>
+<span class="k">val</span> <span class="n">rdd2</span><span class="k">=</span><span class="n">sc</span><span class="o">.</span><span class="n">parallelize</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">))</span>
+
+<span class="c1">//转换操作
+</span><span class="c1"></span><span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="mi">2</span><span class="o">*).</span><span class="n">collect</span> <span class="c1">//等同于：rdd1.map(t=&gt;2*t).collect
+</span><span class="c1">//Array[Int] = Array(2, 4, 6, 6)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">filter</span><span class="o">(</span><span class="k">_</span><span class="o">&gt;</span><span class="mi">2</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(3, 3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">flatMap</span><span class="o">(</span><span class="k">_</span> <span class="n">to</span> <span class="mi">4</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(1, 2, 3, 4, 2, 3, 4, 3, 4, 3, 4)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">sample</span><span class="o">(</span><span class="kc">false</span><span class="o">,</span> <span class="mf">0.3</span><span class="o">,</span> <span class="mi">4</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(3, 3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">sample</span><span class="o">(</span><span class="kc">true</span><span class="o">,</span> <span class="mf">0.3</span><span class="o">,</span> <span class="mi">4</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">union</span><span class="o">(</span><span class="n">rdd2</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(1, 2, 3, 3, 3, 4, 5)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">distinct</span><span class="o">().</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(1, 2, 3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">groupByKey</span><span class="o">.</span><span class="n">collect</span>
+<span class="c1">//Array[(Int, Iterable[Int])] = Array((1,CompactBuffer(1)), (2,CompactBuffer(2)), (3,CompactBuffer(3, 3)))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">reduceByKey</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[(Int, Int)] = Array((1,1), (2,2), (3,6))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">sortByKey</span><span class="o">(</span><span class="kc">false</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[(Int, Int)] = Array((3,3), (3,3), (2,2), (1,1))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">join</span><span class="o">(</span><span class="n">rdd2</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">))).</span><span class="n">collect</span>
+<span class="c1">//Array[(Int, (Int, Int))] = Array((3,(3,3)), (3,(3,3)))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">cogroup</span><span class="o">(</span><span class="n">rdd2</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">))).</span><span class="n">collect</span>
+<span class="c1">//Array[(Int, (Iterable[Int], Iterable[Int]))] = Array((4,(CompactBuffer(),CompactBuffer(4))), (1,(CompactBuffer(1),CompactBuffer())), (5,(CompactBuffer(),CompactBuffer(5))), (2,(CompactBuffer(2),CompactBuffer())), (3,(CompactBuffer(3, 3),CompactBuffer(3))))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">cartesian</span><span class="o">(</span><span class="n">rdd2</span><span class="o">).</span><span class="n">collect</span><span class="o">()</span>
+<span class="c1">//Array[(Int, Int)] = Array((1,3), (1,4), (1,5), (2,3), (2,4), (2,5), (3,3), (3,4), (3,5), (3,3), (3,4), (3,5))
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">pipe</span><span class="o">(</span><span class="s">&#34;head -n 1&#34;</span><span class="o">).</span><span class="n">collect</span>
+<span class="c1">//Array[String] = Array(1, 2, 3, 3)
+</span><span class="c1"></span>
+<span class="c1">//动作操作
+</span><span class="c1"></span><span class="n">rdd1</span><span class="o">.</span><span class="n">reduce</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">)</span>
+<span class="c1">//Int = 9
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">collect</span>
+<span class="c1">//Array[Int] = Array(1, 2, 3, 3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">first</span><span class="o">()</span>
+<span class="c1">//Int = 1
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+<span class="c1">//Array[Int] = Array(1, 2)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">top</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+<span class="c1">//Array[Int] = Array(3, 3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">takeOrdered</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+<span class="c1">//Array[Int] = Array(1, 2)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">i</span><span class="o">=&gt;(</span><span class="n">i</span><span class="o">,</span><span class="n">i</span><span class="o">)).</span><span class="n">countByKey</span><span class="o">()</span>
+<span class="c1">//scala.collection.Map[Int,Long] = Map(1 -&gt; 1, 2 -&gt; 1, 3 -&gt; 2)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">countByValue</span><span class="o">()</span>
+<span class="c1">//scala.collection.Map[Int,Long] = Map(1 -&gt; 1, 2 -&gt; 1, 3 -&gt; 2)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">intersection</span><span class="o">(</span><span class="n">rdd2</span><span class="o">).</span><span class="n">collect</span><span class="o">()</span>
+<span class="c1">//Array[Int] = Array(3)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">subtract</span><span class="o">(</span><span class="n">rdd2</span><span class="o">).</span><span class="n">collect</span><span class="o">()</span>
+<span class="c1">//Array[Int] = Array(1, 2)
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+<span class="c1">//3
+</span><span class="c1">//2
+</span><span class="c1">//3
+</span><span class="c1">//1
+</span><span class="c1"></span>
+<span class="n">rdd1</span><span class="o">.</span><span class="n">foreachPartition</span><span class="o">(</span><span class="n">x</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">x</span><span class="o">.</span><span class="n">reduce</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">)))</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>更多例子，参考<a href="http://homepage.cs.latrobe.edu.au/zhe/ZhenHeSparkRDDAPIExamples.html">http://homepage.cs.latrobe.edu.au/zhe/ZhenHeSparkRDDAPIExamples.html</a>。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-03-30
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/spark/">spark</a>
+          <a href="/tags/scala/">scala</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/03/30/reading-list-2015-03/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Reading List 2015-03</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/03/26/spark-sql-dataframe/">
+            <span class="next-text nav-default">Spark SQL中的DataFrame</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

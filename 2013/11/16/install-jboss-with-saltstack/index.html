@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用SaltStack安装JBoss - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="使用SaltStack安装jboss。SaltStack是一个具备puppet与func功能为一身的集中化管理平台，其基于python实现，功能十分强大，各模块融合度及复用性极高。SaltStack 采用 zeromq 消息队列进行通信，和 Puppet/Chef 比起来，SaltStack 速度快得多。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/11/16/install-jboss-with-saltstack/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用SaltStack安装JBoss" />
+<meta property="og:description" content="使用SaltStack安装jboss。SaltStack是一个具备puppet与func功能为一身的集中化管理平台，其基于python实现，功能十分强大，各模块融合度及复用性极高。SaltStack 采用 zeromq 消息队列进行通信，和 Puppet/Chef 比起来，SaltStack 速度快得多。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/11/16/install-jboss-with-saltstack/" />
+<meta property="article:published_time" content="2013-11-16T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-11-16T00:00:00+08:00" />
+<meta itemprop="name" content="使用SaltStack安装JBoss">
+<meta itemprop="description" content="使用SaltStack安装jboss。SaltStack是一个具备puppet与func功能为一身的集中化管理平台，其基于python实现，功能十分强大，各模块融合度及复用性极高。SaltStack 采用 zeromq 消息队列进行通信，和 Puppet/Chef 比起来，SaltStack 速度快得多。">
+
+
+<meta itemprop="datePublished" content="2013-11-16T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-11-16T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2528">
+
+
+
+<meta itemprop="keywords" content="saltstack," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用SaltStack安装JBoss"/>
+<meta name="twitter:description" content="使用SaltStack安装jboss。SaltStack是一个具备puppet与func功能为一身的集中化管理平台，其基于python实现，功能十分强大，各模块融合度及复用性极高。SaltStack 采用 zeromq 消息队列进行通信，和 Puppet/Chef 比起来，SaltStack 速度快得多。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用SaltStack安装JBoss</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-11-16 </span>
+        
+          <span class="more-meta"> 约 2528 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装saltstack">安装saltstack</a></li>
+<li><a href="#添加pillar">添加pillar</a></li>
+<li><a href="#编写states">编写states</a></li>
+<li><a href="#自定义grains-module">自定义grains_module</a></li>
+<li><a href="#自定义module">自定义module</a></li>
+<li><a href="#同步配置文件">同步配置文件</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>SaltStack是一个具备puppet与func功能为一身的集中化管理平台，其基于python实现，功能十分强大，各模块融合度及复用性极高。SaltStack 采用 zeromq 消息队列进行通信，和 Puppet/Chef 比起来，SaltStack 速度快得多。</p>
+
+<p>在开始使用SaltStack之前，首先要对SaltStack的基础进行一系列的学习，这里，强烈推荐官网的<a href="http://docs.saltstack.com/topics/tutorials/walkthrough.html">Tutorial</a>,在完成了整个Tutorial之后，通过Module Index页面，我们能够快速查阅Salt所有模块的功能与用法:<a href="http://docs.saltstack.com/py-modindex.html">http://docs.saltstack.com/py-modindex.html</a></p>
+
+<h1 id="安装saltstack">安装saltstack</h1>
+
+<p>安装过程请参考：<a href="/linux/images/11/11/install-saltstack-and-halite/">安装saltstack和halite</a></p>
+
+<h1 id="添加pillar">添加pillar</h1>
+
+<p>你可以执行下面命令查看minion拥有哪些Pillar数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; pillar.data</pre></td></tr></table>
+</div>
+</div>
+<p>saltstack的默认states目录为<code>/srv/salt</code>，默认为<code>/srv/pillar</code>，如果不存在请先创建。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 /]# tree /srv/ -L 3
+/srv/
+├── pillar
+│   ├── jboss
+│       ├── params.sls
+│   └── top.sls
+├── salt
+│   ├── jboss
+│   ├── _modules
+│   └── top.sls</pre></td></tr></table>
+</div>
+</div>
+<p>在<code>/srv/pillar/</code>下创建top.sls，该文件引入jboss下的params.sls：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"> <span class="n">base</span><span class="p">:</span>
+  <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">jboss</span><span class="o">.</span><span class="n">params</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>创建jboss目录并添加params.sls如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"> <span class="n">jboss_home</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">jboss</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="n">eap</span><span class="o">-</span><span class="mf">5.1</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="k">as</span>
+ <span class="n">profile_port</span><span class="p">:</span>
+  <span class="n">default1</span><span class="p">:</span> 
+    <span class="n">http_port</span><span class="p">:</span> <span class="n">ports</span><span class="o">-</span><span class="n">default</span>
+    <span class="n">jmx_port</span><span class="p">:</span> <span class="mi">1099</span>
+  <span class="n">default2</span><span class="p">:</span> 
+    <span class="n">http_port</span><span class="p">:</span> <span class="n">ports</span><span class="o">-</span><span class="mo">01</span>
+    <span class="n">jmx_port</span><span class="p">:</span> <span class="mi">1199</span>
+  <span class="n">default3</span><span class="p">:</span> 
+    <span class="n">http_port</span><span class="p">:</span> <span class="n">ports</span><span class="o">-</span><span class="mo">02</span>
+    <span class="n">jmx_port</span><span class="p">:</span> <span class="mi">1299</span>
+  <span class="n">default4</span><span class="p">:</span> 
+    <span class="n">http_port</span><span class="p">:</span> <span class="n">ports</span><span class="o">-</span><span class="mo">03</span>
+    <span class="n">jmx_port</span><span class="p">:</span> <span class="mi">1399</span>
+
+ <span class="n">jmx</span><span class="p">:</span>
+  <span class="n">username</span><span class="p">:</span> <span class="n">admin</span>
+  <span class="n">password</span><span class="p">:</span> <span class="n">admin</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>该文件定义了如下变量，你可以按需要定义自己的变量：</p>
+
+<ul>
+<li>jboss_home：mimion机器上jboss的home目录</li>
+<li>profile_port：定义有多少个profile以及每个profile下的http端口和jmx端口</li>
+<li>jmx:定义jmx-console用户名和密码</li>
+</ul>
+
+<p>定义变量之后，你可以在sates文件中这样引用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">pillar</span><span class="p">[</span><span class="s1">&#39;profile_port&#39;</span><span class="p">][</span><span class="s1">&#39;default1&#39;</span><span class="p">]</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>下面是个复杂的例子，使用了python中的模板引擎语言：</p>
+
+<p>{% raw %}</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">profile</span><span class="p">,</span> <span class="n">port</span> <span class="ow">in</span> <span class="n">pillar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;profile_port&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">%</span><span class="p">}</span>
+    <span class="p">{{</span><span class="n">profile</span><span class="p">}}</span>
+<span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>{% endraw %}</p>
+
+<p>你还可以在python脚本中或者是saltstack自定义module中这样引用变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">__pillar__[&#39;jboss_home&#39;]
+__pillar__[&#39;profile_port&#39;][&#39;default1&#39;][&#39;jmx_port&#39;]</pre></td></tr></table>
+</div>
+</div>
+<p>在master上修改Pilla文件后，需要用以下命令刷新minion上的数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; saltutil.refresh_pillar</pre></td></tr></table>
+</div>
+</div>
+<p>如果定义好的pillar不生效，建议刷新一下或者重启salt试试。</p>
+
+<h1 id="编写states">编写states</h1>
+
+<p>/srv/salt目录如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 salt]# tree -L 3
+.
+├── jboss
+│   ├── files
+│   │   └── jboss-eap-5.1.zip
+│   └── init.sls
+
+├── _modules
+│   └── jboss.py
+├── top.sls</pre></td></tr></table>
+</div>
+</div>
+<p>top.sls为sates入口，定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> base:
+  *:
+    - jboss</pre></td></tr></table>
+</div>
+</div>
+<p>创建jboss目录并编写init.sls文件：</p>
+
+<p>{% raw %}</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"> <span class="n">unzip</span><span class="p">:</span>
+  <span class="n">pkg</span><span class="o">.</span><span class="n">installed</span>
+ <span class="n">jboss</span><span class="p">:</span>
+  <span class="nb">file</span><span class="o">.</span><span class="n">managed</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span>  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">jboss</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="n">eap</span><span class="o">-</span><span class="mf">5.1</span><span class="o">.</span><span class="n">zip</span>
+    <span class="o">-</span> <span class="n">source</span><span class="p">:</span> <span class="n">salt</span><span class="p">:</span><span class="o">//</span><span class="n">jboss</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="n">eap</span><span class="o">-</span><span class="mf">5.1</span><span class="o">.</span><span class="n">zip</span>
+    <span class="o">-</span> <span class="n">include_empty</span><span class="p">:</span> <span class="bp">True</span>
+    <span class="o">-</span> <span class="n">user</span><span class="p">:</span> <span class="n">jboss</span>
+    <span class="o">-</span> <span class="n">group</span><span class="p">:</span> <span class="n">jboss</span>
+    <span class="o">-</span> <span class="n">mode</span><span class="p">:</span> <span class="mi">655</span>
+  <span class="n">cmd</span><span class="o">.</span><span class="n">run</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;unzip jboss-eap-5.1.zip&#39;</span>
+    <span class="o">-</span> <span class="n">cwd</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">jboss</span>
+    <span class="o">-</span> <span class="n">user</span><span class="p">:</span> <span class="n">jboss</span>
+    <span class="o">-</span> <span class="n">unless</span><span class="p">:</span> <span class="s1">&#39;test -e jboss-eap-5.1&#39;</span>
+    <span class="o">-</span> <span class="n">require</span><span class="p">:</span>
+      <span class="o">-</span> <span class="nb">file</span><span class="o">.</span><span class="n">managed</span><span class="p">:</span> <span class="n">jboss</span>
+
+<span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">profile</span><span class="p">,</span> <span class="n">port</span> <span class="ow">in</span> <span class="n">pillar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;profile_port&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">%</span><span class="p">}</span>
+ <span class="p">{{</span><span class="n">profile</span><span class="p">}}:</span>
+  <span class="n">cmd</span><span class="o">.</span><span class="n">run</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;\cp -r default {{profile}}&#39;</span>
+    <span class="o">-</span> <span class="n">cwd</span><span class="p">:</span>  <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">jboss</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="n">eap</span><span class="o">-</span><span class="mf">5.1</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="k">as</span><span class="o">/</span><span class="n">server</span>
+    <span class="o">-</span> <span class="n">user</span><span class="p">:</span> <span class="n">jboss</span>
+    <span class="o">-</span> <span class="n">unless</span><span class="p">:</span> <span class="s1">&#39;test -e {{profile}}&#39;</span>
+    <span class="o">-</span> <span class="n">require</span><span class="p">:</span>
+      <span class="o">-</span> <span class="nb">file</span><span class="o">.</span><span class="n">managed</span><span class="p">:</span> <span class="n">jboss</span>
+<span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>{% endraw %}</p>
+
+<p>说明：</p>
+
+<p>1.上面文件中创建了jboss ID，其包括两部分：拷贝文件和解压缩，分别对应file.managed和cmd.run。</p>
+
+<p>2.然后通过脚本语言读取pillar中定义的变量并以依次遍历生成多个ID，ID名称由变量中值定义。本例中，是读取<code>profile_port</code>的值，然后创建多个profile。<code>profile_port</code>变量在<code>/srv/pillar/jboss/params.sls</code>中定义。</p>
+
+<p>编写完sates文件之后，你可以通过执行以下命令让所有minion执行sates文件中定义的state：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; state.highstate</pre></td></tr></table>
+</div>
+</div>
+<p>你也可以单独执行jboss这个states：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; state.sls jboss</pre></td></tr></table>
+</div>
+</div>
+<h1 id="自定义grains-module">自定义grains_module</h1>
+
+<p>自定义的<code>grains_module</code>存放在<code>/srv/salt/_grains</code>目录，下面定义一个获取<code>max_open_file</code>的grains：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span><span class="o">,</span><span class="nn">commands</span>
+ 
+<span class="k">def</span> <span class="nf">Grains</span><span class="p">():</span> 
+    <span class="n">grains</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_open_file</span><span class="o">=</span><span class="mi">65536</span> 
+    <span class="k">try</span><span class="p">:</span> 
+        <span class="n">getulimit</span><span class="o">=</span><span class="n">commands</span><span class="o">.</span><span class="n">getstatusoutput</span><span class="p">(</span><span class="s1">&#39;source /etc/profile;ulimit -n&#39;</span><span class="p">)</span>  
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span> 
+        <span class="k">pass</span>  
+    <span class="k">if</span> <span class="n">getulimit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> 
+        <span class="n">max_open_file</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">getulimit</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  
+    <span class="n">grains</span><span class="p">[</span><span class="s1">&#39;max_open_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_open_file</span> 
+    <span class="k">return</span> <span class="n">grains</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，同步grains模块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ salt <span class="s1">&#39;*&#39;</span> saltutil.sync_all
+sk2:
+    ----------
+    grains:
+        - grains.max_open_file 
+    modules:
+    outputters:
+    renderers:
+    returners:
+    states:</code></pre></td></tr></table>
+</div>
+</div>
+<p>刷新模块(让minion编译模块)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; sys.reload_modules</pre></td></tr></table>
+</div>
+</div>
+<p>然后，验证max open file的value：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; grains.item max_open_file
+sk2:
+  max_open_file: 1024</pre></td></tr></table>
+</div>
+</div>
+<h1 id="自定义module">自定义module</h1>
+
+<p>你通过执行states可以完成bao的安装、配置和部署，如果你想对他们做管理，你可以自定义module来执行一些远程命令。</p>
+
+<p>自定义的module需要存放在<code>/srv/salt/_modules</code>目录下，为了对jboss实例进行启动、停止、查看运行状态，编写jboss.py模块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">_simple_cmd_retcode</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="n">home</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jboss_home&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/bin&#39;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">__salt__</span><span class="p">[</span><span class="s1">&#39;cmd.retcode&#39;</span><span class="p">](</span><span class="n">cmd</span><span class="p">,</span><span class="n">cwd</span><span class="o">=</span><span class="n">home</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Cmd&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">cmd</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">out</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Result&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">_simple_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="n">home</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jboss_home&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/bin&#39;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">__salt__</span><span class="p">[</span><span class="s1">&#39;cmd.run&#39;</span><span class="p">](</span><span class="n">cmd</span><span class="p">,</span><span class="n">cwd</span><span class="o">=</span><span class="n">home</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Cmd&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">cmd</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">out</span>
+    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Result&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="n">profile</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span><span class="n">_simple_cmd</span><span class="p">(</span><span class="s2">&#34;ps -ef|grep -v grep|grep java|grep &#34;</span><span class="o">+</span><span class="n">profile</span><span class="o">+</span><span class="s2">&#34; |grep &#34;</span><span class="o">+</span><span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;profile_port&#39;</span><span class="p">][</span><span class="n">profile</span><span class="p">][</span><span class="s1">&#39;http_port&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;&#39;</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">profile</span><span class="p">):</span>
+    <span class="n">ip</span> <span class="o">=</span> <span class="n">__grains__</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;profile_port&#39;</span><span class="p">][</span><span class="n">profile</span><span class="p">][</span><span class="s1">&#39;http_port&#39;</span><span class="p">]</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="s1">&#39;nohup ./run.sh -b &#39;</span><span class="o">+</span><span class="n">ip</span><span class="o">+</span><span class="s1">&#39; -c &#39;</span><span class="o">+</span><span class="n">profile</span><span class="o">+</span><span class="s1">&#39; -Djboss.service.binding.set=&#39;</span><span class="o">+</span><span class="n">port</span><span class="o">+</span><span class="s1">&#39; &amp;&#39;</span>
+ 
+    <span class="n">ret</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">if</span> <span class="n">running</span><span class="p">(</span><span class="n">profile</span><span class="p">):</span>
+        <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Cmd&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">cmd</span>
+	<span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">profile</span><span class="o">+</span><span class="s1">&#39; has started&#39;</span>
+        <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Result&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">return</span> <span class="n">_simple_cmd_retcode</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="n">profile</span><span class="p">):</span>
+    <span class="n">ip</span> <span class="o">=</span> <span class="n">__grains__</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;profile_port&#39;</span><span class="p">][</span><span class="n">profile</span><span class="p">][</span><span class="s1">&#39;jmx_port&#39;</span><span class="p">]</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jmx&#39;</span><span class="p">][</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jmx&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+    <span class="n">cmd</span><span class="o">=</span><span class="s2">&#34;./twiddle.sh -s &#34;</span><span class="o">+</span><span class="n">ip</span><span class="o">+</span><span class="s2">&#34;:&#34;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">)</span><span class="o">+</span><span class="s2">&#34; -u &#34;</span><span class="o">+</span><span class="n">username</span><span class="o">+</span><span class="s2">&#34; -p &#34;</span><span class="o">+</span><span class="n">password</span><span class="o">+</span><span class="s2">&#34; get jboss.system:type=Server Started&#34;</span>
+    
+    <span class="n">ret</span><span class="o">=</span><span class="n">_simple_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="s1">&#39;ERROR&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+ 	    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Result&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+	    <span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">ret</span><span class="p">[</span><span class="s1">&#39;Msg&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">ret</span>
+    
+<span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="n">profile</span><span class="p">):</span>
+    <span class="n">ip</span> <span class="o">=</span> <span class="n">__grains__</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;profile_port&#39;</span><span class="p">][</span><span class="n">profile</span><span class="p">][</span><span class="s1">&#39;jmx_port&#39;</span><span class="p">]</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jmx&#39;</span><span class="p">][</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">__pillar__</span><span class="p">[</span><span class="s1">&#39;jmx&#39;</span><span class="p">][</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+    <span class="n">cmd</span><span class="o">=</span><span class="s2">&#34;./shutdown.sh -S -s &#34;</span><span class="o">+</span><span class="n">ip</span><span class="o">+</span><span class="s2">&#34;:&#34;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">)</span><span class="o">+</span><span class="s2">&#34; -u &#34;</span><span class="o">+</span><span class="n">username</span><span class="o">+</span><span class="s2">&#34; -p &#34;</span><span class="o">+</span><span class="n">password</span>
+    <span class="k">return</span> <span class="n">_simple_cmd</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>以上python脚本定义了对单个profile的启动、停止和查看运行状态的方法，你可以修改或者扩增代码，添加更多的方法。</p>
+
+<p>然后运行下面命令同步所有模块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; saltutil.sync_all
+sk2:
+    ----------
+    grains:
+    modules:
+        - modules.jboss
+    outputters:
+    renderers:
+    returners:
+    states:</pre></td></tr></table>
+</div>
+</div>
+<p>刷新自定义模块(让minion编译模块)：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; sys.reload_modules</pre></td></tr></table>
+</div>
+</div>
+<p>如果你想启动jboss的default1实例，只需要执行以下方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; jboss.start default1</pre></td></tr></table>
+</div>
+</div>
+<p>同样，查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ salt &#39;*&#39; jboss.status default1</pre></td></tr></table>
+</div>
+</div>
+<p>jboss为自定义模块的名称，也是jboss.py的名称，start或者status为jboss.py中定义的方法。</p>
+
+<p>如果运行出错，请查看minion的日志，路径为<code>/var/log/salt/minion</code></p>
+
+<h1 id="同步配置文件">同步配置文件</h1>
+
+<p>现在需要修改jmx-console-users.properties文件中的用户名和密码并将其同步到所有jboss实例中。</p>
+
+<p>将jmx-console-users.properties文件放置在<code>/srv/salt/jboss/files</code>目录下，并修改该文件如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> #A sample users.properties file for use with the UsersRolesLoginModule
+ pillar[&#39;jmx&#39;][&#39;username&#39;]= pillar[&#39;jmx&#39;][&#39;password&#39;]</pre></td></tr></table>
+</div>
+</div>
+<p>上面文件中使用了pillar获取变量，你还可以使用模板语言如if、for语句来丰富你的文件内容，saltstack支持的模板引擎有<code>jinja</code>等。</p>
+
+<p>然后在init.sls中添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"> <span class="n">jmx</span><span class="o">-</span><span class="n">console</span><span class="o">-</span><span class="n">users</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+   <span class="nb">file</span><span class="o">.</span><span class="n">managed</span><span class="p">:</span>
+     <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">jboss</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="n">eap</span><span class="o">-</span><span class="mf">5.1</span><span class="o">/</span><span class="n">jboss</span><span class="o">-</span><span class="k">as</span><span class="o">/</span><span class="n">server</span><span class="o">/</span><span class="n">default</span><span class="o">/</span><span class="n">conf</span><span class="o">/</span><span class="n">props</span><span class="o">/</span><span class="n">jmx</span><span class="o">-</span><span class="n">console</span><span class="o">-</span><span class="n">users</span><span class="o">.</span><span class="n">properties</span>
+     <span class="o">-</span> <span class="n">source</span><span class="p">:</span> <span class="n">salt</span><span class="p">:</span><span class="o">//</span><span class="n">jboss</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">jmx</span><span class="o">-</span><span class="n">console</span><span class="o">-</span><span class="n">users</span><span class="o">.</span><span class="n">properties</span>
+     <span class="o">-</span> <span class="n">template</span><span class="p">:</span> <span class="n">jinja</span></code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-11-16
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/saltstack/">saltstack</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/11/18/study-note-of-saltstack/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">SaltStack学习笔记</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2013/11/11/install-saltstack-and-halite/">
+            <span class="next-text nav-default">安装SaltStack和Halite</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

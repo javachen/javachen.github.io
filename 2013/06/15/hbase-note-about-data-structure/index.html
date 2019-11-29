@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>HBase笔记：存储结构 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="从HBase的架构图上可以看出，HBase中的存储包括HMaster、HRegionServer、HRegion、Store、MemStore、StoreFile、HFile、HLog等，本篇文章统一介绍他们的作用即存储结构。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/06/15/hbase-note-about-data-structure/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="HBase笔记：存储结构" />
+<meta property="og:description" content="从HBase的架构图上可以看出，HBase中的存储包括HMaster、HRegionServer、HRegion、Store、MemStore、StoreFile、HFile、HLog等，本篇文章统一介绍他们的作用即存储结构。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/06/15/hbase-note-about-data-structure/" />
+<meta property="article:published_time" content="2013-06-15T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-06-15T00:00:00+08:00" />
+<meta itemprop="name" content="HBase笔记：存储结构">
+<meta itemprop="description" content="从HBase的架构图上可以看出，HBase中的存储包括HMaster、HRegionServer、HRegion、Store、MemStore、StoreFile、HFile、HLog等，本篇文章统一介绍他们的作用即存储结构。">
+
+
+<meta itemprop="datePublished" content="2013-06-15T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-06-15T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="3884">
+
+
+
+<meta itemprop="keywords" content="hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="HBase笔记：存储结构"/>
+<meta name="twitter:description" content="从HBase的架构图上可以看出，HBase中的存储包括HMaster、HRegionServer、HRegion、Store、MemStore、StoreFile、HFile、HLog等，本篇文章统一介绍他们的作用即存储结构。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">HBase笔记：存储结构</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-06-15 </span>
+        <div class="post-category">
+            <a href="/categories/hbase/"> hbase </a>
+            </div>
+          <span class="more-meta"> 约 3884 字 </span>
+          <span class="more-meta"> 预计阅读 8 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#hmaster的作用">HMaster的作用：</a></li>
+<li><a href="#hregionserver作用">HRegionServer作用：</a></li>
+<li><a href="#hregion">HRegion</a></li>
+<li><a href="#store">Store</a></li>
+<li><a href="#memstore">MemStore</a></li>
+<li><a href="#storefile">StoreFile</a></li>
+<li><a href="#hfile">HFile</a></li>
+<li><a href="#hlog">HLog</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>从HBase的架构图上可以看出，HBase中的存储包括HMaster、HRegionServer、HRegion、Store、MemStore、StoreFile、HFile、HLog等，本篇文章统一介绍他们的作用即存储结构。</p>
+
+<p>以下是网络上流传的HBase存储架构图:</p>
+
+<p><img src="/images/hbase-structure.jpg" alt="hbase-structure" /></p>
+
+<p>HBase中的每张表都通过行键按照一定的范围被分割成多个子表（HRegion），默认一个HRegion超过256M就要被分割成两个，这个过程由HRegionServer管理，而HRegion的分配由HMaster管理。</p>
+
+<h1 id="hmaster的作用">HMaster的作用：</h1>
+
+<ul>
+<li>为Region server分配region</li>
+<li>负责Region server的负载均衡</li>
+<li>发现失效的Region server并重新分配其上的region</li>
+<li>HDFS上的垃圾文件回收</li>
+<li>处理schema更新请求</li>
+</ul>
+
+<h1 id="hregionserver作用">HRegionServer作用：</h1>
+
+<ul>
+<li>维护master分配给他的region，处理对这些region的io请求</li>
+<li>负责切分正在运行过程中变的过大的region</li>
+</ul>
+
+<p>可以看到，client访问hbase上的数据并不需要master参与（寻址访问zookeeper和region server，数据读写访问region server），master仅仅维护table和region的元数据信息（table的元数据信息保存在zookeeper上），负载很低。</p>
+
+<p>HRegionServer存取一个子表时，会创建一个HRegion对象，然后对表的每个列族创建一个Store实例，每个Store都会有一个MemStore和0个或多个StoreFile与之对应，每个StoreFile都会对应一个HFile， HFile就是实际的存储文件。因此，一个HRegion有多少个列族就有多少个Store。</p>
+
+<p>一个HRegionServer会有多个HRegion和一个HLog。</p>
+
+<h1 id="hregion">HRegion</h1>
+
+<p>table在行的方向上分隔为多个Region。Region是HBase中分布式存储和负载均衡的最小单元，即不同的region可以分别在不同的Region Server上，但同一个Region是不会拆分到多个server上。</p>
+
+<p>Region按大小分隔，每个表一行是只有一个region。随着数据不断插入表，region不断增大，<strong>当region的某个列族达到一个阈值</strong>（默认256M）时就会分成两个新的region。</p>
+
+<p>每个region由以下信息标识：</p>
+
+<ul>
+<li>&lt;表名,startRowkey,创建时间&gt;</li>
+<li>由目录表(-ROOT-和.META.)可值该region的endRowkey</li>
+</ul>
+
+<p>HRegion定位：</p>
+
+<p>Region被分配给哪个Region Server是完全动态的，所以需要机制来定位Region具体在哪个region server。</p>
+
+<p>HBase使用三层结构来定位region：</p>
+
+<ul>
+<li>1、 通过zk里的文件/hbase/rs得到-ROOT-表的位置。-ROOT-表只有一个region。</li>
+<li>2、通过-ROOT-表查找.META.表的第一个表中相应的region的位置。其实-ROOT-表是.META.表的第一个region；.META.表中的每一个region在-ROOT-表中都是一行记录。</li>
+<li>3、通过.META.表找到所要的用户表region的位置。用户表中的每个region在.META.表中都是一行记录。</li>
+</ul>
+
+<p><img src="http://images.cnblogs.com/cnblogs_com/chenli0513/image0030.jpg" alt="" /></p>
+
+<p>-ROOT-表永远不会被分隔为多个region，保证了最多需要三次跳转，就能定位到任意的region。client会讲查询的位置信息保存缓存起来，缓存不会主动失效，因此如果client上的缓存全部失效，则需要进行6次网络来回，才能定位到正确的region，其中蚕丝用来发现缓存失效，另外三次用来获取位置信息。</p>
+
+<h1 id="store">Store</h1>
+
+<p>每一个region有一个或多个store组成，至少是一个store，hbase会把一起访问的数据放在一个store里面，即为每个ColumnFamily建一个store，如果有几个ColumnFamily，也就有几个Store。一个Store由一个memStore和0或者多个StoreFile组成。</p>
+
+<p>HBase以store的大小来判断是否需要切分region。</p>
+
+<h1 id="memstore">MemStore</h1>
+
+<p>memStore 是放在内存里的。保存修改的数据即keyValues。当memStore的大小达到一个阀值（默认64MB）时，memStore会被flush到文件，即生成一个快照。目前hbase 会有一个线程来负责memStore的flush操作。</p>
+
+<h1 id="storefile">StoreFile</h1>
+
+<p>memStore内存中的数据写到文件后就是StoreFile，StoreFile底层是以HFile的格式保存。</p>
+
+<h1 id="hfile">HFile</h1>
+
+<p>HBase中KeyValue数据的存储格式，是hadoop的二进制格式文件。</p>
+
+<p>首先HFile文件是不定长的，长度固定的只有其中的两块：Trailer和FileInfo。Trailer中又指针指向其他数据块的起始点，FileInfo记录了文件的一些meta信息。</p>
+
+<p>Data Block是hbase io的基本单元，为了提高效率，HRegionServer中又基于LRU的block cache机制。每个Data块的大小可以在创建一个Table的时候通过参数指定（默认块大小64KB），大号的Block有利于顺序Scan，小号的Block利于随机查询。每个Data块除了开头的Magic以外就是一个个KeyValue对拼接而成，Magic内容就是一些随机数字，目的是烦着数据损坏，结构如下。</p>
+
+<p><img src="/images/hfile-keyvalue-structure.jpg" alt="" /></p>
+
+<p>HFile结构图如下：</p>
+
+<p><img src="/images/hfile-structure.jpg" alt="" /></p>
+
+<p>Data Block段用来保存表中的数据，这部分可以被压缩。</p>
+
+<p>Meta Block段（可选的）用来保存用户自定义的kv段，可以被压缩。</p>
+
+<p>FileInfo段用来保存HFile的元信息，本能被压缩，用户也可以在这一部分添加自己的元信息。</p>
+
+<p>Data Block Index段（可选的）用来保存Meta Blcok的索引。</p>
+
+<p>Trailer这一段是定长的。保存了每一段的偏移量，读取一个HFile时，会首先读取Trailer，Trailer保存了每个段的起始位置(段的Magic Number用来做安全check)，然后，DataBlock Index会被读取到内存中，这样，当检索某个key时，不需要扫描整个HFile，而只需从内存中找到key所在的block，通过一次磁盘io将整个 block读取到内存中，再找到需要的key。DataBlock Index采用LRU机制淘汰。</p>
+
+<p>HFile的Data Block，Meta Block通常采用压缩方式存储，压缩之后可以大大减少网络IO和磁盘IO，随之而来的开销当然是需要花费cpu进行压缩和解压缩。目标HFile的压缩支持两种方式：gzip、lzo。</p>
+
+<p><img src="/images/hfile-data-storeage.jpg" alt="" /></p>
+
+<p>另外，针对目前针对现有HFile的两个主要缺陷：</p>
+
+<ul>
+<li>a) 暂用过多内存</li>
+<li>b) 启动加载时间缓慢</li>
+</ul>
+
+<p>提出了HFile Version2设计：<a href="https://issues.apache.org/jira/secure/attachment/12478329/hfile_format_v2_design_draft_0.1.pdf">https://issues.apache.org/jira/secure/attachment/12478329/hfile_format_v2_design_draft_0.1.pdf</a></p>
+
+<h1 id="hlog">HLog</h1>
+
+<p>其实HLog文件就是一个普通的Hadoop Sequence File，
+Sequence File的value是key时HLogKey对象，其中记录了写入数据的归属信息，除了table和region名字外，还同时包括sequence number和timestamp，timestamp是写入时间，equence number的起始值为0，或者是最近一次存入文件系统中的equence number。</p>
+
+<p>Sequence File的value是HBase的KeyValue对象，即对应HFile中的KeyValue。</p>
+
+<p><img src="/images/hlog-structure.jpg" alt="" /></p>
+
+<p>HLog(WAL log)：WAL意为write ahead log，用来做灾难恢复使用，HLog记录数据的所有变更，一旦region server 宕机，就可以从log中进行恢复。</p>
+
+<p><img src="/images/hbase-write-hlog-process.jpg" alt="" /></p>
+
+<p>LogFlusher</p>
+
+<p>前面提到，数据以KeyValue形式到达HRegionServer，将写入WAL，之后，写入一个SequenceFile。看过去没问题，但是因为数据流在写入文件系统时，经常会缓存以提高性能。这样，有些本以为在日志文件中的数据实际在内存中。这里，我们提供了一个LogFlusher的类。它调用HLog.optionalSync(),后者根据 <code>hbase.regionserver.optionallogflushinterval</code> (默认是10秒)，定期调用Hlog.sync()。另外，HLog.doWrite()也会根据 <code>hbase.regionserver.flushlogentries</code> (默认100秒)定期调用Hlog.sync()。Sync() 本身调用HLog.Writer.sync()，它由SequenceFileLogWriter实现。</p>
+
+<p>LogRoller</p>
+
+<p>Log的大小通过$HBASE_HOME/conf/hbase-site.xml 的 <code>hbase.regionserver.logroll.period</code> 限制，默认是一个小时。所以每60分钟，会打开一个新的log文件。久而久之，会有一大堆的文件需要维护。首先，LogRoller调用HLog.rollWriter()，定时滚动日志，之后，利用HLog.cleanOldLogs()可以清除旧的日志。它首先取得存储文件中的最大的sequence number，之后检查是否存在一个log所有的条目的“sequence number”均低于这个值，如果存在，将删除这个log。</p>
+
+<p>每个region server维护一个HLog，而不是每一个region一个，这样不同region（来自不同的table）的日志会混在一起，这样做的目的是不断追加单个文件相对于同时写多个文件而言，可以减少磁盘寻址次数，因此可以提高table的写性能。带来麻烦的时，如果一个region server下线，为了恢复其上的region，需要讲region server上的log进行拆分，然后分发到其他region server上进行恢复。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-06-15
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/07/20/install-rhadoop/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">安装RHadoop</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2013/06/08/java-collection-framework/">
+            <span class="next-text nav-default">Java笔记：集合框架实现原理</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

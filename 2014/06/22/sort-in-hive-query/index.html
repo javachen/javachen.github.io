@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Hive中的排序语法 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="测试hive中各种排序语法。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/06/22/sort-in-hive-query/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Hive中的排序语法" />
+<meta property="og:description" content="测试hive中各种排序语法。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/06/22/sort-in-hive-query/" />
+<meta property="article:published_time" content="2014-06-22T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-06-22T08:00:00+08:00" />
+<meta itemprop="name" content="Hive中的排序语法">
+<meta itemprop="description" content="测试hive中各种排序语法。">
+
+
+<meta itemprop="datePublished" content="2014-06-22T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-06-22T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1338">
+
+
+
+<meta itemprop="keywords" content="hive," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hive中的排序语法"/>
+<meta name="twitter:description" content="测试hive中各种排序语法。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Hive中的排序语法</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-06-22 </span>
+        <div class="post-category">
+            <a href="/categories/hive/"> hive </a>
+            </div>
+          <span class="more-meta"> 约 1338 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#order-by">ORDER BY</a></li>
+<li><a href="#sort-by">SORT BY</a></li>
+<li><a href="#distribute-by-with-sort-by">DISTRIBUTE BY with SORT BY</a></li>
+<li><a href="#cluster-by来代替">CLUSTER BY来代替</a></li>
+<li><a href="#总结">总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="order-by">ORDER BY</h1>
+
+<p>hive中的ORDER BY语句和关系数据库中的sql语法相似。他会对查询结果做全局排序，这意味着所有的数据会传送到一个Reduce任务上，这样会导致在大数量的情况下，花费大量时间。</p>
+
+<p>与数据库中 ORDER BY 的区别在于在<code>hive.mapred.mode = strict</code>模式下，必须指定 limit 否则执行会报错。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">set</span> <span class="n">hive</span><span class="p">.</span><span class="n">mapred</span><span class="p">.</span><span class="k">mode</span><span class="o">=</span><span class="k">strict</span><span class="p">;</span>
+<span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="k">order</span> <span class="k">by</span> <span class="n">id</span><span class="p">;</span>
+<span class="n">FAILED</span><span class="p">:</span> <span class="n">SemanticException</span> <span class="mi">1</span><span class="p">:</span><span class="mi">28</span> <span class="k">In</span> <span class="k">strict</span> <span class="k">mode</span><span class="p">,</span> <span class="k">if</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="k">is</span> <span class="n">specified</span><span class="p">,</span> <span class="k">LIMIT</span> <span class="n">must</span> <span class="n">also</span> <span class="n">be</span> <span class="n">specified</span><span class="p">.</span> <span class="n">Error</span> <span class="n">encountered</span> <span class="n">near</span> <span class="n">token</span> <span class="s1">&#39;id&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hive&gt; set hive.mapred.mode=unstrict;
+hive&gt; select * from test order BY id ;
+MapReduce Jobs Launched: 
+Job 0: Map: 1  Reduce: 1   Cumulative CPU: 1.88 sec   HDFS Read: 305 HDFS Write: 32 SUCCESS
+Total MapReduce CPU Time Spent: 1 seconds 880 msec
+OK
+1	a
+1	a
+2	b
+2	b
+3	c
+3	c
+4	d
+4	d
+Time taken: 24.609 seconds, Fetched: 8 row(s)</pre></td></tr></table>
+</div>
+</div>
+<p>从上面的日志可以看到：启动了一个reduce进行全局排序。</p>
+
+<h1 id="sort-by">SORT BY</h1>
+
+<p>SORT BY不是全局排序，其在数据进入reducer前完成排序，因此在有多个reduce任务情况下，SORT BY只能保证每个reduce的输出有序，而不能保证全局有序。</p>
+
+<blockquote>
+<p>注意：SORT BY 不受 <code>hive.mapred.mode</code> 参数的影响</p>
+</blockquote>
+
+<p>你可以通过设置<code>mapred.reduce.tasks</code>的值来控制reduce的数，然后对reduce输出的结果做二次排序。</p>
+
+<p>例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">set</span> <span class="n">mapred</span><span class="p">.</span><span class="n">reduce</span><span class="p">.</span><span class="n">tasks</span><span class="o">=</span><span class="mi">3</span><span class="p">;</span>
+<span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="n">sort</span> <span class="k">BY</span> <span class="n">id</span> <span class="p">;</span> 
+<span class="n">MapReduce</span> <span class="n">Jobs</span> <span class="n">Launched</span><span class="p">:</span> 
+<span class="n">Job</span> <span class="mi">0</span><span class="p">:</span> <span class="k">Map</span><span class="p">:</span> <span class="mi">1</span>  <span class="n">Reduce</span><span class="p">:</span> <span class="mi">3</span>   <span class="n">Cumulative</span> <span class="n">CPU</span><span class="p">:</span> <span class="mi">4</span><span class="p">.</span><span class="mi">48</span> <span class="n">sec</span>   <span class="n">HDFS</span> <span class="k">Read</span><span class="p">:</span> <span class="mi">305</span> <span class="n">HDFS</span> <span class="k">Write</span><span class="p">:</span> <span class="mi">32</span> <span class="n">SUCCESS</span>
+<span class="n">Total</span> <span class="n">MapReduce</span> <span class="n">CPU</span> <span class="n">Time</span> <span class="n">Spent</span><span class="p">:</span> <span class="mi">4</span> <span class="n">seconds</span> <span class="mi">480</span> <span class="n">msec</span>
+<span class="n">OK</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">29</span><span class="p">.</span><span class="mi">574</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>从上面的日志可以看到：启动了三个reduce分别排序，最后的结果不是有序的。</p>
+
+<h1 id="distribute-by-with-sort-by">DISTRIBUTE BY with SORT BY</h1>
+
+<p>DISTRIBUTE BY能够控制map的输出在reduce中如何划分。其可以按照指定的字段对数据进行划分到不同的输出reduce/文件中。</p>
+
+<p>DISTRIBUTE BY和GROUP BY有点类似，DISTRIBUTE BY控制reduce如何处理数据，而SORT BY控制reduce中的数据如何排序。</p>
+
+<blockquote>
+<p>注意：hive要求DISTRIBUTE BY语句出现在SORT BY语句之前。</p>
+</blockquote>
+
+<p>例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="n">distribute</span> <span class="k">BY</span> <span class="n">id</span> <span class="n">sort</span> <span class="k">by</span> <span class="n">id</span> <span class="k">asc</span><span class="p">;</span>  
+<span class="n">Job</span> <span class="mi">0</span><span class="p">:</span> <span class="k">Map</span><span class="p">:</span> <span class="mi">1</span>  <span class="n">Reduce</span><span class="p">:</span> <span class="mi">3</span>   <span class="n">Cumulative</span> <span class="n">CPU</span><span class="p">:</span> <span class="mi">4</span><span class="p">.</span><span class="mi">24</span> <span class="n">sec</span>   <span class="n">HDFS</span> <span class="k">Read</span><span class="p">:</span> <span class="mi">305</span> <span class="n">HDFS</span> <span class="k">Write</span><span class="p">:</span> <span class="mi">32</span> <span class="n">SUCCESS</span>
+<span class="n">Total</span> <span class="n">MapReduce</span> <span class="n">CPU</span> <span class="n">Time</span> <span class="n">Spent</span><span class="p">:</span> <span class="mi">4</span> <span class="n">seconds</span> <span class="mi">240</span> <span class="n">msec</span>
+<span class="n">OK</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">29</span><span class="p">.</span><span class="mi">89</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>从上面的日志可以看到：启动了三个reduce分别排序，最后的结果不是有序的。</p>
+
+<h1 id="cluster-by来代替">CLUSTER BY来代替</h1>
+
+<p>当DISTRIBUTE BY的字段和SORT BY的字段相同时，可以用CLUSTER BY来代替 DISTRIBUTE BY with SORT BY。</p>
+
+<blockquote>
+<p>注意：CLUSTER BY不能添加desc或者asc。</p>
+</blockquote>
+
+<p>例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="k">cluster</span> <span class="k">by</span> <span class="n">id</span> <span class="k">asc</span><span class="p">;</span>              
+<span class="n">FAILED</span><span class="p">:</span> <span class="n">ParseException</span> <span class="n">line</span> <span class="mi">1</span><span class="p">:</span><span class="mi">33</span> <span class="n">extraneous</span> <span class="k">input</span> <span class="s1">&#39;asc&#39;</span> <span class="n">expecting</span> <span class="n">EOF</span> <span class="n">near</span> <span class="s1">&#39;&lt;EOF&gt;&#39;</span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="k">cluster</span> <span class="k">by</span> <span class="n">id</span> <span class="p">;</span>
+<span class="n">MapReduce</span> <span class="n">Jobs</span> <span class="n">Launched</span><span class="p">:</span> 
+<span class="n">Job</span> <span class="mi">0</span><span class="p">:</span> <span class="k">Map</span><span class="p">:</span> <span class="mi">1</span>  <span class="n">Reduce</span><span class="p">:</span> <span class="mi">3</span>   <span class="n">Cumulative</span> <span class="n">CPU</span><span class="p">:</span> <span class="mi">4</span><span class="p">.</span><span class="mi">58</span> <span class="n">sec</span>   <span class="n">HDFS</span> <span class="k">Read</span><span class="p">:</span> <span class="mi">305</span> <span class="n">HDFS</span> <span class="k">Write</span><span class="p">:</span> <span class="mi">32</span> <span class="n">SUCCESS</span>
+<span class="n">Total</span> <span class="n">MapReduce</span> <span class="n">CPU</span> <span class="n">Time</span> <span class="n">Spent</span><span class="p">:</span> <span class="mi">4</span> <span class="n">seconds</span> <span class="mi">580</span> <span class="n">msec</span>
+<span class="n">OK</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">30</span><span class="p">.</span><span class="mi">646</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>从上面的日志可以看到：启动了三个reduce分别排序，最后的结果不是有序的。</p>
+
+<p><strong>怎样让最后的结果是有序的呢？</strong></p>
+
+<p>可以这样做：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">select</span> <span class="n">a</span><span class="p">.</span><span class="o">*</span> <span class="k">from</span> <span class="p">(</span><span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">test</span> <span class="k">cluster</span> <span class="k">by</span> <span class="n">id</span> <span class="p">)</span> <span class="n">a</span> <span class="k">order</span> <span class="k">by</span> <span class="n">a</span><span class="p">.</span><span class="n">id</span> <span class="p">;</span>
+<span class="n">MapReduce</span> <span class="n">Jobs</span> <span class="n">Launched</span><span class="p">:</span> 
+<span class="n">Job</span> <span class="mi">0</span><span class="p">:</span> <span class="k">Map</span><span class="p">:</span> <span class="mi">1</span>  <span class="n">Reduce</span><span class="p">:</span> <span class="mi">3</span>   <span class="n">Cumulative</span> <span class="n">CPU</span><span class="p">:</span> <span class="mi">4</span><span class="p">.</span><span class="mi">5</span> <span class="n">sec</span>   <span class="n">HDFS</span> <span class="k">Read</span><span class="p">:</span> <span class="mi">305</span> <span class="n">HDFS</span> <span class="k">Write</span><span class="p">:</span> <span class="mi">448</span> <span class="n">SUCCESS</span>
+<span class="n">Job</span> <span class="mi">1</span><span class="p">:</span> <span class="k">Map</span><span class="p">:</span> <span class="mi">1</span>  <span class="n">Reduce</span><span class="p">:</span> <span class="mi">1</span>   <span class="n">Cumulative</span> <span class="n">CPU</span><span class="p">:</span> <span class="mi">1</span><span class="p">.</span><span class="mi">96</span> <span class="n">sec</span>   <span class="n">HDFS</span> <span class="k">Read</span><span class="p">:</span> <span class="mi">1232</span> <span class="n">HDFS</span> <span class="k">Write</span><span class="p">:</span> <span class="mi">32</span> <span class="n">SUCCESS</span>
+<span class="n">Total</span> <span class="n">MapReduce</span> <span class="n">CPU</span> <span class="n">Time</span> <span class="n">Spent</span><span class="p">:</span> <span class="mi">6</span> <span class="n">seconds</span> <span class="mi">460</span> <span class="n">msec</span>
+<span class="n">OK</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">1</span>	<span class="n">a</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">2</span>	<span class="n">b</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">3</span>	<span class="k">c</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="mi">4</span>	<span class="n">d</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">118</span><span class="p">.</span><span class="mi">261</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="总结">总结</h1>
+
+<ul>
+<li>ORDER BY是全局排序，但在数据量大的情况下，花费时间会很长</li>
+<li>SORT BY是将reduce的单个输出进行排序，不能保证全局有序</li>
+<li>DISTRIBUTE BY可以按指定字段将数据划分到不同的reduce中</li>
+<li>当DISTRIBUTE BY的字段和SORT BY的字段相同时，可以用CLUSTER BY来代替 DISTRIBUTE BY with SORT BY。</li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-06-22
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hive/">hive</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/06/24/the-running-process-of-mapreduce-job/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">MapReduce任务运行过程</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/06/21/the-introduction-of-lucene/">
+            <span class="next-text nav-default">Lucene介绍</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

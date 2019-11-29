@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>手动安装Hadoop集群 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="手动安装Cloudera Hadoop CDH4" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/03/24/manual-install-Cloudera-Hadoop-CDH/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="手动安装Hadoop集群" />
+<meta property="og:description" content="手动安装Cloudera Hadoop CDH4" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/03/24/manual-install-Cloudera-Hadoop-CDH/" />
+<meta property="article:published_time" content="2013-03-24T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-03-24T00:00:00+08:00" />
+<meta itemprop="name" content="手动安装Hadoop集群">
+<meta itemprop="description" content="手动安装Cloudera Hadoop CDH4">
+
+
+<meta itemprop="datePublished" content="2013-03-24T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-03-24T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2462">
+
+
+
+<meta itemprop="keywords" content="hadoop,cdh," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="手动安装Hadoop集群"/>
+<meta name="twitter:description" content="手动安装Cloudera Hadoop CDH4"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">手动安装Hadoop集群</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-03-24 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 2462 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装版本">安装版本</a></li>
+<li><a href="#安装前说明">安装前说明</a></li>
+<li><a href="#规划">规划</a></li>
+<li><a href="#部署过程">部署过程</a>
+<ul>
+<li><a href="#系统和网络配置">系统和网络配置</a></li>
+</ul></li>
+<li><a href="#安装hadoop">安装Hadoop</a>
+<ul>
+<li><a href="#配置hadoop">配置Hadoop</a></li>
+<li><a href="#配置mapreduce">配置MapReduce</a></li>
+<li><a href="#修改环境变量">修改环境变量</a></li>
+<li><a href="#启动脚本">启动脚本</a></li>
+<li><a href="#检查集群进程">检查集群进程</a></li>
+</ul></li>
+<li><a href="#相关文章">相关文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="安装版本">安装版本</h1>
+
+<p>centos版本为6。</p>
+
+<p>hadoop各个组件和jdk版本如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	hadoop-2.0.0-cdh4.6.0
+	hbase-0.94.15-cdh4.6.0
+	hive-0.10.0-cdh4.6.0
+	jdk1.6.0_38</pre></td></tr></table>
+</div>
+</div>
+<p>hadoop各组件可以在<a href="http://archive.cloudera.com/cdh4/cdh/4/">这里</a>下载。</p>
+
+<h1 id="安装前说明">安装前说明</h1>
+
+<ul>
+<li>确定安装目录为/opt</li>
+<li>检查hosts文件是否设置集群各节点的hostname和ip映射</li>
+<li>关闭每个节点的防火墙</li>
+<li>设置每个节点时钟同步</li>
+</ul>
+
+<h1 id="规划">规划</h1>
+
+<p>集群规划为3个节点，每个节点的ip、主机名和部署的组件分配如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	192.168.0.1        desktop1     NameNode、Hive、ResourceManager、impala
+	192.168.0.2        desktop2     SSNameNode
+	192.168.0.3        desktop3     DataNode、HBase、NodeManager、impala</pre></td></tr></table>
+</div>
+</div>
+<h1 id="部署过程">部署过程</h1>
+
+<h2 id="系统和网络配置">系统和网络配置</h2>
+
+<ol>
+<li><p>修改每个节点的主机名称</p>
+
+<p>例如在desktop1节点上做如下修改：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# cat /etc/sysconfig/network
+	NETWORKING=yes
+	HOSTNAME=desktop1</pre></td></tr></table>
+</div>
+</div></li>
+
+<li><p>在每个节点上修改<code>/etc/hosts</code>增加以下内容:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# cat /etc/hosts
+	127.0.0.1   localhost
+	192.168.0.1		desktop1
+	192.168.0.2		desktop2</pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+
+<p>修改一台机器之后，可以使用scp同步到其他机器。</p>
+
+<ol>
+<li>配置ssh无密码登陆</li>
+</ol>
+
+<p>以下是设置desktop1上可以无密码登陆到其他机器上。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# ssh-keygen
+	[root@desktop1 ~]# ssh-copy-id -i .ssh/id_rsa.pub desktop2
+	[root@desktop1 ~]# ssh-copy-id -i .ssh/id_rsa.pub desktop3</pre></td></tr></table>
+</div>
+</div>
+<ol>
+<li><p>每台机器上关闭防火墙：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# service iptables stop
+	[root@desktop1 ~]# ssh desktop2 &#39;service iptables stop&#39;
+	[root@desktop1 ~]# ssh desktop3 &#39;service iptables stop&#39;</pre></td></tr></table>
+</div>
+</div></li>
+</ol>
+
+<h1 id="安装hadoop">安装Hadoop</h1>
+
+<h2 id="配置hadoop">配置Hadoop</h2>
+
+<p>将jdk1.6.0_38.zip上传到/opt，并解压缩。</p>
+
+<p>将hadoop-2.0.0-cdh4.2.0.zip上传到/opt，并解压缩。</p>
+
+<p><strong>在NameNode上需要修改以下文件</strong>：</p>
+
+<ul>
+<li>core-site.xml fs.defaultFS指定NameNode文件系统，开启回收站功能。</li>
+<li>hdfs-site.xml
+
+<ul>
+<li>dfs.namenode.name.dir指定NameNode存储meta和editlog的目录，</li>
+<li>dfs.datanode.data.dir指定DataNode存储blocks的目录，</li>
+<li>dfs.namenode.secondary.http-address指定Secondary NameNode地址。</li>
+<li>开启WebHDFS。</li>
+</ul></li>
+<li>slaves 添加DataNode节点主机</li>
+</ul>
+
+<p><strong>注意</strong>：在desktop1节点上修改如下几个文件的内容：</p>
+
+<ol>
+<li>core-site.xml</li>
+</ol>
+
+<p>在该文件中修改fs.defaultFS指向desktop1节点，即配置desktop1为NameNode节点。</p>
+
+<p>修改后的core-site.xml(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/core-site.xml</code>)目录如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+<span class="cp">&lt;?xml-stylesheet type=&#34;text/xsl&#34; href=&#34;configuration.xsl&#34;?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+<span class="c">&lt;!--fs.default.name for MRV1 ,fs.defaultFS for MRV2(yarn) --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+     <span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+         <span class="c">&lt;!--这个地方的值要和hdfs-site.xml文件中的dfs.federation.nameservices一致--&gt;</span>
+     <span class="nt">&lt;value&gt;</span>hdfs://desktop1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>fs.trash.interval<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>10080<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>fs.trash.checkpoint.interval<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>10080<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<ol>
+<li>hdfs-site.xml</li>
+</ol>
+
+<p>该文件主要设置数据副本保存份数，以及namenode、datanode数据保存路径(<code>/opt/data/hadoop-${user.name}</code>)以及http-address。</p>
+
+<p>修改后的hdfs-site.xml(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/hdfs-site.xml</code>)文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;
+&lt;?xml-stylesheet type=&#34;text/xsl&#34; href=&#34;configuration.xsl&#34;?&gt;
+&lt;configuration&gt;
+&lt;property&gt;
+  &lt;name&gt;dfs.replication&lt;/name&gt;
+  &lt;value&gt;1&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+  &lt;name&gt;hadoop.tmp.dir&lt;/name&gt;
+  &lt;value&gt;/opt/data/hadoop-${user.name}&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+&lt;name&gt;dfs.namenode.http-address&lt;/name&gt;
+&lt;value&gt;desktop1:50070&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+&lt;name&gt;dfs.namenode.secondary.http-address&lt;/name&gt;
+&lt;value&gt;desktop2:50090&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+&lt;name&gt;dfs.webhdfs.enabled&lt;/name&gt;
+&lt;value&gt;true&lt;/value&gt;
+&lt;/property&gt;
+&lt;/configuration&gt;</pre></td></tr></table>
+</div>
+</div>
+<ol>
+<li>masters</li>
+</ol>
+
+<p>设置namenode和secondary namenode节点。</p>
+
+<p>修改后的masters(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/masters</code>)文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">desktop1
+desktop2</pre></td></tr></table>
+</div>
+</div>
+<p>第一行为namenode，第二行为secondary namenode。</p>
+
+<ol>
+<li>slaves</li>
+</ol>
+
+<p>设置哪些机器上安装datanode节点。
+修改后的slaves(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/slaves</code>)文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">desktop3
+desktop4
+desktop5
+desktop6
+desktop7</pre></td></tr></table>
+</div>
+</div>
+<p>接下来将上面几个文件同步到其他各个节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# scp /opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/ desktop2:/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/
+	[root@desktop1 ~]# scp /opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/ desktop3:/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/</pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置mapreduce">配置MapReduce</h2>
+
+<p>接下来还是在desktop1节点上修改以下几个文件：</p>
+
+<ol>
+<li>mapred-site.xml</li>
+</ol>
+
+<p>配置使用yarn计算框架，以及jobhistory的地址。</p>
+
+<p>修改后的mapred-site.xml(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/mapred-site.xml</code>)文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">&lt;?xml version=&#34;1.0&#34;?&gt;
+&lt;?xml-stylesheet type=&#34;text/xsl&#34; href=&#34;configuration.xsl&#34;?&gt;
+&lt;configuration&gt;
+&lt;property&gt;
+ &lt;name&gt;mapreduce.framework.name&lt;/name&gt;
+ &lt;value&gt;yarn&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;mapreduce.jobhistory.address&lt;/name&gt;
+ &lt;value&gt;desktop1:10020&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;mapreduce.jobhistory.webapp.address&lt;/name&gt;
+ &lt;value&gt;desktop1:19888&lt;/value&gt;
+&lt;/property&gt;
+&lt;/configuration&gt;</pre></td></tr></table>
+</div>
+</div>
+<ol>
+<li>yarn-site.xml</li>
+</ol>
+
+<p>主要配置resourcemanager地址以及<code>yarn.application.classpath</code>（这个路径很重要，要不然集成hive时候会提示找不到class）</p>
+
+<p>修改后的yarn-site.xml(<code>/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/yarn-site.xml</code>)文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">&lt;?xml version=&#34;1.0&#34;?&gt;
+&lt;configuration&gt;
+&lt;property&gt;
+    &lt;name&gt;yarn.resourcemanager.resource-tracker.address&lt;/name&gt;
+    &lt;value&gt;desktop1:8031&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.resourcemanager.address&lt;/name&gt;
+    &lt;value&gt;desktop1:8032&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.resourcemanager.scheduler.address&lt;/name&gt;
+    &lt;value&gt;desktop1:8030&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.resourcemanager.admin.address&lt;/name&gt;
+    &lt;value&gt;desktop1:8033&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.resourcemanager.webapp.address&lt;/name&gt;
+    &lt;value&gt;desktop1:8088&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;description&gt;Classpath for typical applications.&lt;/description&gt;
+    &lt;name&gt;yarn.application.classpath&lt;/name&gt;
+    &lt;value&gt;$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/share/hadoop/common/*,
+	$HADOOP_COMMON_HOME/share/hadoop/common/lib/*,
+	$HADOOP_HDFS_HOME/share/hadoop/hdfs/*,$HADOOP_HDFS_HOME/share/hadoop/hdfs/lib/*,
+	$YARN_HOME/share/hadoop/yarn/*,$YARN_HOME/share/hadoop/yarn/lib/*,
+	$YARN_HOME/share/hadoop/mapreduce/*,$YARN_HOME/share/hadoop/mapreduce/lib/*&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.nodemanager.aux-services&lt;/name&gt;
+    &lt;value&gt;mapreduce.shuffle&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.nodemanager.aux-services.mapreduce.shuffle.class&lt;/name&gt;
+    &lt;value&gt;org.apache.hadoop.mapred.ShuffleHandler&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.nodemanager.local-dirs&lt;/name&gt;
+    &lt;value&gt;/opt/data/yarn/local&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.nodemanager.log-dirs&lt;/name&gt;
+    &lt;value&gt;/opt/data/yarn/logs&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;description&gt;Where to aggregate logs&lt;/description&gt;
+    &lt;name&gt;yarn.nodemanager.remote-app-log-dir&lt;/name&gt;
+    &lt;value&gt;/opt/data/yarn/logs&lt;/value&gt;
+  &lt;/property&gt;
+  &lt;property&gt;
+    &lt;name&gt;yarn.app.mapreduce.am.staging-dir&lt;/name&gt;
+    &lt;value&gt;/user&lt;/value&gt;
+ &lt;/property&gt;
+&lt;/configuration&gt;</pre></td></tr></table>
+</div>
+</div>
+<p>同样地，将上面2个文件同步到其他各个节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# scp /opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/ desktop2:/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/
+	[root@desktop1 ~]# scp /opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/ desktop3:/opt/hadoop-2.0.0-cdh4.6.0/etc/hadoop/</pre></td></tr></table>
+</div>
+</div>
+<h2 id="修改环境变量">修改环境变量</h2>
+
+<p>修改<code>/root/.bashrc</code>环境变量，并将其同步到其他几台机器</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 ~] # cat .bashrc 
+# .bashrc
+alias rm=&#39;rm -i&#39;
+alias cp=&#39;cp -i&#39;
+alias mv=&#39;mv -i&#39;
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+# User specific environment and startup programs
+export LANG=zh_CN.utf8
+export JAVA_HOME=/opt/jdk1.6.0_38
+export JRE_HOME=$JAVA_HOME/jre
+export CLASSPATH=./:$JAVA_HOME/lib:$JRE_HOME/lib:$JRE_HOME/lib/tools.jar
+export HADOOP_HOME=/opt/hadoop-2.0.0-cdh4.2.0
+export HIVE_HOME=/opt/hive-0.10.0-cdh4.2.0
+export HBASE_HOME=/opt/hbase-0.94.2-cdh4.2.0
+export HADOOP_MAPRED_HOME=${HADOOP_HOME}
+export HADOOP_COMMON_HOME=${HADOOP_HOME}
+export HADOOP_HDFS_HOME=${HADOOP_HOME}
+export YARN_HOME=${HADOOP_HOME}
+export HADOOP_YARN_HOME=${HADOOP_HOME}
+export HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+export HDFS_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+export YARN_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+export PATH=$PATH:$HOME/bin:$JAVA_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$HIVE_HOME/bin</pre></td></tr></table>
+</div>
+</div>
+<p>修改配置文件之后，使其生效。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 ~]# source .bashrc </pre></td></tr></table>
+</div>
+</div>
+<p>将该文件同步到其他各个节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# scp /root/.bashrc desktop2:/root
+	[root@desktop1 ~]# scp /root/.bashrc desktop3:/root</pre></td></tr></table>
+</div>
+</div>
+<p>并且使各个节点的环境变量生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">	[root@desktop1 ~]# ssh desktop2 &#39;source .bashrc&#39;
+	[root@desktop1 ~]# ssh desktop3 &#39;source .bashrc&#39;</pre></td></tr></table>
+</div>
+</div>
+<h2 id="启动脚本">启动脚本</h2>
+
+<p>第一次启动hadoop需要先格式化NameNode，该操作只做一次。当修改了配置文件时，需要重新格式化</p>
+
+<p>在desktop1上格式化：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 hadoop]hadoop namenode -format</pre></td></tr></table>
+</div>
+</div>
+<p>在desktop1上启动hdfs：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 hadoop]#start-dfs.sh</pre></td></tr></table>
+</div>
+</div>
+<p>在desktop1上启动mapreduce：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 hadoop]#start-yarn.sh</pre></td></tr></table>
+</div>
+</div>
+<p>在desktop1上启动historyserver：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 hadoop]#mr-jobhistory-daemon.sh start historyserver</pre></td></tr></table>
+</div>
+</div>
+<p>查看MapReduce：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">http://desktop1:8088/cluster</pre></td></tr></table>
+</div>
+</div>
+<p>查看节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">http://desktop2:8042/
+http://desktop2:8042/node</pre></td></tr></table>
+</div>
+</div>
+<h2 id="检查集群进程">检查集群进程</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@desktop1 ~]# jps
+5389 NameNode
+5980 Jps
+5710 ResourceManager
+7032 JobHistoryServer
+[root@desktop2 ~]# jps
+3187 Jps
+3124 SecondaryNameNode
+[root@desktop3 ~]# jps
+3187 Jps
+3124 DataNode
+5711 NodeManager</pre></td></tr></table>
+</div>
+</div>
+<h1 id="相关文章">相关文章</h1>
+
+<ul>
+<li><a href="/2019/03/24/manual-install-Cloudera-hadoop-CDH.html">手动安装Hadoop集群</a></li>
+<li><a href="/2019/03/24/manual-install-Cloudera-hbase-CDH.html">手动安装HBase集群</a></li>
+<li><a href="/2019/03/24/manual-install-Cloudera-hive-CDH.html">手动安装Hive群</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-03-24
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/cdh/">cdh</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/03/24/manual-install-Cloudera-hive-CDH/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">手动安装Cloudera Hive CDH</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

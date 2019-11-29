@@ -1,0 +1,3191 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用yum源安装CDH集群 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要是记录使用yum源安装CDH Hadoop集群的过程，包括HDFS、Yarn、Hive和HBase。本文针对的集群版本为CDH5.4。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/04/06/install-cloudera-cdh-by-yum/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用yum源安装CDH集群" />
+<meta property="og:description" content="本文主要是记录使用yum源安装CDH Hadoop集群的过程，包括HDFS、Yarn、Hive和HBase。本文针对的集群版本为CDH5.4。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/04/06/install-cloudera-cdh-by-yum/" />
+<meta property="article:published_time" content="2013-04-06T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-04-06T00:00:00+08:00" />
+<meta itemprop="name" content="使用yum源安装CDH集群">
+<meta itemprop="description" content="本文主要是记录使用yum源安装CDH Hadoop集群的过程，包括HDFS、Yarn、Hive和HBase。本文针对的集群版本为CDH5.4。">
+
+
+<meta itemprop="datePublished" content="2013-04-06T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-04-06T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="8969">
+
+
+
+<meta itemprop="keywords" content="hadoop,hdfs,yarn,hive,hbase," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用yum源安装CDH集群"/>
+<meta name="twitter:description" content="本文主要是记录使用yum源安装CDH Hadoop集群的过程，包括HDFS、Yarn、Hive和HBase。本文针对的集群版本为CDH5.4。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用yum源安装CDH集群</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-04-06 </span>
+        <div class="post-category">
+            <a href="/categories/hadoop/"> hadoop </a>
+            </div>
+          <span class="more-meta"> 约 8969 字 </span>
+          <span class="more-meta"> 预计阅读 18 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#0-环境说明">0. 环境说明</a></li>
+<li><a href="#1-准备工作">1. 准备工作</a>
+<ul>
+<li><a href="#1-1-准备虚拟机">1.1 准备虚拟机</a></li>
+<li><a href="#1-2-禁用防火墙">1.2、禁用防火墙</a></li>
+<li><a href="#1-4-禁用ipv6">1.4 禁用IPv6</a></li>
+<li><a href="#1-5-配置hosts">1.5 配置hosts</a></li>
+<li><a href="#1-6-设置中文编码和时区">1.6 设置中文编码和时区</a></li>
+<li><a href="#1-7-设置root密码">1.7 设置root密码</a></li>
+<li><a href="#1-8-设置命名服务">1.8 设置命名服务</a></li>
+<li><a href="#1-9-生成ssh">1.9 生成ssh</a></li>
+<li><a href="#1-10-时钟同步">1.10 时钟同步</a></li>
+<li><a href="#1-11-虚拟内存设置">1.11 虚拟内存设置</a></li>
+<li><a href="#1-12-设置透明大页面">1.12 设置透明大页面</a></li>
+<li><a href="#1-13-设置文件打开数">1.13 设置文件打开数</a></li>
+<li><a href="#1-14-安装jdk">1.14 安装jdk</a></li>
+<li><a href="#1-15-配置ssh无密码登陆">1.15 配置SSH无密码登陆</a></li>
+<li><a href="#1-16-配置cdh-yum源">1.16 配置cdh yum源</a></li>
+</ul></li>
+<li><a href="#2-安装hdfs">2. 安装HDFS</a>
+<ul>
+<li><a href="#2-1-修改hadoop配置文件">2.1 修改hadoop配置文件</a></li>
+<li><a href="#2-2-指定本地文件目录">2.2 指定本地文件目录</a></li>
+<li><a href="#2-3-配置-secondarynamenode">2.3 配置 SecondaryNameNode</a></li>
+<li><a href="#2-4-开启回收站功能">2.4 开启回收站功能</a></li>
+<li><a href="#2-5-可选-配置datanode存储的负载均衡">2.5 (可选)配置DataNode存储的负载均衡</a></li>
+<li><a href="#2-6-开启webhdfs">2.6 开启WebHDFS</a></li>
+<li><a href="#2-7-配置lzo">2.7 配置LZO</a></li>
+<li><a href="#2-8-可选-配置snappy">2.8 (可选)配置Snappy</a></li>
+<li><a href="#2-9-启动hdfs">2.9 启动HDFS</a></li>
+<li><a href="#2-10-测试">2.10 测试</a></li>
+</ul></li>
+<li><a href="#3-安装yarn">3. 安装YARN</a>
+<ul>
+<li><a href="#3-1-安装服务">3.1 安装服务</a></li>
+<li><a href="#3-2-修改配置参数">3.2 修改配置参数</a></li>
+<li><a href="#3-4-验证-hdfs-结构">3.4 验证 HDFS 结构：</a></li>
+<li><a href="#3-5-同步配置文件">3.5 同步配置文件</a></li>
+<li><a href="#3-6-启动服务">3.6 启动服务</a></li>
+<li><a href="#3-7-测试">3.7 测试</a></li>
+<li><a href="#3-8-最后的配置文件">3.8 最后的配置文件</a></li>
+<li><a href="#3-9-yarn默认配置">3.9 YARN默认配置</a></li>
+</ul></li>
+<li><a href="#4-安装-zookeeper">4. 安装 Zookeeper</a>
+<ul>
+<li><a href="#4-1-安装">4.1 安装</a></li>
+<li><a href="#4-2-修改配置文件">4.2 修改配置文件</a></li>
+<li><a href="#4-4-初始化并启动服务">4.4 初始化并启动服务</a></li>
+<li><a href="#4-5-测试">4.5 测试</a></li>
+</ul></li>
+<li><a href="#5-安装-hbase">5. 安装 HBase</a>
+<ul>
+<li><a href="#5-1-安装前设置">5.1 安装前设置</a></li>
+<li><a href="#5-2-安装">5.2 安装</a></li>
+<li><a href="#5-3-修改配置文件">5.3 修改配置文件</a></li>
+<li><a href="#5-4-同步配置文件">5.4 同步配置文件</a></li>
+<li><a href="#5-5-创建本地目录">5.5 创建本地目录</a></li>
+<li><a href="#5-6-启动hbase">5.6 启动HBase</a></li>
+<li><a href="#5-7-测试">5.7 测试</a></li>
+</ul></li>
+<li><a href="#6-安装hive">6. 安装hive</a>
+<ul>
+<li><a href="#安装postgresql">安装postgresql</a></li>
+<li><a href="#安装mysql">安装mysql</a></li>
+<li><a href="#配置hive">配置hive</a></li>
+<li><a href="#测试">测试</a></li>
+<li><a href="#与hbase集成">与hbase集成</a></li>
+</ul></li>
+<li><a href="#7-遇到的问题">7. 遇到的问题</a>
+<ul>
+<li><a href="#安装hadoop过程中需要注意以下几点">安装hadoop过程中需要注意以下几点：</a></li>
+<li><a href="#使用intel的hadoop发行版idh过程遇到问题">使用intel的hadoop发行版IDH过程遇到问题：</a>
+<ul>
+<li><a href="#使用cdh4-3-0的hadoop-通过rpm安装-过程中发现如下问题">使用CDH4.3.0的hadoop（通过rpm安装）过程中发现如下问题：</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#8-参考文章">8. 参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要是记录使用yum安装CDH Hadoop集群的过程，包括HDFS、Yarn、Hive和HBase。<code>目前使用的是CDH6.2.0安装集群</code>。</p>
+
+<h1 id="0-环境说明">0. 环境说明</h1>
+
+<p>系统环境：</p>
+
+<ul>
+<li>操作系统：<code>CentOs 7.2</code></li>
+<li>Hadoop版本：<code>CDH6.2.0</code></li>
+<li>JDK版本：<code>java-1.8.0-openjdk</code></li>
+<li>运行用户：root</li>
+</ul>
+
+<p>集群各节点角色规划为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">192.168.56.11  cdh1   NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+192.168.56.12  cdh2   DataNode、NodeManager、HBase、Hive Server2、Impala Server
+192.168.56.13  cdh3   DataNode、NodeManager、HBase、Hive Server2、Impala Server</pre></td></tr></table>
+</div>
+</div>
+<p>cdh1作为管理节点，安装脚本在cdh1上执行。</p>
+
+<h1 id="1-准备工作">1. 准备工作</h1>
+
+<h2 id="1-1-准备虚拟机">1.1 准备虚拟机</h2>
+
+<p>参考<a href="/2014/02/23/create-virtualbox-by-vagrant">使用Vagrant创建虚拟机安装Hadoop</a>创建三台虚拟机。</p>
+
+<h2 id="1-2-禁用防火墙">1.2、禁用防火墙</h2>
+
+<p>保存存在的iptables规则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">iptables-save &gt; ~/firewall.rules</code></pre></td></tr></table>
+</div>
+</div>
+<p>rhel7系统禁用防火墙：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl disable firewalld
+systemctl stop firewalld</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置SELinux模式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">setenforce <span class="m">0</span>  &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+sed -i <span class="s2">&#34;s/.*SELINUX=.*/SELINUX=disabled/g&#34;</span> /etc/selinux/config   </code></pre></td></tr></table>
+</div>
+</div>
+<p>一个考虑操作系统情况的综合示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span> -f /etc/init.d/iptables <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">FIREWALL</span><span class="o">=</span><span class="s2">&#34;iptables&#34;</span>
+<span class="o">[</span> -f /etc/init.d/SuSEfirewall2_setup <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">FIREWALL</span><span class="o">=</span><span class="s2">&#34;SuSEfirewall2_setup&#34;</span>
+<span class="o">[</span> -f /etc/init.d/boot.apparmor <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">SELINUX</span><span class="o">=</span><span class="s2">&#34;boot.apparmor&#34;</span>
+<span class="o">[</span> -f /usr/sbin/setenforce <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nv">SELINUX</span><span class="o">=</span><span class="s2">&#34;selinux&#34;</span>
+service <span class="nv">$FIREWALL</span> stop &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+chkconfig <span class="nv">$FIREWALL</span> off &gt; /dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="nv">$SELINUX</span> <span class="o">==</span> <span class="s2">&#34;selinux&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    sed -i <span class="s2">&#34;s/.*SELINUX=.*/SELINUX=disabled/g&#34;</span> /etc/selinux/config
+    setenforce <span class="m">0</span>  &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="nv">$SELINUX</span> <span class="o">==</span> <span class="s2">&#34;boot.apparmor&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+    service boot.apparmor stop &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+    chkconfig boot.apparmor off &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<span class="k">fi</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-4-禁用ipv6">1.4 禁用IPv6</h2>
+
+<p>CDH 要求使用 IPv4，IPv6 不支持，禁用IPv6方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/sysctl.conf <span class="s">&lt;&lt;EOF
+</span><span class="s">net.ipv6.conf.all.disable_ipv6=1
+</span><span class="s">net.ipv6.conf.default.disable_ipv6=1
+</span><span class="s">net.ipv6.conf.lo.disable_ipv6=1
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使其生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sysctl -p</code></pre></td></tr></table>
+</div>
+</div>
+<p>最后确认是否已禁用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat /proc/sys/net/ipv6/conf/all/disable_ipv6
+<span class="m">1</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-5-配置hosts">1.5 配置hosts</h2>
+
+<p>修改每个节点/etc/hosts文：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/hosts <span class="s">&lt;&lt;EOF
+</span><span class="s">127.0.0.1       localhost
+</span><span class="s">192.168.56.11 cdh1 cdh1.example.com
+</span><span class="s">192.168.56.12 cdh2 cdh2.example.com
+</span><span class="s">192.168.56.13 cdh3 cdh3.example.com
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在每个节点分别配置网络名称。例如在cdh1节点上：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hostname
+cdh1.example.com
+hostnamectl set-hostname <span class="k">$(</span>hostname<span class="k">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>修改网络名称：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/sysconfig/network<span class="s">&lt;&lt;EOF
+</span><span class="s">HOSTNAME=$(hostname)
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看hostname是否修改过来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">uname -a
+Linux cdh1.example.com <span class="m">3</span>.10.0-327.4.5.el7.x86_64 <span class="c1">#1 SMP Mon Jan 25 22:07:14 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看ip是否正确：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install net-tools -y <span class="o">&amp;&amp;</span> ifconfig <span class="p">|</span>grep -B1 broadcast
+enp0s3: <span class="nv">flags</span><span class="o">=</span><span class="m">4163</span>&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu <span class="m">1500</span>
+        inet <span class="m">10</span>.0.2.15  netmask <span class="m">255</span>.255.255.0  broadcast <span class="m">10</span>.0.2.255
+--
+enp0s8: <span class="nv">flags</span><span class="o">=</span><span class="m">4163</span>&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu <span class="m">1500</span>
+        inet <span class="m">192</span>.168.56.11  netmask <span class="m">255</span>.255.255.0  broadcast <span class="m">192</span>.168.56.255</code></pre></td></tr></table>
+</div>
+</div>
+<p>检查一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install bind-utils -y <span class="o">&amp;&amp;</span> host -v -t A <span class="sb">`</span>hostname<span class="sb">`</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-6-设置中文编码和时区">1.6 设置中文编码和时区</h2>
+
+<p>查看中文：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">locale -a <span class="p">|</span> grep zh</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果没有，则安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install glibc-common</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改配置文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/locale.conf <span class="s">&lt;&lt;EOF
+</span><span class="s">LANG=&#34;zh_CN.UTF-8&#34;
+</span><span class="s">LC_CTYPE=zh_CN.UTF-8
+</span><span class="s">LC_ALL=zh_CN.UTF-8
+</span><span class="s">EOF</span>
+<span class="nb">source</span>   /etc/locale.conf
+
+cat &gt; /etc/sysconfig/i18n <span class="s">&lt;&lt;EOF
+</span><span class="s">LANG=&#34;zh_CN.UTF-8&#34;
+</span><span class="s">LC_ALL=&#34;zh_CN.UTF-8&#34;
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>设置时区：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-7-设置root密码">1.7 设置root密码</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Setup sudo to allow no-password sudo for &#34;admin&#34;. Additionally,</span>
+<span class="c1"># make &#34;admin&#34; an exempt group so that the PATH is inherited.</span>
+cp /etc/sudoers /etc/sudoers.orig
+<span class="nb">echo</span> <span class="s2">&#34;root            ALL=(ALL)               NOPASSWD: ALL&#34;</span> &gt;&gt; /etc/sudoers
+<span class="nb">echo</span> <span class="s1">&#39;redhat&#39;</span><span class="p">|</span>passwd root --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-8-设置命名服务">1.8 设置命名服务</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># http://ithelpblog.com/os/linux/redhat/centos-redhat/howto-fix-couldnt-resolve-host-on-centos-redhat-rhel-fedora/</span>
+<span class="c1"># http://stackoverflow.com/a/850731/1486325</span>
+<span class="nb">echo</span> <span class="s2">&#34;nameserver 8.8.8.8&#34;</span> <span class="p">|</span> tee -a /etc/resolv.conf
+<span class="nb">echo</span> <span class="s2">&#34;nameserver 8.8.4.4&#34;</span> <span class="p">|</span> tee -a /etc/resolv.conf</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-9-生成ssh">1.9 生成ssh</h2>
+
+<p>在每个节点依次执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span> ! -d ~/.ssh <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> mkdir ~/.ssh <span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> chmod <span class="m">600</span> ~/.ssh <span class="o">)</span>
+<span class="o">[</span> ! -f ~/.ssh/id_rsa.pub <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">(</span>yes<span class="p">|</span>ssh-keygen -f ~/.ssh/id_rsa -t rsa -N <span class="s2">&#34;&#34;</span><span class="o">)</span> <span class="se">\
+</span><span class="se"></span>  <span class="o">&amp;&amp;</span> <span class="o">(</span> chmod <span class="m">600</span> ~/.ssh/id_rsa.pub <span class="o">)</span> <span class="o">&amp;&amp;</span> cat ~/.ssh/id_rsa.pub &gt;&gt; ~/.ssh/authorized_keys</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-10-时钟同步">1.10 时钟同步</h2>
+
+<p>每个节点执行</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install ntp -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改时钟服务器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sed -i &#34;/^server/ d&#34; /etc/ntp.conf   #删除行
+cat &lt;&lt; EOF | sudo tee -a /etc/ntp.conf
+server ntp1.aliyun.com
+server ntp2.aliyun.com
+server ntp3.aliyun.com
+server ntp4.aliyun.com
+EOF</pre></td></tr></table>
+</div>
+</div>
+<p>启动 ntp：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl start ntpd
+
+<span class="c1">#设置开机启动</span>
+sudo systemctl <span class="nb">enable</span> ntpd</code></pre></td></tr></table>
+</div>
+</div>
+<p>同步硬件时钟：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hwclock --systohc</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看硬件时钟：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hwclock --show</code></pre></td></tr></table>
+</div>
+</div>
+<p>同步时间：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ntpdate -u ntp1.aliyun.com</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-11-虚拟内存设置">1.11 虚拟内存设置</h2>
+
+<p>Cloudera 建议将<code>/proc/sys/vm/swappiness</code>设置为 0，当前设置为 60。</p>
+
+<p>临时解决，通过<code>echo 0 &gt; /proc/sys/vm/swappiness</code>即可解决。</p>
+
+<p>永久解决：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sysctl -w vm.swappiness<span class="o">=</span><span class="m">0</span>
+<span class="nb">echo</span> vm.swappiness <span class="o">=</span> <span class="m">0</span> &gt;&gt; /etc/sysctl.conf</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-12-设置透明大页面">1.12 设置透明大页面</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">echo &#34;echo never &gt; /sys/kernel/mm/redhat_transparent_hugepage/defrag&#34; &gt;/etc/rc.local
+echo &#34;echo never &gt; /sys/kernel/mm/redhat_transparent_hugepage/enabled&#34; &gt;/etc/rc.local</pre></td></tr></table>
+</div>
+</div>
+<p>给与可执行权限：chmod +x /etc/rc.d/rc.local</p>
+
+<h2 id="1-13-设置文件打开数">1.13 设置文件打开数</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">rst</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&#34;^fs.file-max&#34;</span> /etc/sysctl.conf<span class="sb">`</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;x</span><span class="nv">$rst</span><span class="s2">&#34;</span> <span class="o">=</span> <span class="s2">&#34;x&#34;</span> <span class="o">]</span> <span class="p">;</span> <span class="k">then</span>
+	<span class="nb">echo</span> <span class="s2">&#34;fs.file-max = 727680&#34;</span> &gt;&gt; /etc/sysctl.conf <span class="o">||</span> <span class="nb">exit</span> <span class="nv">$?</span>
+<span class="k">else</span>
+	sed -i <span class="s2">&#34;s:^fs.file-max.*:fs.file-max = 727680:g&#34;</span> /etc/sysctl.conf
+<span class="k">fi</span>
+
+addline <span class="s2">&#34;*	soft		nofile	327680&#34;</span> /etc/security/limits.conf
+addline <span class="s2">&#34;*	hard	    nofile	327680&#34;</span> /etc/security/limits.conf
+addline <span class="s2">&#34;root	soft	nofile	327680&#34;</span> /etc/security/limits.conf
+addline <span class="s2">&#34;root	hard	nofile	327680&#34;</span> /etc/security/limits.conf
+
+<span class="nv">curuser</span><span class="o">=</span><span class="sb">`</span>whoami<span class="sb">`</span>
+<span class="k">for</span> user in hdfs mapred hbase zookeeper hive impala flume <span class="nv">$curuser</span> <span class="p">;</span><span class="k">do</span>
+    addline <span class="s2">&#34;</span><span class="nv">$user</span><span class="s2">	soft	nproc	131072&#34;</span> /etc/security/limits.conf
+    addline <span class="s2">&#34;</span><span class="nv">$user</span><span class="s2">	hard	nproc	131072&#34;</span> /etc/security/limits.conf
+<span class="k">done</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里用到了一个函数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="k">function</span> addline <span class="o">{</span>
+    <span class="nv">line</span><span class="o">=</span><span class="nv">$1</span>
+    <span class="nv">file</span><span class="o">=</span><span class="nv">$2</span>
+    <span class="nv">tempstr</span><span class="o">=</span><span class="sb">`</span>grep <span class="s2">&#34;</span><span class="nv">$line</span><span class="s2">&#34;</span> <span class="nv">$file</span>  <span class="m">2</span>&gt;/dev/null<span class="sb">`</span>
+    <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$tempstr</span><span class="s2">&#34;</span> <span class="o">==</span> <span class="s2">&#34;&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+        <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$line</span><span class="s2">&#34;</span> &gt;&gt;<span class="nv">$file</span>
+    <span class="k">fi</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-14-安装jdk">1.14 安装jdk</h2>
+
+<p>jdk版本看cdh版本而定，我这里是jdk1.8。</p>
+
+<p>先卸载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum remove java* -y</pre></td></tr></table>
+</div>
+</div>
+<p>每个节点安装jdk：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install -y java-1.8.0-openjdk-devel</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置环境变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | sudo tee -a /etc/profile
+</span><span class="s">export JAVA_HOME=/usr/lib/jvm/java
+</span><span class="s">export CLASSPATH=.:\$JAVA_HOME/lib:\$JAVA_HOME/jre/lib:\$CLASSPATH
+</span><span class="s">export PATH=\$JAVA_HOME/bin:\$JAVA_HOME/jre/bin:\$PATH
+</span><span class="s">EOF</span>
+<span class="nb">source</span> /etc/profile</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="1-15-配置ssh无密码登陆">1.15 配置SSH无密码登陆</h2>
+
+<p><img src="/images/ssh-1.png" alt="image-20190703162002253" /></p>
+
+<p>每个节点先生成ssh公钥，参考上面说明。</p>
+
+<p>配置无密码登陆，在每个节点上执行以下命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh-copy-id -i /root/.ssh/id_rsa.pub root@cdh1
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@cdh2
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@cdh3</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，在其他节点上类似操作。</p>
+
+<p>也可以使用expect来操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh_nopassword.expect cdh1 root <span class="c1">#root是要设置的密码</span>
+ssh_nopassword.expect cdh1 root
+ssh_nopassword.expect cdh1 root</code></pre></td></tr></table>
+</div>
+</div>
+<p>ssh_nopassword.expect文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#! /usr/bin/expect -f
+</span><span class="cp"></span>
+<span class="nb">set</span> host <span class="o">[</span>lindex <span class="nv">$argv</span> <span class="m">0</span><span class="o">]</span>
+<span class="nb">set</span> password <span class="o">[</span>lindex <span class="nv">$argv</span> <span class="m">1</span><span class="o">]</span>
+
+spawn ssh-copy-id -i /root/.ssh/id_rsa.pub root@<span class="nv">$host</span>
+expect <span class="o">{</span>
+yes/no  <span class="o">{</span>send <span class="s2">&#34;yes\r&#34;</span><span class="p">;</span>exp_continue<span class="o">}</span>
+-nocase <span class="s2">&#34;password:&#34;</span> <span class="o">{</span>send <span class="s2">&#34;</span><span class="nv">$password</span><span class="s2">\r&#34;</span><span class="o">}</span>
+<span class="o">}</span>
+expect eof</code></pre></td></tr></table>
+</div>
+</div>
+<p>.ssh文件夹下的文件功能解释</p>
+
+<p>​   （1）~/.ssh/known_hosts   ：记录ssh访问过计算机的公钥(public key)</p>
+
+<p>​   （2）id_rsa   ：生成的私钥</p>
+
+<p>​   （3）id_rsa.pub   ：生成的公钥</p>
+
+<p>​   （4）authorized_keys  ：存放授权过得无秘登录服务器公钥</p>
+
+<h2 id="1-16-配置cdh-yum源">1.16 配置cdh yum源</h2>
+
+<p>配置cdh6.2的远程yum源：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/yum.repos.d/cdh6.repo  <span class="s">&lt;&lt;EOF
+</span><span class="s">[cloudera-cdh]  
+</span><span class="s">name=Cloudera&#39;s Distribution for Hadoop, Version 6  
+</span><span class="s">baseurl=https://archive.cloudera.com/cdh6/6.2.0/redhat7/yum/
+</span><span class="s">gpgkey = https://archive.cloudera.com/cdh6/6.2.0/redhat7/yum/RPM-GPG-KEY-cloudera
+</span><span class="s">enabled=1      
+</span><span class="s">gpgcheck = 1 
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>将/etc/yum.repos.d/cdh6.repo拷贝到其他节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scp /etc/yum.repos.d/cdh6.repo root@cdh2:/etc/yum.repos.d/cdh6.repo
+scp /etc/yum.repos.d/cdh6.repo root@cdh3:/etc/yum.repos.d/cdh6.repo</code></pre></td></tr></table>
+</div>
+</div>
+<p>也可以将yum远程同步到本地，设置本地yum源：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum -y install createrepo yum-utils
+mkdir -p /mnt/yum
+<span class="nb">cd</span> /mnt/yum
+reposync -r cloudera-cdh
+createrepo cloudera-cdh
+yum clean all</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="2-安装hdfs">2. 安装HDFS</h1>
+
+<p>根据文章开头的节点规划，cdh1 为NameNode节点，cdh1、cdh2 和 cdh3 为DataNode节点</p>
+
+<p>在 cdh1 节点安装 hadoop-hdfs-namenode：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop-hdfs-namenode -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>在cdh1、cdh2、cdh3节点安装 hadoop-hdfs-datanode</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop hadoop-hdfs-datanode -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>NameNode HA 的配置过程请参考<a href="/2014/07/18/install-hdfs-ha-in-cdh.html">CDH中配置HDFS HA</a>，建议暂时不用配置。</p>
+
+<h2 id="2-1-修改hadoop配置文件">2.1 修改hadoop配置文件</h2>
+
+<p>修改<code>/etc/hadoop/conf/core-site.xml</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>hdfs://cdh1:8020<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+
+     <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>hadoop.tmp.dir<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>/var/hadoop<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>更多的配置信息说明，请参考 <a href="http://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/ClusterSetup.html">Apache Cluster Setup</a></p>
+</blockquote>
+
+<p>修改<code>/etc/hadoop/conf/hdfs-site.xml</code>，dfs.namenode.http-address如果不指定，默认端口为9870：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;configuration&gt;</span>
+  	<span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>dfs.namenode.http-address<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>cdh1:9870<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+    <span class="c">&lt;!-- CLOUDERA-BUILD: CDH-64745. --&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>cloudera.erasure_coding.enabled<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：需要将配置文件同步到各个节点。</p>
+</blockquote>
+
+<p>设置文件权限相关，请参考 <a href="https://www.cloudera.com/documentation/enterprise/latest/topics/cdh_sg_hdfs_ext_acls.html">HDFS Extended ACLs</a> 和 <a href="https://cloud.tencent.com/developer/article/1429112">0630-6.2-什么是HDFS ACL</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml">  <span class="nt">&lt;property&gt;</span>
+		<span class="nt">&lt;name&gt;</span>dfs.permissions.superusergroup<span class="nt">&lt;/name&gt;</span>
+		<span class="nt">&lt;value&gt;</span>hadoop<span class="nt">&lt;/value&gt;</span>
+	<span class="nt">&lt;/property&gt;</span>
+
+	<span class="nt">&lt;property&gt;</span>
+		<span class="nt">&lt;name&gt;</span>dfs.permissions.umask-mode<span class="nt">&lt;/name&gt;</span>
+		<span class="nt">&lt;value&gt;</span>022<span class="nt">&lt;/value&gt;</span>
+	<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-2-指定本地文件目录">2.2 指定本地文件目录</h2>
+
+<p>在hadoop中默认的文件路径以及权限要求如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">目录		所有者		权限			默认路径
+hadoop.tmp.dir	hdfs:hdfs	drwx------	/tmp/hadoop-${user}
+dfs.namenode.name.dir	hdfs:hdfs	drwx------	file://${hadoop.tmp.dir}/dfs/name
+dfs.datanode.data.dir	hdfs:hdfs	drwx------	file://${hadoop.tmp.dir}/dfs/data
+dfs.namenode.checkpoint.dir	hdfs:hdfs	drwx------ file://${hadoop.tmp.dir}/dfs/namesecondary</pre></td></tr></table>
+</div>
+</div>
+<p>我在hdfs-site.xm l中配置了<code>hadoop.tmp.dir</code>的路径为<code>/var/hadoop</code>，其他路径使用默认配置，所以，在NameNode上手动创建 <code>dfs.namenode.name.dir</code> 的本地目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /var/hadoop/dfs/name
+chown -R hdfs:hdfs /var/hadoop/dfs/name </code></pre></td></tr></table>
+</div>
+</div>
+<p>在DataNode上手动创建 <code>dfs.datanode.data.dir</code>目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /var/hadoop/dfs/data
+chown -R hdfs:hdfs /var/hadoop/dfs/data</code></pre></td></tr></table>
+</div>
+</div>
+<p>hadoop的进程会自动设置 <code>dfs.data.dir</code> 或 <code>dfs.datanode.data.dir</code>，但是 <code>dfs.name.dir</code> 或 <code>dfs.namenode.name.dir</code> 的权限默认为755，需要手动设置为700：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chmod <span class="m">700</span> /var/hadoop/dfs/name
+<span class="c1"># 或者</span>
+chmod go-rx /var/hadoop/dfs/name</code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：DataNode的本地目录可以设置多个，你可以设置 <code>dfs.datanode.failed.volumes.tolerated</code> 参数的值，表示能够容忍不超过该个数的目录失败。</p>
+
+<h2 id="2-3-配置-secondarynamenode">2.3 配置 SecondaryNameNode</h2>
+
+<p>不建议使用。</p>
+
+<h2 id="2-4-开启回收站功能">2.4 开启回收站功能</h2>
+
+<p>回收站功能默认是关闭的，建议打开。在 <code>/etc/hadoop/conf/core-site.xml</code> 中添加如下两个参数：</p>
+
+<ul>
+<li><code>fs.trash.interval</code>,该参数值为时间间隔，单位为分钟，默认为0，表示回收站功能关闭。该值表示回收站中文件保存多长时间，如果服务端配置了该参数，则忽略客户端的配置；如果服务端关闭了该参数，则检查客户端是否有配置该参数；</li>
+<li><code>fs.trash.checkpoint.interval</code>，该参数值为时间间隔，单位为分钟，默认为0。该值表示检查回收站时间间隔，该值要小于<code>fs.trash.interval</code>，该值在服务端配置。如果该值设置为0，则使用 <code>fs.trash.interval</code> 的值。</li>
+</ul>
+
+<h2 id="2-5-可选-配置datanode存储的负载均衡">2.5 (可选)配置DataNode存储的负载均衡</h2>
+
+<p>在 <code>/etc/hadoop/conf/hdfs-site.xml</code> 中配置以下三个参数：</p>
+
+<ul>
+<li><code>dfs.datanode.fsdataset. volume.choosing.policy</code></li>
+<li><code>dfs.datanode.available-space-volume-choosing-policy.balanced-space-threshold</code></li>
+<li><code>dfs.datanode.available-space-volume-choosing-policy.balanced-space-preference-fraction</code></li>
+</ul>
+
+<p>详细说明，请参考 <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_hdfs_cluster_deploy.html#concept_ncq_nnk_ck_unique_1">Optionally configure DataNode storage balancing</a>。</p>
+
+<h2 id="2-6-开启webhdfs">2.6 开启WebHDFS</h2>
+
+<p>在NameNode节点上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop-httpfs -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后修改 /etc/hadoop/conf/core-site.xml配置代理用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>  
+        <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.httpfs.hosts<span class="nt">&lt;/name&gt;</span>  
+        <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>  
+    <span class="nt">&lt;/property&gt;</span>  
+
+    <span class="nt">&lt;property&gt;</span>  
+        <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.httpfs.groups<span class="nt">&lt;/name&gt;</span>  
+        <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>  
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-7-配置lzo">2.7 配置LZO</h2>
+
+<p>下载repo文件到 <code>/etc/yum.repos.d/</code>:</p>
+
+<ul>
+<li>如果你安装的是 CDH4，请下载<a href="http://archive.cloudera.com/gplextras/redhat/6/x86_64/gplextras/cloudera-gplextras4.repo">Red Hat/CentOS 6</a></li>
+<li>如果你安装的是 CDH5，请下载<a href="http://archive.cloudera.com/gplextras5/redhat/6/x86_64/gplextras/cloudera-gplextras5.repo">Red Hat/CentOS 6</a></li>
+<li>如果你安装的是 CDH6，请直接使用yum源：<a href="https://archive.cloudera.com/gplextras6/6.2.0/redhat7/yum/">https://archive.cloudera.com/gplextras6/6.2.0/redhat7/yum/</a></li>
+</ul>
+
+<p>然后，安装lzo:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop-lzo* impala-lzo  -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>最后，在 <code>/etc/hadoop/conf/core-site.xml</code> 中添加如下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>io.compression.codecs<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.GzipCodec,
+org.apache.hadoop.io.compress.BZip2Codec,com.hadoop.compression.lzo.LzoCodec,
+com.hadoop.compression.lzo.LzopCodec<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>io.compression.codec.lzo.class<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>com.hadoop.compression.lzo.LzoCodec<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>更多关于LZO信息，请参考：<a href="http://wiki.apache.org/hadoop/UsingLzoCompression">Using LZO Compression</a></p>
+
+<h2 id="2-8-可选-配置snappy">2.8 (可选)配置Snappy</h2>
+
+<p>cdh 的 rpm 源中默认已经包含了 snappy ，直接在每个节点安装Snappy：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install snappy snappy-devel  -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，在 <code>core-site.xml</code> 中修改<code>io.compression.codecs</code>的值，添加 <code>org.apache.hadoop.io.compress.SnappyCodec</code> 。</p>
+
+<p>使 snappy 对 hadoop 可用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ln -sf /usr/lib64/libsnappy.so /usr/lib/hadoop/lib/native/</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-9-启动hdfs">2.9 启动HDFS</h2>
+
+<p>将cdh1上的配置文件同步到每一个节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scp -r /etc/hadoop/conf root@cdh2:/etc/hadoop/
+scp -r /etc/hadoop/conf root@cdh3:/etc/hadoop/</code></pre></td></tr></table>
+</div>
+</div>
+<p>在cdh1节点格式化NameNode：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hdfs namenode -format</code></pre></td></tr></table>
+</div>
+</div>
+<p>在cdh1启动namenode，其他节点启动datanode：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/etc/init.d/hadoop-hdfs-namenode start
+/etc/init.d/hadoop-hdfs-datanode start</code></pre></td></tr></table>
+</div>
+</div>
+<p>在cdh1节点上查看java进程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">jps
+12721 DataNode
+12882 Jps
+12587 NameNode</pre></td></tr></table>
+</div>
+</div>
+<p>在 hdfs 运行之后，创建 <code>/tmp</code> 临时目录，并设置权限为 <code>1777</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -mkdir /tmp
+sudo -u hdfs hadoop fs -chmod -R <span class="m">1777</span> /tmp</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果安装了HttpFS，则启动 HttpFS 服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">service hadoop-httpfs start</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="2-10-测试">2.10 测试</h2>
+
+<p>如果使用CM安装，则Hadoop各组件使用的端口可查阅 <a href="https://www.cloudera.com/documentation/enterprise/6/6.2/topics/cdh_ports.html#cdh_ports">Ports Used by CDH Components</a>。</p>
+
+<p>可以通过 <a href="http://cdh1:9870/">http://cdh1:9870/</a> （需要先在本机配置虚拟机节点的hosts映射才能访问）可以访问 NameNode 页面，也可以访问datanode节点，如：<a href="http://cdh1:9864/">http://cdh1:9864/</a>。</p>
+
+<p>如果安装了webhdfs，可以使用 curl 运行下面命令，可以测试 webhdfs 并查看执行结果：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl <span class="s2">&#34;http://cdh1:14000/webhdfs/v1?op=gethomedirectory&amp;user.name=hdfs&#34;</span>
+<span class="o">{</span><span class="s2">&#34;Path&#34;</span>:<span class="s2">&#34;\/var\/lib\/hadoop-httpfs&#34;</span><span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>更多的 API，请参考 <a href="http://archive.cloudera.com/cdh5/cdh/5/hadoop/hadoop-project-dist/hadoop-hdfs/WebHDFS.html">WebHDFS REST API</a></p>
+
+<h1 id="3-安装yarn">3. 安装YARN</h1>
+
+<p>根据文章开头的节点规划，cdh1 为resourcemanager节点，cdh2 和 cdh3 为nodemanager节点，为了简单，historyserver 也装在 cdh1 节点上。</p>
+
+<h2 id="3-1-安装服务">3.1 安装服务</h2>
+
+<p>在 cdh1 节点安装:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop-yarn-resourcemanager -y
+
+<span class="c1">#安装 historyserver</span>
+yum install hadoop-mapreduce-historyserver hadoop-yarn-proxyserver -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 cdh2、cdh3 节点安装:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hadoop-yarn-nodemanager -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-2-修改配置参数">3.2 修改配置参数</h2>
+
+<p>1、要想使用YARN，需要在 <code>/etc/hadoop/conf/mapred-site.xml</code> 中做如下配置:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+    	<span class="nt">&lt;name&gt;</span>mapreduce.framework.name<span class="nt">&lt;/name&gt;</span>
+    	<span class="nt">&lt;value&gt;</span>yarn<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>2、修改 <code>/etc/hadoop/conf/yarn-site.xml</code>文件内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.hostname<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.nodemanager.aux-services<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>mapreduce_shuffle<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.nodemanager.aux-services.mapreduce_shuffle.class<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>org.apache.hadoop.mapred.ShuffleHandler<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;description&gt;</span>Classpath for typical applications.<span class="nt">&lt;/description&gt;</span>
+     <span class="nt">&lt;name&gt;</span>yarn.application.classpath<span class="nt">&lt;/name&gt;</span>
+     <span class="nt">&lt;value&gt;</span>
+        $HADOOP_CONF_DIR,
+        $HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,
+        $HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,
+        $HADOOP_MAPRED_HOME/*,$HADOOP_MAPRED_HOME/lib/*,
+        $HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*
+     <span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p><strong>注意：</strong></p>
+
+<ul>
+<li><p><code>yarn.nodemanager.aux-services</code> 的值在 cdh4 中应该为 <code>mapreduce.shuffle</code>，并配置参数<code>yarn.nodemanager.aux-services.mapreduce.shuffle.class</code>值为 <code>org.apache.hadoop.mapred.ShuffleHandler</code> ，在cdh5之后中为<code>mapreduce_shuffle</code>，这时候请配置<code>yarn.nodemanager.aux-services.mapreduce_shuffle.class</code>参数</p></li>
+
+<li><p>这里配置了 <code>yarn.application.classpath</code> ，需要设置一些喜欢环境变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">HADOOP_HOME</span><span class="o">=</span>/usr/lib/hadoop
+<span class="nb">export</span> <span class="nv">HIVE_HOME</span><span class="o">=</span>/usr/lib/hive
+<span class="nb">export</span> <span class="nv">HBASE_HOME</span><span class="o">=</span>/usr/lib/hbase
+
+<span class="nb">export</span> <span class="nv">HADOOP_CONF_DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">HADOOP_HOME</span><span class="si">}</span>/etc/hadoop
+<span class="nb">export</span> <span class="nv">HADOOP_COMMON_HOME</span><span class="o">=</span><span class="si">${</span><span class="nv">HADOOP_HOME</span><span class="si">}</span>
+<span class="nb">export</span> <span class="nv">HADOOP_HDFS_HOME</span><span class="o">=</span>/usr/lib/hadoop-hdfs
+<span class="nb">export</span> <span class="nv">HADOOP_MAPRED_HOME</span><span class="o">=</span>/usr/lib/hadoop-mapreduce
+<span class="nb">export</span> <span class="nv">HADOOP_YARN_HOME</span><span class="o">=</span>/usr/lib/hadoop-yarn
+
+<span class="nb">export</span> <span class="nv">HADOOP_LIBEXEC_DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">HADOOP_HOME</span><span class="si">}</span>/libexec</code></pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<p>在hadoop中默认的文件路径以及权限要求如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">目录		所有者		 权限		默认路径
+yarn.nodemanager.local-dirs	yarn:yarn	  drwxr-xr-x    ${hadoop.tmp.dir}/nm-local-dir
+yarn.nodemanager.log-dirs		yarn:yarn	  drwxr-xr-x	  ${yarn.log.dir}/userlogs
+yarn.nodemanager.remote-app-log-dir	hdfs:hadoop /tmp/logs</pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li><p><code>${yarn.log.dir}</code>默认值为：<code>/var/log/hadoop-yarn/userlogs</code>，这是本地目录。</p></li>
+
+<li><p>/tmp/logs为hdfs上的地址，运行时自动创建</p></li>
+</ul>
+
+<p>在nodemanager节点cdh2、cdh3创建 <code>yarn.nodemanager.local-dirs</code> 和 <code>yarn.nodemanager.log-dirs</code> 参数对应的目录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /var/hadoop/nm-local-dir
+chown -R yarn:yarn /var/hadoop/nm-local-dir</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、在 <code>/etc/hadoop/conf/mapred-site.xml</code> 中配置 MapReduce History Server：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.address<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh1:10020<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.webapp.address<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh1:19888<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>4、此外，确保 mapred、yarn 用户能够使用代理，在 <code>/etc/hadoop/conf/core-site.xml</code> 中添加如下参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.mapred.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.mapred.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.yarn.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.yarn.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>5、开启日志聚集</p>
+
+<p>日志聚集概念：应用运行完成以后，将日志信息上传到HDFS系统上。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!-- 日志聚集功能使能 --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.log-aggregation-enable<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="c">&lt;!-- 日志保留时间设置7天 --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.log-aggregation.retain-seconds<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>604800<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看日志 <a href="http://cdh1:19888/jobhistory">http://cdh1:19888/jobhistory</a></p>
+
+<h2 id="3-4-验证-hdfs-结构">3.4 验证 HDFS 结构：</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -ls -R /</code></pre></td></tr></table>
+</div>
+</div>
+<p>你应该看到如下结构：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">drwxrwxrwt   - hdfs  hadoop          <span class="m">0</span> <span class="m">2019</span>-07-03 <span class="m">23</span>:40 /tmp</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-5-同步配置文件">3.5 同步配置文件</h2>
+
+<p>同步配置文件到整个集群:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scp -r /etc/hadoop/conf root@cdh2:/etc/hadoop/
+scp -r /etc/hadoop/conf root@cdh3:/etc/hadoop/</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-6-启动服务">3.6 启动服务</h2>
+
+<p>在 cdh1 节点启动 resourceManager</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/etc/init.d/hadoop-yarn-resourcemanager start</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 cdh1 节点启动 mapred-historyserver :</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/etc/init.d/hadoop-mapreduce-historyserver start</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 cdh2、cdh3 节点启动nodeManager :</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/etc/init.d/hadoop-yarn-nodemanager start</code></pre></td></tr></table>
+</div>
+</div>
+<p>为每个 MapReduce 用户创建主目录，比如说 hive 用户或者当前用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -mkdir /user/<span class="nv">$USER</span>
+sudo -u hdfs hadoop fs -chown <span class="nv">$USER</span> /user/<span class="nv">$USER</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-7-测试">3.7 测试</h2>
+
+<p>通过 <a href="http://cdh1:8088/">http://cdh1:8088/</a> 可以访问 Yarn 的管理页面，通过 <a href="http://cdh1:19888/">http://cdh1:19888/</a> 可以访问 JobHistory 的管理页面，查看在线的节点：<a href="http://cdh1:8088/cluster/nodes">http://cdh1:8088/cluster/nodes</a>。</p>
+
+<p>运行下面的测试程序，看是否报错：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Find how many jars name ending with examples you have inside location /usr/lib/</span>
+find /usr/lib/ -name <span class="s2">&#34;*hadoop*examples*.jar&#34;</span>
+
+<span class="c1"># To list all the class name inside jar</span>
+find /usr/lib/ -name <span class="s2">&#34;hadoop*examples.jar&#34;</span> <span class="p">|</span> xargs -0 -I <span class="s1">&#39;{}&#39;</span> sh -c <span class="s1">&#39;jar tf {}&#39;</span>
+
+<span class="c1"># To search for specific class name inside jar</span>
+find /usr/lib/ -name <span class="s2">&#34;hadoop*examples.jar&#34;</span> <span class="p">|</span> xargs -0 -I <span class="s1">&#39;{}&#39;</span> sh -c <span class="s1">&#39;jar tf {}&#39;</span> <span class="p">|</span> grep -i wordcount.class
+
+<span class="c1"># 运行 randomwriter 例子</span>
+sudo -u hdfs hadoop jar /usr/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar randomwriter out</code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>注意：在虚拟机上，内存不足，跑不出来结果。</p>
+</blockquote>
+
+<h2 id="3-8-最后的配置文件">3.8 最后的配置文件</h2>
+
+<p>/etc/hadoop/conf/yarn-site.xml：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.hostname<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.nodemanager.aux-services<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>mapreduce_shuffle<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.nodemanager.aux-services.mapreduce_shuffle.class<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>org.apache.hadoop.mapred.ShuffleHandler<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.log-aggregation-enable<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.app.mapreduce.am.staging-dir<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>/user<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+     <span class="nt">&lt;name&gt;</span>yarn.application.classpath<span class="nt">&lt;/name&gt;</span>
+     <span class="nt">&lt;value&gt;</span>
+        $HADOOP_CONF_DIR,
+        $HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,
+        $HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,
+        $HADOOP_MAPRED_HOME/*,$HADOOP_MAPRED_HOME/lib/*,
+        $HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*
+     <span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>/etc/hadoop/conf/mapred-site.xml：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>mapreduce.framework.name<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>yarn<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.address<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1:10020<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>mapreduce.jobhistory.webapp.address<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1:19888<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-9-yarn默认配置">3.9 YARN默认配置</h2>
+
+<p><strong>ResourceManager</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>yarn.resourcemanager.address</td>
+<td>${yarn.resourcemanager.hostname}:8032</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.scheduler.address</td>
+<td>${yarn.resourcemanager.hostname}:8030</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.resource-tracker.address</td>
+<td>${yarn.resourcemanager.hostname}:8031</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.admin.address</td>
+<td>${yarn.resourcemanager.hostname}:8033</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.webapp.address</td>
+<td>${yarn.resourcemanager.hostname}:8088</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.webapp.https.address</td>
+<td>${yarn.resourcemanager.hostname}:8090</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.scheduler.class</td>
+<td>org.apache.hadoop.yarn.server.resourcemanager<br/>.scheduler.capacity.CapacityScheduler</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.resource-tracker.client.thread-count</td>
+<td>50</td>
+</tr>
+
+<tr>
+<td>yarn.scheduler.minimum-allocation-mb</td>
+<td>1024</td>
+</tr>
+
+<tr>
+<td>yarn.scheduler.maximum-allocation-mb</td>
+<td>8192</td>
+</tr>
+
+<tr>
+<td>yarn.scheduler.minimum-allocation-vcores</td>
+<td>1</td>
+</tr>
+
+<tr>
+<td>yarn.scheduler.maximum-allocation-vcores</td>
+<td>32</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.nodes.include-path</td>
+<td>空</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.nodes.exclude-path</td>
+<td>空</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.nodemanagers.heartbeat-interval-ms</td>
+<td>1000（毫秒）</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>NodeManager</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>yarn.nodemanager.resource.memory-mb</td>
+<td>2.1</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.resource.cpu-vcores</td>
+<td>8</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.local-dirs</td>
+<td>${hadoop.tmp.dir}/nm-local-dir</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.log.retain-seconds</td>
+<td>10800（3小时）</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.aux-services</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.aux-services.mapreduce_shuffle.class</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.localizer.address</td>
+<td>${yarn.nodemanager.hostname}:8040</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.webapp.address</td>
+<td>${yarn.nodemanager.hostname}:8042</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.log-dirs</td>
+<td>${yarn.log.dir}/userlogs</td>
+</tr>
+
+<tr>
+<td>yarn.nodemanager.remote-app-log-dir</td>
+<td>/tmp/logs</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>ResourceManager HA</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>yarn.resourcemanager.ha.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.cluster-id</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.ha.id</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.ha.rm-ids</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.ha.automatic-failover.enabled</td>
+<td>true</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.ha.automatic-failover.embedded</td>
+<td>true</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.hostname.xxx</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.recovery.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.zk-address</td>
+<td></td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.store.class</td>
+<td>org.apache.hadoop.yarn.server.resourcemanager.recovery.ZKRMStateStore</td>
+</tr>
+
+<tr>
+<td>yarn.client.failover-proxy-provider</td>
+<td>org.apache.hadoop.yarn.client.ConfiguredRMFailoverProxyProvider</td>
+</tr>
+
+<tr>
+<td>yarn.client.failover-max-attempts</td>
+<td>（yarn.resourcemanager.connect.max-wait.ms）</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.ha.automatic-failover.zk-base-path</td>
+<td>/yarn-leader-election</td>
+</tr>
+
+<tr>
+<td>yarn.client.failover-sleep-max-ms</td>
+<td>（yarn.resourcemanager.connect.retry-interval.ms）</td>
+</tr>
+
+<tr>
+<td>yarn.client.failover-retries</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td>yarn.client.failover-retries-on-socket-timeouts</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Timeline Server</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>yarn.timeline-service.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.resourcemanager.system-metrics-publisher.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.generic-application-history.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.hostname</td>
+<td>0.0.0.0</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.address</td>
+<td>${yarn.timeline-service.hostname}:10200</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.webapp.address</td>
+<td>{yarn.timeline-service.hostname}:8188</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.webapp.https.address</td>
+<td>${yarn.timeline-service.hostname}:8190</td>
+</tr>
+
+<tr>
+<td>yarn.timeline-service.leveldb-timeline-store.path</td>
+<td>${hadoop.tmp.dir}/yarn/timeline</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>sharedcache</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>yarn.sharedcache.enabled</td>
+<td>false</td>
+</tr>
+
+<tr>
+<td>yarn.sharedcache.root-dir</td>
+<td>/sharedcache</td>
+</tr>
+
+<tr>
+<td>yarn.sharedcache.admin.address</td>
+<td>0.0.0.0:8047</td>
+</tr>
+
+<tr>
+<td>yarn.sharedcache.webapp.address</td>
+<td>0.0.0.0:8788</td>
+</tr>
+
+<tr>
+<td>yarn.sharedcache.uploader.server.address</td>
+<td>0.0.0.0:8046</td>
+</tr>
+
+<tr>
+<td>yarn.sharedcache.client-server.address</td>
+<td>0.0.0.0:8045</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="4-安装-zookeeper">4. 安装 Zookeeper</h1>
+
+<p>Zookeeper 至少需要3个节点，并且节点数要求是基数，这里在所有节点上都安装 Zookeeper。</p>
+
+<h2 id="4-1-安装">4.1 安装</h2>
+
+<p>在每个节点上安装zookeeper：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install zookeeper-server -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="4-2-修改配置文件">4.2 修改配置文件</h2>
+
+<p>设置 zookeeper 配置 <code>/etc/zookeeper/conf/zoo.cfg</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-properties" data-lang="properties">maxClientCnxns=50
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/var/lib/zookeeper
+clientPort=2181
+server.1=cdh1:2888:3888
+server.2=cdh3:2888:3888
+server.3=cdh3:2888:3888</code></pre></td></tr></table>
+</div>
+</div>
+<p>##4.3  同步配置文件</p>
+
+<p>将配置文件同步到其他节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scp -r /etc/zookeeper/conf root@cdh2:/etc/zookeeper/
+scp -r /etc/zookeeper/conf root@cdh3:/etc/zookeeper/</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="4-4-初始化并启动服务">4.4 初始化并启动服务</h2>
+
+<p>在每个节点上初始化并启动 zookeeper，注意 n 的值需要和 zoo.cfg 中的编号一致。</p>
+
+<p>在 cdh1 节点运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">service zookeeper-server init --myid<span class="o">=</span><span class="m">1</span>
+service zookeeper-server start</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 cdh2 节点运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">service zookeeper-server init --myid<span class="o">=</span><span class="m">2</span>
+service zookeeper-server start</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 cdh3 节点运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">service zookeeper-server init --myid=3
+service zookeeper-server start</pre></td></tr></table>
+</div>
+</div>
+<h2 id="4-5-测试">4.5 测试</h2>
+
+<p>通过下面命令测试是否启动成功：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">zookeeper-client -server cdh1:2181</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="5-安装-hbase">5. 安装 HBase</h1>
+
+<p>HBase 依赖 ntp 服务，故需要提前安装好 ntp。</p>
+
+<h2 id="5-1-安装前设置">5.1 安装前设置</h2>
+
+<p>修改 <code>dfs.datanode.max.xcievers</code>，在 <code>hdfs-site.xml</code> 中修改该参数值，将该值调整到较大的值：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.max.xcievers<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>8192<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-2-安装">5.2 安装</h2>
+
+<p>在每个节点上安装 master 和 regionserver，如果需要你可以安装 hbase-rest、hbase-solr-indexer、hbase-thrift</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hbase-master hbase-regionserver -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-3-修改配置文件">5.3 修改配置文件</h2>
+
+<p>修改 <code>hbase-site.xml</code>文件，关键几个参数及含义如下：</p>
+
+<ul>
+<li><code>hbase.distributed</code>：是否为分布式模式</li>
+<li><code>hbase.rootdir</code>：HBase在hdfs上的目录路径</li>
+<li><code>hbase.tmp.dir</code>：本地临时目录</li>
+<li><code>hbase.zookeeper.quorum</code>：zookeeper集群地址，逗号分隔</li>
+<li><code>hbase.hregion.max.filesize</code>：hregion文件最大大小</li>
+<li><code>hbase.hregion.memstore.flush.size</code>：memstore文件最大大小</li>
+</ul>
+
+<p>默认配置参数，请参考：<a href="https://hbase.apache.org/2.1/book.html#hbase_default_configurations">https://hbase.apache.org/2.1/book.html#hbase_default_configurations</a> 。</p>
+
+<p>另外，在CDH5中建议<code>关掉Checksums</code>（见<a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/cdh5ig_hbase_upgrade.html">Upgrading HBase</a>）以提高性能，最后的配置如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hbase.cluster.distributed<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hbase.rootdir<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>hdfs://cdh1:8020/hbase<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hbase.tmp.dir<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>/var/hbase<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在 hdfs 中创建 <code>/hbase</code> 目录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -mkdir /hbase
+sudo -u hdfs hadoop fs -chown hbase:hadoop /hbase</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置 crontab 定时删除日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">crontab -e
+* 10 * * * cd /var/log/hbase/; rm -rf `ls /var/log/hbase/|grep -P &#39;hbase\-hbase\-.+\.log\.[0-9]&#39;\`&gt;&gt; /dev/null &amp;</pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-4-同步配置文件">5.4 同步配置文件</h2>
+
+<p>将配置文件同步到其他节点：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">scp -r /etc/hbase/conf root@cdh2:/etc/hbase/
+scp -r /etc/hbase/conf root@cdh3:/etc/hbase/</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-5-创建本地目录">5.5 创建本地目录</h2>
+
+<p>在 hbase-site.xml 配置文件中配置了 <code>hbase.tmp.dir</code> 值为 <code>/data/hbase</code>，现在需要在每个 hbase 节点创建该目录并设置权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /var/hbase
+chown -R hbase:hbase /var/hbase
+chmod -R <span class="m">700</span> /var/hbase</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-6-启动hbase">5.6 启动HBase</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="k">for</span> x in <span class="sb">`</span>ls /etc/init.d/<span class="p">|</span>grep hbase<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> service <span class="nv">$x</span> start <span class="p">;</span> <span class="k">done</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-7-测试">5.7 测试</h2>
+
+<p>通过 <a href="http://cdh2:16030/">http://cdh2:16030/</a> 可以访问 RegionServer 页面，然后通过该页面可以知道哪个节点为 Master，然后再通过 16010 端口访问 Master 管理界面。</p>
+
+<p>在安装有HBase的节点如cdh2运行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hbase shell</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-安装hive">6. 安装hive</h1>
+
+<p>在一个 NameNode 节点上安装 hive：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hive hive-metastore hive-server2 hive-jdbc hive-hbase  -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>在其他 DataNode 上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hive hive-server2 hive-jdbc hive-hbase -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="安装postgresql">安装postgresql</h2>
+
+<p>这里使用 postgresq l数据库来存储元数据，如果你想使用 mysql 数据库，请参考下文。手动安装、配置 postgresql 数据库，请参考 <a href="/hadoop/images/03/24/manual-install-Cloudera-hive-CDH.html">手动安装Cloudera Hive CDH</a></p>
+
+<p>yum 方式安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install postgresql-server postgresql-jdbc -y
+
+ln -s /usr/share/java/postgresql-jdbc.jar /usr/lib/hive/lib/postgresql-jdbc.jar</pre></td></tr></table>
+</div>
+</div>
+<p>配置开启启动，并初始化数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chkconfig postgresql on
+service postgresql initdb</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改配置文件/var/lib/pgsql/data/postgresql.conf：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s2">&#34;s/max_connections = 100/max_connections = 600/&#34;</span> /var/lib/pgsql/data/postgresql.conf
+sed -i <span class="s2">&#34;s/#listen_addresses = &#39;localhost&#39;/listen_addresses = &#39;*&#39;/&#34;</span> /var/lib/pgsql/data/postgresql.conf
+sed -i <span class="s2">&#34;s/shared_buffers = 32MB/shared_buffers = 256MB/&#34;</span> /var/lib/pgsql/data/postgresql.conf
+sed -i <span class="s2">&#34;s/#standard_conforming_strings = on/standard_conforming_strings = off/&#34;</span> /var/lib/pgsql/data/postgresql.conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 /var/lib/pgsql/data/pg_hba.conf：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">	sed -i <span class="s2">&#34;s/127.0.0.1\/32/0.0.0.0\/0/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+	sed -i <span class="s2">&#34;s/ident/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf
+	sed -i <span class="s2">&#34;s/peer/trust/&#34;</span> /var/lib/pgsql/data/pg_hba.conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建数据库metastore和用户hive，设置密码为hive：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">su -c <span class="s2">&#34;cd ; /usr/bin/pg_ctl start -w -m fast -D /var/lib/pgsql/data&#34;</span> postgres
+su -c <span class="s2">&#34;cd ; /usr/bin/psql --command \&#34;create user hive with password &#39;hive&#39;; \&#34; &#34;</span> postgres
+su -c <span class="s2">&#34;cd ; /usr/bin/psql --command \&#34;drop database metastore;\&#34; &#34;</span> postgres
+su -c <span class="s2">&#34;cd ; /usr/bin/psql --command \&#34;CREATE DATABASE metastore owner=hive;\&#34; &#34;</span> postgres
+su -c <span class="s2">&#34;cd ; /usr/bin/psql --command \&#34;GRANT ALL privileges ON DATABASE metastore TO hive;\&#34; &#34;</span> postgres
+su -c <span class="s2">&#34;cd ; /usr/bin/pg_ctl restart -w -m fast -D /var/lib/pgsql/data&#34;</span> postgres</code></pre></td></tr></table>
+</div>
+</div>
+<p>重启数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">su -c <span class="s2">&#34;cd ; /usr/bin/pg_ctl restart -w -m fast -D /var/lib/pgsql/data&#34;</span> postgres</code></pre></td></tr></table>
+</div>
+</div>
+<p>初始化数据库，这里使用的是最新的脚本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ls /usr/lib/hive/scripts/metastore/upgrade/postgres/hive-schema-* <span class="p">|</span>tail -n <span class="m">1</span>
+/usr/lib/hive/scripts/metastore/upgrade/postgres/hive-schema-2.1.1.postgres.sql
+
+$ su -c <span class="s2">&#34;cd ; /usr/bin/psql -U hive -d metastore -f `ls /usr/lib/hive/scripts/metastore/upgrade/postgres/hive-schema-* |tail -n 1`&#34;</span> postgres</code></pre></td></tr></table>
+</div>
+</div>
+<p>这时候的hive-site.xml文件内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionURL<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>jdbc:postgresql://cdh1/hive<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionDriverName<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>org.postgresql.Driver<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionUserName<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionPassword<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>datanucleus.autoCreateSchema<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>false<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>mapreduce.framework.name<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>yarn<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.resource-tracker.address<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1:8031<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.auto.convert.join<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.metastore.schema.verification<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.metastore.warehouse.dir<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>/user/hive/warehouse<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.warehouse.subdir.inherit.perms<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.metastore.uris<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>thrift://cdh1:9083<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.support.concurrency<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.zookeeper.quorum<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>cdh1,cdh2,cdh3<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>默认情况下，hive-server和 hive-server2 的 thrift 端口都为10000，如果要修改 hive-server2 thrift 端口，请修改 <code>hive.server2.thrift.port</code> 参数的值。</p>
+
+<p>如果要设置运行 hive 的用户为连接的用户而不是启动用户，则添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.enable.impersonation<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>并在 core-site.xml 中添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="安装mysql">安装mysql</h2>
+
+<p>yum方式安装mysql以及jdbc驱动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install mysql mysql-devel mysql-server mysql-libs -y
+
+yum install mysql-connector-java
+ln -s /usr/share/java/mysql-connector-java.jar /usr/lib/hive/lib/mysql-connector-java.jar</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建数据库和用户，并设置密码为hive：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mysql -e <span class="s2">&#34;
+</span><span class="s2">	CREATE DATABASE hive;
+</span><span class="s2">	USE hive;
+</span><span class="s2">	CREATE USER &#39;hive&#39;@&#39;cdh1&#39; IDENTIFIED BY &#39;hive&#39;;
+</span><span class="s2">	GRANT ALL PRIVILEGES ON metastore.* TO &#39;hive&#39;@&#39;cdh1&#39;;
+</span><span class="s2">	FLUSH PRIVILEGES;
+</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果是第一次安装，则初始化 hive 的元数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/usr/lib/hive/bin/schematool --dbType mysql --initSchema</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果是更新，则执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">/usr/lib/hive/bin/schematool --dbType mysql --upgradeSchema</code></pre></td></tr></table>
+</div>
+</div>
+<p>配置开启启动并启动数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">chkconfig mysqld on
+service mysqld start</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 hive-site.xml 文件中以下内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionURL<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>jdbc:mysql://cdh1:3306/metastore?useUnicode=true<span class="ni">&amp;amp;</span>characterEncoding=UTF-8<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionDriverName<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>com.mysql.jdbc.Driver<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionUserName<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>javax.jdo.option.ConnectionPassword<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置hive">配置hive</h2>
+
+<p>修改<code>/etc/hadoop/conf/hadoop-env.sh</code>，添加环境变量 <code>HADOOP_MAPRED_HOME</code>，如果不添加，则当你使用 yarn 运行 mapreduce 时候会出现 <code>UNKOWN RPC TYPE</code> 的异常</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">HADOOP_MAPRED_HOME</span><span class="o">=</span>/usr/lib/hadoop-mapreduce</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 hdfs 中创建 hive 数据仓库目录:</p>
+
+<ul>
+<li>hive 的数据仓库在 hdfs 中默认为 <code>/user/hive/warehouse</code>,建议修改其访问权限为 <code>1777</code>，以便其他所有用户都可以创建、访问表，但不能删除不属于他的表。</li>
+<li>每一个查询 hive 的用户都必须有一个 hdfs 的 home 目录( <code>/user</code> 目录下，如 root 用户的为 <code>/user/root</code>)</li>
+<li>hive 所在节点的 <code>/tmp</code> 必须是 world-writable 权限的。</li>
+</ul>
+
+<p>创建目录并设置权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -mkdir /user/hive
+sudo -u hdfs hadoop fs -chown hive /user/hive
+
+sudo -u hdfs hadoop fs -mkdir /user/hive/warehouse
+sudo -u hdfs hadoop fs -chmod <span class="m">1777</span> /user/hive/warehouse
+sudo -u hdfs hadoop fs -chown hive /user/hive/warehouse</code></pre></td></tr></table>
+</div>
+</div>
+<p>启动hive-server和metastore:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">service hive-metastore start
+service hive-server start
+service hive-server2 start</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="测试">测试</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hive -e <span class="s1">&#39;create table t(id int);&#39;</span>
+hive -e <span class="s1">&#39;select * from t limit 2;&#39;</span>
+hive -e <span class="s1">&#39;select id from t;&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>访问beeline:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">beeline
+beeline&gt; !connect jdbc:hive2://cdh1:10000 hive hive org.apache.hive.jdbc.HiveDriver
+Connecting to jdbc:hive2://cdh1:10000
+Connected to: Apache Hive <span class="o">(</span>version <span class="m">2</span>.1.1-cdh6.2.0<span class="o">)</span>
+Driver: Hive JDBC <span class="o">(</span>version <span class="m">2</span>.1.1-cdh6.2.0<span class="o">)</span>
+Transaction isolation: TRANSACTION_REPEATABLE_READ</code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：core-site.xml中需要加以下配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="与hbase集成">与hbase集成</h2>
+
+<p>先安装 hive-hbase:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install hive-hbase -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果你是使用的 cdh4，则需要在 hive shell 里执行以下命令添加 jar：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ADD JAR /usr/lib/hive/lib/zookeeper.jar<span class="p">;</span>
+ADD JAR /usr/lib/hive/lib/hbase.jar<span class="p">;</span>
+ADD JAR /usr/lib/hive/lib/hive-hbase-handler-&lt;hive_version&gt;.jar
+<span class="c1"># guava 包的版本以实际版本为准。</span>
+ADD JAR /usr/lib/hive/lib/guava-11.0.2.jar<span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果你是使用的 cdh5，则需要在 hive shell 里执行以下命令添加 jar：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ADD JAR /usr/lib/hive/lib/zookeeper.jar;
+ADD JAR /usr/lib/hive/lib/hive-hbase-handler.jar;
+ADD JAR /usr/lib/hbase/lib/guava-12.0.1.jar;
+ADD JAR /usr/lib/hbase/hbase-client.jar;
+ADD JAR /usr/lib/hbase/hbase-common.jar;
+ADD JAR /usr/lib/hbase/hbase-hadoop-compat.jar;
+ADD JAR /usr/lib/hbase/hbase-hadoop2-compat.jar;
+ADD JAR /usr/lib/hbase/hbase-protocol.jar;
+ADD JAR /usr/lib/hbase/hbase-server.jar;</pre></td></tr></table>
+</div>
+</div>
+<p>以上你也可以在 hive-site.xml 中通过 <code>hive.aux.jars.path</code> 参数来配置，或者你也可以在 hive-env.sh 中通过 <code>export HIVE_AUX_JARS_PATH=</code> 来设置。</p>
+
+<h1 id="7-遇到的问题">7. 遇到的问题</h1>
+
+<h2 id="安装hadoop过程中需要注意以下几点">安装hadoop过程中需要注意以下几点：</h2>
+
+<ul>
+<li>1. 每个节点配置hosts</li>
+<li>2. 每个节点配置时钟同步</li>
+<li>3. 如果没有特殊要求，关闭防火墙</li>
+<li>4. hadoop需要在<code>/tmp</code>目录下存放一些日志和临时文件，要求<code>/tmp</code>目录权限必须为<code>1777</code></li>
+</ul>
+
+<h2 id="使用intel的hadoop发行版idh过程遇到问题">使用intel的hadoop发行版IDH过程遇到问题：</h2>
+
+<p>1、 IDH集群中需要配置管理节点到集群各节点的无密码登录，公钥文件存放路径为<code>/etc/intelcloud</code>目录下，文件名称为<code>idh-id_rsa</code>。</p>
+
+<p>如果在管理界面发现不能启动/停止hadoop组件的进程，请检查ssh无密码登录是否有问题。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ssh -i /etc/intelcloud/idh-id_rsa nodeX</pre></td></tr></table>
+</div>
+</div>
+<p>如果存在问题，请重新配置无密码登录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">scp -i /etc/intelcloud/idh-id_rsa nodeX</pre></td></tr></table>
+</div>
+</div>
+<p>2、 IDH使用puppt和shell脚本来管理hadoop集群，shell脚本中有一处调用puppt的地方存在问题，详细说明待整理！！</p>
+
+<h3 id="使用cdh4-3-0的hadoop-通过rpm安装-过程中发现如下问题">使用CDH4.3.0的hadoop（通过rpm安装）过程中发现如下问题：</h3>
+
+<blockquote>
+<p>说明：以下问题不局限于CDH的hadoop版本。</p>
+</blockquote>
+
+<p>1、 在hive运行过程中会打印如下日志</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">Starting Job = job_1374551537478_0001, Tracking URL = http://june-fedora:8088/proxy/application_1374551537478_0001/
+Kill Command = /usr/lib/hadoop/bin/hadoop job  -kill job_1374551537478_0001</pre></td></tr></table>
+</div>
+</div>
+<p>通过上面的<code>kill command</code>可以killjob，但是运行过程中发现提示错误，错误原因：<code>HADOOP_LIBEXEC_DIR</code>未做设置</p>
+
+<p>解决方法：在hadoop-env.sh中添加如下代码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">export HADOOP_LIBEXEC_DIR=$HADOOP_COMMON_HOME/libexec</pre></td></tr></table>
+</div>
+</div>
+<p>2、 查看java进程中发现，JVM参数中-Xmx重复出现</p>
+
+<p>解决办法：<code>/etc/hadoop/conf/hadoop-env.sh</code>去掉第二行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">export HADOOP_OPTS=&#34;-Djava.net.preferIPv4Stack=true $HADOOP_OPTS&#34;</pre></td></tr></table>
+</div>
+</div>
+<p>3、 hive中mapreduce运行为本地模式，而不是远程模式</p>
+
+<p>解决办法：<code>/etc/hadoop/conf/hadoop-env.sh</code>设置<code>HADOOP_MAPRED_HOME</code>变量</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">export HADOOP_MAPRED_HOME=/usr/lib/hadoop-mapreduce</pre></td></tr></table>
+</div>
+</div>
+<p>4、 如何设置hive的jvm启动参数</p>
+
+<p>hive脚本运行顺序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">hive--&gt;hive-config.sh--&gt;hive-env.sh--&gt;hadoop-config.sh--&gt;hadoop-env.sh</pre></td></tr></table>
+</div>
+</div>
+<p>故如果hadoop-env.sh中设置了<code>HADOOP_HEAPSIZE</code>，则hive-env.sh中设置的无效</p>
+
+<p>5、如何设置JOB_HISTORYSERVER的jvm参数</p>
+
+<p>在<code>/etc/hadoop/conf/hadoop-env.sh</code>添加如下代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">export HADOOP_JOB_HISTORYSERVER_HEAPSIZE=256</pre></td></tr></table>
+</div>
+</div>
+<h1 id="8-参考文章">8. 参考文章</h1>
+
+<ul>
+<li>[1] <a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH5/latest/CDH5-Installation-Guide/CDH5-Installation-Guide.html">CDH5-Installation-Guide</a></li>
+<li>[2] <a href="http://roserouge.iteye.com/blog/1558498">hadoop cdh 安装笔记</a></li>
+<li>[3] <a href="https://www.codercto.com/a/75971.html">017-Centos7.6+CDH 6.2 安装和使用</a></li>
+<li>[4] <a href="https://blog.csdn.net/android_bar/article/details/80494215">Yarn（二） 详解</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-04-06
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/hdfs/">hdfs</a>
+          <a href="/tags/yarn/">yarn</a>
+          <a href="/tags/hive/">hive</a>
+          <a href="/tags/hbase/">hbase</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/06/08/java-collection-framework/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Java笔记：集合框架实现原理</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2013/03/29/install-impala/">
+            <span class="next-text nav-default">使用yum源安装Impala过程</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>SSH远程连接时环境变量问题 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/01/18/bash-problem-when-ssh-access/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="SSH远程连接时环境变量问题" />
+<meta property="og:description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/01/18/bash-problem-when-ssh-access/" />
+<meta property="article:published_time" content="2014-01-18T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-01-18T08:00:00+08:00" />
+<meta itemprop="name" content="SSH远程连接时环境变量问题">
+<meta itemprop="description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。">
+
+
+<meta itemprop="datePublished" content="2014-01-18T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-01-18T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1764">
+
+
+
+<meta itemprop="keywords" content="ssh,linux," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SSH远程连接时环境变量问题"/>
+<meta name="twitter:description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">SSH远程连接时环境变量问题</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-01-18 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 1764 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-问题">1. 问题</a></li>
+<li><a href="#2-问题分析">2. 问题分析</a>
+<ul>
+<li><a href="#普通用户-user">普通用户 User</a>
+<ul>
+<li><a href="#场景1">场景1：</a></li>
+<li><a href="#场景2">场景2：</a></li>
+</ul></li>
+<li><a href="#场景3">场景3：</a></li>
+<li><a href="#对比-root-用户">对比 root 用户</a>
+<ul>
+<li><a href="#场景1-1">场景1：</a></li>
+<li><a href="#场景2-1">场景2：</a></li>
+<li><a href="#场景3-1">场景3</a></li>
+<li><a href="#关于-etc-profile-文件部分代码分析">关于/etc/profile 文件部分代码分析</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#3-总结">3. 总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="1-问题">1. 问题</h1>
+
+<p>RHEL服务器A有个启动脚本（普通用户user01运行），里面使用ifconfig获取ip地址如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">Localhost_ip=$(ifconfig |awk -F &#39;addr:|Bcast&#39; &#39;/Bcast/{print $2}&#39;)</pre></td></tr></table>
+</div>
+</div>
+<p>由于普通用户user01不能直接识别ifconfig命令，只能使用全路径<code>/sbin/ifconfig</code>，目前处理方式为修改<code>~/.bash_profile</code>文件添加环境变量如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">PATH=$PATH:$HOME/bin</pre></td></tr></table>
+</div>
+</div>
+<p>改成如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">PATH=$PATH:$HOME/bin:/sbin</pre></td></tr></table>
+</div>
+</div>
+<!-- more -->
+
+<p>经过如上配置后服务器本机user01用户登录执行XX.sh脚本可以识别ifconfig命令。</p>
+
+<p>出现如下问题：</p>
+
+<p>远程主机B通过ssh远程执行启动脚本XX.sh，报错如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">bash: ifconfg: command not found</pre></td></tr></table>
+</div>
+</div>
+<h1 id="2-问题分析">2. 问题分析</h1>
+
+<p>测试前准备，追加调用说明语句，如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">/etc/profile
+[root@node3 ~]# vim /etc/profile
+echo &#34;/etc/profile begin:&#34;
+echo &#34;$PATH&#34;
+...
+ 
+unset i
+unset pathmunge
+ 
+echo &#34;invoke /etc/profile&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# vim /etc/bashrc
+...
+# vim:ts=4:sw=4
+ 
+echo &#34;invoke /etc/bashrc&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# vim /root/.bash_profile
+# User specific environment and startup programs
+PATH=$PATH:$HOME/bin
+export PATH
+ 
+echo &#34;invoke ~/.bash_profile&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# vim /root/.bashrc
+...
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+ 
+echo &#34;invoke ~/.bashrc&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# vim /home/user01/.bash_profile
+...
+# User specific environment and startup programs
+PATH=$PATH:$HOME/bin
+export PATH
+ 
+echo &#34;invoke ~/.bashrc&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# vim /home/user01/.bashrc
+...
+# User specific aliases and functions
+ 
+echo &#34;invoke ~/.bashrc&#34;
+echo &#34;$PATH&#34;
+echo &#34;&#34;</pre></td></tr></table>
+</div>
+</div>
+<p>分 user 和 root 用户，3 种场景进行测试，如下：</p>
+
+<h2 id="普通用户-user">普通用户 User</h2>
+
+<h3 id="场景1">场景1：</h3>
+
+<p>本机使用 su 命令切换到普通用户 （属于 Login 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li>Login 之前，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></li>
+<li>Login 方式，文件调用顺序为： <code>/etc/profile -&gt; /etc/bashrc -&gt; ~/.bashrc -&gt; ~/.bash_profile</code></li>
+
+<li><p>Login 之后，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">su - user
+[root@node3 ~]# hostname -i
+192.168.122.33</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# su - user01
+/etc/profile begin:
+/usr/local/bin:/bin:/usr/bin
+invoke /etc/profile
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke /etc/bashrc
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke ~/.bashrc
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke ~/.bash_profile
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h3 id="场景2">场景2：</h3>
+
+<p>远程机使用 ssh 命令以普通用户身份登陆到主机 （属于 Login 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li><p>与在本机使用 su 命令切换到普通用户的效果完全一样！</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ssh user@remote_server_ip
+[root@node1 ~]# hostname -i
+192.168.122.31</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node1 ~]# ssh user01@192.168.122.33
+user01@192.168.122.33&#39;s password: 
+Last login: Tue Jul  9 16:23:33 2013 from 192.168.122.31
+/etc/profile begin:
+/usr/local/bin:/bin:/usr/bin
+invoke /etc/profile
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke /etc/bashrc
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke ~/.bashrc
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
+ 
+invoke ~/.bash_profile
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h2 id="场景3">场景3：</h2>
+
+<p>远程机使用 ssh 命令以普通用户身份连接到主机执行获取 PATH 的命令 （属于 NoLogin 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li>NoLogin 方式，命令获取的 PATH 为该远程机的，并未拿到目标主机的 PATH</li>
+<li>NoLogin 方式，文件调用顺序为：<code>/etc/bashrc -&gt; ~/.bashrc</code></li>
+
+<li><p>NoLogin 方式，目标主机 User 用户 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ssh user@remote_server_ip command
+[root@node1 ~]# hostname -i
+192.168.122.31</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node1 ~]# echo $PATH
+/usr/local/rabbitmq/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+ 
+[root@node1 ~]# ssh user01@192.168.122.33 &#34;echo $PATH&#34;
+user01@192.168.122.33&#39;s password: 
+ 
+invoke /etc/bashrc
+/usr/local/bin:/bin:/usr/bin
+ 
+invoke ~/.bashrc
+/usr/local/bin:/bin:/usr/bin
+ 
+/usr/local/rabbitmq/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h2 id="对比-root-用户">对比 root 用户</h2>
+
+<h3 id="场景1-1">场景1：</h3>
+
+<p>本机使用 su 命令切换到 root （属于 Login 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li>Login 之前，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></li>
+<li>Login 方式，root 用户，文件调用顺序为：<code>/etc/profile -&gt; /etc/bashrc -&gt; ~/.bashrc -&gt; ~/.bash_profile</code></li>
+
+<li><p>Login 之后，系统 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">su - root
+[root@node3 ~]# hostname -i
+192.168.122.33</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node3 ~]# su - root
+/etc/profile begin:
+/usr/local/bin:/bin:/usr/bin
+invoke /etc/profile
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke /etc/bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke ~/.bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke ~/.bash_profile
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h3 id="场景2-1">场景2：</h3>
+
+<p>远程机使用 ssh 命令以 root 用户身份登陆到主机 （属于 Login 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li><p>与在本机使用 su 命令切换到 root 用户的效果完全一样！</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ssh root@remote_server_ip
+[root@node1 ~]# hostname -i
+192.168.122.31</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node1 ~]# ssh root@192.168.122.33
+root@192.168.122.33&#39;s password: 
+Last login: Tue Jul  9 15:54:53 2013 from 192.168.122.1
+/etc/profile begin:
+/usr/local/bin:/bin:/usr/bin
+invoke /etc/profile
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke /etc/bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke ~/.bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke ~/.bash_profile
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h3 id="场景3-1">场景3</h3>
+
+<p>远程机使用 ssh 命令以 root 用户身份连接到主机执行获取 PATH 的命令 （属于 NoLogin 方式）</p>
+
+<p>结论：</p>
+
+<ul>
+<li>NoLogin 方式，命令获取的 PATH 为该远程机的，并未拿到目标主机的 PATH</li>
+<li>NoLogin 方式，文件调用顺序为：<code>/etc/bashrc -&gt; ~/.bashrc</code></li>
+
+<li><p>NoLogin 方式，目标主机 root 用户 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ssh root@remote_server_ip command
+[root@node1 ~]# hostname -i
+192.168.122.31</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@node1 ~]# echo $PATH
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+ 
+[root@node1 ~]# ssh root@192.168.122.33 &#34;echo $PATH&#34;
+root@192.168.122.33&#39;s password: 
+invoke /etc/bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+invoke ~/.bashrc
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+ 
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h3 id="关于-etc-profile-文件部分代码分析">关于/etc/profile 文件部分代码分析</h3>
+
+<p>结论：</p>
+
+<ul>
+<li><p>无论 root 还是 user ，只有调用此文件，其 PATH 中才会被追加 sbin 相关路径。而由以上测试场景可知，只有 Login 时，<code>/etc/profile</code> 文件才会被调用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">pathmunge () {
+case &#34;:${PATH}:&#34; in
+    *:&#34;$1&#34;:*)
+        ;;
+    *)
+        if [ &#34;$2&#34; = &#34;after&#34; ] ; then
+            PATH=$PATH:$1
+        else
+            PATH=$1:$PATH
+        fi
+esac
+}
+
+if [ -x /usr/bin/id ]; then
+if [ -z &#34;$EUID&#34; ]; then
+    # ksh workaround
+    EUID=`id -u`
+    UID=`id -ru`
+fi
+USER=&#34;`id -un`&#34;
+LOGNAME=$USER
+MAIL=&#34;/var/spool/mail/$USER&#34;
+fi
+
+
+# Path manipulation
+if [ &#34;$EUID&#34; = &#34;0&#34; ]; then
+pathmunge /sbin
+pathmunge /usr/sbin
+pathmunge /usr/local/sbin
+else
+pathmunge /usr/local/sbin after
+pathmunge /usr/sbin after
+pathmunge /sbin after
+
+fi</pre></td></tr></table>
+</div>
+</div></li>
+</ul>
+
+<h1 id="3-总结">3. 总结</h1>
+
+<p>综上，如需修改 PATH，建议修改 bashrc 文件，从而保证任何方式访问时 PATH 的正确性。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-01-18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ssh/">ssh</a>
+          <a href="/tags/linux/">linux</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/01/22/all-things-opentsdb/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">All Things OpenTSDB</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/01/16/hbase-region-split-policy/">
+            <span class="next-text nav-default">HBase笔记：Region拆分策略</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

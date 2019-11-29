@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>如何使用Spark ALS实现协同过滤 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录最近一段时间学习和实现Spark MLlib中的协同过滤的一些总结，希望对大家熟悉Spark ALS算法有所帮助。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2015/06/01/how-to-implement-collaborative-filtering-using-spark-als/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="如何使用Spark ALS实现协同过滤" />
+<meta property="og:description" content="本文主要记录最近一段时间学习和实现Spark MLlib中的协同过滤的一些总结，希望对大家熟悉Spark ALS算法有所帮助。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2015/06/01/how-to-implement-collaborative-filtering-using-spark-als/" />
+<meta property="article:published_time" content="2015-06-01T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-06-01T08:00:00+08:00" />
+<meta itemprop="name" content="如何使用Spark ALS实现协同过滤">
+<meta itemprop="description" content="本文主要记录最近一段时间学习和实现Spark MLlib中的协同过滤的一些总结，希望对大家熟悉Spark ALS算法有所帮助。">
+
+
+<meta itemprop="datePublished" content="2015-06-01T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-06-01T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="4036">
+
+
+
+<meta itemprop="keywords" content="spark,mlib,recommendation,als," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="如何使用Spark ALS实现协同过滤"/>
+<meta name="twitter:description" content="本文主要记录最近一段时间学习和实现Spark MLlib中的协同过滤的一些总结，希望对大家熟悉Spark ALS算法有所帮助。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">如何使用Spark ALS实现协同过滤</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-06-01 </span>
+        <div class="post-category">
+            <a href="/categories/spark/"> spark </a>
+            </div>
+          <span class="more-meta"> 约 4036 字 </span>
+          <span class="more-meta"> 预计阅读 9 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#测试环境">测试环境</a></li>
+<li><a href="#预测评分">预测评分</a>
+<ul>
+<li><a href="#准备工作">准备工作</a></li>
+<li><a href="#加载数据">加载数据</a></li>
+<li><a href="#训练模型">训练模型</a></li>
+<li><a href="#评测">评测</a></li>
+<li><a href="#保存真实评分和预测评分">保存真实评分和预测评分</a></li>
+</ul></li>
+<li><a href="#给一个用户推荐商品">给一个用户推荐商品</a></li>
+<li><a href="#批量推荐">批量推荐</a></li>
+<li><a href="#保存和加载推荐模型">保存和加载推荐模型</a></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考资料">参考资料</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要记录最近一段时间学习和实现<a href="/2015/04/17-mllib-collaborative-filtering">Spark MLlib中的协同过滤</a>的一些总结，希望对大家熟悉Spark ALS算法有所帮助。</p>
+
+<blockquote>
+<p>更新：</p>
+
+<ol>
+<li>【2016.06.12】Spark1.4.0中MatrixFactorizationModel提供了recommendForAll方法实现离线批量推荐，见<a href="https://issues.apache.org/jira/browse/SPARK-3066">SPARK-3066</a>。</li>
+</ol>
+</blockquote>
+
+<h1 id="测试环境">测试环境</h1>
+
+<p>为了测试简单，在本地以local方式运行Spark，你需要做的是下载编译好的压缩包解压即可，可以参考<a href="/2015/03/30-test-in-local-mode">Spark本地模式运行</a>。</p>
+
+<p>测试数据使用<a href="http://grouplens.org/datasets/movielens/">MovieLens</a>的<a href="http://files.grouplens.org/datasets/movielens/ml-10m.zip">MovieLens 10M数据集</a>，下载之后解压到data目录。数据的格式请参考README中的说明，需要注意的是ratings.dat中的数据被处理过，<code>每个用户至少访问了20个商品</code>。</p>
+
+<p>下面的代码均在spark-shell中运行，启动时候可以根据你的机器内存设置JVM参数，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">bin-shell --executor-memory 3g --driver-memory 3g --driver-java-options <span class="s1">&#39;-Xms2g -Xmx2g -XX:+UseCompressedOops&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="预测评分">预测评分</h1>
+
+<p>这个例子主要演示如何训练数据、评分并计算根均方差。</p>
+
+<h2 id="准备工作">准备工作</h2>
+
+<p>首先，启动spark-shell，然后引入mllib包，我们需要用到ALS算法类和Rating评分类：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">import</span> <span class="nn">org.apache.spark.mllib.recommendation.</span><span class="o">{</span><span class="nc">ALS</span><span class="o">,</span> <span class="nc">Rating</span><span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>Spark的日志级别默认为INFO，你可以手动设置为WARN级别，同样先引入log4j依赖：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">import</span> <span class="nn">org.apache.log4j.</span><span class="o">{</span><span class="nc">Logger</span><span class="o">,</span><span class="nc">Level</span><span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，运行下面代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="nc">Logger</span><span class="o">.</span><span class="n">getLogger</span><span class="o">(</span><span class="s">&#34;org.apache.spark&#34;</span><span class="o">).</span><span class="n">setLevel</span><span class="o">(</span><span class="nc">Level</span><span class="o">.</span><span class="nc">WARN</span><span class="o">)</span>
+<span class="nc">Logger</span><span class="o">.</span><span class="n">getLogger</span><span class="o">(</span><span class="s">&#34;org.eclipse.jetty.server&#34;</span><span class="o">).</span><span class="n">setLevel</span><span class="o">(</span><span class="nc">Level</span><span class="o">.</span><span class="nc">OFF</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="加载数据">加载数据</h2>
+
+<p>spark-shell启动成功之后，sc为内置变量，你可以通过它来加载测试数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">data</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;data/ml-1m/ratings.dat&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来解析文件内容，获得用户对商品的评分记录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">ratings</span> <span class="k">=</span> <span class="n">data</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34;::&#34;</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Array</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">item</span><span class="o">,</span> <span class="n">rate</span><span class="o">,</span> <span class="n">ts</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">.</span><span class="n">toInt</span><span class="o">,</span> <span class="n">item</span><span class="o">.</span><span class="n">toInt</span><span class="o">,</span> <span class="n">rate</span><span class="o">.</span><span class="n">toDouble</span><span class="o">)</span>
+<span class="o">}).</span><span class="n">cache</span><span class="o">()</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看第一条记录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">scala</span><span class="o">&gt;</span> <span class="n">ratings</span><span class="o">.</span><span class="n">first</span>
+<span class="n">res81</span><span class="k">:</span> <span class="kt">org.apache.spark.mllib.recommendation.Rating</span> <span class="o">=</span> <span class="nc">Rating</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">1193</span><span class="o">,</span><span class="mf">5.0</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>我们可以统计文件中用户和商品数量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">users</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">user</span><span class="o">).</span><span class="n">distinct</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">products</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">product</span><span class="o">).</span><span class="n">distinct</span><span class="o">()</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Got &#34;</span><span class="o">+</span><span class="n">ratings</span><span class="o">.</span><span class="n">count</span><span class="o">()+</span><span class="s">&#34; ratings from &#34;</span><span class="o">+</span><span class="n">users</span><span class="o">.</span><span class="n">count</span><span class="o">+</span><span class="s">&#34; users on &#34;</span><span class="o">+</span><span class="n">products</span><span class="o">.</span><span class="n">count</span><span class="o">+</span><span class="s">&#34; products.&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到如下输出：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="o">//</span><span class="nc">Got</span> <span class="mi">1000209</span> <span class="n">ratings</span> <span class="n">from</span> <span class="mi">6040</span> <span class="n">users</span> <span class="n">on</span> <span class="mi">3706</span> <span class="n">products</span><span class="o">.</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>你可以对评分数据生成训练集和测试集，例如：训练集和测试集比例为8比2：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">splits</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">randomSplit</span><span class="o">(</span><span class="nc">Array</span><span class="o">(</span><span class="mf">0.8</span><span class="o">,</span> <span class="mf">0.2</span><span class="o">),</span> <span class="n">seed</span> <span class="k">=</span> <span class="mi">111</span><span class="n">l</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">training</span> <span class="k">=</span> <span class="n">splits</span><span class="o">(</span><span class="mi">0</span><span class="o">).</span><span class="n">repartition</span><span class="o">(</span><span class="n">numPartitions</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">test</span> <span class="k">=</span> <span class="n">splits</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">repartition</span><span class="o">(</span><span class="n">numPartitions</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里，我们是将评分数据全部当做训练集，并且也为测试集。</p>
+
+<h2 id="训练模型">训练模型</h2>
+
+<p>接下来调用<code>ALS.train()</code>方法，进行模型训练：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">rank</span> <span class="k">=</span> <span class="mi">12</span>
+<span class="k">val</span> <span class="n">lambda</span> <span class="k">=</span> <span class="mf">0.01</span>
+<span class="k">val</span> <span class="n">numIterations</span> <span class="k">=</span> <span class="mi">20</span>
+<span class="k">val</span> <span class="n">model</span> <span class="k">=</span> <span class="nc">ALS</span><span class="o">.</span><span class="n">train</span><span class="o">(</span><span class="n">ratings</span><span class="o">,</span> <span class="n">rank</span><span class="o">,</span> <span class="n">numIterations</span><span class="o">,</span> <span class="n">lambda</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>训练完后，我们看看model中的用户和商品特征向量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">model</span><span class="o">.</span><span class="n">userFeatures</span>
+<span class="c1">//res82: org.apache.spark.rdd.RDD[(Int, Array[Double])] = users MapPartitionsRDD[400] at mapValues at ALS.scala:218
+</span><span class="c1"></span>
+<span class="n">model</span><span class="o">.</span><span class="n">userFeatures</span><span class="o">.</span><span class="n">count</span>
+<span class="c1">//res84: Long = 6040
+</span><span class="c1"></span>
+<span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span>
+<span class="c1">//res85: org.apache.spark.rdd.RDD[(Int, Array[Double])] = products MapPartitionsRDD[401] at mapValues at ALS.scala:222
+</span><span class="c1"></span>
+<span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">count</span>
+<span class="o">//</span><span class="n">res86</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="mi">3706</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="评测">评测</h2>
+
+<p>我们要对比一下预测的结果，注意：<strong>我们将训练集当作测试集</strong>来进行对比测试。从训练集中获取用户和商品的映射：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">usersProducts</span><span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">)</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>显然，测试集的记录数等于评分总记录数，验证一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">usersProducts</span><span class="o">.</span><span class="n">count</span>  <span class="o">//</span><span class="nc">Long</span> <span class="k">=</span> <span class="mi">1000209</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使用推荐模型对用户商品进行预测评分，得到预测评分的数据集：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">var</span> <span class="n">predictions</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">usersProducts</span><span class="o">).</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="n">rate</span><span class="o">)</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看其记录数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">predictions</span><span class="o">.</span><span class="n">count</span> <span class="o">//</span><span class="nc">Long</span> <span class="k">=</span> <span class="mi">1000209</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>将真实评分数据集与预测评分数据集进行合并，这样得到用户对每一个商品的实际评分和预测评分：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">ratesAndPreds</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="n">rate</span><span class="o">)</span>
+<span class="o">}.</span><span class="n">join</span><span class="o">(</span><span class="n">predictions</span><span class="o">)</span>
+
+<span class="n">ratesAndPreds</span><span class="o">.</span><span class="n">count</span>  <span class="o">//</span><span class="nc">Long</span> <span class="k">=</span> <span class="mi">1000209</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后计算根均方差：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">rmse</span><span class="k">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="n">ratesAndPreds</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">r1</span><span class="o">,</span> <span class="n">r2</span><span class="o">))</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">err</span> <span class="k">=</span> <span class="o">(</span><span class="n">r1</span> <span class="o">-</span> <span class="n">r2</span><span class="o">)</span>
+  <span class="n">err</span> <span class="o">*</span> <span class="n">err</span>
+<span class="o">}.</span><span class="n">mean</span><span class="o">())</span>
+
+<span class="n">println</span><span class="o">(</span><span class="s">s&#34;RMSE = </span><span class="si">$rmse</span><span class="s">&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上面这段代码其实就是<code>对测试集进行评分预测并计算相似度</code>，这段代码可以抽象为一个方法，如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="cm">/** Compute RMSE (Root Mean Squared Error). */</span>
+<span class="k">def</span> <span class="n">computeRmse</span><span class="o">(</span><span class="n">model</span><span class="k">:</span> <span class="kt">MatrixFactorizationModel</span><span class="o">,</span> <span class="n">data</span><span class="k">:</span> <span class="kt">RDD</span><span class="o">[</span><span class="kt">Rating</span><span class="o">])</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">usersProducts</span> <span class="k">=</span> <span class="n">data</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">)</span>
+  <span class="o">}</span>
+
+  <span class="k">val</span> <span class="n">predictions</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="n">usersProducts</span><span class="o">).</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="n">rate</span><span class="o">)</span>
+  <span class="o">}</span>
+
+  <span class="k">val</span> <span class="n">ratesAndPreds</span> <span class="k">=</span> <span class="n">data</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+    <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="n">rate</span><span class="o">)</span>
+  <span class="o">}.</span><span class="n">join</span><span class="o">(</span><span class="n">predictions</span><span class="o">)</span>
+
+  <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="o">(</span><span class="n">ratesAndPreds</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">r1</span><span class="o">,</span> <span class="n">r2</span><span class="o">))</span> <span class="k">=&gt;</span>
+    <span class="k">val</span> <span class="n">err</span> <span class="k">=</span> <span class="o">(</span><span class="n">r1</span> <span class="o">-</span> <span class="n">r2</span><span class="o">)</span>
+    <span class="n">err</span> <span class="o">*</span> <span class="n">err</span>
+  <span class="o">}.</span><span class="n">mean</span><span class="o">())</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>除了RMSE指标，我们还可以及时AUC以及Mean average precision at K (MAPK)，关于AUC的计算方法，参考<a href="https://github.com/sryza/aas/blob/master/ch03-recommender/src/main/scala/com/cloudera/datascience/recommender/RunRecommender.scala">RunRecommender.scala</a>，关于MAPK的计算方法可以参考《<a href="http://f.dataguru.cn/thread-495493-1-1.html">Packt.Machine Learning with Spark.2015.pdf</a>》一书第四章节内容，或者你可以看本文后面内容。</p>
+
+<h2 id="保存真实评分和预测评分">保存真实评分和预测评分</h2>
+
+<p>我们还可以保存用户对商品的真实评分和预测评分记录到本地文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">ratesAndPreds</span><span class="o">.</span><span class="n">sortByKey</span><span class="o">().</span><span class="n">repartition</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">sortBy</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_1</span><span class="o">).</span><span class="n">map</span><span class="o">({</span>
+  <span class="k">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">rate</span><span class="o">,</span> <span class="n">pred</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">user</span> <span class="o">+</span> <span class="s">&#34;,&#34;</span> <span class="o">+</span> <span class="n">product</span> <span class="o">+</span> <span class="s">&#34;,&#34;</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">+</span> <span class="s">&#34;,&#34;</span> <span class="o">+</span> <span class="n">pred</span><span class="o">)</span>
+<span class="o">}).</span><span class="n">saveAsTextFile</span><span class="o">(</span><span class="s">&#34;/tmp/result&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>上面这段代码先按用户排序，然后重新分区确保目标目录中只生成一个文件。如果你重复运行这段代码，则需要先删除目标路径：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">import</span> <span class="nn">scala.sys.process._</span>
+<span class="s">&#34;rm -r /tmp/result&#34;</span><span class="o">.!</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>我们还可以对预测的评分结果按用户进行分组并按评分倒排序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">predictions</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="n">rate</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="o">(</span><span class="n">product</span><span class="o">,</span> <span class="n">rate</span><span class="o">))</span>
+<span class="o">}.</span><span class="n">groupByKey</span><span class="o">(</span><span class="n">numPartitions</span><span class="o">).</span><span class="n">map</span><span class="o">{</span><span class="k">case</span> <span class="o">(</span><span class="n">user_id</span><span class="o">,</span><span class="n">list</span><span class="o">)</span><span class="k">=&gt;</span>
+  <span class="o">(</span><span class="n">user_id</span><span class="o">,</span><span class="n">list</span><span class="o">.</span><span class="n">toList</span><span class="o">.</span><span class="n">sortBy</span> <span class="o">{</span><span class="k">case</span> <span class="o">(</span><span class="n">goods_id</span><span class="o">,</span><span class="n">rate</span><span class="o">)</span><span class="k">=&gt;</span> <span class="o">-</span> <span class="n">rate</span><span class="o">})</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="给一个用户推荐商品">给一个用户推荐商品</h1>
+
+<p>这个例子主要是记录如何给一个或大量用户进行推荐商品，例如，对用户编号为384的用户进行推荐，查出该用户在测试集中评分过的商品。</p>
+
+<p>找出5个用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">users</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">5</span><span class="o">)</span> 
+<span class="o">//</span><span class="nc">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">384</span><span class="o">,</span> <span class="mi">1084</span><span class="o">,</span> <span class="mi">4904</span><span class="o">,</span> <span class="mi">3702</span><span class="o">,</span> <span class="mi">5618</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看用户编号为384的用户的预测结果中预测评分排前10的商品：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">userId</span> <span class="k">=</span> <span class="n">users</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">1</span><span class="o">)(</span><span class="mi">0</span><span class="o">)</span> <span class="c1">//384
+</span><span class="c1"></span><span class="k">val</span> <span class="n">K</span> <span class="k">=</span> <span class="mi">10</span>
+<span class="k">val</span> <span class="n">topKRecs</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">recommendProducts</span><span class="o">(</span><span class="n">userId</span><span class="o">,</span> <span class="n">K</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="n">topKRecs</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;\n&#34;</span><span class="o">))</span>
+<span class="c1">//    Rating(384,2545,8.354966018818265)
+</span><span class="c1">//    Rating(384,129,8.113083736094676)
+</span><span class="c1">//    Rating(384,184,8.038113395650853)
+</span><span class="c1">//    Rating(384,811,7.983433591425284)
+</span><span class="c1">//    Rating(384,1421,7.912044967873945)
+</span><span class="c1">//    Rating(384,1313,7.719639594879865)
+</span><span class="c1">//    Rating(384,2892,7.53667094600392)
+</span><span class="c1">//    Rating(384,2483,7.295378004543803)
+</span><span class="c1">//    Rating(384,397,7.141158013610967)
+</span><span class="c1"></span><span class="o">//</span>    <span class="nc">Rating</span><span class="o">(</span><span class="mi">384</span><span class="o">,</span><span class="mi">97</span><span class="o">,</span><span class="mf">7.071089782695754</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看该用户的评分记录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">goodsForUser</span><span class="k">=</span><span class="n">ratings</span><span class="o">.</span><span class="n">keyBy</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">user</span><span class="o">).</span><span class="n">lookup</span><span class="o">(</span><span class="mi">384</span><span class="o">)</span>
+<span class="c1">// Seq[org.apache.spark.mllib.recommendation.Rating] = WrappedArray(Rating(384,2055,2.0), Rating(384,1197,4.0), Rating(384,593,5.0), Rating(384,599,3.0), Rating(384,673,2.0), Rating(384,3037,4.0), Rating(384,1381,2.0), Rating(384,1610,4.0), Rating(384,3074,4.0), Rating(384,204,4.0), Rating(384,3508,3.0), Rating(384,1007,3.0), Rating(384,260,4.0), Rating(384,3487,3.0), Rating(384,3494,3.0), Rating(384,1201,5.0), Rating(384,3671,5.0), Rating(384,1207,4.0), Rating(384,2947,4.0), Rating(384,2951,4.0), Rating(384,2896,2.0), Rating(384,1304,5.0))
+</span><span class="c1"></span>
+<span class="n">productsForUser</span><span class="o">.</span><span class="n">size</span> <span class="c1">//Int = 22
+</span><span class="c1"></span><span class="n">productsForUser</span><span class="o">.</span><span class="n">sortBy</span><span class="o">(-</span><span class="k">_</span><span class="o">.</span><span class="n">rating</span><span class="o">).</span><span class="n">take</span><span class="o">(</span><span class="mi">10</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="n">rating</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">rating</span><span class="o">.</span><span class="n">product</span><span class="o">,</span> <span class="n">rating</span><span class="o">.</span><span class="n">rating</span><span class="o">)).</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+<span class="c1">//    (593,5.0)
+</span><span class="c1">//    (1201,5.0)
+</span><span class="c1">//    (3671,5.0)
+</span><span class="c1">//    (1304,5.0)
+</span><span class="c1">//    (1197,4.0)
+</span><span class="c1">//    (3037,4.0)
+</span><span class="c1">//    (1610,4.0)
+</span><span class="c1">//    (3074,4.0)
+</span><span class="c1">//    (204,4.0)
+</span><span class="c1"></span><span class="o">//</span>    <span class="o">(</span><span class="mi">260</span><span class="o">,</span><span class="mf">4.0</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到该用户对22个商品评过分以及浏览的商品是哪些。</p>
+
+<p>我们可以该用户对某一个商品的实际评分和预测评分方差为多少：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">actualRating</span> <span class="k">=</span> <span class="n">productsForUser</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">1</span><span class="o">)(</span><span class="mi">0</span><span class="o">)</span>
+<span class="c1">//actualRating: org.apache.spark.mllib.recommendation.Rating = Rating(384,2055,2.0)    val predictedRating = model.predict(789, actualRating.product)
+</span><span class="c1"></span><span class="k">val</span> <span class="n">predictedRating</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="o">(</span><span class="mi">384</span><span class="o">,</span> <span class="n">actualRating</span><span class="o">.</span><span class="n">product</span><span class="o">)</span>
+<span class="c1">//predictedRating: Double = 1.9426030777174637
+</span><span class="c1"></span><span class="k">val</span> <span class="n">squaredError</span> <span class="k">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="o">(</span><span class="n">predictedRating</span> <span class="o">-</span> <span class="n">actualRating</span><span class="o">.</span><span class="n">rating</span><span class="o">,</span> <span class="mf">2.0</span><span class="o">)</span>
+<span class="o">//</span><span class="n">squaredError</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">0.0032944066875075172</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如何找出和一个已知商品最相似的商品呢？这里，我们可以使用余弦相似度来计算：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">import</span> <span class="nn">org.jblas.DoubleMatrix</span>
+
+<span class="cm">/* Compute the cosine similarity between two vectors */</span>
+<span class="k">def</span> <span class="n">cosineSimilarity</span><span class="o">(</span><span class="n">vec1</span><span class="k">:</span> <span class="kt">DoubleMatrix</span><span class="o">,</span> <span class="n">vec2</span><span class="k">:</span> <span class="kt">DoubleMatrix</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">vec1</span><span class="o">.</span><span class="n">dot</span><span class="o">(</span><span class="n">vec2</span><span class="o">)</span> <span class="o">/</span> <span class="o">(</span><span class="n">vec1</span><span class="o">.</span><span class="n">norm2</span><span class="o">()</span> <span class="o">*</span> <span class="n">vec2</span><span class="o">.</span><span class="n">norm2</span><span class="o">())</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>以2055商品为例，计算实际评分和预测评分相似度</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">itemId</span> <span class="k">=</span> <span class="mi">2055</span>
+<span class="k">val</span> <span class="n">itemFactor</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">lookup</span><span class="o">(</span><span class="n">itemId</span><span class="o">).</span><span class="n">head</span>
+<span class="c1">//itemFactor: Array[Double] = Array(0.3660752773284912, 0.43573060631752014, -0.3421429991722107, 0.44382765889167786, -1.4875195026397705, 0.6274569630622864, -0.3264533579349518, -0.9939845204353333, -0.8710321187973022, -0.7578890323638916, -0.14621856808662415, -0.7254264950752258)
+</span><span class="c1"></span><span class="k">val</span> <span class="n">itemVector</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">itemFactor</span><span class="o">)</span>
+<span class="c1">//itemVector: org.jblas.DoubleMatrix = [0.366075; 0.435731; -0.342143; 0.443828; -1.487520; 0.627457; -0.326453; -0.993985; -0.871032; -0.757889; -0.146219; -0.725426]
+</span><span class="c1"></span>
+<span class="n">cosineSimilarity</span><span class="o">(</span><span class="n">itemVector</span><span class="o">,</span> <span class="n">itemVector</span><span class="o">)</span>
+<span class="o">//</span> <span class="n">res99</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">0.9999999999999999</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>找到和该商品最相似的10个商品：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">sims</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">factor</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">factorVector</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">factor</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">sim</span> <span class="k">=</span> <span class="n">cosineSimilarity</span><span class="o">(</span><span class="n">factorVector</span><span class="o">,</span> <span class="n">itemVector</span><span class="o">)</span>
+  <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">sim</span><span class="o">)</span>
+<span class="o">}</span>
+<span class="k">val</span> <span class="n">sortedSims</span> <span class="k">=</span> <span class="n">sims</span><span class="o">.</span><span class="n">top</span><span class="o">(</span><span class="n">K</span><span class="o">)(</span><span class="nc">Ordering</span><span class="o">.</span><span class="n">by</span><span class="o">[(</span><span class="kt">Int</span>, <span class="kt">Double</span><span class="o">)</span>, <span class="kt">Double</span><span class="o">]</span> <span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">similarity</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">similarity</span> <span class="o">})</span>
+<span class="c1">//sortedSims: Array[(Int, Double)] = Array((2055,0.9999999999999999), (2051,0.9138311231145874), (3520,0.8739823400539756), (2190,0.8718466671129721), (2050,0.8612639515847019), (1011,0.8466911667526461), (2903,0.8455764332511272), (3121,0.8227325520485377), (3674,0.8075743004357392), (2016,0.8063817280259447))
+</span><span class="c1"></span><span class="n">println</span><span class="o">(</span><span class="n">sortedSims</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;\n&#34;</span><span class="o">))</span>
+<span class="c1">//    (2055,0.9999999999999999)
+</span><span class="c1">//    (2051,0.9138311231145874)
+</span><span class="c1">//    (3520,0.8739823400539756)
+</span><span class="c1">//    (2190,0.8718466671129721)
+</span><span class="c1">//    (2050,0.8612639515847019)
+</span><span class="c1">//    (1011,0.8466911667526461)
+</span><span class="c1">//    (2903,0.8455764332511272)
+</span><span class="c1">//    (3121,0.8227325520485377)
+</span><span class="c1">//    (3674,0.8075743004357392)
+</span><span class="c1"></span><span class="o">//</span>    <span class="o">(</span><span class="mi">2016</span><span class="o">,</span><span class="mf">0.8063817280259447</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>显然第一个最相似的商品即为该商品本身，即2055，我们可以修改下代码，取前k+1个商品，然后排除第一个：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">sortedSims2</span> <span class="k">=</span> <span class="n">sims</span><span class="o">.</span><span class="n">top</span><span class="o">(</span><span class="n">K</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)(</span><span class="nc">Ordering</span><span class="o">.</span><span class="n">by</span><span class="o">[(</span><span class="kt">Int</span>, <span class="kt">Double</span><span class="o">)</span>, <span class="kt">Double</span><span class="o">]</span> <span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">similarity</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">similarity</span> <span class="o">})</span>
+<span class="c1">//sortedSims2: Array[(Int, Double)] = Array((2055,0.9999999999999999), (2051,0.9138311231145874), (3520,0.8739823400539756), (2190,0.8718466671129721), (2050,0.8612639515847019), (1011,0.8466911667526461), (2903,0.8455764332511272), (3121,0.8227325520485377), (3674,0.8075743004357392), (2016,0.8063817280259447), (3672,0.8016276723120674))
+</span><span class="c1"></span>
+<span class="n">sortedSims2</span><span class="o">.</span><span class="n">slice</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">11</span><span class="o">).</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">sim</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">sim</span><span class="o">)</span> <span class="o">}.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;\n&#34;</span><span class="o">)</span>
+<span class="c1">//    (2051,0.9138311231145874)
+</span><span class="c1">//    (3520,0.8739823400539756)
+</span><span class="c1">//    (2190,0.8718466671129721)
+</span><span class="c1">//    (2050,0.8612639515847019)
+</span><span class="c1">//    (1011,0.8466911667526461)
+</span><span class="c1">//    (2903,0.8455764332511272)
+</span><span class="c1">//    (3121,0.8227325520485377)
+</span><span class="c1">//    (3674,0.8075743004357392)
+</span><span class="c1">//    (2016,0.8063817280259447)
+</span><span class="c1"></span><span class="o">//</span>    <span class="o">(</span><span class="mi">3672</span><span class="o">,</span><span class="mf">0.8016276723120674</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，我们可以计算给该用户推荐的前K个商品的平均准确度MAPK，该算法定义如下（该算法是否正确还有待考证）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="cm">/* Function to compute average precision given a set of actual and predicted ratings */</span>
+<span class="c1">// Code for this function is based on: https://github.com/benhamner/Metrics
+</span><span class="c1"></span><span class="k">def</span> <span class="n">avgPrecisionK</span><span class="o">(</span><span class="n">actual</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span> <span class="n">predicted</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span> <span class="n">k</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">predK</span> <span class="k">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="n">k</span><span class="o">)</span>
+  <span class="k">var</span> <span class="n">score</span> <span class="k">=</span> <span class="mf">0.0</span>
+  <span class="k">var</span> <span class="n">numHits</span> <span class="k">=</span> <span class="mf">0.0</span>
+  <span class="k">for</span> <span class="o">((</span><span class="n">p</span><span class="o">,</span> <span class="n">i</span><span class="o">)</span> <span class="k">&lt;-</span> <span class="n">predK</span><span class="o">.</span><span class="n">zipWithIndex</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">actual</span><span class="o">.</span><span class="n">contains</span><span class="o">(</span><span class="n">p</span><span class="o">))</span> <span class="o">{</span>
+      <span class="n">numHits</span> <span class="o">+=</span> <span class="mf">1.0</span>
+      <span class="n">score</span> <span class="o">+=</span> <span class="n">numHits</span> <span class="o">/</span> <span class="o">(</span><span class="n">i</span><span class="o">.</span><span class="n">toDouble</span> <span class="o">+</span> <span class="mf">1.0</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">actual</span><span class="o">.</span><span class="n">isEmpty</span><span class="o">)</span> <span class="o">{</span>
+    <span class="mf">1.0</span>
+  <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+    <span class="n">score</span> <span class="o">/</span> <span class="n">scala</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">min</span><span class="o">(</span><span class="n">actual</span><span class="o">.</span><span class="n">size</span><span class="o">,</span> <span class="n">k</span><span class="o">).</span><span class="n">toDouble</span>
+  <span class="o">}</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>给该用户推荐的商品为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">actualProducts</span> <span class="k">=</span> <span class="n">productsForUser</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">product</span><span class="o">)</span>
+<span class="o">//</span><span class="n">actualProducts</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="nc">ArrayBuffer</span><span class="o">(</span><span class="mi">2055</span><span class="o">,</span> <span class="mi">1197</span><span class="o">,</span> <span class="mi">593</span><span class="o">,</span> <span class="mi">599</span><span class="o">,</span> <span class="mi">673</span><span class="o">,</span> <span class="mi">3037</span><span class="o">,</span> <span class="mi">1381</span><span class="o">,</span> <span class="mi">1610</span><span class="o">,</span> <span class="mi">3074</span><span class="o">,</span> <span class="mi">204</span><span class="o">,</span> <span class="mi">3508</span><span class="o">,</span> <span class="mi">1007</span><span class="o">,</span> <span class="mi">260</span><span class="o">,</span> <span class="mi">3487</span><span class="o">,</span> <span class="mi">3494</span><span class="o">,</span> <span class="mi">1201</span><span class="o">,</span> <span class="mi">3671</span><span class="o">,</span> <span class="mi">1207</span><span class="o">,</span> <span class="mi">2947</span><span class="o">,</span> <span class="mi">2951</span><span class="o">,</span> <span class="mi">2896</span><span class="o">,</span> <span class="mi">1304</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>给该用户预测的商品为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"> <span class="k">val</span> <span class="n">predictedProducts</span> <span class="k">=</span> <span class="n">topKRecs</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">product</span><span class="o">)</span>
+<span class="o">//</span><span class="n">predictedProducts</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">2545</span><span class="o">,</span> <span class="mi">129</span><span class="o">,</span> <span class="mi">184</span><span class="o">,</span> <span class="mi">811</span><span class="o">,</span> <span class="mi">1421</span><span class="o">,</span> <span class="mi">1313</span><span class="o">,</span> <span class="mi">2892</span><span class="o">,</span> <span class="mi">2483</span><span class="o">,</span> <span class="mi">397</span><span class="o">,</span> <span class="mi">97</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>最后的准确度为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">apk10</span> <span class="k">=</span> <span class="n">avgPrecisionK</span><span class="o">(</span><span class="n">actualProducts</span><span class="o">,</span> <span class="n">predictedProducts</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+<span class="o">//</span> <span class="n">apk10</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">0.0</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="批量推荐">批量推荐</h1>
+
+<p>你可以评分记录中获得所有用户然后依次给每个用户推荐：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">users</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">user</span><span class="o">).</span><span class="n">distinct</span><span class="o">()</span>
+
+<span class="n">users</span><span class="o">.</span><span class="n">collect</span><span class="o">.</span><span class="n">flatMap</span> <span class="o">{</span> <span class="n">user</span> <span class="k">=&gt;</span>
+  <span class="n">model</span><span class="o">.</span><span class="n">recommendProducts</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="mi">10</span><span class="o">)</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这种方式是遍历内存中的一个集合然后循环调用RDD的操作，运行会比较慢，另外一种方式是直接操作model中的userFeatures和productFeatures，代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">itemFactors</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">factor</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">factor</span> <span class="o">}.</span><span class="n">collect</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">itemMatrix</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">itemFactors</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="n">itemMatrix</span><span class="o">.</span><span class="n">rows</span><span class="o">,</span> <span class="n">itemMatrix</span><span class="o">.</span><span class="n">columns</span><span class="o">)</span>
+<span class="c1">//(3706,12)
+</span><span class="c1"></span>
+<span class="c1">// broadcast the item factor matrix
+</span><span class="c1"></span><span class="k">val</span> <span class="n">imBroadcast</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="o">(</span><span class="n">itemMatrix</span><span class="o">)</span>
+
+<span class="c1">//获取商品和索引的映射
+</span><span class="c1"></span><span class="k">var</span> <span class="n">idxProducts</span><span class="k">=</span><span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">prodcut</span><span class="o">,</span> <span class="n">factor</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">prodcut</span> <span class="o">}.</span><span class="n">zipWithIndex</span><span class="o">().</span><span class="n">map</span><span class="o">{</span><span class="k">case</span> <span class="o">(</span><span class="n">prodcut</span><span class="o">,</span> <span class="n">idx</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">idx</span><span class="o">,</span><span class="n">prodcut</span><span class="o">)}.</span><span class="n">collectAsMap</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">idxProductsBroadcast</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="o">(</span><span class="n">idxProducts</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">allRecs</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">userFeatures</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">array</span><span class="o">)</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">userVector</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">array</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">scores</span> <span class="k">=</span> <span class="n">imBroadcast</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">mmul</span><span class="o">(</span><span class="n">userVector</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">sortedWithId</span> <span class="k">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">zipWithIndex</span><span class="o">.</span><span class="n">sortBy</span><span class="o">(-</span><span class="k">_</span><span class="o">.</span><span class="n">_1</span><span class="o">)</span>
+  <span class="c1">//根据索引取对应的商品id
+</span><span class="c1"></span>  <span class="k">val</span> <span class="n">recommendedProducts</span> <span class="k">=</span> <span class="n">sortedWithId</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">).</span><span class="n">map</span><span class="o">{</span><span class="n">idx</span><span class="k">=&gt;</span><span class="n">idxProductsBroadcast</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">idx</span><span class="o">).</span><span class="n">get</span><span class="o">}</span>
+  <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">recommendedProducts</span><span class="o">)</span> 
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这种方式其实还不是最优方法，更好的方法可以参考<a href="http://www.alesisnovik.com/?p=8">Personalised recommendations using Spark</a>，当然这篇文章中的代码还可以继续优化一下。我修改后的代码如下，供大家参考：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">productFeatures</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">collect</span><span class="o">()</span>
+<span class="k">var</span> <span class="n">productArray</span> <span class="k">=</span> <span class="nc">ArrayBuffer</span><span class="o">[</span><span class="kt">Int</span><span class="o">]()</span>
+<span class="k">var</span> <span class="n">productFeaturesArray</span> <span class="k">=</span> <span class="nc">ArrayBuffer</span><span class="o">[</span><span class="kt">Array</span><span class="o">[</span><span class="kt">Double</span><span class="o">]]()</span>
+<span class="k">for</span> <span class="o">((</span><span class="n">product</span><span class="o">,</span> <span class="n">features</span><span class="o">)</span> <span class="k">&lt;-</span> <span class="n">productFeatures</span><span class="o">)</span> <span class="o">{</span>
+  <span class="n">productArray</span> <span class="o">+=</span> <span class="n">product</span>
+  <span class="n">productFeaturesArray</span> <span class="o">+=</span> <span class="n">features</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">productArrayBroadcast</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="o">(</span><span class="n">productArray</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">productFeatureMatrixBroadcast</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="o">(</span><span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">productFeaturesArray</span><span class="o">.</span><span class="n">toArray</span><span class="o">).</span><span class="n">transpose</span><span class="o">())</span>
+
+<span class="n">start</span> <span class="k">=</span> <span class="nc">System</span><span class="o">.</span><span class="n">currentTimeMillis</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">allRecs</span> <span class="k">=</span> <span class="n">model</span><span class="o">.</span><span class="n">userFeatures</span><span class="o">.</span><span class="n">mapPartitions</span> <span class="o">{</span> <span class="n">iter</span> <span class="k">=&gt;</span>
+  <span class="c1">// Build user feature matrix for jblas
+</span><span class="c1"></span>  <span class="k">var</span> <span class="n">userFeaturesArray</span> <span class="k">=</span> <span class="nc">ArrayBuffer</span><span class="o">[</span><span class="kt">Array</span><span class="o">[</span><span class="kt">Double</span><span class="o">]]()</span>
+  <span class="k">var</span> <span class="n">userArray</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ArrayBuffer</span><span class="o">[</span><span class="kt">Int</span><span class="o">]()</span>
+  <span class="k">while</span> <span class="o">(</span><span class="n">iter</span><span class="o">.</span><span class="n">hasNext</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">features</span><span class="o">)</span> <span class="k">=</span> <span class="n">iter</span><span class="o">.</span><span class="n">next</span><span class="o">()</span>
+    <span class="n">userArray</span> <span class="o">+=</span> <span class="n">user</span>
+    <span class="n">userFeaturesArray</span> <span class="o">+=</span> <span class="n">features</span>
+  <span class="o">}</span>
+
+  <span class="k">var</span> <span class="n">userFeatureMatrix</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DoubleMatrix</span><span class="o">(</span><span class="n">userFeaturesArray</span><span class="o">.</span><span class="n">toArray</span><span class="o">)</span>
+  <span class="k">var</span> <span class="n">userRecommendationMatrix</span> <span class="k">=</span> <span class="n">userFeatureMatrix</span><span class="o">.</span><span class="n">mmul</span><span class="o">(</span><span class="n">productFeatureMatrixBroadcast</span><span class="o">.</span><span class="n">value</span><span class="o">)</span>
+  <span class="k">var</span> <span class="n">productArray</span><span class="k">=</span><span class="n">productArrayBroadcast</span><span class="o">.</span><span class="n">value</span>
+  <span class="k">var</span> <span class="n">mappedUserRecommendationArray</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ArrayBuffer</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="n">params</span><span class="o">.</span><span class="n">topk</span><span class="o">)</span>
+
+  <span class="c1">// Extract ratings from the matrix
+</span><span class="c1"></span>  <span class="k">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="n">userArray</span><span class="o">.</span><span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">var</span> <span class="n">ratingSet</span> <span class="k">=</span>  <span class="n">mutable</span><span class="o">.</span><span class="nc">TreeSet</span><span class="o">.</span><span class="n">empty</span><span class="o">(</span><span class="nc">Ordering</span><span class="o">.</span><span class="n">fromLessThan</span><span class="o">[(</span><span class="kt">Int</span>,<span class="kt">Double</span><span class="o">)](</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span> <span class="o">&gt;</span> <span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">))</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">j</span> <span class="k">&lt;-</span> <span class="mi">0</span> <span class="n">until</span> <span class="n">productArray</span><span class="o">.</span><span class="n">length</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">var</span> <span class="n">rating</span> <span class="k">=</span> <span class="o">(</span><span class="n">productArray</span><span class="o">(</span><span class="n">j</span><span class="o">),</span> <span class="n">userRecommendationMatrix</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">i</span><span class="o">,</span><span class="n">j</span><span class="o">))</span>
+      <span class="n">ratingSet</span> <span class="o">+=</span> <span class="n">rating</span>
+    <span class="o">}</span>
+    <span class="n">mappedUserRecommendationArray</span> <span class="o">+=</span> <span class="n">userArray</span><span class="o">(</span><span class="n">i</span><span class="o">)+</span><span class="s">&#34;,&#34;</span><span class="o">+</span><span class="n">ratingSet</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="n">params</span><span class="o">.</span><span class="n">topk</span><span class="o">).</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span>
+  <span class="o">}</span>
+  <span class="n">mappedUserRecommendationArray</span><span class="o">.</span><span class="n">iterator</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>2015.06.12 更新：</p>
+
+<p>悲哀的是，上面的方法还是不能解决问题，因为矩阵相乘会撑爆集群内存；可喜的是，如果你关注Spark最新动态，你会发现Spark1.4.0中MatrixFactorizationModel提供了<code>recommendForAll</code>方法实现离线批量推荐，详细说明见<a href="https://issues.apache.org/jira/browse/SPARK-3066">SPARK-3066</a>。因为，我使用的Hadoop版本是CDH-5.4.0，其中Spark版本还是1.3.0，所以暂且不能在集群上测试Spark1.4.0中添加的新方法。</p>
+</blockquote>
+
+<p><code>如果上面结果跑出来了，就可以验证推荐结果是否正确</code>。还是以384用户为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">allRecs</span><span class="o">.</span><span class="n">lookup</span><span class="o">(</span><span class="mi">384</span><span class="o">).</span><span class="n">head</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+<span class="c1">//res50: Array[Int] = Array(1539, 219, 1520, 775, 3161, 2711, 2503, 771, 853, 759)
+</span><span class="c1"></span><span class="n">topKRecs</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">product</span><span class="o">)</span>
+<span class="o">//</span><span class="n">res49</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="mi">1539</span><span class="o">,</span> <span class="mi">219</span><span class="o">,</span> <span class="mi">1520</span><span class="o">,</span> <span class="mi">775</span><span class="o">,</span> <span class="mi">3161</span><span class="o">,</span> <span class="mi">2711</span><span class="o">,</span> <span class="mi">2503</span><span class="o">,</span> <span class="mi">771</span><span class="o">,</span> <span class="mi">853</span><span class="o">,</span> <span class="mi">759</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来，我们可以计算所有推荐结果的准确度了，首先，得到每个用户评分过的所有商品：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">userProducts</span> <span class="k">=</span> <span class="n">ratings</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="nc">Rating</span><span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">,</span> <span class="n">rating</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">)</span> <span class="o">}.</span><span class="n">groupBy</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_1</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>然后，预测的商品和实际商品关联求准确度：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="c1">// finally, compute the APK for each user, and average them to find MAPK
+</span><span class="c1"></span><span class="k">val</span> <span class="nc">MAPK</span> <span class="k">=</span> <span class="n">allRecs</span><span class="o">.</span><span class="n">join</span><span class="o">(</span><span class="n">userProducts</span><span class="o">).</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">userId</span><span class="o">,</span> <span class="o">(</span><span class="n">predicted</span><span class="o">,</span> <span class="n">actualWithIds</span><span class="o">))</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">actual</span> <span class="k">=</span> <span class="n">actualWithIds</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">).</span><span class="n">toSeq</span>
+  <span class="n">avgPrecisionK</span><span class="o">(</span><span class="n">actual</span><span class="o">,</span> <span class="n">predicted</span><span class="o">,</span> <span class="n">K</span><span class="o">)</span>
+<span class="o">}.</span><span class="n">reduce</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">)</span> <span class="o">/</span> <span class="n">allRecs</span><span class="o">.</span><span class="n">count</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Mean Average Precision at K = &#34;</span> <span class="o">+</span> <span class="nc">MAPK</span><span class="o">)</span>
+<span class="o">//</span><span class="nc">Mean</span> <span class="nc">Average</span> <span class="nc">Precision</span> <span class="n">at</span> <span class="n">K</span> <span class="k">=</span> <span class="mf">0.018827551771260383</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>其实，我们也可以使用Spark内置的算法计算RMSE和MAE：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="c1">// MSE, RMSE and MAE
+</span><span class="c1"></span><span class="k">import</span> <span class="nn">org.apache.spark.mllib.evaluation.RegressionMetrics</span>
+
+<span class="k">val</span> <span class="n">predictedAndTrue</span> <span class="k">=</span> <span class="n">ratesAndPreds</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span> <span class="k">case</span> <span class="o">((</span><span class="n">user</span><span class="o">,</span> <span class="n">product</span><span class="o">),</span> <span class="o">(</span><span class="n">actual</span><span class="o">,</span> <span class="n">predicted</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="o">(</span><span class="n">actual</span><span class="o">,</span> <span class="n">predicted</span><span class="o">)</span> <span class="o">}</span>
+<span class="k">val</span> <span class="n">regressionMetrics</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">RegressionMetrics</span><span class="o">(</span><span class="n">predictedAndTrue</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Mean Squared Error = &#34;</span> <span class="o">+</span> <span class="n">regressionMetrics</span><span class="o">.</span><span class="n">meanSquaredError</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Root Mean Squared Error = &#34;</span> <span class="o">+</span> <span class="n">regressionMetrics</span><span class="o">.</span><span class="n">rootMeanSquaredError</span><span class="o">)</span>
+<span class="c1">// Mean Squared Error = 0.5490153087908566
+</span><span class="c1">// Root Mean Squared Error = 0.7409556726220918
+</span><span class="c1"></span>
+<span class="c1">// MAPK
+</span><span class="c1"></span><span class="k">import</span> <span class="nn">org.apache.spark.mllib.evaluation.RankingMetrics</span>
+<span class="k">val</span> <span class="n">predictedAndTrueForRanking</span> <span class="k">=</span> <span class="n">allRecs</span><span class="o">.</span><span class="n">join</span><span class="o">(</span><span class="n">userProducts</span><span class="o">).</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">userId</span><span class="o">,</span> <span class="o">(</span><span class="n">predicted</span><span class="o">,</span> <span class="n">actualWithIds</span><span class="o">))</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">actual</span> <span class="k">=</span> <span class="n">actualWithIds</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">)</span>
+  <span class="o">(</span><span class="n">predicted</span><span class="o">.</span><span class="n">toArray</span><span class="o">,</span> <span class="n">actual</span><span class="o">.</span><span class="n">toArray</span><span class="o">)</span>
+<span class="o">}</span>
+<span class="k">val</span> <span class="n">rankingMetrics</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">RankingMetrics</span><span class="o">(</span><span class="n">predictedAndTrueForRanking</span><span class="o">)</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Mean Average Precision = &#34;</span> <span class="o">+</span> <span class="n">rankingMetrics</span><span class="o">.</span><span class="n">meanAveragePrecision</span><span class="o">)</span>
+<span class="o">//</span> <span class="nc">Mean</span> <span class="nc">Average</span> <span class="nc">Precision</span> <span class="k">=</span> <span class="mf">0.04417535679520426</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>计算推荐2000个商品时的准确度为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="nc">MAPK2000</span> <span class="k">=</span> <span class="n">allRecs</span><span class="o">.</span><span class="n">join</span><span class="o">(</span><span class="n">userProducts</span><span class="o">).</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">userId</span><span class="o">,</span> <span class="o">(</span><span class="n">predicted</span><span class="o">,</span> <span class="n">actualWithIds</span><span class="o">))</span> <span class="k">=&gt;</span>
+  <span class="k">val</span> <span class="n">actual</span> <span class="k">=</span> <span class="n">actualWithIds</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">).</span><span class="n">toSeq</span>
+  <span class="n">avgPrecisionK</span><span class="o">(</span><span class="n">actual</span><span class="o">,</span> <span class="n">predicted</span><span class="o">,</span> <span class="mi">2000</span><span class="o">)</span>
+<span class="o">}.</span><span class="n">reduce</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="k">_</span><span class="o">)</span> <span class="o">/</span> <span class="n">allRecs</span><span class="o">.</span><span class="n">count</span>
+<span class="n">println</span><span class="o">(</span><span class="s">&#34;Mean Average Precision = &#34;</span> <span class="o">+</span> <span class="nc">MAPK2000</span><span class="o">)</span>
+<span class="o">//</span><span class="nc">Mean</span> <span class="nc">Average</span> <span class="nc">Precision</span> <span class="k">=</span> <span class="mf">0.025228311843069083</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="保存和加载推荐模型">保存和加载推荐模型</h1>
+
+<p>对与实时推荐，我们需要启动一个web server，在启动的时候生成或加载训练模型，然后提供API接口返回推荐接口，需要调用的相关方法为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="n">save</span><span class="o">(</span><span class="n">model</span><span class="k">:</span> <span class="kt">MatrixFactorizationModel</span><span class="o">,</span> <span class="n">path</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span>
+<span class="n">load</span><span class="o">(</span><span class="n">sc</span><span class="k">:</span> <span class="kt">SparkContext</span><span class="o">,</span> <span class="n">path</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>model中的userFeatures和productFeatures也可以保存起来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">outputDir</span><span class="o">=</span><span class="s">&#34;/tmp&#34;</span>
+<span class="n">model</span><span class="o">.</span><span class="n">userFeatures</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">vec</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">id</span> <span class="o">+</span> <span class="s">&#34;\t&#34;</span> <span class="o">+</span> <span class="n">vec</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span> <span class="o">}.</span><span class="n">saveAsTextFile</span><span class="o">(</span><span class="n">outputDir</span> <span class="o">+</span> <span class="s">&#34;/userFeatures&#34;</span><span class="o">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">productFeatures</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">case</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">vec</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">id</span> <span class="o">+</span> <span class="s">&#34;\t&#34;</span> <span class="o">+</span> <span class="n">vec</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span> <span class="o">}.</span><span class="n">saveAsTextFile</span><span class="o">(</span><span class="n">outputDir</span> <span class="o">+</span> <span class="s">&#34;/productFeatures&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="总结">总结</h1>
+
+<p>本文主要记录如何使用ALS算法实现协同过滤并给用户推荐商品，以上代码在<a href="https://github.com/javachen/learning-spark/tree/master/src/main/scala/com/javachen/examples/mllib">Github</a>仓库中的ScalaLocalALS.scala文件。</p>
+
+<p>如果你想更加深入了解Spark MLlib算法的使用，可以看看<a href="http://f.dataguru.cn/thread-495493-1-1.html">Packt.Machine Learning with Spark.2015.pdf</a>这本电子书并下载书中的源码，本文大部分代码参考自该电子书。</p>
+
+<h1 id="参考资料">参考资料</h1>
+
+<ul>
+<li><a href="/2015/04/17-mllib-collaborative-filtering">Spark MLlib中的协同过滤</a></li>
+<li><a href="http://f.dataguru.cn/thread-495493-1-1.html">Packt.Machine Learning with Spark.2015.pdf</a></li>
+<li><a href="https://issues.apache.org/jira/browse/SPARK-3066">SPARK-3066</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-06-01
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/spark/">spark</a>
+          <a href="/tags/mlib/">mlib</a>
+          <a href="/tags/recommendation/">recommendation</a>
+          <a href="/tags/als/">als</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/06/05/yarn-memory-and-cpu-configuration/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">YARN的内存和CPU配置</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/04/30/install-and-config-sentry/">
+            <span class="next-text nav-default">安装和配置Sentry</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

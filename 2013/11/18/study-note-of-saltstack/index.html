@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>SaltStack学习笔记 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="这份文档如其名，是我自己整理的学习 SaltStack 的过程记录。只是过程记录，没有刻意像教程那样去做。所以呢，从前至后，中间不免有一些概念不清不明的地方。因为事实上，在某个阶段对于一些概念本来就不可能明白。所以，整个过程只求在形式上的能用即可。前面就不要太纠结概念和原理，知道怎么用就好。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/11/18/study-note-of-saltstack/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="SaltStack学习笔记" />
+<meta property="og:description" content="这份文档如其名，是我自己整理的学习 SaltStack 的过程记录。只是过程记录，没有刻意像教程那样去做。所以呢，从前至后，中间不免有一些概念不清不明的地方。因为事实上，在某个阶段对于一些概念本来就不可能明白。所以，整个过程只求在形式上的能用即可。前面就不要太纠结概念和原理，知道怎么用就好。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/11/18/study-note-of-saltstack/" />
+<meta property="article:published_time" content="2013-11-18T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-11-18T00:00:00+08:00" />
+<meta itemprop="name" content="SaltStack学习笔记">
+<meta itemprop="description" content="这份文档如其名，是我自己整理的学习 SaltStack 的过程记录。只是过程记录，没有刻意像教程那样去做。所以呢，从前至后，中间不免有一些概念不清不明的地方。因为事实上，在某个阶段对于一些概念本来就不可能明白。所以，整个过程只求在形式上的能用即可。前面就不要太纠结概念和原理，知道怎么用就好。">
+
+
+<meta itemprop="datePublished" content="2013-11-18T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-11-18T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="4377">
+
+
+
+<meta itemprop="keywords" content="saltstack," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SaltStack学习笔记"/>
+<meta name="twitter:description" content="这份文档如其名，是我自己整理的学习 SaltStack 的过程记录。只是过程记录，没有刻意像教程那样去做。所以呢，从前至后，中间不免有一些概念不清不明的地方。因为事实上，在某个阶段对于一些概念本来就不可能明白。所以，整个过程只求在形式上的能用即可。前面就不要太纠结概念和原理，知道怎么用就好。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">SaltStack学习笔记</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-11-18 </span>
+        
+          <span class="more-meta"> 约 4377 字 </span>
+          <span class="more-meta"> 预计阅读 9 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-关于本文档">1. 关于本文档</a></li>
+<li><a href="#2-关于saltstack">2. 关于SaltStack</a>
+<ul>
+<li><a href="#2-1-什么是saltstack">2.1. 什么是SaltStack</a></li>
+<li><a href="#2-2-saltstack特点">2.2. SaltStack特点</a>
+<ul>
+<li><a href="#简单">简单</a></li>
+<li><a href="#并行执行">并行执行</a></li>
+<li><a href="#构建在成熟技术之上">构建在成熟技术之上</a></li>
+<li><a href="#python-客户端接口">Python 客户端接口</a></li>
+<li><a href="#快速-灵活-可扩展">快速，灵活，可扩展</a></li>
+<li><a href="#开源">开源</a></li>
+</ul></li>
+<li><a href="#2-3-支持的系统">2.3. 支持的系统</a></li>
+</ul></li>
+<li><a href="#3-安装saltstack">3. 安装SaltStack</a>
+<ul>
+<li><a href="#3-1-依赖">3.1. 依赖</a></li>
+<li><a href="#3-2-快速安装">3.2. 快速安装</a></li>
+<li><a href="#3-3-通过rpm安装">3.3. 通过rpm安装</a>
+<ul>
+<li><a href="#3-3-1-下载epel-yum源">3.3.1. 下载EPEL yum源：</a></li>
+<li><a href="#3-3-2-安装包">3.3.2. 安装包</a></li>
+<li><a href="#3-3-3-安装后">3.3.3. 安装后</a></li>
+<li><a href="#3-4-排错">3.4. 排错</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#4-配置saltstack">4. 配置SaltStack</a>
+<ul>
+<li><a href="#4-1-master配置">4.1. master配置</a></li>
+<li><a href="#4-4-minion配置">4.4. minion配置</a></li>
+</ul></li>
+<li><a href="#5-初识saltstack">5. 初识SaltStack</a>
+<ul>
+<li><a href="#5-1-配置">5.1. 配置</a></li>
+<li><a href="#5-2-运行salt">5.2. 运行salt</a></li>
+<li><a href="#5-3-管理key">5.3. 管理Key</a></li>
+<li><a href="#5-4-发送命令">5.4. 发送命令</a></li>
+</ul></li>
+<li><a href="#6-配置管理">6. 配置管理</a>
+<ul>
+<li><a href="#6-1-states">6.1 states</a></li>
+<li><a href="#6-1-1-states文件">6.1.1 states文件</a></li>
+<li><a href="#6-1-2-运行states">6.1.2 运行states</a></li>
+<li><a href="#6-2-grains">6.2. Grains</a></li>
+<li><a href="#pillar">Pillar</a></li>
+<li><a href="#renderers">Renderers</a></li>
+</ul></li>
+<li><a href="#远程执行命令">远程执行命令</a>
+<ul>
+<li><a href="#targeting">TARGETING</a></li>
+<li><a href="#returners">Returners</a></li>
+<li><a href="#mine">Mine</a></li>
+</ul></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="1-关于本文档">1. 关于本文档</h1>
+
+<p>这份文档如其名，是我自己整理的学习 SaltStack 的过程记录。只是过程记录，没有刻意像教程那样去做。所以呢，从前至后，中间不免有一些概念不清不明的地方。因为事实上，在某个阶段对于一些概念本来就不可能明白。所以，整个过程只求在形式上的能用即可。前面就不要太纠结概念和原理，知道怎么用就好。</p>
+
+<p>希望这篇文章能够让你快速了解并使用saltstack。文章还在编写中。</p>
+
+<h1 id="2-关于saltstack">2. 关于SaltStack</h1>
+
+<h2 id="2-1-什么是saltstack">2.1. 什么是SaltStack</h2>
+
+<p>SaltStack是开源的管理基础设置的轻量级工具，容易搭建，为远程管理服务器提供一种更好、更快速、更有扩展性的解决方案。通过简单、可管理的接口，Salt实现了可以管理成千上百的服务器和处理大数据的能力。</p>
+
+<ul>
+<li>轻量级配置管理系统，能够维持远端节点运行在预定状态（例如，确保指定的软件包已经安装和特定的系统服务正在运行）</li>
+<li>分布式远程执行系统，用于在远端节点执行命令和查询数据，可以是单独，也可以是选定的条件</li>
+</ul>
+
+<h2 id="2-2-saltstack特点">2.2. SaltStack特点</h2>
+
+<h3 id="简单">简单</h3>
+
+<p>兼顾大规模部署与更小的系统的同时提供多功能性是很困难的，Salt是非常简单配置和维护，不管项目的大小。Salt可以胜任管理任意的数量的服务器，不管是本地网络，还是跨数据中心。架构采用C/S模式，在一个后台程序中集成必要功能。默认不需要复杂的配置就可以工作，同时可以定制用于特殊的需求。</p>
+
+<h3 id="并行执行">并行执行</h3>
+
+<p>Salt的核心功能：</p>
+
+<ul>
+<li>通过并行方式让远端节点执行命令</li>
+<li>采用安全的加密/解析协议</li>
+<li>最小化使用网络和负载</li>
+<li>提供简单的程序接口</li>
+<li>Salt引入了更细粒度的控制，允许不通过目标名字，二是通过系统属性分类</li>
+</ul>
+
+<h3 id="构建在成熟技术之上">构建在成熟技术之上</h3>
+
+<p>Salt采用了很多技术和技巧。网络层采用优秀的ZeroMQ库，所以守护进程里面包含AMQ代理。Salt采用公钥和主控通讯，同时使用更快的AES加密通信，验证和加密都已经集成在Salt里面。Salt使用msgpack通讯，所以更快速和更轻量网络交换。</p>
+
+<h3 id="python-客户端接口">Python 客户端接口</h3>
+
+<p>为了实现简单的扩展，Salt执行例程可以写成简单的Python模块。客户端程序收集的数据可以发送回主控端，可以是其他任意程序。可以通过Python API调用Salt程序，或者命令行，因此，Salt可以用来执行一次性命令，或者大型应用程序中的一部分模块。</p>
+
+<h3 id="快速-灵活-可扩展">快速，灵活，可扩展</h3>
+
+<p>结果是一个系统可以高速在一台或者一组服务器执行命令。Salt速度很快，配置简单，扩展性好，提供了一个远程执行架构，可以管理多样化需求的任何数量的服务器。整合了世界上最好的远程执行方法，增强处理能力，扩展使用范围，使得可以适用任何多样化复杂的网络。</p>
+
+<h3 id="开源">开源</h3>
+
+<p>Salt基于Apache 2.0 licence开发，可以用于开源或者自有项目。请反馈你的扩展给项目组，以便更多人受益，共同促进Salt发展。请在你的系统部署 系统，让运维更便捷。</p>
+
+<p>开发语言：Python</p>
+
+<h2 id="2-3-支持的系统">2.3. 支持的系统</h2>
+
+<p>常见的系统包可以直接下载安装使用：</p>
+
+<ul>
+<li><a href="https://admin.fedoraproject.org/pkgdb/acls/name/salt">Fedora</a></li>
+<li>RedHat Enterprise Linux / Centos (<a href="http://dl.fedoraproject.org/pub/epel/5/x86_64/repoview/salt.html">EPEL 5</a>, <a href="http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/salt.html">EPEL 6</a>)</li>
+<li><a href="https://launchpad.net/~saltstack">Ubuntu (PPA)</a></li>
+<li><a href="http://aur.archlinux.org/packages.php?ID=47512">Arch (AUR)</a></li>
+<li><a href="http://www.freebsd.org/cgi/cvsweb.cgi/ports/sysutils/salt/">FreeBSD</a></li>
+<li><a href="http://packages.gentoo.org/package/app-admin/salt">Gentoo</a></li>
+<li><a href="http://packages.debian.org/sid/salt-master">Debian (sid)</a></li>
+<li><a href="http://packages.debian.org/experimental/salt-master">Debian (experimental)</a></li>
+</ul>
+
+<h1 id="3-安装saltstack">3. 安装SaltStack</h1>
+
+<h2 id="3-1-依赖">3.1. 依赖</h2>
+
+<p>SaltStack只能安装在类unix的操作系统上并依赖以下组件：</p>
+
+<ul>
+<li><a href="http://python.org/download/">Python 2.6</a> &gt;= 2.6 &lt;3.0</li>
+<li><a href="http://www.zeromq.org/">ZeroMQ</a> &gt;= 2.1.9</li>
+<li><a href="https://github.com/zeromq/pyzmq">pyzmq</a> &gt;= 2.1.9 - ZeroMQ Python bindings</li>
+<li><a href="http://www.dlitz.net/software/pycrypto/">PyCrypto</a> - The Python cryptography toolkit</li>
+<li><a href="http://pypi.python.org/pypi/msgpack-python/0.1.12">msgpack-python</a> - High-performance message interchange format</li>
+<li><a href="http://pyyaml.org/">YAML</a> - Python YAML bindings</li>
+<li><a href="http://jinja.pocoo.org/">Jinja2</a> - parsing Salt States (configurable in the master settings)</li>
+</ul>
+
+<p>可选的依赖：</p>
+
+<ul>
+<li><a href="http://www.makotemplates.org/">mako</a> - an optional parser for Salt States (configurable in the master settings)</li>
+<li>gcc - dynamic <a href="http://cython.org/">Cython</a> module compiling</li>
+</ul>
+
+<h2 id="3-2-快速安装">3.2. 快速安装</h2>
+
+<p>可以使用官方提供的<a href="https://github.com/saltstack/salt-bootstrap">Salt Bootstrap</a>来快速安装SaltStack。</p>
+
+<p>安装master：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">curl -L http://bootstrap.saltstack.org | sudo sh -s -- -M -N</pre></td></tr></table>
+</div>
+</div>
+<p>安装minion：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wget -O - http://bootstrap.saltstack.org | sudo sh</pre></td></tr></table>
+</div>
+</div>
+<p>当前<a href="https://github.com/saltstack/salt-bootstrap">Salt Bootstrap</a>已经在以下操作系统测试通过：</p>
+
+<ul>
+<li>Ubuntu 10.x/11.x/12.x</li>
+<li>Debian 6.x</li>
+<li>CentOS 6.3</li>
+<li>Fedora</li>
+<li>Arch</li>
+<li>FreeBSD 9.0</li>
+</ul>
+
+<h2 id="3-3-通过rpm安装">3.3. 通过rpm安装</h2>
+
+<h3 id="3-3-1-下载epel-yum源">3.3.1. 下载EPEL yum源：</h3>
+
+<p>RHEL 5系统:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rpm -Uvh http://mirror.pnl.gov/epel/5/i386/epel-release-5-4.noarch.rpm</pre></td></tr></table>
+</div>
+</div>
+<p>RHEL 6系统:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rpm -Uvh http://ftp.linux.ncsu.edu/pub/epel/6/i386/epel-release-6-8.noarch.rpm</pre></td></tr></table>
+</div>
+</div>
+<h3 id="3-3-2-安装包">3.3.2. 安装包</h3>
+
+<p>在master上运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install salt-master</pre></td></tr></table>
+</div>
+</div>
+<p>在minion上运行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">yum install salt-minion</pre></td></tr></table>
+</div>
+</div>
+<h3 id="3-3-3-安装后">3.3.3. 安装后</h3>
+
+<p>master上设置开启启动并启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">chkconfig salt-master on
+service salt-master start</pre></td></tr></table>
+</div>
+</div>
+<p>minion上设置开启启动并启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">chkconfig salt-minion on
+service salt-minion start</pre></td></tr></table>
+</div>
+</div>
+<h3 id="3-4-排错">3.4. 排错</h3>
+
+<p>当前最新版为0.17.1，如果你也是使用的这个版本并且启动提示如下错误：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 vagrant]# /etc/init.d/salt-master start
+Starting salt-master daemon: Traceback (most recent call last):
+ File &#34;/usr/bin/salt-master&#34;, line 10, in &lt;module&gt;
+   salt_master()
+ File &#34;/usr/lib/python2.6/site-packages/salt/scripts.py&#34;, line 20, in salt_master
+   master.start()
+ File &#34;/usr/lib/python2.6/site-packages/salt/__init__.py&#34;, line 114, in start
+   if check_user(self.config[&#39;user&#39;]):
+ File &#34;/usr/lib/python2.6/site-packages/salt/utils/verify.py&#34;, line 296, in check_user
+   if user in e.gr_mem] + [pwuser.gid])
+AttributeError: &#39;pwd.struct_passwd&#39; object has no attribute &#39;gid&#39;</pre></td></tr></table>
+</div>
+</div>
+<p>通过google搜索关键字<code>saltstack 'pwd.struct_passwd' object has no attribute 'gid'</code>，可以找到这个<a href="https://github.com/saltstack/salt/issues/8176">issues</a>，查看评论可以发现这是一个bug，将会在0.17.2中被修复。</p>
+
+<p>我的解决方法是：下载saltstack源码重新编译</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wget https://github.com/saltstack/salt/archive/develop.zip
+unzip develop
+cd salt-develop/
+python2.6 setup.py install</pre></td></tr></table>
+</div>
+</div>
+<h1 id="4-配置saltstack">4. 配置SaltStack</h1>
+
+<h2 id="4-1-master配置">4.1. master配置</h2>
+
+<p>master不修改配置文件就可以运行，而minion必须修改配置文件中的master id才能和master通讯，配置文件分别在<code>/etc/salt/master</code> 和 <code>/etc/salt/minion</code>。</p>
+
+<p>master默认监控0.0.0.0上4505和4506端口，你可以在<code>/etc/salt/master</code>中修改为指定ip。</p>
+
+<p>master关键配置：</p>
+
+<ul>
+<li><code>interface</code></li>
+<li><code>publish_port</code></li>
+<li><code>user</code></li>
+<li><code>max_open_files</code></li>
+<li><code>worker_threads</code></li>
+<li><code>ret_port</code></li>
+<li><code>pidfile</code></li>
+<li><code>root_dir</code></li>
+<li><code>pki_dir</code></li>
+<li><code>cachedir</code></li>
+<li><code>keep_jobs</code></li>
+<li><code>job_cache</code></li>
+<li><code>ext_job_cache</code></li>
+<li><code>minion_data_cache</code></li>
+<li><code>enforce_mine_cache</code></li>
+<li><code>sock_dir</code></li>
+</ul>
+
+<p>Master Security配置</p>
+
+<ul>
+<li><code>open_mode</code></li>
+<li><code>auto_accept</code></li>
+<li><code>autosign_file</code></li>
+<li><code>client_acl</code></li>
+<li><code>client_acl_blacklist</code></li>
+<li><code>external_auth</code></li>
+<li><code>token_expire</code></li>
+</ul>
+
+<p>Master Module管理</p>
+
+<ul>
+<li><code>runner_dirs</code></li>
+<li><code>cython_enable</code></li>
+</ul>
+
+<p>Master State设置</p>
+
+<ul>
+<li><code>state_verbose</code></li>
+<li><code>state_output</code></li>
+<li><code>state_top</code></li>
+<li><code>external_nodes</code></li>
+<li><code>renderer</code></li>
+<li><code>failhard</code></li>
+<li><code>test</code></li>
+</ul>
+
+<p>Master File Server设置</p>
+
+<ul>
+<li><code>fileserver_backend</code></li>
+<li><code>file_roots</code></li>
+<li><code>hash_type</code></li>
+<li><code>file_buffer_size</code></li>
+</ul>
+
+<p>Pillar配置</p>
+
+<ul>
+<li><code>pillar_roots</code></li>
+<li><code>ext_pillar</code></li>
+</ul>
+
+<p>Syndic Server设置</p>
+
+<ul>
+<li><code>order_masters</code></li>
+<li><code>syndic_master</code></li>
+<li><code>syndic_master_port</code></li>
+<li><code>syndic_log_file</code></li>
+<li><code>syndic_pidfile</code></li>
+</ul>
+
+<p>Peer发布设置</p>
+
+<ul>
+<li><code>peer</code></li>
+<li><code>peer_run</code></li>
+</ul>
+
+<p>Node Groups设置</p>
+
+<p>Master Logging设置</p>
+
+<ul>
+<li><code>log_file</code></li>
+<li><code>log_level</code></li>
+<li><code>log_level_logfile</code></li>
+<li><code>log_datefmt</code></li>
+<li><code>log_datefmt_logfile</code></li>
+<li><code>log_fmt_console</code></li>
+<li><code>log_fmt_logfile</code></li>
+<li><code>log_granular_levels</code></li>
+</ul>
+
+<p>Include配置</p>
+
+<ul>
+<li><code>default_include</code></li>
+<li><code>include</code></li>
+</ul>
+
+<h2 id="4-4-minion配置">4.4. minion配置</h2>
+
+<p>Minion主要配置：</p>
+
+<ul>
+<li><code>master</code></li>
+<li><code>master_port</code></li>
+<li><code>user</code></li>
+<li><code>pidfile</code></li>
+<li><code>root_dir</code></li>
+<li><code>pki_dir</code></li>
+<li><code>id</code></li>
+<li><code>append_domain</code></li>
+<li><code>cachedir</code></li>
+<li><code>verify_env</code></li>
+<li><code>cache_jobs</code></li>
+<li><code>sock_dir</code></li>
+<li><code>backup_mode</code></li>
+<li><code>acceptance_wait_time</code></li>
+<li><code>random_reauth_delay</code></li>
+<li><code>cceptance_wait_time_max</code></li>
+<li><code>dns_check</code></li>
+<li><code>ipc_mode</code></li>
+<li><code>tcp_pub_port</code></li>
+<li><code>tcp_pull_port</code></li>
+</ul>
+
+<p>Minion Module管理</p>
+
+<ul>
+<li><code>disable_modules</code></li>
+<li><code>disable_returners</code></li>
+<li><code>module_dirs</code></li>
+<li><code>returner_dirs</code></li>
+<li><code>states_dirs</code></li>
+<li><code>render_dirs</code></li>
+<li><code>cython_enable</code></li>
+<li><code>providers</code></li>
+</ul>
+
+<p>State Management 设置</p>
+
+<ul>
+<li><code>renderer</code></li>
+<li><code>state_verbose</code></li>
+<li><code>state_output</code></li>
+<li><code>autoload_dynamic_modules</code></li>
+<li><code>environment</code></li>
+</ul>
+
+<p>File目录设置</p>
+
+<ul>
+<li><code>file_client</code></li>
+<li><code>file_roots</code></li>
+<li><code>hash_type</code></li>
+<li><code>pillar_roots</code></li>
+</ul>
+
+<p>Security设置</p>
+
+<ul>
+<li><code>open_mode</code></li>
+</ul>
+
+<p>线程设置</p>
+
+<ul>
+<li><code>multiprocessing</code></li>
+</ul>
+
+<p>Minion日志设置</p>
+
+<ul>
+<li><code>log_file</code></li>
+<li><code>log_level</code></li>
+<li><code>log_level_logfile</code></li>
+<li><code>log_datefmt</code></li>
+<li><code>log_datefmt_logfile</code></li>
+<li><code>log_fmt_console</code></li>
+<li><code>log_fmt_logfile</code></li>
+<li><code>log_granular_levels</code></li>
+</ul>
+
+<p>Include配置</p>
+
+<ul>
+<li><code>default_include</code></li>
+<li><code>include</code></li>
+</ul>
+
+<p>Frozen Build Update Settings</p>
+
+<ul>
+<li><code>update_url</code></li>
+<li><code>update_restart_services</code></li>
+</ul>
+
+<h1 id="5-初识saltstack">5. 初识SaltStack</h1>
+
+<h2 id="5-1-配置">5.1. 配置</h2>
+
+<p>参考上面的配置文件说明修改master和minion配置。这里我的master主机名为sk1，minion主机名为sk2。</p>
+
+<p>修改master配置文件/etc/salt/master</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">interface: 0.0.0.0
+auto_accept: True</pre></td></tr></table>
+</div>
+</div>
+<p>修改minion配置文件/etc/salt/minion</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">master: sk1
+id: sk2</pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-2-运行salt">5.2. 运行salt</h2>
+
+<p>然后运行salt，启动master（添加<code>-d</code>参数可以让其后台运行）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt-master</pre></td></tr></table>
+</div>
+</div>
+<p>启动minion（添加-d参数可以让其后台运行）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt-minion</pre></td></tr></table>
+</div>
+</div>
+<p>如果需要排错，可以添加设置日志级别：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt-master --log-level=debug</pre></td></tr></table>
+</div>
+</div>
+<p>如果想以非用户运行，可以添加<code>--user</code>参数</p>
+
+<h2 id="5-3-管理key">5.3. 管理Key</h2>
+
+<p>Salt在master和minion通信之间使用AES加密。在master和minion通信之前，minion上的key需要发送到master并被master接受。可以在master上查看已经接受的key：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 pillar]# salt-key -L
+Accepted Keys:
+Unaccepted Keys:
+sk2
+Rejected Keys:</pre></td></tr></table>
+</div>
+</div>
+<p>然后运行下面命令可以接受所有未被接受的key：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 pillar]# salt-key -A</pre></td></tr></table>
+</div>
+</div>
+<h2 id="5-4-发送命令">5.4. 发送命令</h2>
+
+<p>在master上发送ping命令检测minon是否被认证成功：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 pillar]# salt &#39;*&#39; test.ping
+sk2:salt &#39;*&#39; test.ping
+    True</pre></td></tr></table>
+</div>
+</div>
+<p>True表明测试成功。</p>
+
+<h1 id="6-配置管理">6. 配置管理</h1>
+
+<h2 id="6-1-states">6.1 states</h2>
+
+<h2 id="6-1-1-states文件">6.1.1 states文件</h2>
+
+<p>salt states的核心是sls文件，该文件使用YAML语法定义了一些k/v的数据。</p>
+
+<p>sls文件存放根路径在master配置文件中定义，默认为<code>/srv/salt</code>,该目录在操作系统上不存在，需要手动创建。</p>
+
+<p>在salt中可以通过<code>salt://</code>代替根路径，例如你可以通过<code>salt://top.sls</code>访问<code>/srv/salt/top.sls</code>。</p>
+
+<p>在states中top文件也由master配置文件定义，默认为top.sls，该文件为states的入口文件。</p>
+
+<p>一个简单的sls文件如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> apache:
+  pkg:
+    - installed
+  service:
+    - running
+    - require:
+      - pkg: apache</pre></td></tr></table>
+</div>
+</div>
+<p>说明：此SLS数据确保叫做&rdquo;apache&rdquo;的软件包(package)已经安装,并且&rdquo;apache&rdquo;服务(service)正在运行中。</p>
+
+<ul>
+<li>第一行，被称为ID说明(ID Declaration)。ID说明表明可以操控的名字。</li>
+<li>第二行和第四行是State说明(State Declaration)，它们分别使用了pkg和service states。pkg state通过系统的包管理其管理关键包，service state管理系统服务(daemon)。 在pkg及service列下边是运行的方法。方法定义包和服务应该怎么做。此处是软件包应该被安装，服务应该处于运行中。</li>
+<li>第六行使用require。本方法称为&rdquo;必须指令&rdquo;(Requisite Statement)，表明只有当apache软件包安装成功时，apache服务才启动起来。</li>
+</ul>
+
+<p>state和方法可以通过点连起来，上面sls文件和下面文件意思相同。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> apache:
+  pkg.installed
+  service.running
+    - require:
+      - pkg: apache</pre></td></tr></table>
+</div>
+</div>
+<p>将上面sls保存为init.sls并放置<code>在sal://apache</code>目录下，结果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">/srv/salt
+├── apache
+│   └── init.sls
+└── top.sls</pre></td></tr></table>
+</div>
+</div>
+<p>top.sls如何定义呢？</p>
+
+<p>master配置文件中定义了三种环境，每种环境都可以定义多个目录，但是要避免冲突，分别如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"># file_roots:
+#   base:
+#     - /srv/salt/
+#   dev:
+#     - /srv/salt/dev/services
+#     - /srv/salt/dev/states
+#   prod:
+#     - /srv/salt/prod/services
+#     - /srv/salt/prod/states</pre></td></tr></table>
+</div>
+</div>
+<p>top.sls可以这样定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> base:
+   &#39;*&#39;:
+    - apache</pre></td></tr></table>
+</div>
+</div>
+<p>说明：</p>
+
+<ul>
+<li>第一行，声明使用base环境</li>
+<li>第二行，定义target，这里是匹配所有</li>
+<li>第三行，声明使用哪些states目录，salt会寻找每个目录下的init.sls文件。</li>
+</ul>
+
+<h2 id="6-1-2-运行states">6.1.2 运行states</h2>
+
+<p>一旦创建完states并修改完top.sls之后，你可以在master上执行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[root@sk1 salt]# salt &#39;*&#39; state.highstate
+sk2:
+----------
+    State: - pkg
+    Name:      httpd
+    Function:  installed
+        Result:    True
+        Comment:   The following packages were installed/updated: httpd.
+        Changes:
+                   ----------
+                   httpd:
+                       ----------
+                       new:
+                           2.2.15-29.el6.centos
+                       old:
+
+----------
+    State: - service
+    Name:      httpd
+    Function:  running
+        Result:    True
+        Comment:   Service httpd has been enabled, and is running
+        Changes:
+                   ----------
+                   httpd:
+                       True
+
+Summary
+------------
+Succeeded: 2
+Failed:    0
+------------
+Total:     2</pre></td></tr></table>
+</div>
+</div>
+<p>上面命令会触发所有minion从master下载top.sls文件以及其中定一个的states，然后编译、执行。执行完之后，minion会将执行结果的摘要信息汇报给master。</p>
+
+<h2 id="6-2-grains">6.2. Grains</h2>
+
+<h2 id="pillar">Pillar</h2>
+
+<h2 id="renderers">Renderers</h2>
+
+<h1 id="远程执行命令">远程执行命令</h1>
+
+<p>在上面的例子中，test.ping是最简单的一个远程执行的命令，你还可以执行一些更加复杂的命令。</p>
+
+<p>salt执行命令的格式如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt &#39;&lt;target&gt;&#39; &lt;function&gt; [arguments]</pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>target: 执行salt命令的目标，可以使用正则表达式</li>
+<li>function： 方法，由module提供</li>
+<li>arguments：function的参数</li>
+</ul>
+
+<p>target可以使用正则表达式匹配：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt &#39;*&#39; test.ping
+salt &#39;sk2&#39; test.ping</pre></td></tr></table>
+</div>
+</div>
+<p>function是module提供的方法。通过下面命令可以查看所有的function：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt &#39;*&#39; sys.doc</pre></td></tr></table>
+</div>
+</div>
+<p>function可以接受参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt &#39;*&#39; cmd.run &#39;uname -a&#39;</pre></td></tr></table>
+</div>
+</div>
+<p>并且支持关键字参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt &#39;*&#39; cmd.run &#39;uname -a&#39; cwd=/ user=salt</pre></td></tr></table>
+</div>
+</div>
+<p>上面例子意思是：在所有minion上切换到/目录以salt用户运行<code>uname -a</code>命令。</p>
+
+<p>关键字参数可以参考module的<a href="http://docs.saltstack.com/py-modindex.html">api</a>,通过api你可以查看<a href="http://docs.saltstack.com/ref/states/all/salt.states.cmd.html#salt.states.cmd.run">cmd.run</a>的定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">salt.states.cmd.mod_watch(name, **kwargs)
+Execute a cmd function based on a watch call
+
+salt.states.cmd.run(name, onlyif=None, unless=None, cwd=None, user=None, group=None, shell=None, env=(), stateful=False, umask=None, quiet=False, timeout=None, **kwargs)</pre></td></tr></table>
+</div>
+</div>
+<p>所有module中的方法定义都与上面类似，说明：</p>
+
+<ul>
+<li>name： 第一个参数，为执行的命令</li>
+<li>中间的key=alue为keyword参数，都有默认值</li>
+<li>最后一个参数为name中命令的输入参数</li>
+</ul>
+
+<h2 id="targeting">TARGETING</h2>
+
+<h2 id="returners">Returners</h2>
+
+<h2 id="mine">Mine</h2>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li>[1]<a href="http://zhoulg.blog.51cto.com/48455/1140178">Saltstack服务器集中管理和并行下发命令工具</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-11-18
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/saltstack/">saltstack</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/12/27/some-git-configs-and-cammands/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Git配置和一些常用命令</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2013/11/16/install-jboss-with-saltstack/">
+            <span class="next-text nav-default">使用SaltStack安装JBoss</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用RKE安装单节点kubernetes - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Kubernetes 是Google的一种基于容器的开源服务编排解决方案。在我们进行Kubernetes的学习前，为了对Kubernetes的工作原理有一个大概" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/10/30/install-single-k8s-with-rke/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用RKE安装单节点kubernetes" />
+<meta property="og:description" content="Kubernetes 是Google的一种基于容器的开源服务编排解决方案。在我们进行Kubernetes的学习前，为了对Kubernetes的工作原理有一个大概" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/10/30/install-single-k8s-with-rke/" />
+<meta property="article:published_time" content="2019-10-30T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-10-30T08:00:00+08:00" />
+<meta itemprop="name" content="使用RKE安装单节点kubernetes">
+<meta itemprop="description" content="Kubernetes 是Google的一种基于容器的开源服务编排解决方案。在我们进行Kubernetes的学习前，为了对Kubernetes的工作原理有一个大概">
+
+
+<meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="5023">
+
+
+
+<meta itemprop="keywords" content="kubernetes," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用RKE安装单节点kubernetes"/>
+<meta name="twitter:description" content="Kubernetes 是Google的一种基于容器的开源服务编排解决方案。在我们进行Kubernetes的学习前，为了对Kubernetes的工作原理有一个大概"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用RKE安装单节点kubernetes</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-10-30 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 5023 字 </span>
+          <span class="more-meta"> 预计阅读 11 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#环境准备">环境准备</a>
+<ul>
+<li><a href="#创建虚拟机">创建虚拟机</a></li>
+<li><a href="#设置虚拟机">设置虚拟机</a>
+<ul>
+<li><a href="#设置root密码">设置root密码</a></li>
+<li><a href="#设置hosts">设置hosts</a></li>
+<li><a href="#设置hostname">设置hostname</a></li>
+<li><a href="#关闭selinux">关闭selinux</a></li>
+<li><a href="#关闭防火墙">关闭防火墙</a></li>
+<li><a href="#配置时区">配置时区</a></li>
+<li><a href="#禁用邮件服务">禁用邮件服务</a></li>
+<li><a href="#优化设置-journal-日志相关">优化设置 journal 日志相关</a></li>
+<li><a href="#配置系统语言">配置系统语言</a></li>
+<li><a href="#禁用fastestmirror插件">禁用fastestmirror插件</a></li>
+<li><a href="#安装常用软件">安装常用软件</a></li>
+<li><a href="#设置时钟同步">设置时钟同步</a></li>
+<li><a href="#设置命名服务">设置命名服务</a></li>
+<li><a href="#加载内核模块">加载内核模块</a></li>
+<li><a href="#关闭nozeroconf">关闭NOZEROCONF</a></li>
+<li><a href="#设置内核参数">设置内核参数</a></li>
+<li><a href="#设置文件最大打开数">设置文件最大打开数</a></li>
+<li><a href="#关闭交换空间">关闭交换空间</a></li>
+<li><a href="#解决透明大页面问题">解决透明大页面问题</a></li>
+<li><a href="#设置sudo">设置sudo</a></li>
+<li><a href="#设置ssh">设置ssh</a></li>
+<li><a href="#生成ssh私钥和公钥">生成ssh私钥和公钥</a></li>
+<li><a href="#关闭numa">关闭NUMA</a></li>
+<li><a href="#升级内核到4-44">升级内核到4.44</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#安装docker">安装docker</a>
+<ul>
+<li><a href="#检查系统内核和模块">检查系统内核和模块</a></li>
+<li><a href="#安装docker-ce">安装Docker-ce</a></li>
+<li><a href="#启动docker">启动Docker</a></li>
+<li><a href="#修改配置文件">修改配置文件</a>
+<ul>
+<li><a href="#修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</a></li>
+</ul></li>
+<li><a href="#重新加载配置">重新加载配置</a></li>
+</ul></li>
+<li><a href="#安装k8s">安装k8s</a>
+<ul>
+<li><a href="#下载rke">下载RKE</a></li>
+<li><a href="#配置yum源">配置yum源</a></li>
+<li><a href="#创建非root用户">创建非root用户</a></li>
+<li><a href="#配置无密码登陆">配置无密码登陆</a></li>
+<li><a href="#创建rke配置文件">创建RKE配置文件</a></li>
+<li><a href="#创建集群">创建集群</a></li>
+<li><a href="#与kubernetes集群的交互">与Kubernetes集群的交互</a></li>
+<li><a href="#查看集群状态">查看集群状态</a></li>
+<li><a href="#测试集群dns是否可用">测试集群DNS是否可用</a></li>
+<li><a href="#设置bash自动完成">设置Bash自动完成</a></li>
+</ul></li>
+<li><a href="#集群调优">集群调优</a></li>
+<li><a href="#删除集群">删除集群</a></li>
+<li><a href="#升级k8s">升级K8S</a></li>
+<li><a href="#原生k8s参数">原生K8S参数</a></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>Kubernetes 是Google的一种基于容器的开源服务编排解决方案。在我们进行Kubernetes的学习前，为了对Kubernetes的工作原理有一个大概的认识，我们需要先安装一个单节点的实例服务，用于平常的开发与测试。由于本地环境内存有限，所以只能在虚拟机里面使用单节点安装。</p>
+
+<h1 id="环境准备">环境准备</h1>
+
+<h2 id="创建虚拟机">创建虚拟机</h2>
+
+<p>使用Vagrant创建一个虚拟机，关于Vagrant的使用，本文不做说明。</p>
+
+<p>创建一个k8s-rke-single目录，编写Vagrantfile内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="c1"># -*- mode: ruby -*-</span>
+<span class="c1"># vi: set ft=ruby :</span>
+
+<span class="no">Vagrant</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="s2">&#34;2&#34;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">box</span> <span class="o">=</span> <span class="s2">&#34;centos7&#34;</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">box_check_update</span> <span class="o">=</span> <span class="kp">false</span>
+
+  <span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">define</span> <span class="n">vm_name</span><span class="o">=</span><span class="s2">&#34;k8s-rke-node00</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">&#34;</span> <span class="k">do</span> <span class="o">|</span><span class="n">node</span><span class="o">|</span>
+      <span class="n">node</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provider</span> <span class="s2">&#34;virtualbox&#34;</span> <span class="k">do</span> <span class="o">|</span><span class="n">v</span><span class="o">|</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">customize</span> <span class="o">[</span><span class="s2">&#34;modifyvm&#34;</span><span class="p">,</span> <span class="ss">:id</span><span class="p">,</span> <span class="s2">&#34;--name&#34;</span><span class="p">,</span> <span class="n">vm_name</span><span class="p">,</span> <span class="s2">&#34;--memory&#34;</span><span class="p">,</span> <span class="s2">&#34;4096&#34;</span><span class="p">,</span><span class="s1">&#39;--cpus&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">gui</span> <span class="o">=</span> <span class="kp">false</span>
+      <span class="k">end</span>
+      <span class="n">ip</span> <span class="o">=</span> <span class="s2">&#34;192.168.56.11</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2">&#34;</span>
+      <span class="n">node</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="s2">&#34;private_network&#34;</span><span class="p">,</span> <span class="ss">ip</span><span class="p">:</span> <span class="n">ip</span>
+      <span class="n">node</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">vm_name</span>
+      <span class="c1">#node.vm.provision :shell, :path =&gt; &#34;setup_system.sh&#34;, args: [ip,vm_name]</span>
+      <span class="c1">#node.vm.provision :shell, :path =&gt; &#34;setup_k8s.sh&#34;</span>
+      <span class="c1">#node.vm.provision :shell, :path =&gt; &#34;setup_rancher.sh&#34;</span>
+      <span class="c1">#node.vm.provision :shell, :path =&gt; &#34;setup_ceph.sh&#34;</span>
+      <span class="c1">#node.vm.provision &#34;shell&#34;, privileged: false, path: &#34;post_setup_k8s.sh&#34;</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：</p>
+
+<ul>
+<li>我使用的是centos7操作系统，centos7是Vagrant的box名称，可以替换成其他的。</li>
+<li>这里是创建一个虚拟机，虚拟机名称为k8s-rke-node001，内存分配4G，CPU安装k8s要求的至少为2。</li>
+<li>使用私有网络，固定IP为192.168.56.111。注意：在虚拟机创建之后，该IP会绑定的eth1网卡，eth0网卡绑定是Vagrant创建NAT网络。</li>
+</ul>
+
+<h2 id="设置虚拟机">设置虚拟机</h2>
+
+<h3 id="设置root密码">设置root密码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="s1">&#39;root&#39;</span><span class="p">|</span>passwd root --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置hosts">设置hosts</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/hosts <span class="s">&lt;&lt;EOF
+</span><span class="s">192.168.56.111 k8s-rke-node001
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置hostname">设置hostname</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">hostnamectl set-hostname k8s-rke-node001
+cat &gt; /etc/sysconfig/network<span class="s">&lt;&lt;EOF
+</span><span class="s">HOSTNAME=$(hostname)
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="关闭selinux">关闭selinux</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">setenforce <span class="m">0</span>  &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+sed -i -e <span class="s1">&#39;s/^SELINUX=enforcing/SELINUX=disabled/g&#39;</span> /etc/sysconfig/selinux
+sed -i -e <span class="s1">&#39;s/^SELINUX=enforcing/SELINUX=disabled/g&#39;</span> /etc/selinux/config</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="关闭防火墙">关闭防火墙</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl stop firewalld.service <span class="o">&amp;&amp;</span> systemctl disable firewalld.service
+yum -y install iptables-services  <span class="o">&amp;&amp;</span> systemctl start iptables  <span class="se">\
+</span><span class="se"></span>	<span class="o">&amp;&amp;</span>  systemctl <span class="nb">enable</span> iptables<span class="o">&amp;&amp;</span> iptables -F <span class="o">&amp;&amp;</span> service iptables save</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="配置时区">配置时区</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+timedatectl set-timezone Asia/Shanghai
+timedatectl set-local-rtc <span class="m">0</span>
+
+systemctl restart crond</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="禁用邮件服务">禁用邮件服务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl stop postfix <span class="o">&amp;&amp;</span> systemctl disable postfix</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="优化设置-journal-日志相关">优化设置 journal 日志相关</h3>
+
+<p>优化设置 journal 日志相关，避免日志重复搜集，浪费系统资源</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -ri <span class="s1">&#39;s/^\$ModLoad imjournal/#&amp;/&#39;</span> /etc/rsyslog.conf
+sed -ri <span class="s1">&#39;s/^\$IMJournalStateFile/#&amp;/&#39;</span> /etc/rsyslog.conf
+
+sed -ri <span class="s1">&#39;s/^#(DefaultLimitCORE)=/\1=100000/&#39;</span> /etc/systemd/system.conf
+sed -ri <span class="s1">&#39;s/^#(DefaultLimitNOFILE)=/\1=100000/&#39;</span> /etc/systemd/system.conf
+
+systemctl restart systemd-journald
+systemctl restart rsyslog</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="配置系统语言">配置系统语言</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo <span class="nb">echo</span> <span class="s1">&#39;LANG=&#34;en_US.UTF-8&#34;&#39;</span> &gt;&gt; /etc/profile <span class="o">&amp;&amp;</span> <span class="nb">source</span> /etc/profile</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="禁用fastestmirror插件">禁用fastestmirror插件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/^enabled.*/enabled=0/g&#39;</span> /etc/yum/pluginconf.d/fastestmirror.conf
+sed -i <span class="s1">&#39;s/^plugins.*/plugins=0/g&#39;</span> /etc/yum.conf</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="安装常用软件">安装常用软件</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install -y curl
+mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+curl -s -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+sed -i -e <span class="s1">&#39;/aliyuncs/d&#39;</span> /etc/yum.repos.d/CentOS-Base.repo
+curl -k -s -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+yum install -y wget vim ntp yum-utils git expect</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置时钟同步">设置时钟同步</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s2">&#34;/^server/ d&#34;</span> /etc/ntp.conf
+<span class="nb">echo</span> <span class="s2">&#34;
+</span><span class="s2">#在与上级时间服务器联系时所花费的时间，记录在driftfile参数后面的文件
+</span><span class="s2">driftfile /var/lib/ntp/drift
+</span><span class="s2">#默认关闭所有的 NTP 联机服务
+</span><span class="s2">restrict default ignore
+</span><span class="s2">restrict -6 default ignore
+</span><span class="s2">#如从loopback网口请求，则允许NTP的所有操作
+</span><span class="s2">restrict 127.0.0.1
+</span><span class="s2">restrict -6 ::1
+</span><span class="s2">#使用指定的时间服务器
+</span><span class="s2">server ntp1.aliyun.com
+</span><span class="s2">#允许指定的时间服务器查询本时间服务器的信息
+</span><span class="s2">restrict ntp1.aliyun.com nomodify notrap nopeer noquery
+</span><span class="s2">#其它认证信息
+</span><span class="s2">includefile /etc/ntp/crypto/pw
+</span><span class="s2">keys /etc/ntp/keys
+</span><span class="s2">&#34;</span> &gt; /etc/ntp.conf
+
+systemctl start ntpd
+systemctl <span class="nb">enable</span> ntpd
+
+<span class="nb">echo</span> <span class="s1">&#39;* */6 * * * /usr/sbin/ntpdate -u ntp1.aliyun.com&amp;&amp;/sbin/hwclock --systohc &gt; /dev/null 2&gt;&amp;1&#39;</span> <span class="se">\
+</span><span class="se"></span>	&gt;&gt;/var/spool/cron/root</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置命名服务">设置命名服务</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="s2">&#34;nameserver 114.114.114.114&#34;</span> <span class="p">|</span> tee -a /etc/resolv.conf</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="加载内核模块">加载内核模块</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">lsmod <span class="p">|</span> grep br_netfilter
+modprobe br_netfilter</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="关闭nozeroconf">关闭NOZEROCONF</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/^NOZEROCONF.*/NOZEROCONF=yes/g&#39;</span> /etc/sysconfig/network</code></pre></td></tr></table>
+</div>
+</div>
+<p>更改系统网络接口配置文件，设置该网络接口随系统启动而开启</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i -e <span class="s1">&#39;/^HWADDR=/d&#39;</span> -e <span class="s1">&#39;/^UUID=/d&#39;</span> /etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i -e <span class="s1">&#39;s/^ONBOOT.*$/ONBOOT=yes/&#39;</span> /etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i -e <span class="s1">&#39;s/^NM_CONTROLLED.*$/NM_CONTROLLED=no/&#39;</span> /etc/sysconfig/network-scripts/ifcfg-eth0</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置内核参数">设置内核参数</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; kubernetes.conf <span class="s">&lt;&lt;EOF
+</span><span class="s">net.ipv6.conf.all.disable_ipv6=1
+</span><span class="s">net.ipv6.conf.default.disable_ipv6=1
+</span><span class="s">net.ipv6.conf.lo.disable_ipv6=1
+</span><span class="s">
+</span><span class="s">#ip转发
+</span><span class="s">net.ipv4.ip_nonlocal_bind = 1
+</span><span class="s">net.ipv4.ip_forward = 1
+</span><span class="s"># 开启重用。允许将TIME-WAIT sockets重新用于新的TCP连接，默认为0，表示关闭；
+</span><span class="s">net.ipv4.tcp_tw_reuse = 1
+</span><span class="s">#开启TCP连接中TIME-WAIT sockets的快速回收，默认为0，表示关闭
+</span><span class="s">net.ipv4.tcp_tw_recycle=0
+</span><span class="s">net.ipv4.neigh.default.gc_thresh1=4096
+</span><span class="s">net.ipv4.neigh.default.gc_thresh2=6144
+</span><span class="s">net.ipv4.neigh.default.gc_thresh3=8192
+</span><span class="s">net.ipv4.neigh.default.gc_interval=60
+</span><span class="s">net.ipv4.neigh.default.gc_stale_time=120
+</span><span class="s">
+</span><span class="s">#配置网桥的流量
+</span><span class="s">net.bridge.bridge-nf-call-ip6tables = 1
+</span><span class="s">net.bridge.bridge-nf-call-iptables = 1
+</span><span class="s">net.netfilter.nf_conntrack_max=2310720
+</span><span class="s">
+</span><span class="s">vm.swappiness=0
+</span><span class="s">vm.overcommit_memory=1
+</span><span class="s">vm.panic_on_oom=0
+</span><span class="s">
+</span><span class="s">fs.inotify.max_user_instances=8192
+</span><span class="s">fs.inotify.max_user_watches=1048576
+</span><span class="s">fs.file-max=52706963
+</span><span class="s">fs.nr_open=52706963
+</span><span class="s">EOF</span>
+cp kubernetes.conf /etc/sysctl.d/kubernetes.conf
+sysctl -p /etc/sysctl.d/kubernetes.conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果kube-proxy使用ipvs的话为了防止timeout需要设置下tcp参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># https://github.com/moby/moby/issues/31208</span> 
+<span class="c1"># ipvsadm -l --timout</span>
+<span class="c1"># 修复ipvs模式下长连接timeout问题 小于900即可</span>
+net.ipv4.tcp_keepalive_time <span class="o">=</span> <span class="m">600</span>
+net.ipv4.tcp_keepalive_intvl <span class="o">=</span> <span class="m">30</span>
+net.ipv4.tcp_keepalive_probes <span class="o">=</span> <span class="m">10</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>docker官方的内核检查脚本建议<code>(RHEL7/CentOS7: User namespaces disabled; add 'user_namespace.enable=1' to boot command line)</code>,使用下面命令开启</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">grubby --args<span class="o">=</span><span class="s2">&#34;user_namespace.enable=1&#34;</span> --update-kernel<span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>grubby --default-kernel<span class="k">)</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置文件最大打开数">设置文件最大打开数</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat&gt;/etc/security/limits.d/kubernetes.conf<span class="s">&lt;&lt;EOF
+</span><span class="s">*       soft    nproc   131072
+</span><span class="s">*       hard    nproc   131072
+</span><span class="s">*       soft    nofile  131072
+</span><span class="s">*       hard    nofile  131072
+</span><span class="s">root    soft    nproc   131072
+</span><span class="s">root    hard    nproc   131072
+</span><span class="s">root    soft    nofile  131072
+</span><span class="s">root    hard    nofile  131072
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="关闭交换空间">关闭交换空间</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">swapoff -a <span class="o">&amp;&amp;</span> sed -i <span class="s1">&#39;/swap/s/^/#/&#39;</span> /etc/fstab
+sed -i <span class="s1">&#39;/ \/ .* defaults /s/defaults/defaults,noatime,nodiratime,nobarrier/g&#39;</span> /etc/fstab
+sed -i <span class="s1">&#39;s/tmpfs.*/tmpfs\t\t\t\/dev\/shm\t\ttmpfs\tdefaults,nosuid,noexec,nodev 0 0/g&#39;</span> /etc/fstab</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="解决透明大页面问题">解决透明大页面问题</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="s2">&#34;echo never &gt; /sys/kernel/mm/redhat_transparent_hugepage/defrag&#34;</span> &gt;/etc/rc.local
+<span class="nb">echo</span> <span class="s2">&#34;echo never &gt; /sys/kernel/mm/redhat_transparent_hugepage/enabled&#34;</span> &gt;/etc/rc.local</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置sudo">设置sudo</h3>
+
+<p>关闭远程sudo执行命令需要输入密码和没有终端不让执行命令问题</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/Defaults *requiretty/#Defaults requiretty/g&#39;</span> /etc/sudoers
+sed -i <span class="s1">&#39;s/Defaults *!visiblepw/Defaults   visiblepw/g&#39;</span> /etc/sudoers</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置ssh">设置ssh</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;/PasswordAuthentication/s/^/#/&#39;</span>  /etc/ssh/sshd_config
+sed -i <span class="s1">&#39;s/^[ ]*StrictHostKeyChecking.*/StrictHostKeyChecking no/g&#39;</span> /etc/ssh/ssh_config
+<span class="c1">#禁用sshd服务的UseDNS、GSSAPIAuthentication两项特性</span>
+sed -i -e <span class="s1">&#39;s/^#UseDNS.*$/UseDNS no/&#39;</span> /etc/ssh/sshd_config
+sed -i -e <span class="s1">&#39;s/^GSSAPIAuthentication.*$/GSSAPIAuthentication no/&#39;</span> /etc/ssh/sshd_config
+systemctl restart sshd</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="生成ssh私钥和公钥">生成ssh私钥和公钥</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span> ! -d ~/.ssh <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">(</span> mkdir ~/.ssh <span class="o">)</span>
+<span class="o">[</span> ! -f ~/.ssh/id_rsa.pub <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="o">(</span>yes<span class="p">|</span>ssh-keygen -f ~/.ssh/id_rsa -t rsa -N <span class="s2">&#34;&#34;</span><span class="o">)</span>
+<span class="o">(</span> chmod <span class="m">600</span> ~/.ssh/id_rsa.pub <span class="o">)</span> <span class="o">&amp;&amp;</span> cat ~/.ssh/id_rsa.pub &gt;&gt; ~/.ssh/authorized_keys</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="关闭numa">关闭NUMA</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/rhgb quiet/rhgb quiet numa=off/g&#39;</span> /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="升级内核到4-44">升级内核到4.44</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-4.el7.elrepo.noarch.rpm
+sudo yum --enablerepo<span class="o">=</span>elrepo-kernel install -y kernel-lt kernel-lt-devel 
+sudo awk -F<span class="se">\&#39;</span> <span class="s1">&#39;$1==&#34;menuentry &#34; {print i++ &#34; : &#34; $2}&#39;</span> /etc/grub2.cfg
+sudo grub2-set-default <span class="m">0</span>
+sudo sed -i <span class="s1">&#39;s/GRUB_DEFAULT=saved/GRUB_DEFAULT=0/g&#39;</span> /etc/default/grub
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+reboot
+
+<span class="c1">#重启后，删除3.10内核</span>
+<span class="c1">#sudo rpm -qa | grep kernel</span>
+<span class="c1">#sudo yum remove kernel*-3.10*</span>
+<span class="c1">#sudo yum --enablerepo=elrepo-kernel install -y kernel-lt-headers</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装docker">安装docker</h1>
+
+<h2 id="检查系统内核和模块">检查系统内核和模块</h2>
+
+<p>检查系统内核和模块是否适合运行 docker (仅适用于 linux 系统)</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh &gt; check-config.sh
+bash ./check-config.sh</code></pre></td></tr></table>
+</div>
+</div>
+<p>现在docker存储驱动都是使用的overlay2(不要使用devicemapper，这个坑非常多)，我们重点关注overlay2是否不是绿色</p>
+
+<h2 id="安装docker-ce">安装Docker-ce</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install -y yum-utils device-mapper-persistent-data lvm2
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+yum install docker-ce -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="启动docker">启动Docker</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl <span class="nb">enable</span> docker <span class="o">&amp;&amp;</span> systemctl start docker</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="修改配置文件">修改配置文件</h2>
+
+<h3 id="修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</h3>
+
+<p>根据文档<a href="https://kubernetes.io/docs/setup/cri/">CRI installation</a>中的内容，对于使用systemd作为init system的Linux的发行版，使用systemd作为docker的cgroup driver可以确保服务器节点在资源紧张的情况更加稳定，因此这里修改各个节点上docker的cgroup driver为systemd。</p>
+
+<p>创建或修改<code>/etc/docker/daemon.json</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
+</span><span class="s">{
+</span><span class="s">    &#34;oom-score-adjust&#34;: -1000,
+</span><span class="s">    &#34;log-driver&#34;: &#34;json-file&#34;,
+</span><span class="s">    &#34;log-opts&#34;: {
+</span><span class="s">      &#34;max-size&#34;: &#34;100m&#34;,
+</span><span class="s">      &#34;max-file&#34;: &#34;3&#34;
+</span><span class="s">    },
+</span><span class="s">    &#34;bip&#34;: &#34;172.17.10.1/24&#34;,
+</span><span class="s">    &#34;registry-mirrors&#34;: [&#34;https://hub.daocloud.io&#34;,&#34;http://hub-mirror.c.163.com/&#34;,
+</span><span class="s">      &#34;https://docker.mirrors.ustc.edu.cn/&#34;,
+</span><span class="s">      &#34;https://registry.docker-cn.com&#34;],
+</span><span class="s">    &#34;graph&#34;:&#34;/data/docker&#34;,
+</span><span class="s">    &#34;exec-opts&#34;: [&#34;native.cgroupdriver=systemd&#34;],
+</span><span class="s">    &#34;storage-driver&#34;: &#34;overlay2&#34;,
+</span><span class="s">    &#34;storage-opts&#34;: [
+</span><span class="s">      &#34;overlay2.override_kernel_check=true&#34;
+</span><span class="s">    ]
+</span><span class="s">}
+</span><span class="s">EOF</span>
+
+sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H unix:\/\/var\/run\/docker.sock /&#39;</span> <span class="se">\
+</span><span class="se"></span>	/usr/lib/systemd/system/docker.service</code></pre></td></tr></table>
+</div>
+</div>
+<p>防止FORWARD的DROP策略影响转发,给docker daemon添加下列参数修正，当然暴力点也可以<code>iptables -P FORWARD ACCEPT</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /etc/systemd/system/docker.service.d/
+cat&gt;/etc/systemd/system/docker.service.d/10-docker.conf<span class="s">&lt;&lt;EOF
+</span><span class="s">[Service]
+</span><span class="s">ExecStartPost=/sbin/iptables -I FORWARD -s 0.0.0.0/0 -j ACCEPT
+</span><span class="s">ExecStopPost=/bin/bash -c &#39;/sbin/iptables -D FORWARD -s 0.0.0.0/0 -j ACCEPT &amp;&gt; /dev/null || :&#39;
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="重新加载配置">重新加载配置</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl <span class="nb">enable</span> --now docker
+systemctl daemon-reload <span class="o">&amp;&amp;</span> systemctl restart docker</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果enable docker的时候报错开启debug，如何开见 <a href="https://github.com/zhangguanzhang/Kubernetes-ansible/wiki/systemctl-running-debug">https://github.com/zhangguanzhang/Kubernetes-ansible/wiki/systemctl-running-debug</a></p>
+
+<h1 id="安装k8s">安装k8s</h1>
+
+<h2 id="下载rke">下载RKE</h2>
+
+<p>rke当前发布列表 <a href="https://github.com/rancher/rke/releases">https://github.com/rancher/rke/releases</a> ，这里下载最新的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s -L -o /usr/local/bin/rke <span class="se">\
+</span><span class="se"></span>	https://github.com/rancher/rke/releases/latest/download/rke_linux-amd64
+
+sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置yum源">配置yum源</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+</span><span class="s">[kubernetes]
+</span><span class="s">name=Kubernetes
+</span><span class="s">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+</span><span class="s">enabled=1
+</span><span class="s">gpgcheck=1
+</span><span class="s">gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+</span><span class="s">  http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+</span><span class="s">EOF</span>
+
+sudo yum install kubectl -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建非root用户">创建非root用户</h2>
+
+<p>实际生产环境不允许用root用户操作，故创建一个普通用户chenzj</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">USER</span><span class="o">=</span>chenzj
+
+useradd -G docker <span class="nv">$USER</span>
+<span class="nb">echo</span> <span class="nv">$USER</span><span class="p">|</span>passwd <span class="nv">$USER</span> --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$USER</span><span class="s2"> ALL=(ALL) ALL&#34;</span> &gt;&gt; /etc/sudoers
+chown <span class="nv">$USER</span>:docker /var/run/docker.sock</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置无密码登陆">配置无密码登陆</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u <span class="nv">$USER</span> ssh-keygen -f /home/<span class="nv">$USER</span>/.ssh/id_rsa -t rsa -N <span class="s2">&#34;&#34;</span>
+sudo -u <span class="nv">$USER</span> ./ssh_nopassword.expect <span class="k">$(</span>hostname<span class="k">)</span> <span class="nv">$USER</span> <span class="nv">$USER</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>这里用到了一个脚本ssh_nopassword.expect：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#! /usr/bin/expect -f
+</span><span class="cp"></span>
+<span class="nb">set</span> host <span class="o">[</span>lindex <span class="nv">$argv</span> <span class="m">0</span><span class="o">]</span>
+<span class="nb">set</span> user <span class="o">[</span>lindex <span class="nv">$argv</span> <span class="m">1</span><span class="o">]</span>
+<span class="nb">set</span> password <span class="o">[</span>lindex <span class="nv">$argv</span> <span class="m">2</span><span class="o">]</span>
+
+spawn ssh-copy-id -i /home/<span class="nv">$user</span>/.ssh/id_rsa.pub <span class="nv">$user</span>@<span class="nv">$host</span>
+expect <span class="o">{</span>
+yes/no  <span class="o">{</span>send <span class="s2">&#34;yes\r&#34;</span><span class="p">;</span>exp_continue<span class="o">}</span>
+-nocase <span class="s2">&#34;password:&#34;</span> <span class="o">{</span>send <span class="s2">&#34;</span><span class="nv">$password</span><span class="s2">\r&#34;</span><span class="o">}</span>
+<span class="o">}</span>
+expect eof</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建rke配置文件">创建RKE配置文件</h2>
+
+<p>RKE使用群集配置文件，称为cluster.yml确定群集中的节点以及如何部署Kubernetes。有许多配置选项，可以在设置cluster.yml。</p>
+
+<p>有两种简单的方法可以创建<code>cluster.yml</code>：</p>
+
+<ul>
+<li>使用最小值<a href="https://rancher.com/docs/rke/latest/en/example-yamls/#minimal-cluster-yml-example"> cluster.yml</a> 并根据实际情况进行编辑。</li>
+<li>使用<code>rke config</code>来查询所需的所有信息。</li>
+</ul>
+
+<p>查看RKE支持的K8S版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
+</div>
+</div>
+<p>可以查看某一个k8s版本依赖的系统镜像，然后手动下载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ rke config --system-images --version v1.16.2-rancher1-1
+rancher/coreos-etcd:v3.3.15-rancher1
+rancher/rke-tools:v0.1.50
+rancher/k8s-dns-kube-dns:1.15.0
+rancher/k8s-dns-dnsmasq-nanny:1.15.0
+rancher/k8s-dns-sidecar:1.15.0
+rancher/cluster-proportional-autoscaler:1.7.1
+rancher/coredns-coredns:1.6.2
+rancher/hyperkube:v1.16.2-rancher1
+rancher/coreos-flannel:v0.11.0-rancher1
+rancher/flannel-cni:v0.3.0-rancher5
+rancher/calico-node:v3.8.1
+rancher/calico-cni:v3.8.1
+rancher/calico-kube-controllers:v3.8.1
+rancher/calico-pod2daemon-flexvol:v3.8.1
+rancher/coreos-flannel:v0.11.0
+weaveworks/weave-kube:2.5.2
+weaveworks/weave-npc:2.5.2
+rancher/pause:3.1
+rancher/nginx-ingress-controller:nginx-0.25.1-rancher1
+rancher/nginx-ingress-controller-defaultbackend:1.5-rancher1
+rancher/metrics-server:v0.3.4</code></pre></td></tr></table>
+</div>
+</div>
+<p>获取最新的支持的kubernetes版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">kubernetes_version</span><span class="o">=</span><span class="sb">`</span>rke config --system-images --all<span class="p">|</span>grep rancher/hyperkube<span class="p">|</span>awk -F <span class="s1">&#39;:&#39;</span> <span class="s1">&#39;{print $2}&#39;</span><span class="p">|</span>sort -n<span class="p">|</span>tail -n <span class="m">1</span><span class="sb">`</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>切换到普通用户chenzj，创建RKE配置文件cluster.yml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">su - <span class="nv">$USER</span>
+
+mkdir -p install/k8s <span class="o">&amp;&amp;</span> <span class="nb">cd</span> install/k8s
+cat &gt; cluster.yml <span class="s">&lt;&lt;EOF
+</span><span class="s">nodes:
+</span><span class="s">  - address: 192.168.56.111
+</span><span class="s">    user: $USER
+</span><span class="s">    role: [controlplane,etcd,worker]
+</span><span class="s">
+</span><span class="s">services:
+</span><span class="s">  etcd:
+</span><span class="s">    snapshot: true
+</span><span class="s">    creation: 6h
+</span><span class="s">    retention: 24h
+</span><span class="s">  kube-api:
+</span><span class="s">    service_cluster_ip_range: 10.43.0.0/16
+</span><span class="s">    service_node_port_range: 30000-32767
+</span><span class="s">  kubelet:
+</span><span class="s">    cluster_domain: cluster.local
+</span><span class="s">    cluster_dns_server: 10.43.0.10
+</span><span class="s">    fail_swap_on: false
+</span><span class="s">    extra_args:
+</span><span class="s">      max-pods: 100
+</span><span class="s">
+</span><span class="s">cluster_name: k8s-test
+</span><span class="s">kubernetes_version: &#34;${kubernetes_version}&#34;
+</span><span class="s">network:
+</span><span class="s">    plugin: calico
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：</p>
+
+<ul>
+<li>这里是创建一个节点，所以该节点具有三种角色：controlplane、etcd、worker</li>
+<li>kubernetes版本指定的是 v1.16.2-rancher1-1，可以通过下面命令查看当前RKE支持的kubernetes版本，如果没有找到你想要的版本，可以升级RKE版本。</li>
+<li>RKE支持Kubernetes集群HA方式部署，您可以在cluster.yml文件中指定多个controlplane节点。RKE将在这些节点上部署master组件，并且kubelet配置为默认连接127.0.0.1:6443，这是nginx-proxy代理向所有主节点请求的服务的地址</li>
+</ul>
+
+<h2 id="创建集群">创建集群</h2>
+
+<p>在创建集群</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke up --config cluster.yml</code></pre></td></tr></table>
+</div>
+</div>
+<p>在安装过程中，RKE会自动生成一个kube_config_cluster.yml与RKE二进制文件位于同一目录中的配置文件。此文件很重要，它可以在Rancher Server故障时，利用kubectl通过此配置文件管理Kubernetes集群。复制此文件将其备份到安全位置。</p>
+
+<h2 id="与kubernetes集群的交互">与Kubernetes集群的交互</h2>
+
+<p>为了开始与Kubernetes集群进行交互，需要在本地计算机上安装kubectl。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># sudo 没权限，手动创建</span>
+cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+</span><span class="s">[kubernetes]
+</span><span class="s">name=Kubernetes
+</span><span class="s">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+</span><span class="s">enabled=1
+</span><span class="s">gpgcheck=1
+</span><span class="s">gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg 
+</span><span class="s">  http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+</span><span class="s">EOF</span>
+
+yum install kubectl -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>RKE会在配置文件所在的目录下部署一个本地文件，该文件中包含kube配置信息以连接到新生成的群集。默认情况下，kube配置文件被称为kube_config_cluster.yml。将这个文件复制到你的本地~/.kube/config，就可以在本地使用kubectl了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir ~/.kube/
+cp kube_config_cluster.yml ~/.kube/config</code></pre></td></tr></table>
+</div>
+</div>
+<p>需要注意的是，部署的本地kube配置名称是和集群配置文件相关的。例如，如果您使用名为mycluster.yml的配置文件，则本地kube配置将被命名为.kube_config_mycluster.yml。</p>
+
+<h2 id="查看集群状态">查看集群状态</h2>
+
+<p>查看集群上下文：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl config get-contexts
+CURRENT   NAME               CLUSTER         AUTHINFO            NAMESPACE
+*         k8s-test  			 k8s-test  		 kube-admin-k8s-test</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看集群配置视图：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl config view
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: DATA+OMITTED
+    server: https://192.168.1.113:6443
+  name: k8s-test
+contexts:
+- context:
+    cluster: k8s-test
+    user: kube-admin-k8s-test
+  name: k8s-test
+current-context: k8s-test
+kind: Config
+preferences: <span class="o">{}</span>
+users:
+- name: kube-admin-k8s-test
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看集群信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl cluster-info
+Kubernetes master is running at https://192.168.56.111:6443
+CoreDNS is running at https://192.168.56.111:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use <span class="s1">&#39;kubectl cluster-info dump&#39;</span>.</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看节点信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl get nodes
+NAME             STATUS   ROLES                      AGE    VERSION
+192.168.56.111   Ready    controlplane,etcd,worker   122m   v1.16.2</pre></td></tr></table>
+</div>
+</div>
+<p>查看所有：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all  -A</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看pod状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get pods -A
+NAMESPACE       NAME                                       READY   STATUS      RESTARTS   AGE
+ingress-nginx   default-http-backend-67cf578fc4-d9mrp      <span class="m">1</span>/1     Running     <span class="m">0</span>          5m25s
+ingress-nginx   nginx-ingress-controller-xlr9f             <span class="m">1</span>/1     Running     <span class="m">0</span>          5m25s
+kube-system     calico-kube-controllers-569544ddbd-5844j   <span class="m">1</span>/1     Running     <span class="m">0</span>          123m
+kube-system     calico-node-hp6jx                          <span class="m">1</span>/1     Running     <span class="m">0</span>          123m
+kube-system     coredns-5c59fd465f-5nx9c                   <span class="m">1</span>/1     Running     <span class="m">0</span>          5m36s
+kube-system     coredns-autoscaler-d765c8497-gq8hn         <span class="m">1</span>/1     Running     <span class="m">0</span>          5m35s
+kube-system     metrics-server-64f6dffb84-srcct            <span class="m">1</span>/1     Running     <span class="m">0</span>          5m31s
+kube-system     rke-coredns-addon-deploy-job-xklhm         <span class="m">0</span>/1     Completed   <span class="m">0</span>          5m37s
+kube-system     rke-ingress-controller-deploy-job-pps2m    <span class="m">0</span>/1     Completed   <span class="m">0</span>          5m27s
+kube-system     rke-metrics-addon-deploy-job-9xh4t         <span class="m">0</span>/1     Completed   <span class="m">0</span>          5m32s
+kube-system     rke-network-plugin-deploy-job-88nnb        <span class="m">0</span>/1     Completed   <span class="m">0</span>          123m</code></pre></td></tr></table>
+</div>
+</div>
+<p>pod的状态只有Running、Completed两种状态为正常状态，若有其他状态则需要查看pod日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl logs rke-ingress-controller-deploy-job-2vmvp -n kube-system</pre></td></tr></table>
+</div>
+</div>
+<p>可以看到RKE创建了ingress：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe pod -n ingress-nginx default-http-backend-67cf578fc4-d9mrp 
+kubectl describe pod -n ingress-nginx nginx-ingress-controller-xlr9f </code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="测试集群dns是否可用">测试集群DNS是否可用</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl run curl --image<span class="o">=</span>radial/busyboxplus:curl -it</code></pre></td></tr></table>
+</div>
+</div>
+<p>进入后执行<code>nslookup kubernetes.default</code>确认解析正常:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">nslookup kubernetes.default</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="设置bash自动完成">设置Bash自动完成</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y bash-completion 
+
+<span class="nb">echo</span> <span class="s2">&#34;Configure Kubectl to autocomplete&#34;</span>
+
+<span class="nb">source</span> /usr/share/bash-completion/bash_completion
+<span class="nb">source</span> &lt;<span class="o">(</span>kubectl completion bash<span class="o">)</span> #
+<span class="nb">echo</span> <span class="s1">&#39;source &lt;(kubectl completion bash)&#39;</span> &gt;&gt; ~/.bashrc</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="集群调优">集群调优</h1>
+
+<p>参考 <a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/best-practices/">https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/best-practices/</a></p>
+
+<h1 id="删除集群">删除集群</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke remove
+
+<span class="c1"># 删除每个节点所有容器</span>
+docker rm -f <span class="sb">`</span>docker ps -qa<span class="sb">`</span>
+
+<span class="c1"># 删除每个节点所有容器卷</span>
+docker volume rm <span class="sb">`</span>docker volume ls -q<span class="sb">`</span>
+<span class="c1">#cmd.sh &#39;docker volume rm `docker volume ls -q`&#39;</span>
+
+<span class="c1"># 卸载每个节点mount目录</span>
+<span class="k">for</span> mount in <span class="k">$(</span>sudo mount <span class="p">|</span> grep tmpfs <span class="p">|</span> grep <span class="s1">&#39;/var/lib/kubelet&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3 }&#39;</span><span class="k">)</span> <span class="p">;</span> <span class="k">do</span> 
+sudo umount <span class="nv">$mount</span><span class="p">;</span> 
+<span class="k">done</span>
+ 
+<span class="c1"># 删除残留路径</span>
+sudo rm -rf ~/.kube/ /etc/cni <span class="se">\
+</span><span class="se"></span>  /opt/cni <span class="se">\
+</span><span class="se"></span>  /run/secrets/kubernetes.io <span class="se">\
+</span><span class="se"></span>  /run/calico <span class="se">\
+</span><span class="se"></span>  /run/flannel <span class="se">\
+</span><span class="se"></span>  /var/lib/calico <span class="se">\
+</span><span class="se"></span>  /var/lib/cni <span class="se">\
+</span><span class="se"></span>  /var/lib/kubelet <span class="se">\
+</span><span class="se"></span>  /var/log/containers <span class="se">\
+</span><span class="se"></span>  /var/log/pods <span class="se">\
+</span><span class="se"></span>  /var/run/calico
+
+<span class="c1"># 清理网络接口</span>
+<span class="nv">network_interface</span><span class="o">=</span><span class="sb">`</span>ls /sys/class/net<span class="sb">`</span>
+<span class="k">for</span> net_inter in <span class="nv">$network_interface</span><span class="p">;</span>
+<span class="k">do</span>
+	<span class="k">if</span> ! <span class="nb">echo</span> <span class="nv">$net_inter</span> <span class="p">|</span> grep -qiE <span class="s1">&#39;lo|docker0|eth*|ens*&#39;</span><span class="p">;</span><span class="k">then</span>
+		sudo ip link delete <span class="nv">$net_inter</span>
+	<span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="c1"># 清理残留进程</span>
+<span class="nv">port_list</span><span class="o">=</span><span class="s1">&#39;80 443 6443 2376 2379 2380 8472 9099 10250 10254&#39;</span>
+
+<span class="k">for</span> port in <span class="nv">$port_list</span>
+<span class="k">do</span>
+<span class="nv">pid</span><span class="o">=</span><span class="sb">`</span>netstat -atlnup<span class="p">|</span>grep <span class="nv">$port</span><span class="p">|</span>awk <span class="s1">&#39;{print $7}&#39;</span><span class="p">|</span>awk -F <span class="s1">&#39;/&#39;</span> <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>grep -v -<span class="p">|</span>sort -rnk2<span class="p">|</span>uniq<span class="sb">`</span>
+	<span class="k">if</span> <span class="o">[[</span> -n <span class="nv">$pid</span> <span class="o">]]</span><span class="p">;</span><span class="k">then</span>
+		sudo <span class="nb">kill</span> -9 <span class="nv">$pid</span>
+	<span class="k">fi</span>
+<span class="k">done</span>
+
+<span class="nv">pro_pid</span><span class="o">=</span><span class="sb">`</span>ps -ef <span class="p">|</span>grep -v grep <span class="p">|</span>grep kube<span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span>
+
+<span class="k">if</span> <span class="o">[[</span> -n <span class="nv">$pro_pid</span> <span class="o">]]</span><span class="p">;</span><span class="k">then</span>
+	sudo <span class="nb">kill</span> -9 <span class="nv">$pro_pid</span>
+<span class="k">fi</span>
+
+<span class="c1"># 清理Iptables表</span>
+<span class="c1">## 注意：如果节点Iptables有特殊配置，以下命令请谨慎操作</span>
+sudo iptables --flush
+sudo iptables --flush --table nat
+sudo iptables --flush --table filter
+sudo iptables --table nat --delete-chain
+sudo iptables --table filter --delete-chain
+
+systemctl restart docker </code></pre></td></tr></table>
+</div>
+</div>
+<p>另外，清理docker镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除虚悬镜像</span>
+docker image prune --force
+
+<span class="c1">#删除Rancher中指定版本的镜像</span>
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;v0.1.42|v2.2.8|v2.3.1|v2.3.0|v3.4.0|v3.7.4|v0.10.0|v0.11.0|v1.15.3-rancher1|v3.3.10-rancher1&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep rancher<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.6.1|1.9.1|1.10.0-rc2&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep gitea<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.9.0&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep harbor<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+<span class="nv">version</span><span class="o">=</span><span class="s2">&#34;1.3.1&#34;</span>
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep drone<span class="p">|</span>grep -E <span class="si">${</span><span class="nv">version</span><span class="si">}</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span>
+
+docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep -E <span class="s1">&#39;hello-world|minio-minio|wordpress|postgresq|tomcat|maven|dev/ads|tiller&#39;</span> <span class="p">|</span> awk <span class="s1">&#39;{ print $3}&#39;</span><span class="k">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>删除自动创建的pvc的rbd块：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rbd list k8s
+
+<span class="c1">#rbd rm k8s/kubernetes-dynamic-pvc-2bca2c25-549d-4512-846d-167052bfed75</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="升级k8s">升级K8S</h1>
+
+<p>升级RKE：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s -L -o /usr/local/bin/rke <span class="se">\
+</span><span class="se"></span>	https://github.com/rancher/rke/releases/latest/download/rke_linux-amd64
+
+sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看RKE支持的K8S版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改cluster.yml文件中kubernetes的版本号：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">nodes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>address<span class="p">:</span><span class="w"> </span><span class="m">192.168.56.111</span><span class="w">
+</span><span class="w">    </span>user<span class="p">:</span><span class="w"> </span>chenzj<span class="w">
+</span><span class="w">    </span>port<span class="p">:</span><span class="w"> </span><span class="m">22</span><span class="w">
+</span><span class="w">    </span>role<span class="p">:</span><span class="w"> </span><span class="p">[</span>controlplane<span class="p">,</span>etcd<span class="p">,</span>worker<span class="p">]</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>services<span class="p">:</span><span class="w">
+</span><span class="w">  </span>etcd<span class="p">:</span><span class="w">
+</span><span class="w">    </span>snapshot<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">    </span>creation<span class="p">:</span><span class="w"> </span>6h<span class="w">
+</span><span class="w">    </span>retention<span class="p">:</span><span class="w"> </span>24h<span class="w">
+</span><span class="w">  </span>kube-api<span class="p">:</span><span class="w">
+</span><span class="w">    </span>service_cluster_ip_range<span class="p">:</span><span class="w"> </span><span class="m">10.43.0.0</span>/<span class="m">16</span><span class="w">
+</span><span class="w">    </span>service_node_port_range<span class="p">:</span><span class="w"> </span><span class="m">30000-32767</span><span class="w">
+</span><span class="w">  </span>kubelet<span class="p">:</span><span class="w">
+</span><span class="w">    </span>cluster_domain<span class="p">:</span><span class="w"> </span>cluster.local<span class="w">
+</span><span class="w">    </span>cluster_dns_server<span class="p">:</span><span class="w"> </span><span class="m">10.43.0.10</span><span class="w">
+</span><span class="w">    </span>fail_swap_on<span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+</span><span class="w">    </span>extra_args<span class="p">:</span><span class="w">
+</span><span class="w">      </span>max-pods<span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>cluster_name<span class="p">:</span><span class="w"> </span>k8s-test<span class="w">
+</span><span class="w"></span>kubernetes_version<span class="p">:</span><span class="w"> </span><span class="s2">&#34;v1.16.3-rancher1-1&#34;</span><span class="w">
+</span><span class="w"></span>network<span class="p">:</span><span class="w">
+</span><span class="w">    </span>plugin<span class="p">:</span><span class="w"> </span>calico</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后执行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke up --config cluster.yml</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="原生k8s参数">原生K8S参数</h1>
+
+<p>参考 <a href="https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/k8s-parameter/">https://www.rancher.cn/docs/rancher/v2.x/cn/install-prepare/k8s-parameter/</a></p>
+
+<h1 id="总结">总结</h1>
+
+<p>以上是使用RKE安装单节点k8s的记录，其实稍加修改配置文件，就可以安装集群。</p>
+
+<p>这里，我把上面的所有命令整理了一下，提交到了 <a href="https://github.com/javachen/vagrant/tree/master/k8s-rke-single">github</a>，供大家参考。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://zhangguanzhang.github.io/2019/11/24/kubeadm-base-use/">应大多数人要求写下kubeadm的基础使用</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-10-30
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/10/30/install-single-k8s-with-kubeadm/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用Kubeadm安装单节点kubernetes</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/08/11/install-redis-cluster-with-docker-compose/">
+            <span class="next-text nav-default">Docker Compose安装Redis集群</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

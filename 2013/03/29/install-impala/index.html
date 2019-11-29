@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用yum源安装Impala过程 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="与Hive类似，Impala也可以直接与HDFS和HBase库直接交互。只不过Hive和其它建立在MapReduce上的框架适合需要长时间运" /><meta name="keywords" content="impala,cdh,hadoop,hive" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2013/03/29/install-impala/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用yum源安装Impala过程" />
+<meta property="og:description" content="与Hive类似，Impala也可以直接与HDFS和HBase库直接交互。只不过Hive和其它建立在MapReduce上的框架适合需要长时间运" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2013/03/29/install-impala/" />
+<meta property="article:published_time" content="2013-03-29T00:00:00+08:00" />
+<meta property="article:modified_time" content="2013-03-29T00:00:00+08:00" />
+<meta itemprop="name" content="使用yum源安装Impala过程">
+<meta itemprop="description" content="与Hive类似，Impala也可以直接与HDFS和HBase库直接交互。只不过Hive和其它建立在MapReduce上的框架适合需要长时间运">
+
+
+<meta itemprop="datePublished" content="2013-03-29T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2013-03-29T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1669">
+
+
+
+<meta itemprop="keywords" content="impala," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用yum源安装Impala过程"/>
+<meta name="twitter:description" content="与Hive类似，Impala也可以直接与HDFS和HBase库直接交互。只不过Hive和其它建立在MapReduce上的框架适合需要长时间运"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用yum源安装Impala过程</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2013-03-29 </span>
+        <div class="post-category">
+            <a href="/categories/impala/"> impala </a>
+            </div>
+          <span class="more-meta"> 约 1669 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-环境">1. 环境</a></li>
+<li><a href="#2-安装">2. 安装</a></li>
+<li><a href="#3-配置">3. 配置</a>
+<ul>
+<li><a href="#3-1-修改配置文件">3.1 修改配置文件</a></li>
+<li><a href="#3-2-创建socket-path">3.2 创建socket path</a></li>
+<li><a href="#3-3-用户要求">3.3 用户要求</a></li>
+</ul></li>
+<li><a href="#4-启动服务">4. 启动服务</a></li>
+<li><a href="#5-使用shell">5. 使用shell</a></li>
+<li><a href="#6-参考文章">6. 参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>与Hive类似，Impala也可以直接与HDFS和HBase库直接交互。只不过Hive和其它建立在MapReduce上的框架适合需要长时间运行的批处理任务。例如：那些批量提取，转化，加载（ETL）类型的Job，而Impala主要用于实时查询。</p>
+
+<h1 id="1-环境">1. 环境</h1>
+
+<p>基于 <a href="/2013/04/06/install-cloudera-cdh-by-yum">使用yum安装CDH Hadoop集群</a> 这篇文章中的集群环境，进行impala的安装。</p>
+
+<h1 id="2-安装">2. 安装</h1>
+
+<p>在管理节点 cdh1 上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo yum install impala-server impala-state-store impala-catalog impala-shell -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>在 hive metastore 所在节点安装impala-state-store和impala-catalog</p>
+
+<p>在datanode节点上安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo yum install impala-server impala-shell -y</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="3-配置">3. 配置</h1>
+
+<h2 id="3-1-修改配置文件">3.1 修改配置文件</h2>
+
+<p>查看安装路径：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ find / -name impala
+	/var/run/impala
+	/var/lib/alternatives/impala
+	/var/log/impala
+	/usr/lib/impala
+	/etc/alternatives/impala
+	/etc/default/impala
+	/etc/impala
+	/etc/default/impala</code></pre></td></tr></table>
+</div>
+</div>
+<p>impalad的配置文件路径由环境变量<code>IMPALA_CONF_DIR</code>指定，默认为<code>/usr/lib/impala/conf</code>，impala 的默认配置在/etc/default/impala，修改该文件中的 <code>IMPALA_CATALOG_SERVICE_HOST</code> 和 <code>IMPALA_STATE_STORE_HOST</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">IMPALA_CATALOG_SERVICE_HOST</span><span class="o">=</span>cdh1
+<span class="nv">IMPALA_STATE_STORE_HOST</span><span class="o">=</span>cdh1
+<span class="nv">IMPALA_STATE_STORE_PORT</span><span class="o">=</span><span class="m">24000</span>
+<span class="nv">IMPALA_BACKEND_PORT</span><span class="o">=</span><span class="m">22000</span>
+<span class="nv">IMPALA_LOG_DIR</span><span class="o">=</span>/var/log/impala
+
+<span class="nv">IMPALA_CATALOG_ARGS</span><span class="o">=</span><span class="s2">&#34; -log_dir=</span><span class="si">${</span><span class="nv">IMPALA_LOG_DIR</span><span class="si">}</span><span class="s2"> &#34;</span>
+<span class="nv">IMPALA_STATE_STORE_ARGS</span><span class="o">=</span><span class="s2">&#34; -log_dir=</span><span class="si">${</span><span class="nv">IMPALA_LOG_DIR</span><span class="si">}</span><span class="s2"> -state_store_port=</span><span class="si">${</span><span class="nv">IMPALA_STATE_STORE_PORT</span><span class="si">}</span><span class="s2">&#34;</span>
+<span class="nv">IMPALA_SERVER_ARGS</span><span class="o">=</span><span class="s2">&#34; \
+</span><span class="s2">    -log_dir=</span><span class="si">${</span><span class="nv">IMPALA_LOG_DIR</span><span class="si">}</span><span class="s2"> \
+</span><span class="s2">    -catalog_service_host=</span><span class="si">${</span><span class="nv">IMPALA_CATALOG_SERVICE_HOST</span><span class="si">}</span><span class="s2"> \
+</span><span class="s2">    -state_store_port=</span><span class="si">${</span><span class="nv">IMPALA_STATE_STORE_PORT</span><span class="si">}</span><span class="s2"> \
+</span><span class="s2">    -use_statestore \
+</span><span class="s2">    -state_store_host=</span><span class="si">${</span><span class="nv">IMPALA_STATE_STORE_HOST</span><span class="si">}</span><span class="s2"> \
+</span><span class="s2">    -be_port=</span><span class="si">${</span><span class="nv">IMPALA_BACKEND_PORT</span><span class="si">}</span><span class="s2">&#34;</span>
+
+<span class="nv">ENABLE_CORE_DUMPS</span><span class="o">=</span><span class="nb">false</span>
+
+<span class="c1"># LIBHDFS_OPTS=-Djava.library.path=/usr/lib/impala/lib</span>
+<span class="c1"># MYSQL_CONNECTOR_JAR=/usr/share/java/mysql-connector-java.jar</span>
+<span class="c1"># IMPALA_BIN=/usr/lib/impala/sbin</span>
+<span class="c1"># IMPALA_HOME=/usr/lib/impala</span>
+<span class="c1"># HIVE_HOME=/usr/lib/hive</span>
+<span class="c1"># HBASE_HOME=/usr/lib/hbase</span>
+<span class="c1"># IMPALA_CONF_DIR=/etc/impala/conf</span>
+<span class="c1"># HADOOP_CONF_DIR=/etc/impala/conf</span>
+<span class="c1"># HIVE_CONF_DIR=/etc/impala/conf</span>
+<span class="c1"># HBASE_CONF_DIR=/etc/impala/conf</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>设置 impala 可以使用的最大内存：在上面的 <code>IMPALA_SERVER_ARGS</code> 参数值后面添加 <code>-mem_limit=70%</code> 即可。</p>
+
+<p>如果需要设置 impala 中每一个队列的最大请求数，需要在上面的 <code>IMPALA_SERVER_ARGS</code> 参数值后面添加 <code>-default_pool_max_requests=-1</code> ，该参数设置每一个队列的最大请求数，如果为-1，则表示不做限制。</p>
+
+<p>在节点cdh1上拷贝<code>hive-site.xml</code>、<code>core-site.xml</code>、<code>hdfs-site.xml</code>至<code>/usr/lib/impala/conf</code>目录并作下面修改在<code>hdfs-site.xml</code>文件中添加如下内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>dfs.client.read.shortcircuit<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+ 
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>dfs.domain.socket.path<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>/var/run/hadoop-hdfs/dn._PORT<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.hdfs-blocks-metadata.enabled<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>同步以上文件到其他节点。</p>
+
+<h2 id="3-2-创建socket-path">3.2 创建socket path</h2>
+
+<p>在每个节点上创建/var/run/hadoop-hdfs:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mkdir -p /var/run/hadoop-hdfs</code></pre></td></tr></table>
+</div>
+</div>
+<p>拷贝postgres jdbc jar：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ln -s /usr/share/java/postgresql-jdbc.jar /usr/lib/impala/lib/</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="3-3-用户要求">3.3 用户要求</h2>
+
+<p>impala 安装过程中会创建名为 impala 的用户和组，不要删除该用户和组。</p>
+
+<p>如果想要 impala 和 YARN 和 Llama 合作，需要把 impala 用户加入 hdfs 组。</p>
+
+<p>impala 在执行 DROP TABLE 操作时，需要把文件移到到 hdfs 的回收站，所以你需要创建一个 hdfs 的目录 /user/impala，并将其设置为impala 用户可写。同样的，impala 需要读取 hive 数据仓库下的数据，故需要把 impala 用户加入 hive 组。</p>
+
+<p>impala 不能以 root 用户运行，因为 root 用户不允许直接读。</p>
+
+<p>创建 impala 用户家目录并设置权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo -u hdfs hadoop fs -mkdir /user/impala
+sudo -u hdfs hadoop fs -chown impala /user/impala</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看 impala 用户所属的组：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ groups impala
+impala : impala hadoop hdfs hive</code></pre></td></tr></table>
+</div>
+</div>
+<p>由上可知，impala 用户是属于 imapal、hadoop、hdfs、hive 用户组的</p>
+
+<h1 id="4-启动服务">4. 启动服务</h1>
+
+<p>在 cdh1节点启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ service impala-state-store start
+$ service impala-catalog start</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果impalad正常启动，可以在<code>/tmp/ impalad.INFO</code>查看。如果出现异常，可以查看<code>/tmp/impalad.ERROR</code>定位错误信息。</p>
+
+<h1 id="5-使用shell">5. 使用shell</h1>
+
+<p>使用<code>impala-shell</code>启动Impala Shell，连接 cdh1，并刷新元数据</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">&gt;impala-shell
+<span class="o">[</span>Not connected<span class="o">]</span> &gt;connect cdh1
+<span class="o">[</span>cdh1:21000<span class="o">]</span> &gt;invalidate metadata
+<span class="o">[</span>cdh2:21000<span class="o">]</span> &gt;connect cdh2
+<span class="o">[</span>cdh2:21000<span class="o">]</span> &gt;select * from t</code></pre></td></tr></table>
+</div>
+</div>
+<p>当在 Hive 中创建表之后，第一次启动 impala-shell 时，请先执行 <code>INVALIDATE METADATA</code> 语句以便 Impala 识别出新创建的表(在 Impala 1.2 及以上版本，你只需要在一个节点上运行 <code>INVALIDATE METADATA</code> ，而不是在所有的 Impala 节点上运行)。</p>
+
+<p>你也可以添加一些其他参数，查看有哪些参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># impala-shell -h</span>
+Usage: impala_shell.py <span class="o">[</span>options<span class="o">]</span>
+
+Options:
+  -h, --help            show this <span class="nb">help</span> message and <span class="nb">exit</span>
+  -i IMPALAD, --impalad<span class="o">=</span>IMPALAD
+                        &lt;host:port&gt; of impalad to connect to
+  -q QUERY, --query<span class="o">=</span>QUERY
+                        Execute a query without the shell
+  -f QUERY_FILE, --query_file<span class="o">=</span>QUERY_FILE
+                        Execute the queries in the query file, delimited by <span class="p">;</span>
+  -k, --kerberos        Connect to a kerberized impalad
+  -o OUTPUT_FILE, --output_file<span class="o">=</span>OUTPUT_FILE
+                        If set, query results will written to the given file.
+                        Results from multiple semicolon-terminated queries
+                        will be appended to the same file
+  -B, --delimited       Output rows in delimited mode
+  --print_header        Print column names in delimited mode, <span class="nb">true</span> by default
+                        when pretty-printed.
+  --output_delimiter<span class="o">=</span>OUTPUT_DELIMITER
+                        Field delimiter to use <span class="k">for</span> output in delimited mode
+  -s KERBEROS_SERVICE_NAME, --kerberos_service_name<span class="o">=</span>KERBEROS_SERVICE_NAME
+                        Service name of a kerberized impalad, default is
+                        <span class="s1">&#39;impala&#39;</span>
+  -V, --verbose         Enable verbose output
+  -p, --show_profiles   Always display query profiles after execution
+  --quiet               Disable verbose output
+  -v, --version         Print version information
+  -c, --ignore_query_failure
+                        Continue on query failure
+  -r, --refresh_after_connect
+                        Refresh Impala catalog after connecting
+  -d DEFAULT_DB, --database<span class="o">=</span>DEFAULT_DB
+                        Issue a use database <span class="nb">command</span> on startup.</code></pre></td></tr></table>
+</div>
+</div>
+<p>例如，你可以在连接时候字段刷新：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ impala-shell -r
+Starting Impala Shell in unsecure mode
+Connected to <span class="m">192</span>.168.56.11:21000
+Server version: impalad version <span class="m">1</span>.1.1 RELEASE <span class="o">(</span>build 83d5868f005966883a918a819a449f636a5b3d5f<span class="o">)</span>
+Invalidating Metadata
+Welcome to the Impala shell. Press TAB twice to see a list of available commands.
+
+Copyright <span class="o">(</span>c<span class="o">)</span> <span class="m">2012</span> Cloudera, Inc. All rights reserved.
+
+<span class="o">(</span>Shell build version: Impala Shell v1.1.1 <span class="o">(</span>83d5868<span class="o">)</span> built on Fri Aug <span class="m">23</span> <span class="m">17</span>:28:05 PDT <span class="m">2013</span><span class="o">)</span>
+Query: invalidate metadata
+Query finished, fetching results ...
+
+Returned <span class="m">0</span> row<span class="o">(</span>s<span class="o">)</span> in <span class="m">5</span>.13s
+<span class="o">[</span><span class="m">192</span>.168.56.11:21000<span class="o">]</span> &gt;                  </code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 impala 导出数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ impala-shell -i <span class="s1">&#39;192.168.56.11:21000&#39;</span> -r -q <span class="s2">&#34;select * from test&#34;</span> -B --output_delimiter<span class="o">=</span><span class="s2">&#34;\t&#34;</span> -o result.txt</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-参考文章">6. 参考文章</h1>
+
+<ul>
+<li><a href="http://yuntai.1kapp.com/?p=904">Impala安装文档完整版</a></li>
+<li><a href="http://tech.uc.cn/?p=817">Impala入门笔记</a></li>
+<li><a href="https://ccp.cloudera.com/display/IMPALA10BETADOC/Installing+and+Using+Cloudera+Impala">Installing and Using Cloudera Impala</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2013-03-29
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/impala/">impala</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2013/04/06/install-cloudera-cdh-by-yum/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用yum源安装CDH集群</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2013/03/24/manual-install-Cloudera-hbase-CDH/">
+            <span class="next-text nav-default">手动安装Cloudera HBase CDH</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

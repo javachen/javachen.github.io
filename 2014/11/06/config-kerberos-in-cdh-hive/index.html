@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Hive配置Kerberos认证 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="记录 CDH Hadoop 集群上配置 Hive 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hive 相关配置修改说明。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/11/06/config-kerberos-in-cdh-hive/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Hive配置Kerberos认证" />
+<meta property="og:description" content="记录 CDH Hadoop 集群上配置 Hive 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hive 相关配置修改说明。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/11/06/config-kerberos-in-cdh-hive/" />
+<meta property="article:published_time" content="2014-11-06T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-11-06T08:00:00+08:00" />
+<meta itemprop="name" content="Hive配置Kerberos认证">
+<meta itemprop="description" content="记录 CDH Hadoop 集群上配置 Hive 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hive 相关配置修改说明。">
+
+
+<meta itemprop="datePublished" content="2014-11-06T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-11-06T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1537">
+
+
+
+<meta itemprop="keywords" content="hadoop,kerberos,cdh,hive," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hive配置Kerberos认证"/>
+<meta name="twitter:description" content="记录 CDH Hadoop 集群上配置 Hive 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hive 相关配置修改说明。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Hive配置Kerberos认证</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-11-06 </span>
+        <div class="post-category">
+            <a href="/categories/hive/"> hive </a>
+            </div>
+          <span class="more-meta"> 约 1537 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-环境说明">1. 环境说明</a></li>
+<li><a href="#2-生成-keytab">2. 生成 keytab</a></li>
+<li><a href="#3-修改-hive-配置文件">3. 修改 hive 配置文件</a></li>
+<li><a href="#4-启动服务">4. 启动服务</a>
+<ul>
+<li><a href="#启动-hive-metastore">启动 Hive MetaStore</a></li>
+<li><a href="#启动-hive-server2">启动 Hive Server2</a></li>
+</ul></li>
+<li><a href="#5-测试">5. 测试</a>
+<ul>
+<li><a href="#hive-cli">Hive CLI</a></li>
+<li><a href="#jdbc-客户端">JDBC 客户端</a></li>
+<li><a href="#beeline">Beeline</a></li>
+</ul></li>
+<li><a href="#6-相关文章">6. 相关文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="1-环境说明">1. 环境说明</h1>
+
+<p>系统环境：</p>
+
+<ul>
+<li>操作系统：CentOs 6.6</li>
+<li>Hadoop版本：<code>CDH5.4</code></li>
+<li>JDK版本：<code>1.7.0_71</code></li>
+<li>运行用户：root</li>
+</ul>
+
+<p>集群各节点角色规划为：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+192.168.56.122        cdh2     DataNode、SecondaryNameNode、NodeManager、HBase、Hive Server2、Impala Server
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hive Server2、Impala Server</pre></td></tr></table>
+</div>
+</div>
+<p>cdh1作为master节点，其他节点作为slave节点，hostname 请使用小写，要不然在集成 kerberos 时会出现一些错误。</p>
+
+<h1 id="2-生成-keytab">2. 生成 keytab</h1>
+
+<p>在 cdh1 节点，即 KDC server 节点上执行下面命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> /var/kerberos/krb5kdc/
+
+kadmin.local -q <span class="s2">&#34;addprinc -randkey hive/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey hive/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey hive/cdh3@JAVACHEN.COM &#34;</span>
+
+kadmin.local -q <span class="s2">&#34;xst  -k hive.keytab  hive/cdh1@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k hive.keytab  hive/cdh2@JAVACHEN.COM &#34;</span>
+kadmin.local -q <span class="s2">&#34;xst  -k hive.keytab  hive/cdh3@JAVACHEN.COM &#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>拷贝 hive.keytab 文件到其他节点的 /etc/hive/conf 目录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ scp hive.keytab cdh1:/etc/hive/conf
+$ scp hive.keytab cdh2:/etc/hive/conf
+$ scp hive.keytab cdh3:/etc/hive/conf</code></pre></td></tr></table>
+</div>
+</div>
+<p>并设置权限，分别在 cdh1、cdh2、cdh3 上执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s2">&#34;cd /etc/hive/conf/;chown hive:hadoop hive.keytab ;chmod 400 *.keytab&#34;</span>
+$ ssh cdh2 <span class="s2">&#34;cd /etc/hive/conf/;chown hive:hadoop hive.keytab ;chmod 400 *.keytab&#34;</span>
+$ ssh cdh3 <span class="s2">&#34;cd /etc/hive/conf/;chown hive:hadoop hive.keytab ;chmod 400 *.keytab&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>由于 keytab 相当于有了永久凭证，不需要提供密码(如果修改 kdc 中的 principal 的密码，则该 keytab 就会失效)，所以其他用户如果对该文件有读权限，就可以冒充 keytab 中指定的用户身份访问 hadoop，所以 keytab 文件需要确保只对 owner 有读权限(0400)</p>
+
+<h1 id="3-修改-hive-配置文件">3. 修改 hive 配置文件</h1>
+
+<p>修改 hive-site.xml，添加下面配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>KERBEROS<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hive/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.server2.authentication.kerberos.keytab<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hive/conf/hive.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.metastore.sasl.enabled<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.metastore.kerberos.keytab.file<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hive/conf/hive.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hive.metastore.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hive/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>在 core-site.xml 中添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hive.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hdfs.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.hdfs.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.HTTP.hosts<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.proxyuser.HTTP.groups<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>*<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>记住将修改的上面文件同步到其他节点：cdh2、cdh3，并再次一一检查权限是否正确。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ scp /etc/hive/conf/hive-site.xml cdh2:/etc/hive/conf/
+$ scp /etc/hive/conf/hive-site.xml cdh3:/etc/hive/conf/</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="4-启动服务">4. 启动服务</h1>
+
+<h2 id="启动-hive-metastore">启动 Hive MetaStore</h2>
+
+<p>hive-metastore 是通过 hive 用户启动的，故在 cdh1 上先获取 hive 用户的 ticket 再启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hive/conf/hive.keytab hive/cdh1@JAVACHEN.COM
+$ service hive-metastore start</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后查看日志，确认是否启动成功。</p>
+
+<h2 id="启动-hive-server2">启动 Hive Server2</h2>
+
+<p>hive-server2 是通过 hive 用户启动的，故在 cdh2 和 cdh3 上先获取 hive 用户的 ticket 再启动服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hive/conf/hive.keytab hive/cdh1@JAVACHEN.COM
+$ service hive-server2 start</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后查看日志，确认是否启动成功。</p>
+
+<h1 id="5-测试">5. 测试</h1>
+
+<h2 id="hive-cli">Hive CLI</h2>
+
+<p>在没有配置 kerberos 之前，想要通过 hive 用户运行 hive 命令需要执行sudo，现在配置了 kerberos 之后，不再需要 <code>sudo</code> 了，hive 会通过 ticket 中的用户去执行该命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ klist
+Ticket cache: FILE:/tmp/krb5cc_0
+Default principal: hdfs/dn5.h.lashou-inc.com@lashou_hadoop
+
+Valid starting     Expires            Service principal
+11/06/14 11:39:09  11/07/14 11:39:09  krbtgt/lashou_hadoop@lashou_hadoop
+  renew until 11/08/14 11:39:09
+
+
+Kerberos 4 ticket cache: /tmp/tkt0
+klist: You have no tickets cached</pre></td></tr></table>
+</div>
+</div>
+<p>运行Hive cli：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ hive
+hive&gt; set system:user.name;
+system:user.name=root
+hive&gt; create table t(id int);
+OK
+Time taken: 2.183 seconds
+hive&gt; show tables;
+OK
+t
+Time taken: 1.349 seconds
+hive&gt; select * from t;
+OK
+Time taken: 1.116 seconds</pre></td></tr></table>
+</div>
+</div>
+<p>可以看到在获取了 hdfs 用户的 ticket 之后，进入 hive cli 可以执行查看表、查询数据等命令。当然，你也可以获取 hive 的 ticket 之后再来运行 hive 命令。</p>
+
+<p>另外，如果你想通过普通用户来访问 hive，则需要 kerberos 创建规则和导出 ticket，然后把这个 ticket 拷贝到普通用户所在的家目录，在获取 ticket 了之后，再运行 hive 命令即可。</p>
+
+<h2 id="jdbc-客户端">JDBC 客户端</h2>
+
+<p>客户端通过 jdbc 代码连结 hive-server2：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">String</span> <span class="nf">url</span> <span class="o">=</span> <span class="s">&#34;jdbc:hive2://cdh1:10000/default;principal=hive/cdh1@JAVACHEN.COM&#34;</span>
+<span class="n">Connection</span> <span class="nf">con</span> <span class="o">=</span> <span class="n">DriverManager</span><span class="p">.</span><span class="na">getConnection</span><span class="p">(</span><span class="n">url</span><span class="p">);</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="beeline">Beeline</h2>
+
+<p>Beeline 连结 hive-server2：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ beeline
+beeline&gt; !connect jdbc:hive2://cdh1:10000/default<span class="p">;</span><span class="nv">principal</span><span class="o">=</span>hive/cdh1@JAVACHEN.COM
+scan <span class="nb">complete</span> in 4ms
+Connecting to jdbc:hive2://localhost:10000/default<span class="p">;</span><span class="nv">principal</span><span class="o">=</span>hive/cdh1@JAVACHEN.COM<span class="p">;</span>
+Enter username <span class="k">for</span> jdbc:hive2://localhost:10000/default<span class="p">;</span><span class="nv">principal</span><span class="o">=</span>hive/cdh1@JAVACHEN.COM<span class="p">;</span>:
+Enter password <span class="k">for</span> jdbc:hive2://localhost:10000/default<span class="p">;</span><span class="nv">principal</span><span class="o">=</span>hive/cdh1@JAVACHEN.COM<span class="p">;</span>:
+Connected to: Apache Hive <span class="o">(</span>version <span class="m">0</span>.14.0<span class="o">)</span>
+Driver: Hive <span class="o">(</span>version <span class="m">0</span>.14.0-cdh5.4.0<span class="o">)</span>
+Transaction isolation: TRANSACTION_REPEATABLE_READ
+<span class="m">0</span>: jdbc:hive2://cdh1:10000/default&gt; <span class="k">select</span> * from t<span class="p">;</span>
++-------+--+
+<span class="p">|</span> t.id  <span class="p">|</span>
++-------+--+
++-------+--+
+No rows selected <span class="o">(</span><span class="m">1</span>.575 seconds<span class="o">)</span>
+<span class="m">0</span>: jdbc:hive2://cdh1:10000/default&gt; desc t<span class="p">;</span>
++-----------+------------+----------+--+
+<span class="p">|</span> col_name  <span class="p">|</span> data_type  <span class="p">|</span> comment  <span class="p">|</span>
++-----------+------------+----------+--+
+<span class="p">|</span> id        <span class="p">|</span> int        <span class="p">|</span>          <span class="p">|</span>
++-----------+------------+----------+--+
+<span class="m">1</span> row selected <span class="o">(</span><span class="m">0</span>.24 seconds<span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="6-相关文章">6. 相关文章</h1>
+
+<ul>
+<li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
+<li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-hive">Hive配置Kerberos认证</a></li>
+<li><a href="/2014/11/06/config-kerberos-in-cdh-impala">Impala配置Kerberos认证</a></li>
+<li><a href="/2014/11/18/config-kerberos-in-cdh-zookeeper.">Zookeeper配置Kerberos认证</a></li>
+<li><a href="/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop">Hadoop配置LDAP集成Kerberos</a></li>
+<li><a href="/2014/11/14/config-secured-hive-with-sentry">配置安全的Hive集群集成Sentry</a></li>
+<li><a href="/2014/11/14/config-secured-impala-with-sentry">配置安全的Impala集群集成Sentry</a></li>
+<li><a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop">Hadoop集群部署权限总结</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-11-06
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/hadoop/">hadoop</a>
+          <a href="/tags/kerberos/">kerberos</a>
+          <a href="/tags/cdh/">cdh</a>
+          <a href="/tags/hive/">hive</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/11/12/config-ldap-with-kerberos-in-cdh-hadoop/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Hadoop配置LDAP集成Kerberos</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/11/06/config-kerberos-in-cdh-impala/">
+            <span class="next-text nav-default">Impala配置Kerberos认证</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>MapReduce任务参数调优 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录Hadoop 2.x版本中MapReduce参数调优，不涉及Yarn的调优。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2014/06/24/tuning-in-mapreduce/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="MapReduce任务参数调优" />
+<meta property="og:description" content="本文主要记录Hadoop 2.x版本中MapReduce参数调优，不涉及Yarn的调优。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2014/06/24/tuning-in-mapreduce/" />
+<meta property="article:published_time" content="2014-06-24T08:00:00+08:00" />
+<meta property="article:modified_time" content="2014-06-24T08:00:00+08:00" />
+<meta itemprop="name" content="MapReduce任务参数调优">
+<meta itemprop="description" content="本文主要记录Hadoop 2.x版本中MapReduce参数调优，不涉及Yarn的调优。">
+
+
+<meta itemprop="datePublished" content="2014-06-24T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2014-06-24T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2780">
+
+
+
+<meta itemprop="keywords" content="mapreduce," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MapReduce任务参数调优"/>
+<meta name="twitter:description" content="本文主要记录Hadoop 2.x版本中MapReduce参数调优，不涉及Yarn的调优。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">MapReduce任务参数调优</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2014-06-24 </span>
+        <div class="post-category">
+            <a href="/categories/mapreduce/"> mapreduce </a>
+            </div>
+          <span class="more-meta"> 约 2780 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-操作系统调优">1. 操作系统调优</a></li>
+<li><a href="#2-hdfs参数调优">2. Hdfs参数调优</a>
+<ul>
+<li><a href="#2-1-core-default-xml">2.1 core-default.xml：</a></li>
+<li><a href="#2-2-hdfs-default-xml">2.2 hdfs-default.xml：</a></li>
+</ul></li>
+<li><a href="#3-mapreduce参数调优">3. MapReduce参数调优</a>
+<ul>
+<li><a href="#3-1-mapred-default-xml">3.1 mapred-default.xml：</a></li>
+</ul></li>
+<li><a href="#4-系统优化">4. 系统优化</a>
+<ul>
+<li><a href="#4-1-避免排序">4.1 避免排序</a></li>
+<li><a href="#4-2-shuffle阶段内部优化">4.2 Shuffle阶段内部优化</a></li>
+</ul></li>
+<li><a href="#5-总结">5. 总结</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要记录Hadoop 2.x版本中MapReduce参数调优，不涉及Yarn的调优。</p>
+
+<p>Hadoop的默认配置文件（以cdh5.0.1为例）：</p>
+
+<ul>
+<li><a href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.3.0-cdh5.0.1/hadoop-project-dist/hadoop-common/core-default.xml">core-default.xml</a></li>
+<li><a href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.3.0-cdh5.0.1/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml">hdfs-default.xml</a></li>
+<li><a href="http://archive.cloudera.com/cdh5/cdh/5/hadoop-2.3.0-cdh5.0.1/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml">mapred-default.xml</a></li>
+</ul>
+
+<blockquote>
+<p>说明：</p>
+
+<p>在hadoop2中有些参数名称过时了，例如原来的<code>mapred.reduce.tasks</code>改名为<code>mapreduce.job.reduces</code>了，当然，这两个参数你都可以使用，只是第一个参数过时了。</p>
+</blockquote>
+
+<h1 id="1-操作系统调优">1. 操作系统调优</h1>
+
+<ul>
+<li>增大打开文件数据和网络连接上限，调整内核参数<code>net.core.somaxconn</code>，提高读写速度和网络带宽使用率</li>
+<li>适当调整<code>epoll的文件描述符</code>上限，提高Hadoop RPC并发</li>
+<li><code>关闭swap</code>。如果进程内存不足，系统会将内存中的部分数据暂时写入磁盘，当需要时再将磁盘上的数据动态换置到内存中，这样会降低进程执行效率</li>
+<li>增加<code>预读缓存区</code>大小。预读可以减少磁盘寻道次数和I/O等待时间</li>
+<li>设置<code>openfile</code></li>
+</ul>
+
+<h1 id="2-hdfs参数调优">2. Hdfs参数调优</h1>
+
+<h2 id="2-1-core-default-xml">2.1 core-default.xml：</h2>
+
+<p><code>hadoop.tmp.dir</code>：</p>
+
+<ul>
+<li>默认值： /tmp</li>
+<li>说明： 尽量手动配置这个选项，否则的话都默认存在了里系统的默认临时文件/tmp里。并且手动配置的时候，如果服务器是多磁盘的，每个磁盘都设置一个临时文件目录，这样便于mapreduce或者hdfs等使用的时候提高磁盘IO效率。</li>
+</ul>
+
+<p><code>fs.trash.interval</code>：</p>
+
+<ul>
+<li>默认值： 0</li>
+<li>说明： 这个是开启hdfs文件删除自动转移到垃圾箱的选项，值为垃圾箱文件清除时间。一般开启这个会比较好，以防错误删除重要文件。单位是分钟。</li>
+</ul>
+
+<p><code>io.file.buffer.size</code>：</p>
+
+<ul>
+<li>默认值：4096</li>
+<li>说明：SequenceFiles在读写中可以使用的缓存大小，可减少 I/O 次数。在大型的 Hadoop cluster，建议可设定为 65536 到 131072。</li>
+</ul>
+
+<h2 id="2-2-hdfs-default-xml">2.2 hdfs-default.xml：</h2>
+
+<p><code>dfs.blocksize</code>：</p>
+
+<ul>
+<li>默认值：134217728</li>
+<li>说明： 这个就是hdfs里一个文件块的大小了，CDH5中默认128M。太大的话会有较少map同时计算，太小的话也浪费可用map个数资源，而且文件太小namenode就浪费内存多。根据需要进行设置。</li>
+</ul>
+
+<p><code>dfs.namenode.handler.count</code>：</p>
+
+<ul>
+<li>默认值：10</li>
+<li>说明：设定 namenode server threads 的数量，这些 threads 會用 RPC 跟其他的 datanodes 沟通。当 datanodes 数量太多时会发現很容易出現 RPC timeout，解決方法是提升网络速度或提高这个值，但要注意的是 thread 数量多也表示 namenode 消耗的内存也随着增加</li>
+</ul>
+
+<h1 id="3-mapreduce参数调优">3. MapReduce参数调优</h1>
+
+<p>包括以下节点：</p>
+
+<ul>
+<li>合理设置槽位数目</li>
+<li>调整心跳配置</li>
+<li>磁盘块配置</li>
+<li>设置RPC和线程数目</li>
+<li>启用批量任务调度</li>
+</ul>
+
+<h2 id="3-1-mapred-default-xml">3.1 mapred-default.xml：</h2>
+
+<p><code>mapred.reduce.tasks</code>（<code>mapreduce.job.reduces</code>）：</p>
+
+<ul>
+<li>默认值：1</li>
+<li>说明：默认启动的reduce数。通过该参数可以手动修改reduce的个数。</li>
+</ul>
+
+<p><code>mapreduce.task.io.sort.factor</code>：</p>
+
+<ul>
+<li>默认值：10</li>
+<li>说明：Reduce Task中合并小文件时，一次合并的文件数据，每次合并的时候选择最小的前10进行合并。</li>
+</ul>
+
+<p><code>mapreduce.task.io.sort.mb</code>：</p>
+
+<ul>
+<li>默认值：100</li>
+<li>说明： Map Task缓冲区所占内存大小。</li>
+</ul>
+
+<p><code>mapred.child.java.opts</code>：</p>
+
+<ul>
+<li>默认值：-Xmx200m</li>
+<li>说明：jvm启动的子线程可以使用的最大内存。建议值<code>-XX:-UseGCOverheadLimit -Xms512m -Xmx2048m -verbose:gc -Xloggc:/tmp/@taskid@.gc</code></li>
+</ul>
+
+<p><code>mapreduce.jobtracker.handler.count</code>：</p>
+
+<ul>
+<li>默认值：10</li>
+<li>说明：JobTracker可以启动的线程数，一般为tasktracker节点的4%。</li>
+</ul>
+
+<p><code>mapreduce.reduce.shuffle.parallelcopies</code>：</p>
+
+<ul>
+<li>默认值：5</li>
+<li>说明：reuduce shuffle阶段并行传输数据的数量。这里改为10。集群大可以增大。</li>
+</ul>
+
+<p><code>mapreduce.tasktracker.http.threads</code>：</p>
+
+<ul>
+<li>默认值：40</li>
+<li>说明：map和reduce是通过http进行数据传输的，这个是设置传输的并行线程数。</li>
+</ul>
+
+<p><code>mapreduce.map.output.compress</code>：</p>
+
+<ul>
+<li>默认值：false</li>
+<li>说明： map输出是否进行压缩，如果压缩就会多耗cpu，但是减少传输时间，如果不压缩，就需要较多的传输带宽。配合mapreduce.map.output.compress.codec使用，默认是org.apache.hadoop.io.compress.DefaultCodec，可以根据需要设定数据压缩方式。</li>
+</ul>
+
+<p><code>mapreduce.reduce.shuffle.merge.percent</code>：</p>
+
+<ul>
+<li>默认值： 0.66</li>
+<li>说明：reduce归并接收map的输出数据可占用的内存配置百分比。类似mapreduce.reduce.shuffle.input.buffer.percen属性。</li>
+</ul>
+
+<p><code>mapreduce.reduce.shuffle.memory.limit.percent</code>：</p>
+
+<ul>
+<li>默认值： 0.25</li>
+<li>说明：一个单一的shuffle的最大内存使用限制。</li>
+</ul>
+
+<p><code>mapreduce.jobtracker.handler.count</code>：</p>
+
+<ul>
+<li>默认值： 10</li>
+<li>说明：可并发处理来自tasktracker的RPC请求数，默认值10。</li>
+</ul>
+
+<p><code>mapred.job.reuse.jvm.num.tasks</code>（<code>mapreduce.job.jvm.numtasks</code>）：</p>
+
+<ul>
+<li>默认值： 1</li>
+<li>说明：一个jvm可连续启动多个同类型任务，默认值1，若为-1表示不受限制。</li>
+</ul>
+
+<p><code>mapreduce.tasktracker.tasks.reduce.maximum</code>：</p>
+
+<ul>
+<li>默认值： 2</li>
+<li>说明：一个tasktracker并发执行的reduce数，建议为cpu核数</li>
+</ul>
+
+<h1 id="4-系统优化">4. 系统优化</h1>
+
+<h2 id="4-1-避免排序">4.1 避免排序</h2>
+
+<p>对于一些不需要排序的应用，比如hash join或者limit n，可以将排序变为可选环节，这样可以带来一些好处：</p>
+
+<ul>
+<li>在Map Collect阶段，不再需要同时比较partition和key，只需要比较partition，并可以使用更快的计数排序（O(n)）代替快速排序（O(NlgN)）</li>
+<li>在Map Combine阶段，不再需要进行归并排序，只需要按照字节合并数据块即可。</li>
+<li>去掉排序之后，Shuffle和Reduce可同时进行，这样就消除了Reduce Task的屏障（所有数据拷贝完成之后才能执行reduce()函数）。</li>
+</ul>
+
+<h2 id="4-2-shuffle阶段内部优化">4.2 Shuffle阶段内部优化</h2>
+
+<ol>
+<li>Map端&ndash;用Netty代替Jetty</li>
+<li>Reduce端&ndash;批拷贝</li>
+<li>将Shuffle阶段从Reduce Task中独立出来</li>
+</ol>
+
+<h1 id="5-总结">5. 总结</h1>
+
+<p>在运行mapreduce任务中，经常调整的参数有：</p>
+
+<ul>
+<li><code>mapred.reduce.tasks</code>：手动设置reduce个数</li>
+<li><code>mapreduce.map.output.compress</code>：map输出结果是否压缩
+
+<ul>
+<li><code>mapreduce.map.output.compress.codec</code></li>
+</ul></li>
+<li><code>mapreduce.output.fileoutputformat.compress</code>：job输出结果是否压缩
+
+<ul>
+<li><code>mapreduce.output.fileoutputformat.compress.type</code></li>
+<li><code>mapreduce.output.fileoutputformat.compress.codec</code></li>
+</ul></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2014-06-24
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/mapreduce/">mapreduce</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2014/06/24/hbase-vs-cassandra/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">HBase和Cassandra比较</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2014/06/24/the-running-process-of-mapreduce-job/">
+            <span class="next-text nav-default">MapReduce任务运行过程</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

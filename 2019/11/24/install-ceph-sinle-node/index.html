@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>安装单节点Ceph集群 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/11/24/install-ceph-sinle-node/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="安装单节点Ceph集群" />
+<meta property="og:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/11/24/install-ceph-sinle-node/" />
+<meta property="article:published_time" content="2019-11-24T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-24T08:00:00+08:00" />
+<meta itemprop="name" content="安装单节点Ceph集群">
+<meta itemprop="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908">
+
+
+<meta itemprop="datePublished" content="2019-11-24T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-24T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2758">
+
+
+
+<meta itemprop="keywords" content="ceph," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="安装单节点Ceph集群"/>
+<meta name="twitter:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">安装单节点Ceph集群</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-24 </span>
+        <div class="post-category">
+            <a href="/categories/ceph/"> ceph </a>
+            </div>
+          <span class="more-meta"> 约 2758 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#集群规划">集群规划</a></li>
+<li><a href="#配置环境">配置环境</a>
+<ul>
+<li><a href="#设置hosts">设置hosts</a></li>
+<li><a href="#创建安装用户">创建安装用户</a></li>
+<li><a href="#设置tty">设置TTY</a></li>
+<li><a href="#配置无密码登陆">配置无密码登陆</a></li>
+<li><a href="#检查环境">检查环境</a></li>
+<li><a href="#安装yum-plugin-priorities">安装yum-plugin-priorities</a></li>
+<li><a href="#加载rbd模块">加载rbd模块</a></li>
+</ul></li>
+<li><a href="#配置ceph-deploy节点">配置ceph-deploy节点</a></li>
+<li><a href="#创建集群配置">创建集群配置</a></li>
+<li><a href="#创建集群">创建集群</a></li>
+<li><a href="#初始化monitor">初始化monitor</a></li>
+<li><a href="#初始化osd">初始化OSD</a></li>
+<li><a href="#创建mgr">创建MGR</a></li>
+<li><a href="#创建mds">创建MDS</a></li>
+<li><a href="#创建rgw">创建RGW</a></li>
+<li><a href="#部署ceph-cli工具和秘钥">部署ceph cli工具和秘钥</a></li>
+<li><a href="#查看集群状态">查看集群状态</a></li>
+<li><a href="#清理环境">清理环境</a></li>
+<li><a href="#安装mgr-dashboard">安装mgr dashboard</a></li>
+<li><a href="#扩容集群">扩容集群</a>
+<ul>
+<li><a href="#添加monitor">添加Monitor</a></li>
+<li><a href="#添加mgr">添加MGR</a></li>
+</ul></li>
+<li><a href="#配置客户端">配置客户端</a>
+<ul>
+<li><a href="#新建用户密钥">新建用户密钥</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。</p>
+
+<h1 id="集群规划">集群规划</h1>
+
+<p>集群环境：</p>
+
+<table>
+<thead>
+<tr>
+<th>主机</th>
+<th>IP</th>
+<th>操作系统</th>
+<th>软件</th>
+<th>组件</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>k8s-rke-node001</td>
+<td>192.168.56.111</td>
+<td>Centos7.7.1908</td>
+<td>Ceph 14.2.4</td>
+<td>ceph_deploy、OSD.0、MON</td>
+</tr>
+</tbody>
+</table>
+
+<p>安装用户：chenzj</p>
+
+<h1 id="配置环境">配置环境</h1>
+
+<h2 id="设置hosts">设置hosts</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 k8s-rke-node001</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建安装用户">创建安装用户</h2>
+
+<p>在每个节点创建普通用户如chenzj，并设置密码和sudo权限</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">USER</span><span class="o">=</span>chenzj
+useradd -G docker -d /home/<span class="nv">$USER</span> -m <span class="nv">$USER</span> 
+<span class="nb">echo</span> <span class="nv">$USER</span><span class="p">|</span>passwd <span class="nv">$USER</span> --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+sudo <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$USER</span><span class="s2"> ALL = (root) NOPASSWD:ALL&#34;</span> <span class="p">|</span> sudo tee /etc/sudoers.d/<span class="nv">$USER</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="设置tty">设置TTY</h2>
+
+<p>执行命令visudo修改suoders文件：</p>
+
+<ol>
+<li>注释Defaults requiretty</li>
+</ol>
+
+<p>Defaults requiretty修改为 #Defaults requiretty， 表示不需要控制终端。</p>
+
+<p>否则会出现sudo: sorry, you must have a tty to run sudo</p>
+
+<ol>
+<li>增加行 Defaults visiblepw</li>
+</ol>
+
+<p>否则会出现 sudo: no tty present and no askpass program specified</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/Defaults *requiretty/#Defaults requiretty/g&#39;</span> /etc/sudoers
+sed -i <span class="s1">&#39;s/Defaults *!visiblepw/Defaults   visiblepw/g&#39;</span> /etc/sudoers</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="配置无密码登陆">配置无密码登陆</h2>
+
+<p>设置chenzj用户无密码登陆：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">su - chenzj
+sudo yes|ssh-keygen -f ~/.ssh/id_rsa -t rsa -N &#34;&#34;
+
+ssh-copy-id k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>设置ssh默认用户名：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt;&gt; ~/.ssh/config
+</span><span class="s">Host      k8s-rke-node001
+</span><span class="s">Hostname  k8s-rke-node001
+</span><span class="s">User         chenzj
+</span><span class="s">EOF</span>
+
+chmod <span class="m">644</span> ~/.ssh/config</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="检查环境">检查环境</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#检查操作系统</span>
+cat /etc/redhat-release
+
+<span class="c1">#检查时钟同步</span>
+date</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="安装yum-plugin-priorities">安装yum-plugin-priorities</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install yum-plugin-priorities -y</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="加载rbd模块">加载rbd模块</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo modprobe rbd</pre></td></tr></table>
+</div>
+</div>
+<h1 id="配置ceph-deploy节点">配置ceph-deploy节点</h1>
+
+<p>在管理节点 k8s-rke-node001 上配置yum源，注意：这里ceph使用的是nautilus版本。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; ceph.repo
+</span><span class="s">[Ceph]
+</span><span class="s">name=Ceph packages for \$basearch
+</span><span class="s">baseurl=http://mirrors.163.com/ceph/rpm-nautilus/el7/\$basearch
+</span><span class="s">enabled=1
+</span><span class="s">gpgcheck=0
+</span><span class="s">type=rpm-md
+</span><span class="s">gpgkey=https://mirrors.163.com/ceph/keys/release.asc
+</span><span class="s">priority=1
+</span><span class="s">
+</span><span class="s">[Ceph-noarch]
+</span><span class="s">name=Ceph noarch packages
+</span><span class="s">baseurl=http://mirrors.163.com/ceph/rpm-nautilus/el7/noarch
+</span><span class="s">enabled=1
+</span><span class="s">gpgcheck=0
+</span><span class="s">type=rpm-md
+</span><span class="s">gpgkey=https://mirrors.163.com/ceph/keys/release.asc
+</span><span class="s">priority=1
+</span><span class="s">EOF</span>
+
+sudo mv ceph.repo /etc/yum.repos.d/</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置环境变量，使ceph-deploy使用163源。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">CEPH_DEPLOY_REPO_URL</span><span class="o">=</span>https://mirrors.163.com/ceph/rpm-nautilus/el7
+<span class="nb">export</span> <span class="nv">CEPH_DEPLOY_GPG_URL</span><span class="o">=</span>http://mirrors.163.com/ceph/keys/release.asc</code></pre></td></tr></table>
+</div>
+</div>
+<p>安装部署工具：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装 EPEL 源</span>
+sudo yum install -y epel-release
+
+sudo yum install ceph-deploy -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>说明：ceph-deploy 工具需要使用 ssh 来自动化部署 Ceph 各个组件，因此需要保证部署节点能够免密码登录待部署节点；最后，待部署节点最好加入到部署节点的 hosts 中，方便使用域名(某些地方强制)连接管理。</p>
+
+<h1 id="创建集群配置">创建集群配置</h1>
+
+<p>ceph-deploy 工具部署集群前需要创建一些集群配置信息，其保存在 <code>ceph.conf</code> 文件中，这个文件未来将会被复制到每个节点的 <code>/etc/ceph/ceph.conf</code></p>
+
+<p>在ceph-deploy节点执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建集群配置目录</span>
+mkdir ceph-cluster <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ceph-cluster
+
+<span class="c1"># 创建 monitor-node</span>
+ceph-deploy new k8s-rke-node001 <span class="se">\
+</span><span class="se"></span>  --public-network <span class="m">192</span>.168.56.0/24 <span class="se">\
+</span><span class="se"></span>  --cluster-network <span class="m">192</span>.168.56.0/24 </code></pre></td></tr></table>
+</div>
+</div>
+<p>注意：public-network要和当前ip的网段保持对应。</p>
+
+<p>出现异常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">Traceback <span class="o">(</span>most recent call last<span class="o">)</span>:
+  File <span class="s2">&#34;/usr/bin/ceph-deploy&#34;</span>, line <span class="m">18</span>, in &lt;module&gt;
+    from ceph_deploy.cli import main
+  File <span class="s2">&#34;/usr/lib/python2.7/site-packages/ceph_deploy/cli.py&#34;</span>, line <span class="m">1</span>, in &lt;module&gt;
+    import pkg_resources
+ImportError: No module named pkg_resources</code></pre></td></tr></table>
+</div>
+</div>
+<p>安装相关依赖即可：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install python-pkg-resources python-setuptools -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>执行完之后，在当前目录下会创建一些辅助文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">-rw-r--r-- 1 root root    291 9月  17 22:15 ceph.conf
+-rw-r--r-- 1 root root 212100 9月  17 22:16 ceph-deploy-ceph.log
+-rw------- 1 root root     73 9月  16 09:40 ceph.mon.keyring</pre></td></tr></table>
+</div>
+</div>
+<p>接下来，我们需要修改下 ceph.conf 配置文件，增加副本数为 1，因为我们目前只有1个 osd 节点。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">echo &#34;
+osd_pool_default_size = 1
+
+[mon]
+mon_allow_pool_delete = true
+mon_max_pg_per_osd = 1024
+#时钟同步
+mon_clock_drift_allowed = 2
+mon_clock_drift_warn_backoff = 30
+&#34; &gt;&gt; ceph.conf</pre></td></tr></table>
+</div>
+</div>
+<p>如果是在集群启动后修改配置文件，则需要同步配置文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy --overwrite-conf config push k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建集群">创建集群</h1>
+
+<p>创建集群使用 ceph-deploy 工具即可，通过 ceph-deploy 在各个节点安装 ceph：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装 ceph</span>
+ceph-deploy install k8s-rke-node001</code></pre></td></tr></table>
+</div>
+</div>
+<p>此过程需要等待一段时间，因为 ceph-deploy 会 SSH 登录到各 node 上去，依次执行安装 ceph 依赖的组件包。</p>
+
+<p>如果下载太慢，可以设置镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rpm --import http://mirrors.163.com/ceph/keys/release.asc
+ceph-deploy install --repo-url http://mirrors.163.com/ceph/rpm-nautilus k8s-rke-node001</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果还是太慢，则在<strong>每个节点配置ceph的yum源</strong>，然后通过yum安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum -y install ceph ceph-radosgw</code></pre></td></tr></table>
+</div>
+</div>
+<p>再次执行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy install k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>安装成功之后，检查每个节点的ceph版本是否一致：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo ceph --version
+ceph version 14.2.4 (75f4de193b3ea58512f204623e6c5a16e6c1e1ba) nautilus (stable)</pre></td></tr></table>
+</div>
+</div>
+<h1 id="初始化monitor">初始化monitor</h1>
+
+<p>初始化 monitor node 和 秘钥文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy mon create-initial</pre></td></tr></table>
+</div>
+</div>
+<p>注意：执行完成后会在/etc/ceph目录多以下内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph.client.admin.keyring
+ceph.bootstrap-mgr.keyring
+ceph.bootstrap-osd.keyring
+ceph.bootstrap-mds.keyring
+ceph.bootstrap-rgw.keyring
+ceph.bootstrap-rbd.keyring
+ceph.bootstrap-rbd-mirror.keyring</pre></td></tr></table>
+</div>
+</div>
+<p>如果出现下面异常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[ceph_deploy.mon][ERROR ] Some monitors have still not reached quorum:
+[ceph_deploy.mon][ERROR ] k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>可能原因：</p>
+
+<ul>
+<li>ceph版本不一致</li>
+<li>hostname没设置正确</li>
+</ul>
+
+<p>查看仲裁信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph quorum_status --format json-pretty</pre></td></tr></table>
+</div>
+</div>
+<h1 id="初始化osd">初始化OSD</h1>
+
+<p>首先，给每个虚拟机挂载一个磁盘。</p>
+
+<p>查看磁盘分区：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo fdisk  -l</code></pre></td></tr></table>
+</div>
+</div>
+<p>格式化：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkfs /dev/sdb</code></pre></td></tr></table>
+</div>
+</div>
+<p>列出节点所有磁盘信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph-deploy disk list k8s-rke-node001
+<span class="o">[</span>ceph_deploy.conf<span class="o">][</span>DEBUG <span class="o">]</span> found configuration file at: /home/chenzj/.cephdeploy.conf
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span> Invoked <span class="o">(</span><span class="m">2</span>.0.1<span class="o">)</span>: /usr/bin/ceph-deploy disk list k8s-rke-node001
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span> ceph-deploy options:
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  username                      : None
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  verbose                       : False
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  debug                         : False
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  overwrite_conf                : False
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  subcommand                    : list
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  quiet                         : False
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  cd_conf                       : &lt;ceph_deploy.conf.cephdeploy.Conf instance at 0x7f17fe3af3f8&gt;
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  cluster                       : ceph
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  host                          : <span class="o">[</span><span class="s1">&#39;k8s-rke-node001&#39;</span><span class="o">]</span>
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  func                          : &lt;<span class="k">function</span> disk at 0x7f17fe3eb938&gt;
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  ceph_conf                     : None
+<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  default_release               : False
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> connection detected need <span class="k">for</span> sudo
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> connected to host: k8s-rke-node001
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> detect platform information from remote host
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> detect machine <span class="nb">type</span>
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> find the location of an executable
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Running command: sudo fdisk -l
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/sda: <span class="m">34</span>.4 GB, <span class="m">34359738368</span> bytes, <span class="m">67108864</span> sectors
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/sdb: <span class="m">8589</span> MB, <span class="m">8589934592</span> bytes, <span class="m">16777216</span> sectors
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/mapper/centos_centos7-root: <span class="m">31</span>.1 GB, <span class="m">31130124288</span> bytes, <span class="m">60801024</span> sectors
+<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/mapper/centos_centos7-swap: <span class="m">2147</span> MB, <span class="m">2147483648</span> bytes, <span class="m">4194304</span> sectors</code></pre></td></tr></table>
+</div>
+</div>
+<p>清除磁盘分区和内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy disk zap k8s-rke-node001 /dev/sdb</pre></td></tr></table>
+</div>
+</div>
+<p>创建osd：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy osd create --data /dev/sdb k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>查看创建的osd：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy osd list k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建mgr">创建MGR</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy mgr create k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建mds">创建MDS</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy mds create k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建rgw">创建RGW</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy rgw create k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问：<a href="http://192.168.56.100:7480">http://192.168.56.100:7480</a></p>
+
+<h1 id="部署ceph-cli工具和秘钥">部署ceph cli工具和秘钥</h1>
+
+<p>我们先通过ceph admin命令将将ceph.client.admin.keyring同步到各个Node上，以便可以在各个Node上使用ceph命令连接到monitor：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy admin k8s-rke-node001</pre></td></tr></table>
+</div>
+</div>
+<p>各节点修改ceph.client.admin.keyring权限：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo chmod +r /etc/ceph/ceph.client.admin.keyring</pre></td></tr></table>
+</div>
+</div>
+<h1 id="查看集群状态">查看集群状态</h1>
+
+<p>只有先部署ceph cli工具和秘钥之后，才能运行ceph命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph health
+
+$ ceph -s
+  cluster:
+    id:     9114557d-8096-4b4d-ad74-622d68903aea
+    health: HEALTH_OK
+
+  services:
+    mon: <span class="m">1</span> daemons, quorum k8s-rke-node001 <span class="o">(</span>age 10m<span class="o">)</span>
+    mgr: k8s-rke-node001<span class="o">(</span>active, since 3m<span class="o">)</span>
+    osd: <span class="m">1</span> osds: <span class="m">1</span> up <span class="o">(</span>since 4m<span class="o">)</span>, <span class="m">1</span> in <span class="o">(</span>since 4m<span class="o">)</span>
+    rgw: <span class="m">1</span> daemon active <span class="o">(</span>k8s-rke-node001<span class="o">)</span>
+
+  data:
+    pools:   <span class="m">4</span> pools, <span class="m">32</span> pgs
+    objects: <span class="m">187</span> objects, <span class="m">1</span>.2 KiB
+    usage:   <span class="m">1</span>.0 GiB used, <span class="m">6</span>.0 GiB / <span class="m">7</span> GiB avail
+    pgs:     <span class="m">32</span> active+clean</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果出现too many PGs per OSD (448 &gt; max 300)，则查看默认配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph --show-config  <span class="p">|</span> grep mon_pg_warn_max_per_osd
+<span class="nv">mon_pg_warn_max_per_osd</span> <span class="o">=</span> <span class="m">300</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>解决办法，在/etc/ceph/ceph.conf中添加：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>global<span class="o">]</span>
+.......
+<span class="nv">mon_pg_warn_max_per_osd</span> <span class="o">=</span> <span class="m">1000</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>重启monitor服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">systemctl restart ceph-mon.target</pre></td></tr></table>
+</div>
+</div>
+<p>接下来，查看一下ceph集群中的OSD节点状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph osd tree</pre></td></tr></table>
+</div>
+</div>
+<p>如果有一个osd down了，则去对应的机器上重启服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo systemctl restart ceph-osd@0.service</pre></td></tr></table>
+</div>
+</div>
+<p>如果出错了，可以查看日志：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tailf /var/log/ceph/ceph-osd.0.log</pre></td></tr></table>
+</div>
+</div>
+<p>查看mds状态，ceph的mds是一个单独的daemon，它只能服务于一个Cephfs：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ ceph mds stat
+ 1 up:standby</pre></td></tr></table>
+</div>
+</div>
+<h1 id="清理环境">清理环境</h1>
+
+<p>如果我们在安装过程中出现了问题，需要重新操作的时候，例如想清理我搭建的这个集群的话，可以使用以下命令。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ceph-deploy 上执行</span>
+
+<span class="c1"># 清理配置</span>
+ceph-deploy purgedata k8s-rke-node001
+ceph-deploy forgetkeys
+
+<span class="c1"># 清理 Ceph 安装包</span>
+ceph-deploy purge k8s-rke-node001</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="安装mgr-dashboard">安装mgr dashboard</h1>
+
+<p>自 nautilus开始，dashboard作为一个单独的模块独立出来了，使用时需要单独安装:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y ceph-mgr-dashboard</code></pre></td></tr></table>
+</div>
+</div>
+<p>启用dashboard：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph mgr module enable dashboard --force</pre></td></tr></table>
+</div>
+</div>
+<p>默认启用SSL/TLS，所以需要创建自签名根证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph dashboard create-self-signed-cert</pre></td></tr></table>
+</div>
+</div>
+<p>创建具有管理员角色的用户</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph dashboard ac-user-create admin admin administrator</pre></td></tr></table>
+</div>
+</div>
+<p>查看ceph-mgr服务</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ ceph mgr services 
+{
+    &#34;dashboard&#34;: &#34;https://0.0.0.0:8443/&#34;
+}</pre></td></tr></table>
+</div>
+</div>
+<p>访问：<a href="https://192.168.56.111:8443/">https://192.168.56.111:8443</a></p>
+
+<h1 id="扩容集群">扩容集群</h1>
+
+<h2 id="添加monitor">添加Monitor</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy mon add k8s-rke-node002</pre></td></tr></table>
+</div>
+</div>
+<p>查看仲裁信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph quorum_status --format json-pretty</pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>请确保ntp时钟同步</li>
+</ul>
+
+<h2 id="添加mgr">添加MGR</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy mgr create k8s-rke-node002</pre></td></tr></table>
+</div>
+</div>
+<p>查看standby manager：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph -s</pre></td></tr></table>
+</div>
+</div>
+<h1 id="配置客户端">配置客户端</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh-copy-id k8s-rke-node002
+
+ceph-deploy install k8s-rke-node002</code></pre></td></tr></table>
+</div>
+</div>
+<p>将Ceph 配置文件复制到客户端：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy config push k8s-rke-node002</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="新建用户密钥">新建用户密钥</h2>
+
+<p>客户机需要 ceph 秘钥去访问 ceph 集群。ceph创建了一个默认的用户client.admin，它有足够的权限去访问ceph集群。但是不建议把 client.admin 共享到所有其他的客户端节点。这里我用分开的秘钥新建一个用户k8s去访问特定的存储池。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s mon <span class="s1">&#39;allow r&#39;</span> osd <span class="s1">&#39;allow class-read object_prefix rbd_children, allow rwx pool=rbd&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>为 k8s-rke-node002 上的 client.rbd 用户添加秘钥：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s <span class="p">|</span> ssh k8s-node4 tee /etc/ceph/ceph.client.k8s.keyring</code></pre></td></tr></table>
+</div>
+</div>
+<p>到客户端 k8s-rke-node002  检查集群健康状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat /etc/ceph/ceph.client.k8s.keyring &gt;&gt; /etc/ceph/keyring
+ceph -s --name client.k8s</code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-24
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ceph/">ceph</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2019/11/22/install-file-fdw-for-postgresql/">
+            <span class="next-text nav-default">PostgreSQL安装并测试file_fdw</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

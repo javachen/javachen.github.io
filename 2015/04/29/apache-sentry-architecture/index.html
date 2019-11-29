@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Apache Sentry架构介绍 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Apache Sentry是Cloudera公司发布的一个Hadoop开源组件，截止目前还是Apache的孵化项目，它提供了细粒度级、基于角色的授权以及多租户的管理模式。Sentry当前可以和Hive/Hcatalog、Apache Solr 和Cloudera Impala集成，未来会扩展到其他的Hadoop组件，例如HDFS和HBase。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2015/04/29/apache-sentry-architecture/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Apache Sentry架构介绍" />
+<meta property="og:description" content="Apache Sentry是Cloudera公司发布的一个Hadoop开源组件，截止目前还是Apache的孵化项目，它提供了细粒度级、基于角色的授权以及多租户的管理模式。Sentry当前可以和Hive/Hcatalog、Apache Solr 和Cloudera Impala集成，未来会扩展到其他的Hadoop组件，例如HDFS和HBase。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2015/04/29/apache-sentry-architecture/" />
+<meta property="article:published_time" content="2015-04-29T08:00:00+08:00" />
+<meta property="article:modified_time" content="2015-04-29T08:00:00+08:00" />
+<meta itemprop="name" content="Apache Sentry架构介绍">
+<meta itemprop="description" content="Apache Sentry是Cloudera公司发布的一个Hadoop开源组件，截止目前还是Apache的孵化项目，它提供了细粒度级、基于角色的授权以及多租户的管理模式。Sentry当前可以和Hive/Hcatalog、Apache Solr 和Cloudera Impala集成，未来会扩展到其他的Hadoop组件，例如HDFS和HBase。">
+
+
+<meta itemprop="datePublished" content="2015-04-29T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2015-04-29T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="3165">
+
+
+
+<meta itemprop="keywords" content="sentry,hive,impala," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Apache Sentry架构介绍"/>
+<meta name="twitter:description" content="Apache Sentry是Cloudera公司发布的一个Hadoop开源组件，截止目前还是Apache的孵化项目，它提供了细粒度级、基于角色的授权以及多租户的管理模式。Sentry当前可以和Hive/Hcatalog、Apache Solr 和Cloudera Impala集成，未来会扩展到其他的Hadoop组件，例如HDFS和HBase。"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Apache Sentry架构介绍</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2015-04-29 </span>
+        <div class="post-category">
+            <a href="/categories/hive/"> hive </a>
+            </div>
+          <span class="more-meta"> 约 3165 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#介绍">介绍</a></li>
+<li><a href="#特性">特性</a></li>
+<li><a href="#如何工作">如何工作</a></li>
+<li><a href="#架构">架构</a>
+<ul>
+<li><a href="#binding">Binding</a></li>
+<li><a href="#policy-engine">Policy Engine</a></li>
+<li><a href="#policy-provider">Policy Provider</a></li>
+</ul></li>
+<li><a href="#使用">使用</a>
+<ul>
+<li><a href="#和hive集成">和Hive集成</a></li>
+<li><a href="#和hcatalog集成">和HCatalog集成</a></li>
+</ul></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="介绍">介绍</h1>
+
+<p><a href="https://sentry.incubator.apache.org/">Apache Sentry</a>是Cloudera公司发布的一个Hadoop开源组件，截止目前还是Apache的孵化项目，它提供了细粒度级、基于角色的授权以及多租户的管理模式。Sentry当前可以和Hive/Hcatalog、Apache Solr 和Cloudera Impala集成，未来会扩展到其他的Hadoop组件，例如HDFS和HBase。</p>
+
+<h1 id="特性">特性</h1>
+
+<p>Apache Sentry为Hadoop使用者提供了以下便利：</p>
+
+<ul>
+<li>能够在Hadoop中存储更敏感的数据</li>
+<li>使更多的终端用户拥有Hadoop数据访问权</li>
+<li>创建更多的Hadoop使用案例</li>
+<li>构建多用户应用程序</li>
+<li>符合规范（例如SOX，PCI，HIPAA，EAL3）</li>
+</ul>
+
+<p>在Sentry诞生之前，对于授权有两种备选解决方案：<code>粗粒度级的HDFS授权</code>和<code>咨询授权</code>，但它们并不符合典型的规范和数据安全需求，原因如下：</p>
+
+<ul>
+<li><code>粗粒度级的HDFS授权</code>：安全访问和授权的基本机制被HDFS文件模型的粒度所限制。五级授权是粗粒度的，因为没有对文件内数据的访问控制：用户要么可以访问整个文件，要么什么都看不到。另外，HDFS权限模式不允许多个组对同一数据集有不同级别的访问权限。</li>
+<li><code>咨询授权</code>：咨询授权在Hive中是一个很少使用的机制，旨在使用户能够自我监管，以防止意外删除或重写数据。这是一种“自服务”模式，因为用户可以为自己授予任何权限。因此，一旦恶意用户通过认证，它不能阻止其对敏感数据的访问。</li>
+</ul>
+
+<p>通过引进Sentry，Hadoop目前可在以下方面满足企业和政府用户的RBAC需求：</p>
+
+<ul>
+<li><code>安全授权</code>：Sentry可以控制数据访问，并对已通过验证的用户提供数据访问特权。</li>
+<li><code>细粒度访问控制</code>：Sentry支持细粒度的Hadoop数据和元数据访问控制。在Hive和Impala中Sentry的最初发行版本中，Sentry在服务器、数据库、表和视图范围提供了不同特权级别的访问控制，包括查找、插入等，允许管理员使用视图限制对行或列的访问。管理员也可以通过Sentry和带选择语句的视图或UDF，根据需要在文件内屏蔽数据。</li>
+<li><code>基于角色的管理</code>：Sentry通过基于角色的授权简化了管理，你可以轻易将访问同一数据集的不同特权级别授予多个组。</li>
+<li><code>多租户管理</code>：Sentry允许为委派给不同管理员的不同数据集设置权限。在Hive/Impala的情况下，Sentry可以在数据库/schema级别进行权限管理。</li>
+<li><code>统一平台</code>：Sentry为确保数据安全，提供了一个统一平台，使用现有的Hadoop Kerberos实现安全认证。同时，通过Hive或Impala访问数据时可以使用同样的Sentry协议。未来，Sentry协议会被扩展到其它组件。</li>
+</ul>
+
+<h1 id="如何工作">如何工作</h1>
+
+<p>Apache Sentry的目标是实现授权管理，它是一个策略引擎，被数据处理工具用来验证访问权限。它也是一个高度扩展的模块，可以支持任何的数据模型。当前，它支持Apache Hive和Cloudera Impala的关系数据模型，以及Apache中的有继承关系的数据模型。</p>
+
+<p>Sentry提供了定义和持久化访问资源的策略的方法。目前，这些策略可以存储在文件里或者是能使用RPC服务访问的数据库后端存储里。数据访问工具，例如Hive，以一定的模式辨认用户访问数据的请求，例如从一个表读一行数据或者删除一个表。这个工具请求Sentry验证访问是否合理。Sentry构建请求用户被允许的权限的映射并判断给定的请求是否允许访问。请求工具这时候根据Sentry的判断结果来允许或者禁止用户的访问请求。</p>
+
+<p>Sentry授权包括以下几种角色：</p>
+
+<ul>
+<li><code>资源</code>。可能是<code>Server</code>、<code>Database</code>、<code>Table</code>、或者<code>URL</code>（例如：HDFS或者本地路径）。Sentry1.5中支持对<code>列</code>进行授权。</li>
+<li><code>权限</code>。授权访问某一个资源的规则。</li>
+<li><code>角色</code>。角色是一系列权限的集合。</li>
+<li><code>用户和组</code>。一个组是一系列用户的集合。Sentry 的组映射是可以扩展的。默认情况下，Sentry使用Hadoop的组映射（可以是操作系统组或者LDAP中的组）。Sentry允许你将用户和组进行关联，你可以将一系列的用户放入到一个组中。Sentry不能直接给一个用户或组授权，需要将权限授权给角色，角色可以授权给一个组而不是一个用户。</li>
+</ul>
+
+<h1 id="架构">架构</h1>
+
+<p>下面是Sentry架构图，图片来自《<a href="http://developer.51cto.com/art/201502/465091.htm">Apache Sentry architecture overview</a>》。</p>
+
+<p><img src="https://blogs.apache.org/sentry/mediaresource/c07e8094-e79a-4c97-aa9e-cbb2b18fe9b2" alt="" /></p>
+
+<p>Sentry的体系结构中有三个重要的组件：一是Binding；二是Policy Engine；三是Policy Provider。</p>
+
+<h2 id="binding">Binding</h2>
+
+<p>Binding实现了对不同的查询引擎授权，Sentry将自己的Hook函数插入到各SQL引擎的编译、执行的不同阶段。这些Hook函数起两大作用：一是起过滤器的作用，只放行具有相应数据对象访问权限的SQL查询；二是起授权接管的作用，使用了Sentry之后，grant/revoke管理的权限完全被Sentry接管，grant/revoke的执行也完全在Sentry中实现；对于所有引擎的授权信息也存储在由Sentry设定的统一的数据库中。这样所有引擎的权限就实现了集中管理。</p>
+
+<h2 id="policy-engine">Policy Engine</h2>
+
+<p>这是Sentry授权的核心组件。Policy Engine判定从binding层获取的输入的权限要求与服务提供层已保存的权限描述是否匹配。</p>
+
+<h2 id="policy-provider">Policy Provider</h2>
+
+<p>Policy Provider负责从文件或者数据库中读取出原先设定的访问权限。Policy Engine以及Policy Provider其实对于任何授权体系来说都是必须的，因此是公共模块，后续还可服务于别的查询引擎。</p>
+
+<p>基于文件的提供者使用的是ini格式的文件保存元数据信息，这个文件可以是一个本地文件或者HDFS文件。下面是一个例子：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="k">[groups]</span>
+<span class="c1"># Assigns each Hadoop group to its set of roles</span>
+<span class="na">manager</span> <span class="o">=</span> <span class="s">analyst_role, junior_analyst_role</span>
+<span class="na">analyst</span> <span class="o">=</span> <span class="s">analyst_role</span>
+
+<span class="na">admin</span> <span class="o">=</span> <span class="s">admin_role</span>
+<span class="k">[roles]</span>
+<span class="na">analyst_role</span> <span class="o">=</span> <span class="s">server=server1-&gt;db=analyst1, \
+</span><span class="s">   server=server1-&gt;db=jranalyst1-&gt;table=*-&gt;action=select, \
+</span><span class="s">   server=server1-&gt;uri=hdfs://ha-nn-uri/landing/analyst1, \
+</span><span class="s">   server=server1-&gt;db=default-&gt;table=tab2</span>
+<span class="c1"># Implies everything on server1.</span>
+<span class="na">admin_role</span> <span class="o">=</span> <span class="s">server=server1</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>基于文件的方式不易于使用程序修改，在修改过程中会存在资源竞争，不利于维护。Hive和Impala需要提供工业标准的SQL接口来管理授权策略，要求能够使用编程的方式进行管理。</p>
+
+<p>Sentry策略存储和服务将角色和权限以及组合角色的映射持久化到一个关系数据库并提供编程的API接口方便创建、查询、更新和删除。这允许Sentry的客户端并行和安全地获取和修改权限。</p>
+
+<p><img src="https://blogs.apache.org/sentry/mediaresource/d9cc7fbc-dbf0-4dcb-a065-3f4d95878c00" alt="" /></p>
+
+<p>Sentry策略存储可以使用很多后端的数据库，例如MySQL、Postgres等等，它使用ORM库DataNucleus来完成持久化操作。Sentry支持kerberos认证，也可以扩展代码支持其他认证方式。</p>
+
+<h1 id="使用">使用</h1>
+
+<h2 id="和hive集成">和Hive集成</h2>
+
+<p>Sentry策略引擎通过hook的方式插入到hive中，hiveserver2在查询成功编译之后执行这个hook。</p>
+
+<p><img src="https://blogs.apache.org/sentry/mediaresource/c7680848-aa39-46cc-8165-0fc27b8b12db" alt="" /></p>
+
+<p>这个hook获得这个查询需要以读和写的方式访问的对象，然后Sentry的Hive binding基于SQL授权模型将他们转换为授权的请求。</p>
+
+<p>策略维护：</p>
+
+<p><img src="https://blogs.apache.org/sentry/mediaresource/6b3b87ce-5054-40ab-90a2-0711dda06678" alt="" /></p>
+
+<p>策略维护包括两个步骤。在查询编译期间，hive调用Sentry的授权任务工厂来生产会在查询过程中执行的Sentry的特定任务行。这个任务调用Sentry存储客户端发送RPC请求给Sentry服务要求改变授权策略。</p>
+
+<h2 id="和hcatalog集成">和HCatalog集成</h2>
+
+<p><img src="https://blogs.apache.org/sentry/mediaresource/eb8c8249-189f-404a-a348-8f5722b4d1ed" alt="" /></p>
+
+<p>Sentry通过pre-listener hook集成到Hive Metastore。metastore在执行metadata维护请求之前执行这个hook。metastore binding为提交给metastore和HCatalog客户端的metadata修改请求创建一个Sentry授权请求。</p>
+
+<p>网上关于sentry配置和使用的例子：</p>
+
+<ul>
+<li><a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a></li>
+<li><a href="/2015/04/30/install-and-config-sentry.html">安装和配置Sentry</a></li>
+<li><a href="/2015/04/30/test-hive-with-sentry.html">测试Hive集成Sentry</a></li>
+<li><a href="/2014/11/14/config-secured-hive-with-sentry.html">配置安全的Hive集群集成Sentry</a></li>
+<li><a href="/2014/11/14/config-secured-impala-with-sentry.html">配置安全的Impala集群集成Sentry</a></li>
+</ul>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://blogs.apache.org/sentry/tags/architecture">Apache Sentry architecture overview</a></li>
+<li><a href="http://developer.51cto.com/art/201502/465091.htm">为什么Cloudera要创建Hadoop安全组件Sentry？</a></li>
+<li><a href="http://www.csdn.net/article/images-08-14/2816575-with-sentry-cloudera-fills-hadoops-enterprise-security-gap">Cloudera发布Hadoop开源组件Sentry：提供细粒度基于角色的安全控制</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2015-04-29
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/sentry/">sentry</a>
+          <a href="/tags/hive/">hive</a>
+          <a href="/tags/impala/">impala</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2015/04/30/test-hive-with-sentry/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">测试Hive集成Sentry</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2015/04/28/compile-cdh-spark-source-code/">
+            <span class="next-text nav-default">编译CDH Spark源代码</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
