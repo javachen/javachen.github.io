@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4529">
+<meta itemprop="wordCount" content="4612">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4529 字 </span>
+          <span class="more-meta"> 约 4612 字 </span>
           <span class="more-meta"> 预计阅读 10 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -1557,7 +1557,88 @@ docker rmi <span class="k">$(</span>docker images <span class="p">|</span>grep -
 </div>
 <h1 id="升级k8s">升级K8S</h1>
 
-<p>修改cluster.yml文件，然后执行下面命令：</p>
+<p>升级RKE：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s -L -o /usr/local/bin/rke <span class="se">\
+</span><span class="se"></span>	https://github.com/rancher/rke/releases/latest/download/rke_linux-amd64
+
+sudo chmod <span class="m">777</span> /usr/local/bin/rke</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看RKE支持的K8S版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rke config --system-images --all <span class="p">|</span>grep version</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改cluster.yml文件中kubernetes的版本号：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">nodes<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span>address<span class="p">:</span><span class="w"> </span><span class="m">192.168.56.111</span><span class="w">
+</span><span class="w">    </span>user<span class="p">:</span><span class="w"> </span>chenzj<span class="w">
+</span><span class="w">    </span>port<span class="p">:</span><span class="w"> </span><span class="m">22</span><span class="w">
+</span><span class="w">    </span>role<span class="p">:</span><span class="w"> </span><span class="p">[</span>controlplane<span class="p">,</span>etcd<span class="p">,</span>worker<span class="p">]</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>services<span class="p">:</span><span class="w">
+</span><span class="w">  </span>etcd<span class="p">:</span><span class="w">
+</span><span class="w">    </span>snapshot<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">    </span>creation<span class="p">:</span><span class="w"> </span>6h<span class="w">
+</span><span class="w">    </span>retention<span class="p">:</span><span class="w"> </span>24h<span class="w">
+</span><span class="w">  </span>kube-api<span class="p">:</span><span class="w">
+</span><span class="w">    </span>service_cluster_ip_range<span class="p">:</span><span class="w"> </span><span class="m">10.43.0.0</span>/<span class="m">16</span><span class="w">
+</span><span class="w">    </span>service_node_port_range<span class="p">:</span><span class="w"> </span><span class="m">30000-32767</span><span class="w">
+</span><span class="w">  </span>kubelet<span class="p">:</span><span class="w">
+</span><span class="w">    </span>cluster_domain<span class="p">:</span><span class="w"> </span>cluster.local<span class="w">
+</span><span class="w">    </span>cluster_dns_server<span class="p">:</span><span class="w"> </span><span class="m">10.43.0.10</span><span class="w">
+</span><span class="w">    </span>fail_swap_on<span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+</span><span class="w">    </span>extra_args<span class="p">:</span><span class="w">
+</span><span class="w">      </span>max-pods<span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>cluster_name<span class="p">:</span><span class="w"> </span>k8s-test<span class="w">
+</span><span class="w"></span>kubernetes_version<span class="p">:</span><span class="w"> </span><span class="s2">&#34;v1.16.3-rancher1-1&#34;</span><span class="w">
+</span><span class="w"></span>network<span class="p">:</span><span class="w">
+</span><span class="w">    </span>plugin<span class="p">:</span><span class="w"> </span>calico</code></pre></td></tr></table>
+</div>
+</div>
+<p>然后执行下面命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1

@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-03T23:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-03T23:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4863">
+<meta itemprop="wordCount" content="4706">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4863 字 </span>
+          <span class="more-meta"> 约 4706 字 </span>
           <span class="more-meta"> 预计阅读 10 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -147,12 +147,7 @@
 <li><a href="#添加chart仓库地址">添加Chart仓库地址</a></li>
 <li><a href="#ssl证书配置">SSL证书配置</a>
 <ul>
-<li><a href="#安装cert-manager">安装cert-manager</a>
-<ul>
-<li><a href="#使用kubectl安装">使用kubectl安装</a></li>
-<li><a href="#使用helm3安装">使用helm3安装</a></li>
-<li><a href="#查看状态">查看状态</a></li>
-</ul></li>
+<li><a href="#安装cert-manager">安装cert-manager</a></li>
 <li><a href="#使用rancher生成证书">使用Rancher生成证书</a></li>
 <li><a href="#lets-encrypt生成证书">Lets Encrypt生成证书</a></li>
 <li><a href="#从文件生成证书">从文件生成证书</a>
@@ -170,13 +165,13 @@
 <li><a href="#配置nginx">配置Nginx</a></li>
 <li><a href="#安装rancher">安装Rancher</a></li>
 </ul></li>
-<li><a href="#七层负载均衡部署">七层负载均衡部署`</a>
+<li><a href="#七层负载均衡部署">七层负载均衡部署</a>
 <ul>
 <li><a href="#配置nginx-1">配置Nginx</a></li>
 <li><a href="#安装rancher-1">安装Rancher</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#查看状态-1">查看状态</a></li>
+<li><a href="#查看状态">查看状态</a></li>
 <li><a href="#添加主机映射">添加主机映射</a></li>
 <li><a href="#卸载重装">卸载重装</a></li>
 <li><a href="#升级版本">升级版本</a></li>
@@ -368,69 +363,17 @@
 
 <h2 id="安装cert-manager">安装cert-manager</h2>
 
-<p>当ingress.tls.source值为rancher或者letsEncrypt时，需要安装cert-manager</p>
-
-<h3 id="使用kubectl安装">使用kubectl安装</h3>
-
-<p>这里安装v0.9.0版本</p>
+<p>使用kubectl安装</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.9.0/cert-manager.yaml</code></pre></td></tr></table>
-</div>
-</div>
-<h3 id="使用helm3安装">使用helm3安装</h3>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Install the CustomResourceDefinition resources separately</span>
-kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9.0/deploy/manifests/00-crds.yaml
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cert-manager
 
-<span class="c1"># Create the namespace for cert-manager</span>
-kubectl create namespace cert-manager
-
-<span class="c1"># Add the Jetstack Helm repository</span>
-helm repo add jetstack https://charts.jetstack.io
-
-<span class="c1"># Update your local Helm chart repository cache</span>
-helm repo update
-
-<span class="c1"># Install the cert-manager Helm chart</span>
-helm install <span class="se">\
-</span><span class="se"></span>  cert-manager <span class="se">\
-</span><span class="se"></span>  --namespace cert-manager <span class="se">\
-</span><span class="se"></span>  --version v0.9.1 <span class="se">\
-</span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
-</div>
-</div>
-<h3 id="查看状态">查看状态</h3>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get pods --namespace cert-manager</code></pre></td></tr></table>
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="使用rancher生成证书">使用Rancher生成证书</h2>
@@ -819,12 +762,24 @@ stream {
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span>helm install rancher-latest/rancher <span class="se">\ </span> --name rancher <span class="se">\ </span> --version v2.3.1  <span class="se">\ </span> --namespace cattle-system <span class="se">\ </span> --set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\ </span> --set <span class="nv">tls</span><span class="o">=</span>external<span class="se">\ </span> --set <span class="nv">privateCA</span><span class="o">=</span><span class="nb">true</span><span class="sb">`</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install rancher-latest/rancher <span class="se">\ </span> 
+	--name rancher <span class="se">\ </span> 
+	--version v2.3.2  <span class="se">\ </span> 
+	--namespace cattle-system <span class="se">\ </span> 
+	--set <span class="nv">hostname</span><span class="o">=</span>rancher.javachen.space<span class="se">\ </span> 
+	--set <span class="nv">tls</span><span class="o">=</span>external<span class="se">\ </span> 
+	--set <span class="nv">privateCA</span><span class="o">=</span>true</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="七层负载均衡部署">七层负载均衡部署`</h2>
+<h2 id="七层负载均衡部署">七层负载均衡部署</h2>
 
 <p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ls3vv8jcj30yc0elmyy.jpg" alt="image.png" /></p>
 
@@ -1029,7 +984,7 @@ gzip_types
 </span><span class="se"></span>  --set <span class="nv">tls</span><span class="o">=</span>ingress</code></pre></td></tr></table>
 </div>
 </div>
-<h1 id="查看状态-1">查看状态</h1>
+<h1 id="查看状态">查看状态</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1150,7 +1105,7 @@ kubectl delete ServiceAccount,ClusterRoleBinding,Role rancher -n cattle-system</
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用rancher-latest镜像仓库</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用rancher-stable镜像仓库</span>
 helm upgrade rancher rancher-stable/rancher <span class="se">\
 </span><span class="se"></span> --version v2.3.2 <span class="se">\
 </span><span class="se"></span> --namespace cattle-system <span class="se">\
@@ -1220,8 +1175,8 @@ kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
             <span class="prev-text nav-default">使用Cert Manager配置Let’s Encrypt证书</span>
             <span class="prev-text nav-mobile">上一篇</span>
           </a>
-        <a class="next" href="/2019/11/01/install-gitea-and-drone-with-helm/">
-            <span class="next-text nav-default">使用Helm安装Gitea和Drone</span>
+        <a class="next" href="/2019/11/02/install-cert-manager/">
+            <span class="next-text nav-default">安装Cert Manager</span>
             <span class="next-text nav-mobile">下一篇</span>
             <i class="iconfont icon-right"></i>
           </a>

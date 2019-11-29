@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>安装Cert Manager - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录kubernetes中安装Cert-Manager组件的过程。 本文使用Cert Manager最新版本0.12.0，该版本相对于之" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/11/02/install-cert-manager/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="安装Cert Manager" />
+<meta property="og:description" content="本文主要记录kubernetes中安装Cert-Manager组件的过程。 本文使用Cert Manager最新版本0.12.0，该版本相对于之" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/11/02/install-cert-manager/" />
+<meta property="article:published_time" content="2019-11-02T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-02T08:00:00+08:00" />
+<meta itemprop="name" content="安装Cert Manager">
+<meta itemprop="description" content="本文主要记录kubernetes中安装Cert-Manager组件的过程。 本文使用Cert Manager最新版本0.12.0，该版本相对于之">
+
+
+<meta itemprop="datePublished" content="2019-11-02T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-02T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1154">
+
+
+
+<meta itemprop="keywords" content="kubernetes," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="安装Cert Manager"/>
+<meta name="twitter:description" content="本文主要记录kubernetes中安装Cert-Manager组件的过程。 本文使用Cert Manager最新版本0.12.0，该版本相对于之"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">安装Cert Manager</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-02 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 1154 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装-cert-manager">安装 Cert Manager</a>
+<ul>
+<li><a href="#使用kubectl安装">使用kubectl安装</a></li>
+<li><a href="#使用helm安装">使用helm安装</a></li>
+</ul></li>
+<li><a href="#查看状态">查看状态</a></li>
+<li><a href="#验证证书">验证证书</a>
+<ul>
+<li><a href="#创建自签名的ca证书">创建自签名的CA证书</a></li>
+<li><a href="#通过ingress测试">通过Ingress测试</a></li>
+</ul></li>
+<li><a href="#卸载">卸载</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要记录kubernetes中安装Cert-Manager组件的过程。</p>
+
+<p>本文使用Cert Manager最新版本0.12.0，该版本相对于之前的版本，做了一些改动，例如：API从 certmanager.k8s.io/v1alpha1 改为 cert-manager.io/v1alpha2。</p>
+
+<p>官方文档：<a href="https://cert-manager.io/">https://cert-manager.io/</a></p>
+
+<h1 id="安装-cert-manager">安装 Cert Manager</h1>
+
+<h2 id="使用kubectl安装">使用kubectl安装</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cert-manager
+
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="使用helm安装">使用helm安装</h2>
+
+<p>使用helm安装0.12版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Install the CustomResourceDefinition resources separately.</span>
+kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.12/deploy/manifests/00-crds.yaml
+
+<span class="c1"># Create the namespace for cert-manager</span>
+kubectl create namespace cert-manager
+
+<span class="c1"># Add the Jetstack Helm repository</span>
+helm repo add jetstack https://charts.jetstack.io
+
+<span class="c1"># Update your local Helm chart repository cache</span>
+helm repo update
+
+<span class="c1"># Install the cert-manager Helm chart</span>
+helm install --name cert-manager <span class="se">\
+</span><span class="se"></span>  --namespace cert-manager <span class="se">\
+</span><span class="se"></span>  --version v0.12.0 <span class="se">\
+</span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="查看状态">查看状态</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get pods --namespace cert-manager
+
+NAME                                       READY   STATUS    RESTARTS   AGE
+cert-manager-5c6866597-zw7kh               <span class="m">1</span>/1     Running   <span class="m">0</span>          2m
+cert-manager-cainjector-577f6d9fd7-tr77l   <span class="m">1</span>/1     Running   <span class="m">0</span>          2m
+cert-manager-webhook-787858fcdb-nlzsq      <span class="m">1</span>/1     Running   <span class="m">0</span>          2m</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="验证证书">验证证书</h1>
+
+<h2 id="创建自签名的ca证书">创建自签名的CA证书</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Namespace
+</span><span class="s">metadata:
+</span><span class="s">  name: cert-manager-test
+</span><span class="s">  
+</span><span class="s">---
+</span><span class="s"># Create a selfsigned Issuer
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Issuer
+</span><span class="s">metadata:
+</span><span class="s">  name: test-issuer-selfsigned
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  selfSigned: {}
+</span><span class="s">  
+</span><span class="s">---
+</span><span class="s"># Generate a CA Certificate 
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: test-cert-ca
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  commonName: acme.javachen.space
+</span><span class="s">  secretName: test-issuer-selfsigned-tls
+</span><span class="s">  duration: 43800h # 5y
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: test-issuer-selfsigned
+</span><span class="s">  isCA: true  
+</span><span class="s">  
+</span><span class="s">---
+</span><span class="s"># Create an Issuer that uses the above generated CA certificate to issue certs
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Issuer
+</span><span class="s">metadata:
+</span><span class="s">  name: test-issuer-ca
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  ca:
+</span><span class="s">    secretName: test-issuer-selfsigned-tls
+</span><span class="s">
+</span><span class="s">---
+</span><span class="s"># Finally, generate a serving certificate for *.javachen.space
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: test-cert-javachen
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  commonName: acme.javachen.space
+</span><span class="s">  secretName: test-issuer-javachen-tls
+</span><span class="s">  duration: 43800h # 5y
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: test-issuer-ca
+</span><span class="s">    kind: Issuer
+</span><span class="s">  organization:
+</span><span class="s">  - CA
+</span><span class="s">  dnsNames:
+</span><span class="s">  - &#34;*.javachen.space&#34;
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>当然，也可以这样创建CA签发机构和证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Generate a CA private key</span>
+openssl genrsa -out tls.key <span class="m">2048</span>
+openssl req -x509 -new -nodes -key tls.key -subj <span class="s2">&#34;/CN=kuard.javachen.space&#34;</span> -days <span class="m">3650</span> -reqexts v3_req -extensions v3_ca -out tls.crt
+
+kubectl create secret tls ca-key-pair <span class="se">\
+</span><span class="se"></span>   --cert<span class="o">=</span>tls.crt <span class="se">\
+</span><span class="se"></span>   --key<span class="o">=</span>tls.key 
+   
+cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Issuer
+</span><span class="s">metadata:
+</span><span class="s">  name: test-issuer-ca
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  ca:
+</span><span class="s">    secretName: ca-key-pair
+</span><span class="s">---
+</span><span class="s"># Finally, generate a serving certificate for *.javachen.space
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: test-cert-javachen
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  commonName: acme.javachen.space
+</span><span class="s">  secretName: test-issuer-javachen-tls
+</span><span class="s">  duration: 43800h # 5y
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: test-issuer-ca
+</span><span class="s">    kind: Issuer
+</span><span class="s">  organization:
+</span><span class="s">  - CA
+</span><span class="s">  dnsNames:
+</span><span class="s">  - &#34;*.javachen.space&#34;    
+</span><span class="s">EOF</span>   </code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get certificate,Issuer,secret -n cert-manager-test
+
+NAME                                             READY   SECRET                       AGE
+certificate.cert-manager.io/test-cert-ca         True    test-issuer-selfsigned-tls   14s
+certificate.cert-manager.io/test-cert-javachen   True    test-issuer-javachen-tls     14s
+
+NAME                                            READY   AGE
+issuer.cert-manager.io/test-issuer-ca           True    14s
+issuer.cert-manager.io/test-issuer-selfsigned   True    14s
+
+NAME                                TYPE                                  DATA   AGE
+secret/default-token-dslms          kubernetes.io/service-account-token   <span class="m">3</span>      14s
+secret/test-issuer-javachen-tls     kubernetes.io/tls                     <span class="m">3</span>      14s
+secret/test-issuer-selfsigned-tls   kubernetes.io/tls                     <span class="m">3</span>      14s</code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到状态都是True的，如果状态不正常，可以查看状态。</p>
+
+<p>我们来查看test-cert-ca证书生成证书的过程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl describe certificate test-cert-ca -n cert-manager-test
+kubectl describe CertificateRequest test-cert-ca-1862708136 -n cert-manager-test</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="通过ingress测试">通过Ingress测试</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: apps/v1
+</span><span class="s">kind: Deployment
+</span><span class="s">metadata:
+</span><span class="s">  name: kuard
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  selector:
+</span><span class="s">    matchLabels:
+</span><span class="s">      app: kuard
+</span><span class="s">  replicas: 1
+</span><span class="s">  template:
+</span><span class="s">    metadata:
+</span><span class="s">      labels:
+</span><span class="s">        app: kuard
+</span><span class="s">    spec:
+</span><span class="s">      containers:
+</span><span class="s">      - image: tomcat 
+</span><span class="s">        imagePullPolicy: Always
+</span><span class="s">        name: kuard
+</span><span class="s">        ports:
+</span><span class="s">        - containerPort: 8080
+</span><span class="s">---
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Service
+</span><span class="s">metadata:
+</span><span class="s">  name: kuard
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">spec:
+</span><span class="s">  ports:
+</span><span class="s">  - port: 80
+</span><span class="s">    targetPort: 8080
+</span><span class="s">    protocol: TCP
+</span><span class="s">  selector:
+</span><span class="s">    app: kuard
+</span><span class="s">---
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: kuard
+</span><span class="s">  namespace: cert-manager-test
+</span><span class="s">  annotations:
+</span><span class="s">    kubernetes.io/ingress.class: &#34;nginx&#34;    
+</span><span class="s">spec:
+</span><span class="s">  tls:
+</span><span class="s">  - hosts:
+</span><span class="s">    - kuard.javachen.space
+</span><span class="s">    secretName: test-issuer-javachen-tls
+</span><span class="s">  rules:
+</span><span class="s">  - host: kuard.javachen.space
+</span><span class="s">    http:
+</span><span class="s">      paths:
+</span><span class="s">      - path: /
+</span><span class="s">        backend:
+</span><span class="s">          serviceName: kuard
+</span><span class="s">          servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get Certificate,ing,Issuer,secret 
+kubectl describe Certificate
+
+<span class="c1">#检查 ca.crt、tls.crt、tls.key是否有值</span>
+$ kubectl get secret test-issuer-javachen-tls -o yaml</code></pre></td></tr></table>
+</div>
+</div>
+<p>访问浏览器，可以看到证书不被chrome浏览器信任。在系统里，手动设置信任证书，然后可以看到证书签发者是cert-manager：</p>
+
+<p><img src="/Users/chenzj/Library/Application Support/typora-user-images/image-20191129131253316.png" alt="image-20191129131253316" /></p>
+
+<h1 id="卸载">卸载</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除测试用的</span>
+kubectl delete Certificate,secret --all -n cert-manager-test
+kubectl delete ClusterIssuer,Issuer test-issuer-selfsigned test-issuer-ca
+
+kubectl delete deploy,svc,ing kuard -n cert-manager-test
+
+kubectl delete ns cert-manager-test
+
+<span class="c1">#通过kubectl删除</span>
+kubectl delete -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml
+
+<span class="c1">#通过helm删除</span>
+helm del --purge cert-manager</code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-02
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/11/03/install-rancher-ha-with-helm/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">使用Helm安装Rancher HA集群</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/11/01/install-gitea-and-drone-with-helm/">
+            <span class="next-text nav-default">使用Helm安装Gitea和Drone</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-20T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-20T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2947">
+<meta itemprop="wordCount" content="3010">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/database/"> database </a>
             </div>
-          <span class="more-meta"> 约 2947 字 </span>
-          <span class="more-meta"> 预计阅读 6 分钟 </span>
+          <span class="more-meta"> 约 3010 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -173,7 +173,11 @@
 </ul></li>
 <li><a href="#登录测试"><strong>登录测试</strong></a></li>
 <li><a href="#创建数据库">创建数据库</a></li>
+<li><a href="#修改数据库配置">修改数据库配置</a>
+<ul>
+<li><a href="#设置远程用户访问">设置远程用户访问</a></li>
 <li><a href="#设置监听ip和port">设置监听IP和Port</a></li>
+</ul></li>
 <li><a href="#数据库启动与关闭">数据库启动与关闭</a></li>
 <li><a href="#清空数据">清空数据</a></li>
 <li><a href="#参考文章">参考文章</a></li>
@@ -207,21 +211,21 @@
 <td>192.168.56.101</td>
 <td>gp-node001</td>
 <td>master</td>
-<td>/opt/data/master</td>
+<td>/data/greenplum/master</td>
 </tr>
 
 <tr>
 <td>192.168.56.101</td>
 <td>gp-node001</td>
 <td>segment</td>
-<td>/opt/data/primary1</td>
+<td>/data/greenplum/primary1</td>
 </tr>
 
 <tr>
 <td>192.168.56.101</td>
 <td>gp-node001</td>
 <td>segment</td>
-<td>/opt/data/primary2</td>
+<td>/data/greenplum/primary2</td>
 </tr>
 </tbody>
 </table>
@@ -373,7 +377,7 @@ sysctl -p /etc/sysctl.d/system.conf</code></pre></td></tr></table>
 <td class="lntd">
 <pre class="chroma">fdisk -l
 
-/sbin/blockdev --setra 16384 /dev/sda</pre></td></tr></table>
+/sbin/blockdev --setra 16384 /dev/sdb</pre></td></tr></table>
 </div>
 </div>
 <p>调整IO调度算法</p>
@@ -383,7 +387,7 @@ sysctl -p /etc/sysctl.d/system.conf</code></pre></td></tr></table>
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> deadline &gt; /sys/block/vdb/queue/scheduler
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> deadline &gt; /sys/block/sdb/queue/scheduler
 grubby --update-kernel<span class="o">=</span>ALL --args<span class="o">=</span><span class="s2">&#34;elevator=deadline&#34;</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -504,7 +508,7 @@ service sshd restart</code></pre></td></tr></table>
 </span><span class="s2">&#34;</span> &gt; /etc/ntp.conf
 systemctl start ntpd
 systemctl <span class="nb">enable</span> ntpd
-<span class="nb">echo</span> <span class="s1">&#39;* */6 * * * /usr/sbin/ntpdate -u ntp1.aliyun.com &amp;&amp; /sbin/hwclock --systohc &gt; /dev/null 2&gt;&amp;1&#39;</span>&gt;&gt;/var/spool/cron/root</code></pre></td></tr></table>
+<span class="nb">echo</span> <span class="s1">&#39;* */6 * * * /usr/sbin/ntpdate -u ntp1.aliyun.com &amp;&amp; /sbin/hwclock --systohc &gt; /dev/null 2&gt;&amp;1&#39;</span>&gt;&gt;/var/spool/cron/chenzj</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="创建greenplum管理员用户">创建Greenplum管理员用户</h2>
@@ -595,7 +599,7 @@ sudo chgrp -R gpadmin /usr/local/greenplum*</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt;&gt;  ~/.bashrc <span class="s">&lt;&lt;EOF
 </span><span class="s">source /usr/local/greenplum-db/greenplum_path.sh
 </span><span class="s">export GPHOME=/usr/local/greenplum-db
-</span><span class="s">export MASTER_DATA_DIRECTORY=/opt/data/master/gpseg-1
+</span><span class="s">export MASTER_DATA_DIRECTORY=/data/greenplum/master/gpseg-1
 </span><span class="s">export LD_PRELOAD=/lib64/libz.so.1 ps
 </span><span class="s">export PGPORT=5432
 </span><span class="s">EOF</span>
@@ -690,10 +694,12 @@ sudo chgrp -R gpadmin /usr/local/greenplum*</code></pre></td></tr></table>
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo chown -R gpadmin:gpadmin /opt
-mkdir -p /opt/data/<span class="o">{</span>master,primary1,primary2,mirror1,mirror2<span class="o">}</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkdir -p /data/greenplum
+sudo chown -R gpadmin:gpadmin /data/greenplum
+mkdir -p /data/greenplum/<span class="o">{</span>master,primary1,primary2,mirror1,mirror2<span class="o">}</span></code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="创建gpinitsystem-config">创建gpinitsystem_config</h2>
@@ -741,11 +747,11 @@ mkdir -p /opt/data/<span class="o">{</span>master,primary1,primary2,mirror1,mirr
 </span><span class="s">#Primary Segment起始的端口号
 </span><span class="s">PORT_BASE=40000
 </span><span class="s">#指定Primary Segment的数据目录
-</span><span class="s">declare -a DATA_DIRECTORY=(/opt/data/primary1 /opt/data/primary2)
+</span><span class="s">declare -a DATA_DIRECTORY=(/data/greenplum/primary1 /data/greenplum/primary2)
 </span><span class="s">#Master所在机器的Hostname
 </span><span class="s">MASTER_HOSTNAME=mdw 
 </span><span class="s">#指定Master的数据目录
-</span><span class="s">MASTER_DIRECTORY=/opt/data/master
+</span><span class="s">MASTER_DIRECTORY=/data/greenplum/master
 </span><span class="s">#Master的端口
 </span><span class="s">MASTER_PORT=5432
 </span><span class="s">#指定Bash的版本
@@ -761,7 +767,7 @@ mkdir -p /opt/data/<span class="o">{</span>master,primary1,primary2,mirror1,mirr
 </span><span class="s">#Mirror Segment主备同步的起始端口号
 </span><span class="s">MIRROR_REPLICATION_PORT_BASE=43000
 </span><span class="s">#Mirror Segment的数据目录
-</span><span class="s">declare -a MIRROR_DATA_DIRECTORY=(/opt/data/mirror1 /opt/data/mirror2)
+</span><span class="s">declare -a MIRROR_DATA_DIRECTORY=(/data/greenplum/mirror1 /data/greenplum/mirror2)
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -789,27 +795,6 @@ gpconfig -c TimeZone -v <span class="s1">&#39;Asia/Shanghai&#39;</span></code></
 </div>
 <p>##查看状态</p>
 
-<p>查看pg_hba.conf</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /opt/data/master/gpseg-1/pg_hba.conf
-<span class="nb">local</span>    all         gpadmin         ident
-host     all         gpadmin         <span class="m">127</span>.0.0.1/28    trust
-host     all         gpadmin         <span class="m">10</span>.0.2.15/32       trust
-host     all         gpadmin         <span class="m">192</span>.168.56.101/32       trust
-<span class="nb">local</span>    replication gpadmin         ident
-host     replication gpadmin         samenet       trust</code></pre></td></tr></table>
-</div>
-</div>
 <p>查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -833,9 +818,9 @@ host     replication gpadmin         samenet       trust</code></pre></td></tr><
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">ps -ef<span class="p">|</span>grep greenplum
-gpadmin   <span class="m">1098</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /opt/data/primary1/gpseg0 -p <span class="m">40000</span>
-gpadmin   <span class="m">1099</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /opt/data/primary2/gpseg1 -p <span class="m">40001</span>
-gpadmin   <span class="m">1120</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /opt/data/master/gpseg-1 -p <span class="m">5432</span> -E</code></pre></td></tr></table>
+gpadmin   <span class="m">1098</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /data/greenplum/primary1/gpseg0 -p <span class="m">40000</span>
+gpadmin   <span class="m">1099</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /data/greenplum/primary2/gpseg1 -p <span class="m">40001</span>
+gpadmin   <span class="m">1120</span>     <span class="m">1</span>  <span class="m">0</span> <span class="m">17</span>:00 ?        <span class="m">00</span>:00:00 /usr/local/greenplum-db-6.1.0/bin/postgres -D /data/greenplum/master/gpseg-1 -p <span class="m">5432</span> -E</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="登录测试"><strong>登录测试</strong></h1>
@@ -885,9 +870,9 @@ Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 <span class="nv">postgres</span><span class="o">=</span><span class="c1"># select * from gp_segment_configuration;</span>
  dbid <span class="p">|</span> content <span class="p">|</span> role <span class="p">|</span> preferred_role <span class="p">|</span> mode <span class="p">|</span> status <span class="p">|</span> port  <span class="p">|</span>  hostname  <span class="p">|</span>  address   <span class="p">|</span>          datadir
 ------+---------+------+----------------+------+--------+-------+------------+------------+---------------------------
-    <span class="m">1</span> <span class="p">|</span>      -1 <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span>  <span class="m">5432</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /opt/data/master/gpseg-1
-    <span class="m">2</span> <span class="p">|</span>       <span class="m">0</span> <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span> <span class="m">40000</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /opt/data/primary1/gpseg0
-    <span class="m">3</span> <span class="p">|</span>       <span class="m">1</span> <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span> <span class="m">40001</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /opt/data/primary2/gpseg1
+    <span class="m">1</span> <span class="p">|</span>      -1 <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span>  <span class="m">5432</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /data/greenplum/master/gpseg-1
+    <span class="m">2</span> <span class="p">|</span>       <span class="m">0</span> <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span> <span class="m">40000</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /data/greenplum/primary1/gpseg0
+    <span class="m">3</span> <span class="p">|</span>       <span class="m">1</span> <span class="p">|</span> p    <span class="p">|</span> p              <span class="p">|</span> n    <span class="p">|</span> u      <span class="p">|</span> <span class="m">40001</span> <span class="p">|</span> gp-node001 <span class="p">|</span> gp-node001 <span class="p">|</span> /data/greenplum/primary2/gpseg1
 <span class="o">(</span><span class="m">3</span> rows<span class="o">)</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -934,6 +919,21 @@ Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 <span class="nv">testDB</span><span class="o">=</span>#</code></pre></td></tr></table>
 </div>
 </div>
+<p>创建用户和数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">CREATE USER <span class="nb">test</span> WITH PASSWORD <span class="s1">&#39;test&#39;</span><span class="p">;</span>
+CREATE DATABASE dataware <span class="nv">owner</span><span class="o">=</span>test<span class="p">;</span>
+
+GRANT ALL privileges ON DATABASE dataware TO test<span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
 <p>查询数据库版本并创建一张简单的表：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -947,7 +947,26 @@ Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 CREATE TABLE</code></pre></td></tr></table>
 </div>
 </div>
-<h1 id="设置监听ip和port">设置监听IP和Port</h1>
+<h1 id="修改数据库配置">修改数据库配置</h1>
+
+<h2 id="设置远程用户访问">设置远程用户访问</h2>
+
+<p>修改/data/greenplum/master/gpseg-1/pg_hba.conf</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">local</span>    all         all         									trust
+host     all         all             <span class="m">0</span>.0.0.0/0    trust
+<span class="nb">local</span>    replication gpadmin         ident
+host     replication gpadmin         samenet       trust</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="设置监听ip和port">设置监听IP和Port</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1005,7 +1024,7 @@ host     all         gpadmin         <span class="m">0</span>.0.0.0/0        md5
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">gpstop</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">gpstop -a</code></pre></td></tr></table>
 </div>
 </div>
 <p>与gpstart一样，在关闭数据库时，一般使用gpstop -a，这样就不用输入“yes”了</p>
@@ -1018,15 +1037,13 @@ host     all         gpadmin         <span class="m">0</span>.0.0.0/0        md5
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#如有报错需重新初始化，清理以下内容：</span>
 <span class="nb">kill</span> -9 <span class="k">$(</span>ps -ef <span class="p">|</span>grep greenplum<span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="k">)</span>
-gpssh -f hostfile_all -e <span class="s2">&#34;rm -rf /opt/data/master/*&#34;</span>
-gpssh -f hostfile_segment -e <span class="s2">&#34;rm -rf /opt/data/{mirror*,primary*}/*&#34;</span>
-rm  -f /tmp/.s.PGSQL.5432.lock
-rm -rf /data/master/gpseg-1</code></pre></td></tr></table>
+gpssh -f hostfile_all -e <span class="s2">&#34;rm -rf /data/greenplum/master/*&#34;</span>
+gpssh -f hostfile_segment -e <span class="s2">&#34;rm -rf /data/greenplum/{mirror*,primary*}/*&#34;</span>
+rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="参考文章">参考文章</h1>
