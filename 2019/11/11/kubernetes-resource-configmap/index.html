@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-08T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-08T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1480">
+<meta itemprop="wordCount" content="3311">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1480 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
+          <span class="more-meta"> 约 3311 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -156,14 +156,21 @@
 </ul></li>
 <li><a href="#使用configmap">使用ConfigMap</a>
 <ul>
-<li>
-<ul>
 <li><a href="#环境变量方式">环境变量方式</a></li>
 <li><a href="#命令行参数方式">命令行参数方式</a></li>
 <li><a href="#volume方式">volume方式</a></li>
 </ul></li>
+<li><a href="#configmap的热更新">ConfigMap的热更新</a>
+<ul>
+<li><a href="#测试示例">测试示例</a></li>
+<li><a href="#测试">测试</a>
+<ul>
+<li><a href="#更新使用configmap挂载的env">更新使用ConfigMap挂载的Env</a></li>
+<li><a href="#更新使用configmap挂载的volume">更新使用ConfigMap挂载的Volume</a></li>
 </ul></li>
-<li><a href="#使用configmap-注意事项">使用ConfigMap 注意事项</a></li>
+<li><a href="#configmap-更新后滚动更新-pod">ConfigMap 更新后滚动更新 Pod</a></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
 <li><a href="#参考">参考</a></li>
 </ul>
 </nav>
@@ -209,7 +216,7 @@
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span>kubectl create secret generic db-user-pass --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>admin --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="m">123456</span><span class="sb">`</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic db-user-pass --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>admin --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="m">123456</span></code></pre></td></tr></table>
 </div>
 </div>
 <ul>
@@ -222,9 +229,13 @@
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span><span class="nb">echo</span> -n <span class="s2">&#34;admin&#34;</span> &gt; ./username.txt <span class="nb">echo</span> -n <span class="s2">&#34;123456&#34;</span> &gt; ./password.txt kubectl create secret generic db-user-pass --from-file<span class="o">=</span>./username.txt --from-file<span class="o">=</span>./password.txt<span class="sb">`</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> -n <span class="s2">&#34;admin&#34;</span> &gt; ./username.txt 
+<span class="nb">echo</span> -n <span class="s2">&#34;123456&#34;</span> &gt; ./password.txt 
+kubectl create secret generic db-user-pass --from-file<span class="o">=</span>./username.txt --from-file<span class="o">=</span>./password.txt</code></pre></td></tr></table>
 </div>
 </div>
 <ul>
@@ -235,9 +246,19 @@
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span>cat <span class="s">&lt;&lt; EOF &gt; env.txt username=admin password=123456 EOF</span> kubectl create secret generic db-user-pass --from-env-file<span class="o">=</span>env.txt<span class="sb">`</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; env.txt 
+</span><span class="s">username=admin 
+</span><span class="s">password=123456 
+</span><span class="s">EOF</span> 
+
+kubectl create secret generic db-user-pass --from-env-file<span class="o">=</span>env.txt</code></pre></td></tr></table>
 </div>
 </div>
 <ul>
@@ -249,10 +270,28 @@
 <p>Yaml文件中的数据明文输入</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="sb">`</span>cat <span class="s">&lt;&lt; EOF | kubectl create -f - apiVersion: v1 kind: Secret metadata:  name: db-user-pass type: Opaque data:  username: YWRtaW4=  password: MTIzNDU2 EOF</span><span class="sb">`</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f - 
+</span><span class="s">apiVersion: v1 
+</span><span class="s">kind: Secret 
+</span><span class="s">metadata:  
+</span><span class="s">  name: db-user-pass 
+</span><span class="s">type: Opaque 
+</span><span class="s">data:  
+</span><span class="s">  username: YWRtaW4=  
+</span><span class="s">  password: MTIzNDU2 
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
 <p>保存文件的方式：</p>
@@ -351,9 +390,50 @@ metadata:
 </div>
 <h1 id="使用configmap">使用ConfigMap</h1>
 
-<h3 id="环境变量方式">环境变量方式</h3>
+<h2 id="环境变量方式">环境变量方式</h2>
 
-<p>这种方式将作为容器内的环境变量。</p>
+<p>ConfigMap可以被用来填入环境变量。看下下面的ConfigMap。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ConfigMap<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w"></span>data<span class="p">:</span><span class="w">
+</span><span class="w">  </span>special.how<span class="p">:</span><span class="w"> </span>very<span class="w">
+</span><span class="w">  </span>special.type<span class="p">:</span><span class="w"> </span>charm<span class="w">
+</span><span class="w">
+</span><span class="w"></span>---<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ConfigMap<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>env-config<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w"></span>data<span class="p">:</span><span class="w">
+</span><span class="w">  </span>log_level<span class="p">:</span><span class="w"> </span>INFO</code></pre></td></tr></table>
+</div>
+</div>
+<p>我们可以在Pod中这样使用ConfigMap：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
@@ -377,34 +457,76 @@ metadata:
 </span><span class="lnt">19
 </span><span class="lnt">20
 </span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>dapi-test-pod<span class="w">
 </span><span class="w"></span>spec<span class="p">:</span><span class="w">
 </span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>test-container<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>gcr.io/google_containers/busybox<span class="w">
 </span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;env&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
 </span><span class="w">      </span>env<span class="p">:</span><span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>CONFIG_1<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>SPECIAL_LEVEL_KEY<span class="w">
 </span><span class="w">          </span>valueFrom<span class="p">:</span><span class="w">
 </span><span class="w">            </span>configMapKeyRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>config1<span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>CONFIG_2<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>special.how<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>SPECIAL_TYPE_KEY<span class="w">
 </span><span class="w">          </span>valueFrom<span class="p">:</span><span class="w">
 </span><span class="w">            </span>configMapKeyRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>config2<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>special.type<span class="w">
+</span><span class="w">      </span>envFrom<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>configMapRef<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span>env-config<span class="w">
 </span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never</code></pre></td></tr></table>
 </div>
 </div>
-<h3 id="命令行参数方式">命令行参数方式</h3>
+<p>这个Pod运行后会输出如下几行：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">SPECIAL_LEVEL_KEY</span><span class="o">=</span>very
+<span class="nv">SPECIAL_TYPE_KEY</span><span class="o">=</span>charm
+<span class="nv">log_level</span><span class="o">=</span>INFO</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="命令行参数方式">命令行参数方式</h2>
 
-<p>这种方式需要先设置为环境变量，之后可以通过$(VAR_NAME)设置容器启动命令的启动参数。</p>
+<p>ConfigMap也可以被使用来设置容器中的命令或者参数值。它使用的是Kubernetes的$(VAR_NAME)替换语法。我们看下下面这个ConfigMap。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ConfigMap<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w"></span>data<span class="p">:</span><span class="w">
+</span><span class="w">  </span>special.how<span class="p">:</span><span class="w"> </span>very<span class="w">
+</span><span class="w">  </span>special.type<span class="p">:</span><span class="w"> </span>charm</code></pre></td></tr></table>
+</div>
+</div>
+<p>为了将ConfigMap中的值注入到命令行的参数里面，我们还要像前面那个例子一样使用环境变量替换语法<code>${VAR_NAME)</code>。（其实这个东西就是给Docker容器设置环境变量，以前我创建镜像的时候经常这么玩，通过docker run的时候指定-e参数修改镜像里的环境变量，然后docker的CMD命令再利用该$(VAR_NAME)通过sed来修改配置文件或者作为命令行启动参数。）</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
@@ -433,32 +555,175 @@ metadata:
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>dapi-test-pod<span class="w">
 </span><span class="w"></span>spec<span class="p">:</span><span class="w">
 </span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;echo $(CONFIG_1) $(CONFIG_2)&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>test-container<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>gcr.io/google_containers/busybox<span class="w">
+</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;echo $(SPECIAL_LEVEL_KEY) $(SPECIAL_TYPE_KEY)&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
 </span><span class="w">      </span>env<span class="p">:</span><span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>CONFIG_1<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>SPECIAL_LEVEL_KEY<span class="w">
 </span><span class="w">          </span>valueFrom<span class="p">:</span><span class="w">
 </span><span class="w">            </span>configMapKeyRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>config1<span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>CONFIG_2<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>special.how<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>SPECIAL_TYPE_KEY<span class="w">
 </span><span class="w">          </span>valueFrom<span class="p">:</span><span class="w">
 </span><span class="w">            </span>configMapKeyRef<span class="p">:</span><span class="w">
-</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>config2<span class="w">
+</span><span class="w">              </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">              </span>key<span class="p">:</span><span class="w"> </span>special.type<span class="w">
 </span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never</code></pre></td></tr></table>
 </div>
 </div>
-<h3 id="volume方式">volume方式</h3>
+<p>运行这个Pod后会输出：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">very charm</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="volume方式">volume方式</h2>
 
-<p>这种方式将以volume的形式挂载为容器内部的文件或目录。</p>
+<p>ConfigMap也可以在数据卷里面被使用。还是这个ConfigMap。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ConfigMap<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
+</span><span class="w"></span>data<span class="p">:</span><span class="w">
+</span><span class="w">  </span>special.how<span class="p">:</span><span class="w"> </span>very<span class="w">
+</span><span class="w">  </span>special.type<span class="p">:</span><span class="w"> </span>charm</code></pre></td></tr></table>
+</div>
+</div>
+<p>在数据卷里面使用这个ConfigMap，有不同的选项。最基本的就是将文件填入数据卷，在这个文件中，键就是文件名，键值就是文件内容：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>dapi-test-pod<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>test-container<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>gcr.io/google_containers/busybox<span class="w">
+</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;cat /etc/config/special.how&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
+</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/config<span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
+</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never</code></pre></td></tr></table>
+</div>
+</div>
+<p>运行这个Pod的输出是<code>very</code>。</p>
+
+<p>我们也可以在ConfigMap值被映射的数据卷里控制路径。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>dapi-test-pod<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>test-container<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>gcr.io/google_containers/busybox<span class="w">
+</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="s2">&#34;cat /etc/config/path/to/special-key&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
+</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/config<span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
+</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span>special-config<span class="w">
+</span><span class="w">        </span>items<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>special.how<span class="w">
+</span><span class="w">          </span>path<span class="p">:</span><span class="w"> </span>path/to/special-key<span class="w">
+</span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never</code></pre></td></tr></table>
+</div>
+</div>
+<p>运行这个Pod后的结果是<code>very</code>。</p>
+
+<h1 id="configmap的热更新">ConfigMap的热更新</h1>
+
+<p>ConfigMap是用来存储配置文件的kubernetes资源对象，所有的配置内容都存储在etcd中，下文主要是探究 ConfigMap 的创建和更新流程，以及对 ConfigMap 更新后容器内挂载的内容是否同步更新的测试。</p>
+
+<h2 id="测试示例">测试示例</h2>
+
+<p>假设我们在 <code>default</code> namespace 下有一个名为 <code>nginx-config</code> 的 ConfigMap，可以使用 <code>kubectl</code>命令来获取：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get configmap nginx-config
+NAME           DATA      AGE
+nginx-config   <span class="m">1</span>         99d</code></pre></td></tr></table>
+</div>
+</div>
+<p>获取该ConfigMap的内容。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -514,90 +779,360 @@ metadata:
 </span><span class="lnt">54
 </span><span class="lnt">55
 </span><span class="lnt">56
-</span><span class="lnt">57
-</span><span class="lnt">58
-</span><span class="lnt">59
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;cat /etc/config/config1&#34;</span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
-</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/config<span class="w">
-</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
-</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never<span class="w">
-</span><span class="w">
-</span><span class="w"></span>---<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;cat /etc/config/path/to/config1&#34;</span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
-</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/config<span class="w">
-</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
-</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span>myconfigmap<span class="w">
-</span><span class="w">        </span>items<span class="p">:</span><span class="w">
-</span><span class="w">        </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>config1<span class="w">
-</span><span class="w">          </span>path<span class="p">:</span><span class="w"> </span>path/to/config1<span class="w"> 
-</span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never<span class="w">
-</span><span class="w">  
-</span><span class="w"></span>---<span class="w">
-</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
-</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
-</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>example<span class="w">
-</span><span class="w"></span>spec<span class="p">:</span><span class="w">
-</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>busybox<span class="w">
-</span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="s2">&#34;/bin/sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;ls /etc/config&#34;</span><span class="w"> </span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
-</span><span class="w">      </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">        </span>mountPath<span class="p">:</span><span class="w"> </span>/etc/config<span class="w">
-</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
-</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span>no-config<span class="w">
-</span><span class="w">        </span>optional<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">    
-</span><span class="w">  </span>restartPolicy<span class="p">:</span><span class="w"> </span>Never</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get configmap nginx-config -o yaml
+apiVersion: v1
+data:
+  nginx.conf: <span class="p">|</span>-
+    worker_processes <span class="m">1</span><span class="p">;</span>
+    events <span class="o">{</span> worker_connections <span class="m">1024</span><span class="p">;</span> <span class="o">}</span>
+    http <span class="o">{</span>
+        sendfile on<span class="p">;</span>
+        server <span class="o">{</span>
+            listen <span class="m">80</span><span class="p">;</span>
+            <span class="c1"># a test endpoint that returns http 200s</span>
+            location / <span class="o">{</span>
+                proxy_pass http://httpstat.us/200<span class="p">;</span>
+                proxy_set_header  X-Real-IP  <span class="nv">$remote_addr</span><span class="p">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        server <span class="o">{</span>
+            listen <span class="m">80</span><span class="p">;</span>
+            server_name api.hello.world<span class="p">;</span>
+            location / <span class="o">{</span>
+                proxy_pass http://l5d.default.svc.cluster.local<span class="p">;</span>
+                proxy_set_header Host <span class="nv">$host</span><span class="p">;</span>
+                proxy_set_header Connection <span class="s2">&#34;&#34;</span><span class="p">;</span>
+                proxy_http_version <span class="m">1</span>.1<span class="p">;</span>
+                more_clear_input_headers <span class="s1">&#39;l5d-ctx-*&#39;</span> <span class="s1">&#39;l5d-dtab&#39;</span> <span class="s1">&#39;l5d-sample&#39;</span><span class="p">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        server <span class="o">{</span>
+            listen <span class="m">80</span><span class="p">;</span>
+            server_name www.hello.world<span class="p">;</span>
+            location / <span class="o">{</span>
+                <span class="c1"># allow &#39;employees&#39; to perform dtab overrides</span>
+                <span class="k">if</span> <span class="o">(</span><span class="nv">$cookie_special_employee_cookie</span> !<span class="o">=</span> <span class="s2">&#34;letmein&#34;</span><span class="o">)</span> <span class="o">{</span>
+                  more_clear_input_headers <span class="s1">&#39;l5d-ctx-*&#39;</span> <span class="s1">&#39;l5d-dtab&#39;</span> <span class="s1">&#39;l5d-sample&#39;</span><span class="p">;</span>
+                <span class="o">}</span>
+                <span class="c1"># add a dtab override to get people to our beta, world-v2</span>
+                <span class="nb">set</span> <span class="nv">$xheader</span> <span class="s2">&#34;&#34;</span><span class="p">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="nv">$cookie_special_employee_cookie</span> ~* <span class="s2">&#34;dogfood&#34;</span><span class="o">)</span> <span class="o">{</span>
+                  <span class="nb">set</span> <span class="nv">$xheader</span> <span class="s2">&#34;/host/world =&gt; /srv/world-v2;&#34;</span><span class="p">;</span>
+                <span class="o">}</span>
+                proxy_set_header <span class="s1">&#39;l5d-dtab&#39;</span> <span class="nv">$xheader</span><span class="p">;</span>
+                proxy_pass http://l5d.default.svc.cluster.local<span class="p">;</span>
+                proxy_set_header Host <span class="nv">$host</span><span class="p">;</span>
+                proxy_set_header Connection <span class="s2">&#34;&#34;</span><span class="p">;</span>
+                proxy_http_version <span class="m">1</span>.1<span class="p">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+kind: ConfigMap
+metadata:
+  creationTimestamp: <span class="m">2017</span>-08-01T06:53:17Z
+  name: nginx-config
+  namespace: default
+  resourceVersion: <span class="s2">&#34;14925806&#34;</span>
+  selfLink: /api/v1/namespaces/default/configmaps/nginx-config
+  uid: 18d70527-7686-11e7-bfbd-8af1e3a7c5bd</code></pre></td></tr></table>
 </div>
 </div>
-<p><strong>与Secret一样，Volume形式的ConfigMap也支持动态更新。</strong></p>
+<p>ConfigMap中的内容是存储到etcd中的，然后查询etcd：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">ETCDCTL_API</span><span class="o">=</span><span class="m">3</span> etcdctl get /registry/configmaps/default/nginx-config -w json<span class="p">|</span>python -m json.tool</code></pre></td></tr></table>
+</div>
+</div>
+<p>注意使用 v3 版本的 etcdctl API，下面是输出结果：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">{</span>
+    <span class="s2">&#34;count&#34;</span>: <span class="m">1</span>,
+    <span class="s2">&#34;header&#34;</span>: <span class="o">{</span>
+        <span class="s2">&#34;cluster_id&#34;</span>: <span class="m">12091028579527406772</span>,
+        <span class="s2">&#34;member_id&#34;</span>: <span class="m">16557816780141026208</span>,
+        <span class="s2">&#34;raft_term&#34;</span>: <span class="m">36</span>,
+        <span class="s2">&#34;revision&#34;</span>: <span class="m">29258723</span>
+    <span class="o">}</span>,
+    <span class="s2">&#34;kvs&#34;</span>: <span class="o">[</span>
+        <span class="o">{</span>
+            <span class="s2">&#34;create_revision&#34;</span>: <span class="m">14925806</span>,
+            <span class="s2">&#34;key&#34;</span>: <span class="s2">&#34;L3JlZ2lzdHJ5L2NvbmZpZ21hcHMvZGVmYXVsdC9uZ2lueC1jb25maWc=&#34;</span>,
+            <span class="s2">&#34;mod_revision&#34;</span>: <span class="m">14925806</span>,
+            <span class="s2">&#34;value&#34;</span>: <span class="s2">&#34;azhzAAoPCgJ2MRIJQ29uZmlnTWFwEqQMClQKDG5naW54LWNvbmZpZxIAGgdkZWZhdWx0IgAqJDE4ZDcwNTI3LTc2ODYtMTFlNy1iZmJkLThhZjFlM2E3YzViZDIAOABCCwjdyoDMBRC5ss54egASywsKCm5naW54LmNvbmYSvAt3b3JrZXJfcHJvY2Vzc2VzIDE7CgpldmVudHMgeyB3b3JrZXJfY29ubmVjdGlvbnMgMTAyNDsgfQoKaHR0cCB7CiAgICBzZW5kZmlsZSBvbjsKCiAgICBzZXJ2ZXIgewogICAgICAgIGxpc3RlbiA4MDsKCiAgICAgICAgIyBhIHRlc3QgZW5kcG9pbnQgdGhhdCByZXR1cm5zIGh0dHAgMjAwcwogICAgICAgIGxvY2F0aW9uIC8gewogICAgICAgICAgICBwcm94eV9wYXNzIGh0dHA6Ly9odHRwc3RhdC51cy8yMDA7CiAgICAgICAgICAgIHByb3h5X3NldF9oZWFkZXIgIFgtUmVhbC1JUCAgJHJlbW90ZV9hZGRyOwogICAgICAgIH0KICAgIH0KCiAgICBzZXJ2ZXIgewoKICAgICAgICBsaXN0ZW4gODA7CiAgICAgICAgc2VydmVyX25hbWUgYXBpLmhlbGxvLndvcmxkOwoKICAgICAgICBsb2NhdGlvbiAvIHsKICAgICAgICAgICAgcHJveHlfcGFzcyBodHRwOi8vbDVkLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWw7CiAgICAgICAgICAgIHByb3h5X3NldF9oZWFkZXIgSG9zdCAkaG9zdDsKICAgICAgICAgICAgcHJveHlfc2V0X2hlYWRlciBDb25uZWN0aW9uICIiOwogICAgICAgICAgICBwcm94eV9odHRwX3ZlcnNpb24gMS4xOwoKICAgICAgICAgICAgbW9yZV9jbGVhcl9pbnB1dF9oZWFkZXJzICdsNWQtY3R4LSonICdsNWQtZHRhYicgJ2w1ZC1zYW1wbGUnOwogICAgICAgIH0KICAgIH0KCiAgICBzZXJ2ZXIgewoKICAgICAgICBsaXN0ZW4gODA7CiAgICAgICAgc2VydmVyX25hbWUgd3d3LmhlbGxvLndvcmxkOwoKICAgICAgICBsb2NhdGlvbiAvIHsKCgogICAgICAgICAgICAjIGFsbG93ICdlbXBsb3llZXMnIHRvIHBlcmZvcm0gZHRhYiBvdmVycmlkZXMKICAgICAgICAgICAgaWYgKCRjb29raWVfc3BlY2lhbF9lbXBsb3llZV9jb29raWUgIT0gImxldG1laW4iKSB7CiAgICAgICAgICAgICAgbW9yZV9jbGVhcl9pbnB1dF9oZWFkZXJzICdsNWQtY3R4LSonICdsNWQtZHRhYicgJ2w1ZC1zYW1wbGUnOwogICAgICAgICAgICB9CgogICAgICAgICAgICAjIGFkZCBhIGR0YWIgb3ZlcnJpZGUgdG8gZ2V0IHBlb3BsZSB0byBvdXIgYmV0YSwgd29ybGQtdjIKICAgICAgICAgICAgc2V0ICR4aGVhZGVyICIiOwoKICAgICAgICAgICAgaWYgKCRjb29raWVfc3BlY2lhbF9lbXBsb3llZV9jb29raWUgfiogImRvZ2Zvb2QiKSB7CiAgICAgICAgICAgICAgc2V0ICR4aGVhZGVyICIvaG9zdC93b3JsZCA9PiAvc3J2L3dvcmxkLXYyOyI7CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHByb3h5X3NldF9oZWFkZXIgJ2w1ZC1kdGFiJyAkeGhlYWRlcjsKCgogICAgICAgICAgICBwcm94eV9wYXNzIGh0dHA6Ly9sNWQuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbDsKICAgICAgICAgICAgcHJveHlfc2V0X2hlYWRlciBIb3N0ICRob3N0OwogICAgICAgICAgICBwcm94eV9zZXRfaGVhZGVyIENvbm5lY3Rpb24gIiI7CiAgICAgICAgICAgIHByb3h5X2h0dHBfdmVyc2lvbiAxLjE7CiAgICAgICAgfQogICAgfQp9GgAiAA==&#34;</span>,
+            <span class="s2">&#34;version&#34;</span>: <span class="m">1</span>
+        <span class="o">}</span>
+    <span class="o">]</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>其中的value就是 <code>nginx.conf</code> 配置文件的内容。</p>
 
-<h1 id="使用configmap-注意事项">使用ConfigMap 注意事项</h1>
+<p>可以使用base64解码查看具体值，关于etcdctl的使用请参考<a href="https://jimmysong.io/kubernetes-handbook/guide/using-etcdctl-to-access-kubernetes-data.html">使用etcdctl访问kuberentes数据</a>。</p>
+
+<h2 id="测试">测试</h2>
+
+<p>分别测试使用 ConfigMap 挂载 Env 和 Volume 的情况。</p>
+
+<h3 id="更新使用configmap挂载的env">更新使用ConfigMap挂载的Env</h3>
+
+<p>使用下面的配置创建 nginx 容器测试更新 ConfigMap 后容器内的环境变量是否也跟着更新。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: my-nginx
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: my-nginx
+    spec:
+      containers:
+      - name: my-nginx
+        image: harbor-001.jimmysong.io/library/nginx:1.9
+        ports:
+        - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: env-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  namespace: default
+data:
+  log_level: INFO</pre></td></tr></table>
+</div>
+</div>
+<p>获取环境变量的值</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl exec `kubectl get pods -l run=my-nginx  -o=name|cut -d &#34;/&#34; -f2` env|grep log_level
+log_level=INFO</pre></td></tr></table>
+</div>
+</div>
+<p>修改 ConfigMap</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl edit configmap env-config</pre></td></tr></table>
+</div>
+</div>
+<p>修改 <code>log_level</code> 的值为 <code>DEBUG</code>。</p>
+
+<p>再次查看环境变量的值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl exec `kubectl get pods -l run=my-nginx  -o=name|cut -d &#34;/&#34; -f2` env|grep log_level
+log_level=INFO</pre></td></tr></table>
+</div>
+</div>
+<p>实践证明修改 ConfigMap 无法更新容器中已注入的环境变量信息。</p>
+
+<h3 id="更新使用configmap挂载的volume">更新使用ConfigMap挂载的Volume</h3>
+
+<p>使用下面的配置创建 nginx 容器测试更新 ConfigMap 后容器内挂载的文件是否也跟着更新。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: my-nginx
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: my-nginx
+    spec:
+      containers:
+      - name: my-nginx
+        image: harbor-001.jimmysong.io/library/nginx:1.9
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: special-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: special-config
+  namespace: default
+data:
+  log_level: INFO
+$ kubectl exec `kubectl get pods -l run=my-nginx  -o=name|cut -d &#34;/&#34; -f2` cat /etc/config/log_level
+INFO</pre></td></tr></table>
+</div>
+</div>
+<p>修改 ConfigMap</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl edit configmap special-config</pre></td></tr></table>
+</div>
+</div>
+<p>修改 <code>log_level</code> 的值为 <code>DEBUG</code>。</p>
+
+<p>等待大概10秒钟时间，再次查看环境变量的值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl exec `kubectl get pods -l run=my-nginx  -o=name|cut -d &#34;/&#34; -f2` cat /tmp/log_level
+DEBUG</pre></td></tr></table>
+</div>
+</div>
+<p>我们可以看到使用 ConfigMap 方式挂载的 Volume 的文件中的内容已经变成了 <code>DEBUG</code>。</p>
+
+<p>Known Issue： 如果使用ConfigMap的<strong>subPath</strong>挂载为Container的Volume，Kubernetes不会做自动热更新: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically">https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically</a></p>
+
+<h2 id="configmap-更新后滚动更新-pod">ConfigMap 更新后滚动更新 Pod</h2>
+
+<p>更新 ConfigMap 目前并不会触发相关 Pod 的滚动更新，可以通过修改 pod annotations 的方式强制触发滚动更新。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ kubectl patch deployment my-nginx --patch &#39;{&#34;spec&#34;: {&#34;template&#34;: {&#34;metadata&#34;: {&#34;annotations&#34;: {&#34;version/config&#34;: &#34;20180411&#34; }}}}}&#39;</pre></td></tr></table>
+</div>
+</div>
+<p>这个例子里我们在 <code>.spec.template.metadata.annotations</code> 中添加 <code>version/config</code>，每次通过修改 <code>version/config</code> 来触发滚动更新。</p>
+
+<h1 id="总结">总结</h1>
+
+<p>更新 ConfigMap 后：</p>
 
 <ul>
-<li>ConfigMap必须在Pod之前被创建</li>
-<li>如果ConfigMap定义了Namespace, 则只有相同的Namespace的Pod才可以使用。</li>
-<li>目前ConfigMap的限额管理还未实现。</li>
+<li>使用该 ConfigMap 挂载的 Env <strong>不会</strong>同步更新</li>
+<li>使用该 ConfigMap 挂载的 Volume 中的数据需要一段时间（实测大概10秒）才能同步更新</li>
 </ul>
+
+<p>ENV 是在容器启动的时候注入的，启动之后 kubernetes 就不会再改变环境变量的值，且同一个 namespace 中的 pod 的环境变量是不断累加的，参考 <a href="https://jimmysong.io/posts/exploring-kubernetes-env-with-docker/">Kubernetes中的服务发现与docker容器间的环境变量传递源码探究</a>。为了更新容器中使用 ConfigMap 挂载的配置，需要通过滚动更新 pod 的方式来强制重新挂载 ConfigMap。</p>
 
 <h1 id="参考">参考</h1>
 
 <ul>
 <li><a href="https://kubernetes.io/docs/resources-reference/v1.5/#configmap-v1">resources-reference ConfigMap v1</a></li>
-
-<li><p><a href="https://kubernetes.io/docs/user-guide/configmap/">user-guide Using ConfigMap</a></p></li>
-
-<li><p><a href="https://blog.frognew.com/2017/01/kubernetes-configmap.html">Kubernetes资源对象之ConfigMap</a></p></li>
+<li><a href="https://kubernetes.io/docs/user-guide/configmap/">user-guide Using ConfigMap</a></li>
+<li><a href="https://blog.frognew.com/2017/01/kubernetes-configmap.html">Kubernetes资源对象之ConfigMap</a></li>
+<li><a href="https://acotten.com/post/kube17-security">Kubernetes 1.7 security in practice</a></li>
+<li><a href="https://jimmysong.io/kubernetes-handbook/concepts/configmap.html">ConfigMap | kubernetes handbook - jimmysong.io</a></li>
+<li><a href="https://jimmysong.io/kubernetes-handbook/practice/etcd-cluster-installation.html">创建高可用ectd集群 | Kubernetes handbook - jimmysong.io</a></li>
+<li><a href="https://jimmysong.io/posts/exploring-kubernetes-env-with-docker/">Kubernetes中的服务发现与docker容器间的环境变量传递源码探究</a></li>
+<li><a href="https://github.com/kubernetes/helm/blob/master/docs/charts_tips_and_tricks.md#automatically-roll-deployments-when-configmaps-or-secrets-change">Automatically Roll Deployments When ConfigMaps or Secrets change</a></li>
 </ul>
 
     </div>
