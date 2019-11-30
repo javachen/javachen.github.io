@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 Ceph中午文档：http://docs.ce" /><meta name="keywords" content="Java, Hadoop, Docker" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
@@ -40,25 +40,25 @@
 
 
 <meta property="og:title" content="安装单节点Ceph集群" />
-<meta property="og:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908" />
+<meta property="og:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 Ceph中午文档：http://docs.ce" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/24/install-ceph-sinle-node/" />
 <meta property="article:published_time" content="2019-11-24T08:00:00+08:00" />
 <meta property="article:modified_time" content="2019-11-24T08:00:00+08:00" />
 <meta itemprop="name" content="安装单节点Ceph集群">
-<meta itemprop="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908">
+<meta itemprop="description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 Ceph中午文档：http://docs.ce">
 
 
 <meta itemprop="datePublished" content="2019-11-24T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-24T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2758">
+<meta itemprop="wordCount" content="3105">
 
 
 
 <meta itemprop="keywords" content="ceph," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="安装单节点Ceph集群"/>
-<meta name="twitter:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 集群规划 集群环境： 主机 IP 操作系统 软件 组件 k8s-rke-node001 192.168.56.111 Centos7.7.1908"/>
+<meta name="twitter:description" content="本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。 Ceph中午文档：http://docs.ce"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/ceph/"> ceph </a>
             </div>
-          <span class="more-meta"> 约 2758 字 </span>
-          <span class="more-meta"> 预计阅读 6 分钟 </span>
+          <span class="more-meta"> 约 3105 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -144,36 +144,36 @@
     <nav id="TableOfContents">
 <ul>
 <li><a href="#集群规划">集群规划</a></li>
-<li><a href="#配置环境">配置环境</a>
+<li><a href="#准备环境">准备环境</a>
+<ul>
+<li><a href="#安装-ceph-部署工具">安装 CEPH 部署工具</a></li>
+<li><a href="#ceph-节点安装">CEPH 节点安装</a>
 <ul>
 <li><a href="#设置hosts">设置hosts</a></li>
-<li><a href="#创建安装用户">创建安装用户</a></li>
+<li><a href="#创建部署-ceph-的用户">创建部署 CEPH 的用户</a></li>
+<li><a href="#允许无密码-ssh-登录">允许无密码 SSH 登录</a></li>
+<li><a href="#配置时钟同步">配置时钟同步</a></li>
+<li><a href="#设置selinux">设置SELINUX</a></li>
 <li><a href="#设置tty">设置TTY</a></li>
-<li><a href="#配置无密码登陆">配置无密码登陆</a></li>
-<li><a href="#检查环境">检查环境</a></li>
 <li><a href="#安装yum-plugin-priorities">安装yum-plugin-priorities</a></li>
 <li><a href="#加载rbd模块">加载rbd模块</a></li>
 </ul></li>
-<li><a href="#配置ceph-deploy节点">配置ceph-deploy节点</a></li>
-<li><a href="#创建集群配置">创建集群配置</a></li>
-<li><a href="#创建集群">创建集群</a></li>
-<li><a href="#初始化monitor">初始化monitor</a></li>
-<li><a href="#初始化osd">初始化OSD</a></li>
-<li><a href="#创建mgr">创建MGR</a></li>
-<li><a href="#创建mds">创建MDS</a></li>
-<li><a href="#创建rgw">创建RGW</a></li>
-<li><a href="#部署ceph-cli工具和秘钥">部署ceph cli工具和秘钥</a></li>
-<li><a href="#查看集群状态">查看集群状态</a></li>
-<li><a href="#清理环境">清理环境</a></li>
-<li><a href="#安装mgr-dashboard">安装mgr dashboard</a></li>
-<li><a href="#扩容集群">扩容集群</a>
-<ul>
-<li><a href="#添加monitor">添加Monitor</a></li>
-<li><a href="#添加mgr">添加MGR</a></li>
 </ul></li>
-<li><a href="#配置客户端">配置客户端</a>
+<li><a href="#创建集群">创建集群</a>
 <ul>
-<li><a href="#新建用户密钥">新建用户密钥</a></li>
+<li><a href="#创建集群-1">创建集群</a></li>
+<li><a href="#初始化osd">初始化OSD</a></li>
+</ul></li>
+<li><a href="#操作集群">操作集群</a>
+<ul>
+<li><a href="#集群扩容">集群扩容</a>
+<ul>
+<li><a href="#添加-osd">添加 OSD</a></li>
+<li><a href="#添加-monitors">添加 MONITORS</a></li>
+<li><a href="#添加-mds">添加 MDS</a></li>
+<li><a href="#添加-rgw-例程">添加 RGW 例程</a></li>
+</ul></li>
+<li><a href="#操作数据">操作数据</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -183,6 +183,8 @@
       
 
 <p>本文主要记录在虚拟机中安装Ceph单节点集群的过程，其实多配置几个节点，也就是安装集群的过程。</p>
+
+<p>Ceph中午文档：<a href="http://docs.ceph.org.cn/">http://docs.ceph.org.cn/</a></p>
 
 <h1 id="集群规划">集群规划</h1>
 
@@ -205,107 +207,36 @@
 <td>192.168.56.111</td>
 <td>Centos7.7.1908</td>
 <td>Ceph 14.2.4</td>
-<td>ceph_deploy、OSD.0、MON</td>
+<td>ceph_deploy、OSD、MON</td>
+</tr>
+
+<tr>
+<td>k8s-rke-node002</td>
+<td>192.168.56.112</td>
+<td>Centos7.7.1908</td>
+<td>Ceph 14.2.4</td>
+<td>OSD、MON</td>
+</tr>
+
+<tr>
+<td>k8s-rke-node003</td>
+<td>192.168.56.113</td>
+<td>Centos7.7.1908</td>
+<td>Ceph 14.2.4</td>
+<td>OSD、MON</td>
 </tr>
 </tbody>
 </table>
 
 <p>安装用户：chenzj</p>
 
-<h1 id="配置环境">配置环境</h1>
+<h1 id="准备环境">准备环境</h1>
 
-<h2 id="设置hosts">设置hosts</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 k8s-rke-node001</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="创建安装用户">创建安装用户</h2>
+<h2 id="安装-ceph-部署工具">安装 CEPH 部署工具</h2>
 
-<p>在每个节点创建普通用户如chenzj，并设置密码和sudo权限</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">USER</span><span class="o">=</span>chenzj
-useradd -G docker -d /home/<span class="nv">$USER</span> -m <span class="nv">$USER</span> 
-<span class="nb">echo</span> <span class="nv">$USER</span><span class="p">|</span>passwd <span class="nv">$USER</span> --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-sudo <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$USER</span><span class="s2"> ALL = (root) NOPASSWD:ALL&#34;</span> <span class="p">|</span> sudo tee /etc/sudoers.d/<span class="nv">$USER</span></code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="设置tty">设置TTY</h2>
+<p>把 Ceph 仓库添加到 <code>ceph-deploy</code> 管理节点，然后安装 <code>ceph-deploy</code> 。</p>
 
-<p>执行命令visudo修改suoders文件：</p>
-
-<ol>
-<li>注释Defaults requiretty</li>
-</ol>
-
-<p>Defaults requiretty修改为 #Defaults requiretty， 表示不需要控制终端。</p>
-
-<p>否则会出现sudo: sorry, you must have a tty to run sudo</p>
-
-<ol>
-<li>增加行 Defaults visiblepw</li>
-</ol>
-
-<p>否则会出现 sudo: no tty present and no askpass program specified</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/Defaults *requiretty/#Defaults requiretty/g&#39;</span> /etc/sudoers
-sed -i <span class="s1">&#39;s/Defaults *!visiblepw/Defaults   visiblepw/g&#39;</span> /etc/sudoers</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="配置无密码登陆">配置无密码登陆</h2>
-
-<p>设置chenzj用户无密码登陆：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">su - chenzj
-sudo yes|ssh-keygen -f ~/.ssh/id_rsa -t rsa -N &#34;&#34;
-
-ssh-copy-id k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<p>设置ssh默认用户名：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt;&gt; ~/.ssh/config
-</span><span class="s">Host      k8s-rke-node001
-</span><span class="s">Hostname  k8s-rke-node001
-</span><span class="s">User         chenzj
-</span><span class="s">EOF</span>
-
-chmod <span class="m">644</span> ~/.ssh/config</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="检查环境">检查环境</h2>
+<p>安装包管理工具：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -315,34 +246,14 @@ chmod <span class="m">644</span> ~/.ssh/config</code></pre></td></tr></table>
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#检查操作系统</span>
-cat /etc/redhat-release
-
-<span class="c1">#检查时钟同步</span>
-date</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y yum-utils 
+sudo yum-config-manager --add-repo https://dl.fedoraproject.org/pub/epel/7/x86_64/  
+sudo yum install --nogpgcheck -y epel-release 
+sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7 
+sudo rm /etc/yum.repos.d/dl.fedoraproject.org*</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="安装yum-plugin-priorities">安装yum-plugin-priorities</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install yum-plugin-priorities -y</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="加载rbd模块">加载rbd模块</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">sudo modprobe rbd</pre></td></tr></table>
-</div>
-</div>
-<h1 id="配置ceph-deploy节点">配置ceph-deploy节点</h1>
-
-<p>在管理节点 k8s-rke-node001 上配置yum源，注意：这里ceph使用的是nautilus版本。</p>
+<p>配置yum源，注意：这里ceph使用的是nautilus版本。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -357,27 +268,9 @@ date</code></pre></td></tr></table>
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt; ceph.repo
-</span><span class="s">[Ceph]
-</span><span class="s">name=Ceph packages for \$basearch
-</span><span class="s">baseurl=http://mirrors.163.com/ceph/rpm-nautilus/el7/\$basearch
-</span><span class="s">enabled=1
-</span><span class="s">gpgcheck=0
-</span><span class="s">type=rpm-md
-</span><span class="s">gpgkey=https://mirrors.163.com/ceph/keys/release.asc
-</span><span class="s">priority=1
-</span><span class="s">
 </span><span class="s">[Ceph-noarch]
 </span><span class="s">name=Ceph noarch packages
 </span><span class="s">baseurl=http://mirrors.163.com/ceph/rpm-nautilus/el7/noarch
@@ -402,51 +295,221 @@ sudo mv ceph.repo /etc/yum.repos.d/</code></pre></td></tr></table>
 <span class="nb">export</span> <span class="nv">CEPH_DEPLOY_GPG_URL</span><span class="o">=</span>http://mirrors.163.com/ceph/keys/release.asc</code></pre></td></tr></table>
 </div>
 </div>
-<p>安装部署工具：</p>
+<p>更新软件库并安装 <code>ceph-deploy</code></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装 EPEL 源</span>
-sudo yum install -y epel-release
-
-sudo yum install ceph-deploy -y</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum update <span class="o">&amp;&amp;</span> sudo yum install ceph-deploy</code></pre></td></tr></table>
 </div>
 </div>
-<p>说明：ceph-deploy 工具需要使用 ssh 来自动化部署 Ceph 各个组件，因此需要保证部署节点能够免密码登录待部署节点；最后，待部署节点最好加入到部署节点的 hosts 中，方便使用域名(某些地方强制)连接管理。</p>
+<h2 id="ceph-节点安装">CEPH 节点安装</h2>
 
-<h1 id="创建集群配置">创建集群配置</h1>
+<p>你的管理节点必须能够通过 SSH 无密码地访问各 Ceph 节点。如果 <code>ceph-deploy</code> 以某个普通用户登录，那么这个用户必须有无密码使用 <code>sudo</code> 的权限。</p>
 
-<p>ceph-deploy 工具部署集群前需要创建一些集群配置信息，其保存在 <code>ceph.conf</code> 文件中，这个文件未来将会被复制到每个节点的 <code>/etc/ceph/ceph.conf</code></p>
-
-<p>在ceph-deploy节点执行：</p>
+<h3 id="设置hosts">设置hosts</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.111 k8s-rke-node001
+<span class="m">192</span>.168.56.112 k8s-rke-node002
+<span class="m">192</span>.168.56.113 k8s-rke-node003</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="创建部署-ceph-的用户">创建部署 CEPH 的用户</h3>
+
+<p><code>ceph-deploy</code> 工具必须以普通用户登录 Ceph 节点，且此用户拥有无密码使用 <code>sudo</code> 的权限，因为它需要在安装软件及配置文件的过程中，不必输入密码。</p>
+
+<p>在各 Ceph 节点创建新用户并设置密码。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">USER</span><span class="o">=</span>chenzj
+useradd -G docker -d /home/<span class="nv">$USER</span> -m <span class="nv">$USER</span> 
+<span class="nb">echo</span> <span class="nv">$USER</span><span class="p">|</span>passwd <span class="nv">$USER</span> --stdin &gt;/dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>确保各 Ceph 节点上新创建的用户都有 <code>sudo</code> 权限。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$USER</span><span class="s2"> ALL = (root) NOPASSWD:ALL&#34;</span> <span class="p">|</span> sudo tee /etc/sudoers.d/<span class="nv">$USER</span>
+sudo chmod <span class="m">0440</span> /etc/sudoers.d/<span class="nv">$USER</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="允许无密码-ssh-登录">允许无密码 SSH 登录</h3>
+
+<p>正因为 <code>ceph-deploy</code> 不支持输入密码，你必须在管理节点上生成 SSH 密钥并把其公钥分发到各 Ceph 节点。 <code>ceph-deploy</code> 会尝试给初始 monitors 生成 SSH 密钥对。</p>
+
+<p>生成 SSH 密钥对，但不要用 <code>sudo</code> 或 <code>root</code> 用户。提示 “Enter passphrase” 时，直接回车，口令即为空：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">su - <span class="nv">$USER</span>
+yes<span class="p">|</span>ssh-keygen -f ~/.ssh/id_rsa -t rsa -N <span class="s2">&#34;&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>把公钥拷贝到各 Ceph 节点</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh-copy-id <span class="nv">$USER</span>@k8s-rke-node001
+ssh-copy-id <span class="nv">$USER</span>@k8s-rke-node002
+ssh-copy-id <span class="nv">$USER</span>@k8s-rke-node003</code></pre></td></tr></table>
+</div>
+</div>
+<p>修改 <code>ceph-deploy</code> 管理节点上的 <code>~/.ssh/config</code> 文件，这样 <code>ceph-deploy</code> 就能用你所建的用户名登录 Ceph 节点了，而无需每次执行 <code>ceph-deploy</code> 都要指定 <code>--username</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF &gt;&gt; ~/.ssh/config
+</span><span class="s">Host      	k8s-rke-node001
+</span><span class="s">	Hostname  k8s-rke-node001
+</span><span class="s">	User      $USER
+</span><span class="s">
+</span><span class="s">Host      	k8s-rke-node002
+</span><span class="s">	Hostname  k8s-rke-node002
+</span><span class="s">	User      $USER
+</span><span class="s">
+</span><span class="s">Host      	k8s-rke-node003
+</span><span class="s">	Hostname  k8s-rke-node003
+</span><span class="s">	User      $USER
+</span><span class="s">EOF</span>
+
+chmod <span class="m">644</span> ~/.ssh/config</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="配置时钟同步">配置时钟同步</h3>
+
+<h3 id="设置selinux">设置SELINUX</h3>
+
+<p>在 CentOS 和 RHEL 上， SELinux 默认为 <code>Enforcing</code> 开启状态。为简化安装，我们建议把 SELinux 设置为 <code>Permissive</code> 或者完全禁用，也就是在加固系统配置前先确保集群的安装、配置没问题。用下列命令把 SELinux 设置为 <code>Permissive</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo setenforce <span class="m">0</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置tty">设置TTY</h3>
+
+<p>在 CentOS 和 RHEL 上执行 <code>ceph-deploy</code> 命令时可能会报错。如果你的 Ceph 节点默认设置了 <code>requiretty</code> ，执行 <code>sudo visudo</code> 禁用它，并找到 <code>Defaults requiretty</code> 选项，把它改为 <code>Defaults:ceph !requiretty</code> 或者直接注释掉，这样 <code>ceph-deploy</code> 就可以用之前创建的用户（<a href="http://docs.ceph.org.cn/start/quick-start-preflight/#id3">创建部署 Ceph 的用户</a> ）连接了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s1">&#39;s/Defaults *requiretty/#Defaults requiretty/g&#39;</span> /etc/sudoers
+sed -i <span class="s1">&#39;s/Defaults *!visiblepw/Defaults   visiblepw/g&#39;</span> /etc/sudoers</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="安装yum-plugin-priorities">安装yum-plugin-priorities</h3>
+
+<p>确保你的包管理器安装了优先级/首选项包且已启用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install yum-plugin-priorities -y</code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="加载rbd模块">加载rbd模块</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">sudo modprobe rbd</pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建集群">创建集群</h1>
+
+<p>先在ceph-deploy管理节点上创建一个目录，用于保存 <code>ceph-deploy</code> 生成的配置文件和密钥对。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建集群配置目录</span>
-mkdir ceph-cluster <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ceph-cluster
+mkdir ceph-cluster <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ceph-cluster</code></pre></td></tr></table>
+</div>
+</div>
+<p><code>ceph-deploy</code> 会把文件输出到当前目录，所以请确保在此目录下执行 <code>ceph-deploy</code> 。</p>
 
-<span class="c1"># 创建 monitor-node</span>
-ceph-deploy new k8s-rke-node001 <span class="se">\
+<h2 id="创建集群-1">创建集群</h2>
+
+<p>在管理节点上，进入刚创建的放置配置文件的目录，用 <code>ceph-deploy</code> 执行如下步骤，安装规划在k8s-rke-node001节点初始化Monitor。</p>
+
+<p>1、创建集群</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy new k8s-rke-node001 <span class="se">\
 </span><span class="se"></span>  --public-network <span class="m">192</span>.168.56.0/24 <span class="se">\
 </span><span class="se"></span>  --cluster-network <span class="m">192</span>.168.56.0/24 </code></pre></td></tr></table>
 </div>
 </div>
+<blockquote>
 <p>注意：public-network要和当前ip的网段保持对应。</p>
+</blockquote>
 
-<p>出现异常：</p>
+<p>2、在当前目录下用 <code>ls</code> 和 <code>cat</code> 检查 <code>ceph-deploy</code> 的输出，应该有一个 Ceph 配置文件、一个 monitor 密钥环和一个日志文件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">-rw-r--r-- <span class="m">1</span> root root    <span class="m">291</span> 9月  <span class="m">17</span> <span class="m">22</span>:15 ceph.conf
+-rw-r--r-- <span class="m">1</span> root root <span class="m">212100</span> 9月  <span class="m">17</span> <span class="m">22</span>:16 ceph-deploy-ceph.log
+-rw------- <span class="m">1</span> root root     <span class="m">73</span> 9月  <span class="m">16</span> <span class="m">09</span>:40 ceph.mon.keyring</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、如果出现异常：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -474,20 +537,7 @@ ImportError: No module named pkg_resources</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install python-pkg-resources python-setuptools -y</code></pre></td></tr></table>
 </div>
 </div>
-<p>执行完之后，在当前目录下会创建一些辅助文件：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">-rw-r--r-- 1 root root    291 9月  17 22:15 ceph.conf
--rw-r--r-- 1 root root 212100 9月  17 22:16 ceph-deploy-ceph.log
--rw------- 1 root root     73 9月  16 09:40 ceph.mon.keyring</pre></td></tr></table>
-</div>
-</div>
-<p>接下来，我们需要修改下 ceph.conf 配置文件，增加副本数为 1，因为我们目前只有1个 osd 节点。</p>
+<p>4、把 Ceph 配置文件里的默认副本数从 <code>3</code> 改成 <code>2</code> ，这样只有两个 OSD 也可以达到 <code>active + clean</code> 状态。把下面这行加入 <code>[global]</code> 段：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt"> 1
@@ -503,7 +553,7 @@ ImportError: No module named pkg_resources</code></pre></td></tr></table>
 </span></pre></td>
 <td class="lntd">
 <pre class="chroma">echo &#34;
-osd_pool_default_size = 1
+osd_pool_default_size =2
 
 [mon]
 mon_allow_pool_delete = true
@@ -514,29 +564,16 @@ mon_clock_drift_warn_backoff = 30
 &#34; &gt;&gt; ceph.conf</pre></td></tr></table>
 </div>
 </div>
-<p>如果是在集群启动后修改配置文件，则需要同步配置文件：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy --overwrite-conf config push k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<h1 id="创建集群">创建集群</h1>
-
-<p>创建集群使用 ceph-deploy 工具即可，通过 ceph-deploy 在各个节点安装 ceph：</p>
+<p>5、通过 ceph-deploy 在各个节点安装 ceph：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 安装 ceph</span>
-ceph-deploy install k8s-rke-node001</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy install k8s-rke-node001 k8s-rke-node002 k8s-rke-node003</code></pre></td></tr></table>
 </div>
 </div>
-<p>此过程需要等待一段时间，因为 ceph-deploy 会 SSH 登录到各 node 上去，依次执行安装 ceph 依赖的组件包。</p>
+<p>6、此过程需要等待一段时间，因为 ceph-deploy 会 SSH 登录到各 node 上去，依次执行安装 ceph 依赖的组件包。</p>
 
 <p>如果下载太慢，可以设置镜像：</p>
 <div class="highlight"><div class="chroma">
@@ -558,16 +595,7 @@ ceph-deploy install --repo-url http://mirrors.163.com/ceph/rpm-nautilus k8s-rke-
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum -y install ceph ceph-radosgw</code></pre></td></tr></table>
 </div>
 </div>
-<p>再次执行：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy install k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<p>安装成功之后，检查每个节点的ceph版本是否一致：</p>
+<p>7、安装成功之后，检查每个节点的ceph版本是否一致：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -578,9 +606,7 @@ ceph-deploy install --repo-url http://mirrors.163.com/ceph/rpm-nautilus k8s-rke-
 ceph version 14.2.4 (75f4de193b3ea58512f204623e6c5a16e6c1e1ba) nautilus (stable)</pre></td></tr></table>
 </div>
 </div>
-<h1 id="初始化monitor">初始化monitor</h1>
-
-<p>初始化 monitor node 和 秘钥文件：</p>
+<p>8、配置初始 monitor(s)、并收集所有密钥</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -589,7 +615,7 @@ ceph version 14.2.4 (75f4de193b3ea58512f204623e6c5a16e6c1e1ba) nautilus (stable)
 <pre class="chroma">ceph-deploy mon create-initial</pre></td></tr></table>
 </div>
 </div>
-<p>注意：执行完成后会在/etc/ceph目录多以下内容：</p>
+<p>完成上述操作后，当前目录里应该会出现这些密钥：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -637,20 +663,48 @@ ceph.bootstrap-rbd-mirror.keyring</pre></td></tr></table>
 <pre class="chroma">ceph quorum_status --format json-pretty</pre></td></tr></table>
 </div>
 </div>
-<h1 id="初始化osd">初始化OSD</h1>
+<h2 id="初始化osd">初始化OSD</h2>
 
-<p>首先，给每个虚拟机挂载一个磁盘。</p>
-
-<p>查看磁盘分区：</p>
+<p>1、添加两个 OSD 。为了快速地安装，这篇快速入门把目录而非整个硬盘用于 OSD 守护进程。如何为 OSD 及其日志使用独立硬盘或分区，请参考 <a href="http://docs.ceph.org.cn/rados/deployment/ceph-deploy-osd">ceph-deploy osd</a> 。登录到 Ceph 节点、并给 OSD 守护进程创建一个目录。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo fdisk  -l</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh k8s-rke-node001 <span class="s2">&#34;sudo mkdir -p /data/ceph/osd&#34;</span>
+ssh k8s-rke-node002 <span class="s2">&#34;sudo mkdir -p /data/ceph/osd&#34;</span>
+ssh k8s-rke-node003 <span class="s2">&#34;sudo mkdir -p /data/ceph/osd&#34;</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>格式化：</p>
+<p>然后，从管理节点执行 <code>ceph-deploy</code> 来准备 OSD 。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy osd create --data /data/ceph/osd k8s-rke-node001
+ceph-deploy osd create --data /data/ceph/osd k8s-rke-node002
+ceph-deploy osd create --data /data/ceph/osd k8s-rke-node003</pre></td></tr></table>
+</div>
+</div>
+<p>查看创建的osd：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ceph-deploy osd list k8s-rke-node001
+ceph-deploy osd list k8s-rke-node002
+ceph-deploy osd list k8s-rke-node003</pre></td></tr></table>
+</div>
+</div>
+<p>如果是想用磁盘，则必须先格式化：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -662,346 +716,106 @@ ceph.bootstrap-rbd-mirror.keyring</pre></td></tr></table>
 <p>列出节点所有磁盘信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph-deploy disk list k8s-rke-node001
-<span class="o">[</span>ceph_deploy.conf<span class="o">][</span>DEBUG <span class="o">]</span> found configuration file at: /home/chenzj/.cephdeploy.conf
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span> Invoked <span class="o">(</span><span class="m">2</span>.0.1<span class="o">)</span>: /usr/bin/ceph-deploy disk list k8s-rke-node001
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span> ceph-deploy options:
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  username                      : None
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  verbose                       : False
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  debug                         : False
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  overwrite_conf                : False
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  subcommand                    : list
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  quiet                         : False
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  cd_conf                       : &lt;ceph_deploy.conf.cephdeploy.Conf instance at 0x7f17fe3af3f8&gt;
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  cluster                       : ceph
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  host                          : <span class="o">[</span><span class="s1">&#39;k8s-rke-node001&#39;</span><span class="o">]</span>
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  func                          : &lt;<span class="k">function</span> disk at 0x7f17fe3eb938&gt;
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  ceph_conf                     : None
-<span class="o">[</span>ceph_deploy.cli<span class="o">][</span>INFO  <span class="o">]</span>  default_release               : False
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> connection detected need <span class="k">for</span> sudo
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> connected to host: k8s-rke-node001
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> detect platform information from remote host
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> detect machine <span class="nb">type</span>
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>DEBUG <span class="o">]</span> find the location of an executable
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Running command: sudo fdisk -l
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/sda: <span class="m">34</span>.4 GB, <span class="m">34359738368</span> bytes, <span class="m">67108864</span> sectors
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/sdb: <span class="m">8589</span> MB, <span class="m">8589934592</span> bytes, <span class="m">16777216</span> sectors
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/mapper/centos_centos7-root: <span class="m">31</span>.1 GB, <span class="m">31130124288</span> bytes, <span class="m">60801024</span> sectors
-<span class="o">[</span>k8s-rke-node001<span class="o">][</span>INFO  <span class="o">]</span> Disk /dev/mapper/centos_centos7-swap: <span class="m">2147</span> MB, <span class="m">2147483648</span> bytes, <span class="m">4194304</span> sectors</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy disk list k8s-rke-node001
+ceph-deploy disk list k8s-rke-node002
+ceph-deploy disk list k8s-rke-node003</code></pre></td></tr></table>
 </div>
 </div>
 <p>清除磁盘分区和内容：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy disk zap k8s-rke-node001 /dev/sdb</pre></td></tr></table>
-</div>
-</div>
-<p>创建osd：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy osd create --data /dev/sdb k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<p>查看创建的osd：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy osd list k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<h1 id="创建mgr">创建MGR</h1>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy mgr create k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<h1 id="创建mds">创建MDS</h1>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy mds create k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<h1 id="创建rgw">创建RGW</h1>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy rgw create k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<p>浏览器访问：<a href="http://192.168.56.100:7480">http://192.168.56.100:7480</a></p>
-
-<h1 id="部署ceph-cli工具和秘钥">部署ceph cli工具和秘钥</h1>
-
-<p>我们先通过ceph admin命令将将ceph.client.admin.keyring同步到各个Node上，以便可以在各个Node上使用ceph命令连接到monitor：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy admin k8s-rke-node001</pre></td></tr></table>
-</div>
-</div>
-<p>各节点修改ceph.client.admin.keyring权限：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">sudo chmod +r /etc/ceph/ceph.client.admin.keyring</pre></td></tr></table>
-</div>
-</div>
-<h1 id="查看集群状态">查看集群状态</h1>
-
-<p>只有先部署ceph cli工具和秘钥之后，才能运行ceph命令：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph health
-
-$ ceph -s
-  cluster:
-    id:     9114557d-8096-4b4d-ad74-622d68903aea
-    health: HEALTH_OK
-
-  services:
-    mon: <span class="m">1</span> daemons, quorum k8s-rke-node001 <span class="o">(</span>age 10m<span class="o">)</span>
-    mgr: k8s-rke-node001<span class="o">(</span>active, since 3m<span class="o">)</span>
-    osd: <span class="m">1</span> osds: <span class="m">1</span> up <span class="o">(</span>since 4m<span class="o">)</span>, <span class="m">1</span> in <span class="o">(</span>since 4m<span class="o">)</span>
-    rgw: <span class="m">1</span> daemon active <span class="o">(</span>k8s-rke-node001<span class="o">)</span>
-
-  data:
-    pools:   <span class="m">4</span> pools, <span class="m">32</span> pgs
-    objects: <span class="m">187</span> objects, <span class="m">1</span>.2 KiB
-    usage:   <span class="m">1</span>.0 GiB used, <span class="m">6</span>.0 GiB / <span class="m">7</span> GiB avail
-    pgs:     <span class="m">32</span> active+clean</code></pre></td></tr></table>
-</div>
-</div>
-<p>如果出现too many PGs per OSD (448 &gt; max 300)，则查看默认配置：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ceph --show-config  <span class="p">|</span> grep mon_pg_warn_max_per_osd
-<span class="nv">mon_pg_warn_max_per_osd</span> <span class="o">=</span> <span class="m">300</span></code></pre></td></tr></table>
-</div>
-</div>
-<p>解决办法，在/etc/ceph/ceph.conf中添加：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>global<span class="o">]</span>
-.......
-<span class="nv">mon_pg_warn_max_per_osd</span> <span class="o">=</span> <span class="m">1000</span></code></pre></td></tr></table>
-</div>
-</div>
-<p>重启monitor服务：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">systemctl restart ceph-mon.target</pre></td></tr></table>
+<pre class="chroma">ceph-deploy disk zap k8s-rke-node001 /dev/sdb
+ceph-deploy disk zap k8s-rke-node002 /dev/sdb
+ceph-deploy disk zap k8s-rke-node003 /dev/sdb</pre></td></tr></table>
 </div>
 </div>
-<p>接下来，查看一下ceph集群中的OSD节点状态：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph osd tree</pre></td></tr></table>
-</div>
-</div>
-<p>如果有一个osd down了，则去对应的机器上重启服务：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">sudo systemctl restart ceph-osd@0.service</pre></td></tr></table>
-</div>
-</div>
-<p>如果出错了，可以查看日志：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">tailf /var/log/ceph/ceph-osd.0.log</pre></td></tr></table>
-</div>
-</div>
-<p>查看mds状态，ceph的mds是一个单独的daemon，它只能服务于一个Cephfs：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">$ ceph mds stat
- 1 up:standby</pre></td></tr></table>
-</div>
-</div>
-<h1 id="清理环境">清理环境</h1>
-
-<p>如果我们在安装过程中出现了问题，需要重新操作的时候，例如想清理我搭建的这个集群的话，可以使用以下命令。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ceph-deploy 上执行</span>
-
-<span class="c1"># 清理配置</span>
-ceph-deploy purgedata k8s-rke-node001
-ceph-deploy forgetkeys
-
-<span class="c1"># 清理 Ceph 安装包</span>
-ceph-deploy purge k8s-rke-node001</code></pre></td></tr></table>
-</div>
-</div>
-<h1 id="安装mgr-dashboard">安装mgr dashboard</h1>
-
-<p>自 nautilus开始，dashboard作为一个单独的模块独立出来了，使用时需要单独安装:</p>
+<p>2、用 <code>ceph-deploy</code> 把配置文件和 admin 密钥拷贝到管理节点和 Ceph 节点，这样你每次执行 Ceph 命令行时就无需指定 monitor 地址和 <code>ceph.client.admin.keyring</code> 了。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install -y ceph-mgr-dashboard</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy admin k8s-rke-node001 k8s-rke-node002 k8s-rke-node003</code></pre></td></tr></table>
 </div>
 </div>
-<p>启用dashboard：</p>
+<p>3、确保你对 <code>ceph.client.admin.keyring</code> 有正确的操作权限。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo chmod +r /etc/ceph/ceph.client.admin.keyring</code></pre></td></tr></table>
+</div>
+</div>
+<p>4、检查集群的健康状况。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">ceph mgr module enable dashboard --force</pre></td></tr></table>
+<pre class="chroma">ceph health</pre></td></tr></table>
 </div>
 </div>
-<p>默认启用SSL/TLS，所以需要创建自签名根证书：</p>
+<p>等 peering 完成后，集群应该达到 <code>active + clean</code> 状态。</p>
+
+<h1 id="操作集群">操作集群</h1>
+
+<p>用 <code>ceph-deploy</code> 部署完成后它会自动启动集群。Ceph 集群部署完成后，你可以尝试一下管理功能、 <code>rados</code> 对象存储命令，之后可以继续快速入门手册，了解 Ceph 块设备、 Ceph 文件系统和 Ceph 对象网关。</p>
+
+<h2 id="集群扩容">集群扩容</h2>
+
+<p>一个基本的集群启动并开始运行后，下一步就是扩展集群。在 k8s-rke-node004 上添加一个 OSD 守护进程和一个元数据服务器。然后分别在 k8s-rke-node002 和 k8s-rke-node003 上添加 Ceph Monitor ，以形成 Monitors 的法定人数。</p>
+
+<h3 id="添加-osd">添加 OSD</h3>
+
+<p>在 k8s-rke-node004 上添加一个 OSD：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh k8s-rke-node004 <span class="s2">&#34;sudo mkdir -p /data/ceph/osd&#34;</span>
+ceph-deploy osd create --data /data/ceph/osd k8s-rke-node004</code></pre></td></tr></table>
+</div>
+</div>
+<p>一旦你新加了 OSD ， Ceph 集群就开始重均衡，把归置组迁移到新 OSD 。可以用下面的 <code>ceph</code> 命令观察此过程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">ceph dashboard create-self-signed-cert</pre></td></tr></table>
+<pre class="chroma">ceph -w</pre></td></tr></table>
 </div>
 </div>
-<p>创建具有管理员角色的用户</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph dashboard ac-user-create admin admin administrator</pre></td></tr></table>
-</div>
-</div>
-<p>查看ceph-mgr服务</p>
+<p>你应该能看到归置组状态从 <code>active + clean</code> 变为 <code>active</code> ，还有一些降级的对象；迁移完成后又会回到 <code>active + clean</code> 状态（ Control-C 退出）。</p>
+
+<h3 id="添加-monitors">添加 MONITORS</h3>
+
+<p>Ceph 存储集群需要至少一个 Monitor 才能运行。为达到高可用，典型的 Ceph 存储集群会运行多个 Monitors，这样在单个 Monitor 失败时不会影响 Ceph 存储集群的可用性。Ceph 使用 PASOX 算法，此算法要求有多半 monitors（即 1 、 2:3 、 3:4 、 3:5 、 4:6 等 ）形成法定人数。</p>
+
+<p>k8s-rke-node002 和 k8s-rke-node003 上添加 Ceph Monitor</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">$ ceph mgr services 
-{
-    &#34;dashboard&#34;: &#34;https://0.0.0.0:8443/&#34;
-}</pre></td></tr></table>
+<pre class="chroma">ceph-deploy mon add k8s-rke-node002
+ceph-deploy mon add k8s-rke-node003</pre></td></tr></table>
 </div>
 </div>
-<p>访问：<a href="https://192.168.56.111:8443/">https://192.168.56.111:8443</a></p>
-
-<h1 id="扩容集群">扩容集群</h1>
-
-<h2 id="添加monitor">添加Monitor</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ceph-deploy mon add k8s-rke-node002</pre></td></tr></table>
-</div>
-</div>
-<p>查看仲裁信息：</p>
+<p>新增 Monitor 后，Ceph 会自动开始同步并形成法定人数。你可以用下面的命令检查法定人数状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -1014,25 +828,66 @@ ceph-deploy purge k8s-rke-node001</code></pre></td></tr></table>
 <li>请确保ntp时钟同步</li>
 </ul>
 
-<h2 id="添加mgr">添加MGR</h2>
+<h3 id="添加-mds">添加 MDS</h3>
+
+<p>至少需要一个元数据服务器才能使用 CephFS ，执行下列命令创建元数据服务器：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">ceph-deploy mgr create k8s-rke-node002</pre></td></tr></table>
+<pre class="chroma">ceph-deploy mds create k8s-rke-node001</pre></td></tr></table>
 </div>
 </div>
-<p>查看standby manager：</p>
+<blockquote>
+<p>注意：</p>
+
+<p>当前生产环境下的 Ceph 只能运行一个元数据服务器。</p>
+</blockquote>
+
+<h3 id="添加-rgw-例程">添加 RGW 例程</h3>
+
+<p>要使用 Ceph 的 <a href="http://docs.ceph.org.cn/glossary/#term-34"><em>Ceph 对象网关</em></a>组件，必须部署 <a href="http://docs.ceph.org.cn/glossary/#term-rgw"><em>RGW</em></a> 例程。用下列方法创建新 RGW 例程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">ceph -s</pre></td></tr></table>
+<pre class="chroma">ceph-deploy rgw create k8s-rke-node001</pre></td></tr></table>
 </div>
 </div>
-<h1 id="配置客户端">配置客户端</h1>
+<p><a href="http://docs.ceph.org.cn/glossary/#term-rgw"><em>RGW</em></a> 例程默认会监听 7480 端口，可以更改该节点 ceph.conf 内与 <a href="http://docs.ceph.org.cn/glossary/#term-rgw"><em>RGW</em></a> 相关的配置，如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>client<span class="o">]</span>
+rgw <span class="nv">frontends</span> <span class="o">=</span> civetweb <span class="nv">port</span><span class="o">=</span><span class="m">80</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问：<a href="http://192.168.56.111:7480">http://192.168.56.111:7480</a></p>
+
+<h2 id="操作数据">操作数据</h2>
+
+<p>要把对象存入 Ceph 存储集群，客户端必须做到：</p>
+
+<ol>
+<li>指定<strong>对象名</strong></li>
+<li>指定<strong>存储池</strong></li>
+</ol>
+
+<p>Ceph 客户端检出最新集群运行图，用 CRUSH 算法计算出如何把对象映射到<strong>归置组</strong>，然后动态地计算如何把归置组分配到 OSD 。要定位对象，只需要对象名和存储池名字即可，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd map <span class="o">{</span>poolname<span class="o">}</span> <span class="o">{</span>object-name<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>作为练习，我们先创建一个对象，用 <code>rados put</code> 命令加上对象名、一个有数据的测试文件路径、并指定存储池。例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1040,51 +895,51 @@ ceph-deploy purge k8s-rke-node001</code></pre></td></tr></table>
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ssh-copy-id k8s-rke-node002
-
-ceph-deploy install k8s-rke-node002</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="o">{</span>Test-data<span class="o">}</span> &gt; testfile.txt
+rados put <span class="o">{</span>object-name<span class="o">}</span> <span class="o">{</span>file-path<span class="o">}</span> --pool<span class="o">=</span>data
+rados put test-object-1 testfile.txt --pool<span class="o">=</span>data</code></pre></td></tr></table>
 </div>
 </div>
-<p>将Ceph 配置文件复制到客户端：</p>
+<p>为确认 Ceph 存储集群存储了此对象，可执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy config push k8s-rke-node002</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">rados -p data ls</code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="新建用户密钥">新建用户密钥</h2>
-
-<p>客户机需要 ceph 秘钥去访问 ceph 集群。ceph创建了一个默认的用户client.admin，它有足够的权限去访问ceph集群。但是不建议把 client.admin 共享到所有其他的客户端节点。这里我用分开的秘钥新建一个用户k8s去访问特定的存储池。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s mon <span class="s1">&#39;allow r&#39;</span> osd <span class="s1">&#39;allow class-read object_prefix rbd_children, allow rwx pool=rbd&#39;</span></code></pre></td></tr></table>
-</div>
-</div>
-<p>为 k8s-rke-node002 上的 client.rbd 用户添加秘钥：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s <span class="p">|</span> ssh k8s-node4 tee /etc/ceph/ceph.client.k8s.keyring</code></pre></td></tr></table>
-</div>
-</div>
-<p>到客户端 k8s-rke-node002  检查集群健康状态：</p>
+<p>现在，定位对象：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat /etc/ceph/ceph.client.k8s.keyring &gt;&gt; /etc/ceph/keyring
-ceph -s --name client.k8s</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd map <span class="o">{</span>pool-name<span class="o">}</span> <span class="o">{</span>object-name<span class="o">}</span>
+ceph osd map data test-object-1</code></pre></td></tr></table>
 </div>
 </div>
+<p>Ceph 应该会输出对象的位置，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">osdmap e537 pool <span class="s1">&#39;data&#39;</span> <span class="o">(</span><span class="m">0</span><span class="o">)</span> object <span class="s1">&#39;test-object-1&#39;</span> -&gt; pg <span class="m">0</span>.d1743484 <span class="o">(</span><span class="m">0</span>.4<span class="o">)</span> -&gt; up <span class="o">[</span><span class="m">1</span>,0<span class="o">]</span> acting <span class="o">[</span><span class="m">1</span>,0<span class="o">]</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>用<code>rados rm</code> 命令可删除此测试对象，例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">rados rm test-object-1 --pool<span class="o">=</span>data</code></pre></td></tr></table>
+</div>
+</div>
+<p>随着集群的运行，对象位置可能会动态改变。 Ceph 有动态均衡机制，无需手动干预即可完成。</p>
+
     </div>
 
     <div class="post-copyright">
@@ -1124,7 +979,11 @@ ceph -s --name client.k8s</code></pre></td></tr></table>
           <a href="/tags/ceph/">ceph</a>
           </div>
       <nav class="post-nav">
-        
+        <a class="prev" href="/2019/11/30/ceph-rbd-test/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Ceph块设备测试</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
         <a class="next" href="/2019/11/22/install-file-fdw-for-postgresql/">
             <span class="next-text nav-default">PostgreSQL安装并测试file_fdw</span>
             <span class="next-text nav-mobile">下一篇</span>
