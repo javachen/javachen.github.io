@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1706">
+<meta itemprop="wordCount" content="2244">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/ceph/"> ceph </a>
             </div>
-          <span class="more-meta"> 约 1706 字 </span>
-          <span class="more-meta"> 预计阅读 4 分钟 </span>
+          <span class="more-meta"> 约 2244 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -144,7 +144,14 @@
     <nav id="TableOfContents">
 <ul>
 <li><a href="#配置客户端">配置客户端</a></li>
-<li><a href="#配置块设备">配置块设备</a></li>
+<li><a href="#创建块设备">创建块设备</a></li>
+<li><a href="#查看块设备">查看块设备</a></li>
+<li><a href="#检索镜像信息">检索镜像信息</a></li>
+<li><a href="#调整块设备映像大小">调整块设备映像大小</a></li>
+<li><a href="#使用块设备">使用块设备</a></li>
+<li><a href="#取消掉块设备的映射">取消掉块设备的映射</a></li>
+<li><a href="#删除块设备镜像">删除块设备镜像</a></li>
+<li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
   </div>
@@ -209,7 +216,7 @@ ceph-deploy install k8s-rke-node005</code></pre></td></tr></table>
 ceph -s --name client.k8s</code></pre></td></tr></table>
 </div>
 </div>
-<h1 id="配置块设备">配置块设备</h1>
+<h1 id="创建块设备">创建块设备</h1>
 
 <p>1、要想把块设备加入某节点，你得先在Ceph 存储集群中创建一个映像，使用下列命令：</p>
 <div class="highlight"><div class="chroma">
@@ -280,6 +287,28 @@ Ensure that the default pool has been created or specify an alternate pool name.
 </div>
 </div>
 <p>4、在客户端节点上，把 image 映射为块设备。</p>
+
+<p>用 <code>rbd</code> 把映像名映射为内核模块。必须指定映像名、存储池名、和用户名。若 RBD 内核模块尚未加载， <code>rbd</code> 命令会自动加载。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rbd map <span class="o">{</span>pool-name<span class="o">}</span>/<span class="o">{</span>image-name<span class="o">}</span> --id <span class="o">{</span>user-name<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>如果你启用了 <a href="http://docs.ceph.org.cn/rados/configuration/auth-config-ref/">cephx</a> 认证，还必须提供密钥，可以用密钥环或密钥文件指定密钥。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rbd map rbd/myimage --id admin --keyring /path/to/keyring
+sudo rbd map rbd/myimage --id admin --keyfile /path/to/file</code></pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -462,7 +491,36 @@ rbd image <span class="s1">&#39;foo&#39;</span>:
 <pre class="chroma">rbd_default_features = 1</pre></td></tr></table>
 </div>
 </div>
-<p>5、查看系统中已经映射的块设备</p>
+<h1 id="查看块设备">查看块设备</h1>
+
+<p>要列出 <code>rbd</code> 存储池中的块设备，可以用下列命令（即 <code>rbd</code> 是默认存储池名字）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd ls</pre></td></tr></table>
+</div>
+</div>
+<p>用下列命令罗列某个特定存储池中的块设备，用存储池的名字替换 <code>{poolname}</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd ls {poolname}</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd ls swimmingpool</pre></td></tr></table>
+</div>
+</div>
+<p>查看系统中已经映射的块设备</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -475,7 +533,60 @@ id pool namespace image snap device
 <span class="m">0</span>  rbd            foo   -    /dev/rbd0</code></pre></td></tr></table>
 </div>
 </div>
-<p>6、在客户端节点上，创建文件系统后就可以使用块设备了。</p>
+<h1 id="检索镜像信息">检索镜像信息</h1>
+
+<p>用下列命令检索某个特定映像的信息，用映像名字替换 <code>{image-name}</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd info {image-name}</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd info foo</pre></td></tr></table>
+</div>
+</div>
+<p>用下列命令检索某存储池内的映像的信息，用映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd info {pool-name}/{image-name}</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd info rbd/foo</pre></td></tr></table>
+</div>
+</div>
+<h1 id="调整块设备映像大小">调整块设备映像大小</h1>
+
+<p>Ceph 块设备镜像是精简配置，只有在你开始写入数据时它们才会占用物理空间。然而，它们都有最大容量，就是你设置的 <code>--size</code> 选项。如果你想增加（或减小） Ceph 块设备映像的最大尺寸，执行下列命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd resize --size 2048 foo 
+rbd resize --size 512 foo --allow-shrink</pre></td></tr></table>
+</div>
+</div>
+<h1 id="使用块设备">使用块设备</h1>
+
+<p>1、在客户端节点上，创建文件系统后就可以使用块设备了。格式化块设备：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -486,7 +597,7 @@ id pool namespace image snap device
 </div>
 <p>此命令可能耗时较长。</p>
 
-<p>6、在客户端节点上挂载此文件系统。</p>
+<p>2、在客户端节点上挂载此文件系统。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -497,7 +608,7 @@ id pool namespace image snap device
 sudo mount /dev/rbd0 /mnt/ceph-block-device</code></pre></td></tr></table>
 </div>
 </div>
-<p>7、查看挂载情况</p>
+<p>3、查看挂载情况</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -510,7 +621,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/rbd0      1014M   33M  982M   <span class="m">4</span>% /mnt/ceph-block-device</code></pre></td></tr></table>
 </div>
 </div>
-<p>8、我们测试一下生成一个 500M 大文件，看是否自动同步到各个节点：</p>
+<p>4、我们测试一下生成一个 500M 大文件，看是否自动同步到各个节点：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -547,7 +658,9 @@ Filesystem      Size  Used Avail Use% Mounted on
 </div>
 <p>说明文件写入成功。</p>
 
-<p>9、查看ceph集群存储使用情况</p>
+<p>5、查看ceph集群中存储使用情况</p>
+
+<p>在ceph集群某一个节点上执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -590,7 +703,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 </div>
 <p>可以看到有1.0 GB被使用了。</p>
 
-<p>10、取消掉块设备的映射：</p>
+<h1 id="取消掉块设备的映射">取消掉块设备的映射</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -601,6 +714,52 @@ Filesystem      Size  Used Avail Use% Mounted on
 sudo rbd unmap /dev/rbd0 </code></pre></td></tr></table>
 </div>
 </div>
+<h1 id="删除块设备镜像">删除块设备镜像</h1>
+
+<p>可用下列命令删除块设备，用映像名字替换 <code>{image-name}</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd rm {image-name}</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd rm foo</pre></td></tr></table>
+</div>
+</div>
+<p>用下列命令从某存储池中删除一个块设备，用要删除的映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd rm {pool-name}/{image-name}</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">rbd rm rbd/foo</pre></td></tr></table>
+</div>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://blog.csdn.net/ygtlovezf/article/details/79107755">使用内核态的RBD</a></li>
+<li><a href="http://cephnotes.ksperis.com/blog/2014/01/21/feature-set-mismatch-error-on-ceph-kernel-client">Feature Set Mismatch Error on Ceph Kernel Client</a></li>
+<li><a href="http://docs.ceph.org.cn/rbd/rados-rbd-cmds/">块设备命令</a></li>
+</ul>
+
     </div>
 
     <div class="post-copyright">
