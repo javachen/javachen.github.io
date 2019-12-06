@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4970">
+<meta itemprop="wordCount" content="5882">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4970 字 </span>
-          <span class="more-meta"> 预计阅读 10 分钟 </span>
+          <span class="more-meta"> 约 5882 字 </span>
+          <span class="more-meta"> 预计阅读 12 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -181,7 +181,11 @@
 <li><a href="#启动docker">启动Docker</a></li>
 <li><a href="#修改配置文件">修改配置文件</a>
 <ul>
-<li><a href="#修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</a></li>
+<li><a href="#registry-mirrors"><code>registry-mirrors</code></a></li>
+<li><a href="#dns"><code>dns</code></a></li>
+<li><a href="#log-driver"><code>log-driver</code></a></li>
+<li><a href="#cgroup-driver"><code>cgroup driver</code></a></li>
+<li><a href="#storage-driver"><code>storage-driver</code></a></li>
 </ul></li>
 <li><a href="#重新加载配置">重新加载配置</a></li>
 </ul></li>
@@ -191,6 +195,12 @@
 <li><a href="#配置yum源">配置yum源</a></li>
 <li><a href="#创建非root用户">创建非root用户</a></li>
 <li><a href="#配置无密码登陆">配置无密码登陆</a></li>
+<li><a href="#k8s-docker镜像">k8s docker镜像</a>
+<ul>
+<li><a href="#gcr-io-google-containers">gcr.io/google-containers</a></li>
+<li><a href="#k8s-gcr-io">k8s.gcr.io</a></li>
+<li><a href="#quay-io">quay.io</a></li>
+</ul></li>
 <li><a href="#创建rke配置文件">创建RKE配置文件</a></li>
 <li><a href="#创建集群">创建集群</a></li>
 <li><a href="#与kubernetes集群的交互">与Kubernetes集群的交互</a></li>
@@ -818,10 +828,114 @@ yum install docker-ce -y</code></pre></td></tr></table>
 </div>
 <h2 id="修改配置文件">修改配置文件</h2>
 
-<h3 id="修改docker-cgroup-driver为systemd">修改docker cgroup driver为systemd</h3>
+<h3 id="registry-mirrors"><code>registry-mirrors</code></h3>
+
+<p>Docker镜像：</p>
+
+<ol>
+<li><a href="https://www.daocloud.io/mirror#accelerator-doc">Daocloud</a>，具体用法见网站。</li>
+<li><a href="http://mirrors.ustc.edu.cn/help/dockerhub.html">中科大</a>，具体用法见网站。</li>
+</ol>
+
+<h3 id="dns"><code>dns</code></h3>
+
+<p>Docker内置了一个DNS Server，它用来做两件事情：</p>
+
+<ol>
+<li>解析docker network里的容器或Service的IP地址</li>
+<li>把解析不了的交给外部DNS Server解析（<code>dns</code>参数设定的地址）</li>
+</ol>
+
+<p>默认情况下，<code>dns</code>参数值为Google DNS nameserver：<code>8.8.8.8</code>和<code>8.8.4.4</code>。我们得改成国内的DNS地址，比如：</p>
+
+<ol>
+<li><code>1.2.4.8</code></li>
+<li>阿里DNS：<code>223.5.5.5</code>和<code>223.6.6.6</code></li>
+<li>114DNS：<code>114.114.114.114</code>和<code>114.114.115.115</code></li>
+</ol>
+
+<p>比如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;dns&#34;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&#34;223.5.5.5&#34;</span><span class="p">,</span> <span class="s2">&#34;223.6.6.6&#34;</span><span class="p">]</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="log-driver"><code>log-driver</code></h3>
+
+<p><a href="https://docs.docker.com/config/containers/logging/configure/">Log driver</a>是Docker用来接收来自容器内部<code>stdout/stderr</code>的日志的模块，Docker默认的log driver是<a href="https://docs.docker.com/config/containers/logging/json-file/">JSON File logging driver</a>。这里只讲<code>json-file</code>的配置，其他的请查阅相关文档。</p>
+
+<p><code>json-file</code>会将容器日志存储在docker host machine的<code>/var/lib/docker/containers//-json.log</code>（需要root权限才能够读），既然日志是存在磁盘上的，那么就要磁盘消耗的问题。下面介绍两个关键参数：</p>
+
+<ol>
+<li><code>max-size</code>，单个日志文件最大尺寸，当日志文件超过此尺寸时会滚动，即不再往这个文件里写，而是写到一个新的文件里。默认值是-1，代表无限。</li>
+<li><code>max-files</code>，最多保留多少个日志文件。默认值是1。</li>
+</ol>
+
+<p>根据服务器的硬盘尺寸设定合理大小，比如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;log-driver&#34;</span><span class="p">:</span> <span class="s2">&#34;json-file&#34;</span><span class="p">,</span>
+  <span class="nt">&#34;log-opts&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;max-size&#34;</span><span class="p">:</span> <span class="s2">&#34;100m&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;max-files&#34;</span><span class="p">:</span><span class="s2">&#34;5&#34;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="cgroup-driver"><code>cgroup driver</code></h3>
 
 <p>根据文档<a href="https://kubernetes.io/docs/setup/cri/">CRI installation</a>中的内容，对于使用systemd作为init system的Linux的发行版，使用systemd作为docker的cgroup driver可以确保服务器节点在资源紧张的情况更加稳定，因此这里修改各个节点上docker的cgroup driver为systemd。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="s2">&#34;exec-opts&#34;</span>: <span class="o">[</span><span class="s2">&#34;native.cgroupdriver=systemd&#34;</span><span class="o">]</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="storage-driver"><code>storage-driver</code></h3>
 
+<p>Docker推荐使用<a href="https://docs.docker.com/storage/storagedriver/overlayfs-driver/#configure-docker-with-the-overlay-or-overlay2-storage-driver">overlay2</a>作为Storage driver。你可以通过<code>docker info | grep Storage</code>来确认一下当前使用的是什么：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ docker info <span class="p">|</span> grep <span class="s1">&#39;Storage&#39;</span>
+Storage Driver: overlay2</code></pre></td></tr></table>
+</div>
+</div>
+<p>如果结果不是overlay2，那你就需要配置一下了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;storage-driver&#34;</span><span class="p">:</span> <span class="s2">&#34;overlay2&#34;</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
 <p>创建或修改<code>/etc/docker/daemon.json</code>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -856,7 +970,7 @@ yum install docker-ce -y</code></pre></td></tr></table>
 </span><span class="s">    &#34;log-driver&#34;: &#34;json-file&#34;,
 </span><span class="s">    &#34;log-opts&#34;: {
 </span><span class="s">      &#34;max-size&#34;: &#34;100m&#34;,
-</span><span class="s">      &#34;max-file&#34;: &#34;3&#34;
+</span><span class="s">      &#34;max-file&#34;: &#34;5&#34;
 </span><span class="s">    },
 </span><span class="s">    &#34;bip&#34;: &#34;172.17.10.1/24&#34;,
 </span><span class="s">    &#34;registry-mirrors&#34;: [&#34;https://hub.daocloud.io&#34;,&#34;http://hub-mirror.c.163.com/&#34;,
@@ -1016,6 +1130,63 @@ yes/no  <span class="o">{</span>send <span class="s2">&#34;yes\r&#34;</span><spa
 -nocase <span class="s2">&#34;password:&#34;</span> <span class="o">{</span>send <span class="s2">&#34;</span><span class="nv">$password</span><span class="s2">\r&#34;</span><span class="o">}</span>
 <span class="o">}</span>
 expect eof</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="k8s-docker镜像">k8s docker镜像</h2>
+
+<h3 id="gcr-io-google-containers">gcr.io/google-containers</h3>
+
+<p>使用<a href="https://github.com/ustclug/mirrorrequest/issues/187">中科大的镜像</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker pull image gcr.io/google-containers/xxx:yyy
+或
+docker pull image gcr.io/google_containers/xxx:yyy
+=&gt;
+docker pull image gcr.mirrors.ustc.edu.cn/google-containers/xxx:yyy</pre></td></tr></table>
+</div>
+</div>
+<p>也可以使用<a href="https://github.com/anjia0532/gcr.io_mirror">anjia0532的搬运仓库</a></p>
+
+<h3 id="k8s-gcr-io">k8s.gcr.io</h3>
+
+<p>k8s.gcr.io等价于gcr.io/google-containers，因此同上可以使用中科大镜像或者anjia0532的搬运仓库。</p>
+
+<p>使用<a href="https://github.com/ustclug/mirrorrequest/issues/187">中科大的镜像</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker pull image k8s.gcr.io/xxx:yyy
+=&gt;
+docker pull image gcr.mirrors.ustc.edu.cn/google-containers/xxx:yyy</pre></td></tr></table>
+</div>
+</div>
+<p>使用<a href="https://github.com/anjia0532/gcr.io_mirror">anjia0532的搬运仓库</a></p>
+
+<h3 id="quay-io">quay.io</h3>
+
+<p>使用<a href="https://github.com/ustclug/mirrorrequest/issues/135">中科大的镜像</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker pull image quay.io/xxx/yyy:zzz
+=&gt;
+docker pull image quay.mirrors.ustc.edu.cn/xxx/yyy:zzz</pre></td></tr></table>
 </div>
 </div>
 <h2 id="创建rke配置文件">创建RKE配置文件</h2>

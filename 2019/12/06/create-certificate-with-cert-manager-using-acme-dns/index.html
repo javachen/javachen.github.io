@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Cert Manager使用ACME-DNS生成证书 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要使用ACME-DNS来challenge域名并生成证书。 注册 1、先在 https://auth.acme-dns.io 注册 1 2 3 4 5 6 7 8 $ curl -s -X POST https://auth.acme-dns.io/register | python -m json.tool { &amp;#34;allowfrom&amp;#34;: [], &amp;#34;fulldomain&amp;#34;: &amp;#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f.auth.acme-dns.io&amp;#34;, &amp;#34;password&amp;#34;: &amp;#34;r5SYIoQ0LeqzI2z3mP4kNtic2vrqr2n6E4vg8UBr&amp;#34;, &amp;#34;subdomain&amp;#34;: &amp;#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f&amp;#34;, &amp;#34;username&amp;#34;: &amp;#34;132f8197-ac68-4617-9f3a-796b9ce4ac93&amp;#34;" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.58.3 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/12/06/create-certificate-with-cert-manager-using-acme-dns/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Cert Manager使用ACME-DNS生成证书" />
+<meta property="og:description" content="本文主要使用ACME-DNS来challenge域名并生成证书。 注册 1、先在 https://auth.acme-dns.io 注册 1 2 3 4 5 6 7 8 $ curl -s -X POST https://auth.acme-dns.io/register | python -m json.tool { &#34;allowfrom&#34;: [], &#34;fulldomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f.auth.acme-dns.io&#34;, &#34;password&#34;: &#34;r5SYIoQ0LeqzI2z3mP4kNtic2vrqr2n6E4vg8UBr&#34;, &#34;subdomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f&#34;, &#34;username&#34;: &#34;132f8197-ac68-4617-9f3a-796b9ce4ac93&#34;" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/12/06/create-certificate-with-cert-manager-using-acme-dns/" />
+<meta property="article:published_time" content="2019-12-06T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-12-06T08:00:00+08:00" />
+<meta itemprop="name" content="Cert Manager使用ACME-DNS生成证书">
+<meta itemprop="description" content="本文主要使用ACME-DNS来challenge域名并生成证书。 注册 1、先在 https://auth.acme-dns.io 注册 1 2 3 4 5 6 7 8 $ curl -s -X POST https://auth.acme-dns.io/register | python -m json.tool { &#34;allowfrom&#34;: [], &#34;fulldomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f.auth.acme-dns.io&#34;, &#34;password&#34;: &#34;r5SYIoQ0LeqzI2z3mP4kNtic2vrqr2n6E4vg8UBr&#34;, &#34;subdomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f&#34;, &#34;username&#34;: &#34;132f8197-ac68-4617-9f3a-796b9ce4ac93&#34;">
+
+
+<meta itemprop="datePublished" content="2019-12-06T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-12-06T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="520">
+
+
+
+<meta itemprop="keywords" content="kubernetes," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Cert Manager使用ACME-DNS生成证书"/>
+<meta name="twitter:description" content="本文主要使用ACME-DNS来challenge域名并生成证书。 注册 1、先在 https://auth.acme-dns.io 注册 1 2 3 4 5 6 7 8 $ curl -s -X POST https://auth.acme-dns.io/register | python -m json.tool { &#34;allowfrom&#34;: [], &#34;fulldomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f.auth.acme-dns.io&#34;, &#34;password&#34;: &#34;r5SYIoQ0LeqzI2z3mP4kNtic2vrqr2n6E4vg8UBr&#34;, &#34;subdomain&#34;: &#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f&#34;, &#34;username&#34;: &#34;132f8197-ac68-4617-9f3a-796b9ce4ac93&#34;"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Cert Manager使用ACME-DNS生成证书</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-12-06 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 520 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#注册">注册</a></li>
+<li><a href="#添加cname记录">添加CNAME记录</a></li>
+<li><a href="#使用api验证">使用API验证</a></li>
+<li><a href="#使用cert-manager来验证">使用Cert-manager来验证</a>
+<ul>
+<li><a href="#创建一个secret">创建一个secret</a></li>
+<li><a href="#创建issuer">创建Issuer</a></li>
+<li><a href="#创建证书">创建证书</a></li>
+<li><a href="#卸载">卸载</a></li>
+</ul></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>本文主要使用ACME-DNS来challenge域名并生成证书。</p>
+
+<h1 id="注册">注册</h1>
+
+<p>1、先在 <a href="https://auth.acme-dns.io/">https://auth.acme-dns.io</a> 注册</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ curl -s -X POST https://auth.acme-dns.io/register <span class="p">|</span> python -m json.tool
+<span class="o">{</span>
+    <span class="s2">&#34;allowfrom&#34;</span>: <span class="o">[]</span>,
+    <span class="s2">&#34;fulldomain&#34;</span>: <span class="s2">&#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f.auth.acme-dns.io&#34;</span>,
+    <span class="s2">&#34;password&#34;</span>: <span class="s2">&#34;r5SYIoQ0LeqzI2z3mP4kNtic2vrqr2n6E4vg8UBr&#34;</span>,
+    <span class="s2">&#34;subdomain&#34;</span>: <span class="s2">&#34;f7517340-3770-4bc4-b5d4-1ad6bb1cbb8f&#34;</span>,
+    <span class="s2">&#34;username&#34;</span>: <span class="s2">&#34;132f8197-ac68-4617-9f3a-796b9ce4ac93&#34;</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>也可以设置allowfrom:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ curl -s -X POST https://auth.acme-dns.io/register -H <span class="s2">&#34;Content-Type: application/json&#34;</span> --data <span class="s1">&#39;{&#34;allowfrom&#34;: [&#34;58.19.0.0/16&#34;]}&#39;</span> <span class="p">|</span> python -m json.tool
+
+<span class="o">{</span>
+    <span class="s2">&#34;allowfrom&#34;</span>: <span class="o">[</span>
+        <span class="s2">&#34;58.19.0.0/16&#34;</span>
+    <span class="o">]</span>,
+    <span class="s2">&#34;fulldomain&#34;</span>: <span class="s2">&#34;e06311ee-b35c-4b67-a1d8-38b4c7c35487.auth.acme-dns.io&#34;</span>,
+    <span class="s2">&#34;password&#34;</span>: <span class="s2">&#34;9fOnD4Qym1__JN6XKUlv7_4HubRfteegQxKFbo50&#34;</span>,
+    <span class="s2">&#34;subdomain&#34;</span>: <span class="s2">&#34;e06311ee-b35c-4b67-a1d8-38b4c7c35487&#34;</span>,
+    <span class="s2">&#34;username&#34;</span>: <span class="s2">&#34;647c94b3-c2dc-4d22-949c-ea41bc065af1&#34;</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<ul>
+<li>58.19.0.0是外网地址网段</li>
+</ul>
+
+<p>2、将返回值保持到acmedns.json，并设置域名，可以设置多个。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+    <span class="nt">&#34;javachen.xyz&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;allowfrom&#34;</span><span class="p">:</span> <span class="p">[</span>
+        	<span class="s2">&#34;58.19.0.0/16&#34;</span>
+        <span class="p">],</span>
+        <span class="nt">&#34;fulldomain&#34;</span><span class="p">:</span> <span class="s2">&#34;e06311ee-b35c-4b67-a1d8-38b4c7c35487.auth.acme-dns.io&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;password&#34;</span><span class="p">:</span> <span class="s2">&#34;9fOnD4Qym1__JN6XKUlv7_4HubRfteegQxKFbo50&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;subdomain&#34;</span><span class="p">:</span> <span class="s2">&#34;e06311ee-b35c-4b67-a1d8-38b4c7c35487&#34;</span><span class="p">,</span>
+        <span class="nt">&#34;username&#34;</span><span class="p">:</span> <span class="s2">&#34;647c94b3-c2dc-4d22-949c-ea41bc065af1&#34;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="添加cname记录">添加CNAME记录</h1>
+
+<p>在DNS上添加一个CNAME记录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">_acme-challenge CNAME e06311ee-b35c-4b67-a1d8-38b4c7c35487.auth.acme-dns.io</pre></td></tr></table>
+</div>
+</div>
+<p>查看DNS解析是否生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">dig _acme-challenge.javachen.xyz</code></pre></td></tr></table>
+</div>
+</div>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1g9n46qmh7yj31bc0mkdjr.jpg" alt="image-20191206170826655" /></p>
+
+<h1 id="使用api验证">使用API验证</h1>
+
+<p>参考 <a href="https://github.com/joohoi/acme-dns">https://github.com/joohoi/acme-dns</a></p>
+
+<p>1、查找DNS</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">dig auth.acme-dns.io</code></pre></td></tr></table>
+</div>
+</div>
+<p>2、调用API设置一条测试txt记录</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ curl -s -X POST <span class="se">\
+</span><span class="se"></span>  -H <span class="s2">&#34;X-Api-User: 647c94b3-c2dc-4d22-949c-ea41bc065af1&#34;</span> <span class="se">\
+</span><span class="se"></span>  -H <span class="s2">&#34;X-Api-Key: 9fOnD4Qym1__JN6XKUlv7_4HubRfteegQxKFbo50&#34;</span> <span class="se">\
+</span><span class="se"></span>  -d <span class="s1">&#39;{&#34;subdomain&#34;: &#34;e06311ee-b35c-4b67-a1d8-38b4c7c35487&#34;, &#34;txt&#34;: &#34;___validation_token_received_from_the_ca___&#34;}&#39;</span> <span class="se">\
+</span><span class="se"></span>  https://auth.acme-dns.io/update
+  
+<span class="o">{</span><span class="s2">&#34;txt&#34;</span>: <span class="s2">&#34;___validation_token_received_from_the_ca___&#34;</span><span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>3、DNS查找，查看测试txt记录的值</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">dig -t txt @auth.acme-dns.io e06311ee-b35c-4b67-a1d8-38b4c7c35487.auth.acme-dns.io</code></pre></td></tr></table>
+</div>
+</div>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1g9n48s7gmcj31bg0kqq6k.jpg" alt="image-20191206171025562" /></p>
+
+<h1 id="使用cert-manager来验证">使用Cert-manager来验证</h1>
+
+<h2 id="创建一个secret">创建一个secret</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic acme-dns --from-file acmedns.json</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建issuer">创建Issuer</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>cert-manager.io/v1alpha2<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Issuer<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>javachen-xyz-letsencrypt-prod<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>acme<span class="p">:</span><span class="w">
+</span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//acme-v02.api.letsencrypt.org/directory<span class="w">
+</span><span class="w">    </span>privateKeySecretRef<span class="p">:</span><span class="w">
+</span><span class="w">         </span>name<span class="p">:</span><span class="w"> </span>javachen-xyz-letsencrypt-prod<span class="w">
+</span><span class="w">    </span>solvers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>dns01<span class="p">:</span><span class="w">
+</span><span class="w">        </span>acmedns<span class="p">:</span><span class="w">
+</span><span class="w">          </span>host<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//auth.acme-dns.io<span class="w">
+</span><span class="w">          </span>accountSecretRef<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span>acme-dns<span class="w">
+</span><span class="w">            </span>key<span class="p">:</span><span class="w"> </span>acmedns.json<span class="w">
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get issuer 
+kubectl describe issuer javachen-xyz-letsencrypt-prod</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建证书">创建证书</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span><span class="sd">-   
+</span><span class="sd">apiVersion: cert-manager.io/v1alpha2</span><span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Certificate<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>javachen-xyz-cert<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>secretName<span class="p">:</span><span class="w"> </span>javachen-xyz-cert<span class="w">
+</span><span class="w">  </span>renewBefore<span class="p">:</span><span class="w"> </span>240h<span class="w">
+</span><span class="w">  </span>dnsNames<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span><span class="s2">&#34;*.javachen.xyz&#34;</span><span class="w">
+</span><span class="w">  </span>issuerRef<span class="p">:</span><span class="w">
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>javachen-xyz-letsencrypt-prod<span class="w">
+</span><span class="w">    </span>kind<span class="p">:</span><span class="w"> </span>Issuer<span class="w">
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret,certificate
+kubectl describe secret javachen-xyz-cert
+
+kubectl describe certificate javachen-xyz-cert
+
+kubectl describe CertificateRequest javachen-xyz-cert-1493894275
+
+kubectl describe order javachen-xyz-cert-1493894275-3749297292
+
+kubectl describe Challenge javachen-xyz-cert-1493894275-3749297292-3791784176</code></pre></td></tr></table>
+</div>
+</div>
+<p>等待一段时间，直到证书状态变为True</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1g9n4kijhoqj31aq0bcmza.jpg" alt="image-20191206172142283" /></p>
+
+<h2 id="卸载">卸载</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl delete secret acme-dns
+
+kubectl delete Issuer javachen-xyz-letsencrypt-prod
+kubectl delete Certificate,secret javachen-xyz-cert </code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://docs.cert-manager.io/en/latest/tasks/issuers/setup-acme/dns01/acme-dns.html">ACME-DNS</a></li>
+<li><a href="https://blog.csdn.net/xichenguan/article/details/100709830">https://blog.csdn.net/xichenguan/article/details/100709830</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-12-06
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2019/11/30/ceph-rbd-test/">
+            <span class="next-text nav-default">Ceph块设备测试</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2019
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
