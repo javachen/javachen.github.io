@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-02T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-02T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1928">
+<meta itemprop="wordCount" content="1871">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1928 字 </span>
+          <span class="more-meta"> 约 1871 字 </span>
           <span class="more-meta"> 预计阅读 4 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -163,7 +163,9 @@
 <li><a href="#创建clusterissuer">创建ClusterIssuer</a></li>
 <li><a href="#使用ingress自动创建证书">使用Ingress自动创建证书</a></li>
 </ul></li>
+<li><a href="#验证letsencrypt的dns01校验生成证书">验证letsencrypt的DNS01校验生成证书</a></li>
 </ul></li>
+<li><a href="#卸载">卸载</a></li>
 </ul>
 </nav>
   </div>
@@ -825,8 +827,7 @@ kubectl describe clusterissuer letsencrypt-prod</code></pre></td></tr></table>
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
-<blockquote>
-<p>注意：</p>
+<p><strong>注意：</strong></p>
 
 <p>1、前面创建的是ClusterIssuer，所以这里annotations添加的是：cert-manager.io/cluster-issuer: &ldquo;letsencrypt-prod&rdquo;</p>
 
@@ -834,57 +835,59 @@ kubectl describe clusterissuer letsencrypt-prod</code></pre></td></tr></table>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">&gt; curl -kivL -H <span class="s1">&#39;Host: kuard.javachen.space&#39;</span> <span class="s1">&#39;http://X.X.X.X&#39;</span>
-&gt; <span class="sb">```</span>
-
-
-
-查看证书：</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -kivL -H <span class="s1">&#39;Host: kuard.javachen.space&#39;</span> <span class="s1">&#39;http://X.X.X.X&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>bash
-kubectl get certificate -n cert-manager-test</p>
-</blockquote>
-
-<p>kubectl describe CertificateRequest javachen-cert-tls -n cert-manager-test
-kubectl describe Order javachen-cert-tls-2608726807-1509158854 -n cert-manager-test
-kubectl describe Challenge javachen-cert-tls-2608726807-1509158854-114790480 -n cert-manager-test</p>
+<p>查看证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">## 验证letsencrypt的DNS01校验生成证书
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get certificate -n cert-manager-test
 
-参考 [使用Cert Manager配置Let’s Encrypt证书](/2019/11/04/using-cert-manager-with-nginx-ingress/)
-
-# 卸载</pre></td></tr></table>
+kubectl describe CertificateRequest javachen-cert-tls -n cert-manager-test
+kubectl describe Order javachen-cert-tls-2608726807-1509158854 -n cert-manager-test
+kubectl describe Challenge javachen-cert-tls-2608726807-1509158854-114790480 -n cert-manager-test</code></pre></td></tr></table>
 </div>
 </div>
-<p>bash
-#删除测试用的
-kubectl delete all,Certificate,Issuer,secret &ndash;all -n cert-manager-test
+<h2 id="验证letsencrypt的dns01校验生成证书">验证letsencrypt的DNS01校验生成证书</h2>
+
+<p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a></p>
+
+<h1 id="卸载">卸载</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#删除测试用的</span>
+kubectl delete all,Certificate,Issuer,secret --all -n cert-manager-test
 kubectl delete ClusterIssuer letsencrypt-prod
-kubectl delete ns cert-manager-test</p>
+kubectl delete ns cert-manager-test
 
-<p>#通过kubectl删除
-kubectl delete -f <a href="https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml">https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</a></p>
+<span class="c1">#通过kubectl删除</span>
+kubectl delete -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml
 
-<p>#通过helm3删除
-helm del cert-manager -n cert-manager
-```</p>
-
+<span class="c1">#通过helm3删除</span>
+helm del cert-manager -n cert-manager</code></pre></td></tr></table>
+</div>
+</div>
     </div>
 
     <div class="post-copyright">
