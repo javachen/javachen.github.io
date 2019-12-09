@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-02T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-02T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1871">
+<meta itemprop="wordCount" content="2176">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1871 字 </span>
-          <span class="more-meta"> 预计阅读 4 分钟 </span>
+          <span class="more-meta"> 约 2176 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -182,16 +182,23 @@
 <h1 id="安装-cert-manager">安装 Cert Manager</h1>
 
 <h2 id="使用kubectl安装">使用kubectl安装</h2>
+
+<p>创建命名空间：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cert-manager
-
-kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace cert-manager</code></pre></td></tr></table>
+</div>
+</div>
+<p>安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.12.0/cert-manager.yaml</code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="使用helm安装">使用helm安装</h2>
@@ -241,6 +248,40 @@ helm install cert-manager <span class="se">\
 </span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
 </div>
 </div>
+<p>更多详细的配置参数可以参考：<a href="https://github.com/jetstack/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml">https://github.com/jetstack/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml</a></p>
+
+<p>例如：可以配置一个缺省的 <a href="http://docs.cert-manager.io/en/latest/reference/clusterissuers.html">cluster issuer</a>，当部署Cert manager的时候，用于支持Ingress中 <code>kubernetes.io/tls-acme: &quot;true&quot;</code> annotation来自动化TLS：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install cert-manager <span class="se">\
+</span><span class="se"></span>  --namespace cert-manager <span class="se">\
+</span><span class="se"></span>  --version v0.12.0 <span class="se">\
+</span><span class="se"></span>  --set ingressShim.defaultIssuerName<span class="o">=</span>letsencrypt-prod <span class="se">\
+</span><span class="se"></span>	--set ingressShim.defaultIssuerKind<span class="o">=</span>ClusterIssuer <span class="se">\
+</span><span class="se"></span>  jetstack/cert-manager</code></pre></td></tr></table>
+</div>
+</div>
+<p>关于Ingress-shim，参考 <a href="https://docs.cert-manager.io/en/latest/reference/ingress-shim.html">https://docs.cert-manager.io/en/latest/reference/ingress-shim.html</a></p>
+
+<p>还可以设置下面参数，用于设置certificate删除时自动删除secret：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">extraArgs:
+  - --enable-certificate-owner-ref<span class="o">=</span>true</code></pre></td></tr></table>
+</div>
+</div>
 <h2 id="查看状态">查看状态</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -265,7 +306,7 @@ helm install cert-manager <span class="se">\
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl -n cert-manager rollout status deploy/cert-manager
 deployment <span class="s2">&#34;cert-manager&#34;</span> successfully rolled out
 
-$ kubectl get pods,secret --namespace cert-manager
+$ kubectl get pods,secret -n cert-manager
 NAME                                           READY   STATUS              RESTARTS   AGE
 pod/cert-manager-5c47f46f57-k78l6              <span class="m">1</span>/1     Running             <span class="m">0</span>          91s
 pod/cert-manager-cainjector-6659d6844d-tr8rf   <span class="m">1</span>/1     Running             <span class="m">0</span>          91s
@@ -282,6 +323,19 @@ secret/default-token-6g2lx                   kubernetes.io/service-account-token
 </div>
 <p>等待pods状态都变为Running</p>
 
+<p>使用helm3查看：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ helm list -n cert-manager
+NAME        	NAMESPACE   	REVISION	UPDATED                                	STATUS  	CHART               	APP VERSION
+cert-manager	cert-manager	<span class="m">1</span>       	<span class="m">2019</span>-12-09 <span class="m">15</span>:55:03.245917473 +0800 CST	deployed	cert-manager-v0.12.0	v0.12.0</code></pre></td></tr></table>
+</div>
+</div>
 <h1 id="验证证书">验证证书</h1>
 
 <h2 id="验证自签名的ca证书">验证自签名的CA证书</h2>

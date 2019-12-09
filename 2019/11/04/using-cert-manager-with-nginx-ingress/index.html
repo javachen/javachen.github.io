@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-04T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-04T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4490">
+<meta itemprop="wordCount" content="4550">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4490 字 </span>
-          <span class="more-meta"> 预计阅读 9 分钟 </span>
+          <span class="more-meta"> 约 4550 字 </span>
+          <span class="more-meta"> 预计阅读 10 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -612,15 +612,13 @@ kuard   kuard.javachen.space   192.168.56.111   80      91s</pre></td></tr></tab
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> cert-manager-webhook-dnspod
 
-<span class="c1">#./deploy/example-webhook-v2 的 cert-manager api为 cert-manager.io/v1alpha2</span>
 helm install cert-manager-webhook-dnspod -n cert-manager <span class="se">\
 </span><span class="se"></span>	--set <span class="nv">groupName</span><span class="o">=</span>acme.javachen.xyz <span class="se">\
-</span><span class="se"></span>	./deploy/example-webhook-v2</code></pre></td></tr></table>
+</span><span class="se"></span>	./deploy/example-webhook</code></pre></td></tr></table>
 </div>
 </div>
 <blockquote>
@@ -722,7 +720,64 @@ helm list -n cert-manager</code></pre></td></tr></table>
 </div>
 <h4 id="创建签发机构">创建签发机构</h4>
 
-<p>创建 production issuer: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/production-issuer.yaml">production-issuer.yaml</a></p>
+<p>如果是测试，建议创建staging ClusterIssuer：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: javachen-xyz-letsencrypt-staging
+</span><span class="s">spec:
+</span><span class="s">  acme:
+</span><span class="s">    server: https://acme-staging-v02.api.letsencrypt.org/directory
+</span><span class="s">    email: junecloud@163.com
+</span><span class="s">    privateKeySecretRef:
+</span><span class="s">      name: javachen-xyz-letsencrypt-staging
+</span><span class="s">    solvers:
+</span><span class="s">    - selector:
+</span><span class="s">        dnsNames:
+</span><span class="s">        - &#39;*.javachen.xyz&#39;
+</span><span class="s">      dns01:
+</span><span class="s">        webhook:
+</span><span class="s">          groupName: acme.javachen.xyz 
+</span><span class="s">          solverName: dnspod
+</span><span class="s">          config:
+</span><span class="s">            apiID: 127880 
+</span><span class="s">            apiTokenSecretRef:
+</span><span class="s">              key: api-token
+</span><span class="s">              name: dnspod-credentials
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>生产环境，创建 production ClusterIssuer: <a href="https://raw.githubusercontent.com/jetstack/cert-manager/release-0.11/docs/tutorials/acme/quick-start/example/production-issuer.yaml">production-issuer.yaml</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -851,11 +906,11 @@ kubectl describe secret javachen-xyz-cert
 
 kubectl describe certificate javachen-xyz-cert
 
-kubectl describe CertificateRequest javachen-xyz-cert-542546277
+kubectl describe CertificateRequest javachen-xyz-cert-1281933475
 
-kubectl describe order javachen-xyz-cert-542546277-2766464876
+kubectl describe order javachen-xyz-cert-1281933475-906180984
 
-kubectl describe Challenge javachen-xyz-cert-542546277-2766464876-3791784176</code></pre></td></tr></table>
+kubectl describe Challenge javachen-xyz-cert-1281933475-906180984-4119232875</code></pre></td></tr></table>
 </div>
 </div>
 <p>出现异常：</p>
@@ -1017,8 +1072,6 @@ kubectl describe Challenge javachen-xyz-cert-542546277-2766464876-3791784176</co
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del cert-manager-webhook-dnspod -n cert-manager
@@ -1031,10 +1084,8 @@ kubectl delete Certificate,secret,Issuer -n cert-manager cert-manager-webhook-dn
 
 kubectl delete secret dnspod-credentials  -n cert-manager
 
-kubectl delete ClusterIssuer,secret javachen-xyz-letsencrypt-prod -n cert-manager
-kubectl delete Certificate,secret javachen-xyz-cert 
-
-kubectl delete APIService v1alpha1.acme.javachen.xyz </code></pre></td></tr></table>
+kubectl delete ClusterIssuer,secret javachen-xyz-letsencrypt-prod javachen-xyz-letsencrypt-staging -n cert-manager
+kubectl delete Certificate,secret javachen-xyz-cert </code></pre></td></tr></table>
 </div>
 </div>
 <h3 id="godaddy">godaddy</h3>
@@ -1167,7 +1218,7 @@ kubectl describe secret javachen-space-letsencrypt-prod -n cert-manager</code></
 <p>cert-manager 给我们提供了 Certificate 这个用于生成证书的自定义资源对象，它必须局限在某一个 namespace 下，证书最终会在这个 namespace 下以 Secret 的资源对象存储，创建一个 Certificate 对象。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1183,20 +1234,20 @@ kubectl describe secret javachen-space-letsencrypt-prod -n cert-manager</code></
 </span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -   
-</span><span class="s">apiVersion: cert-manager.io/v1alpha2
-</span><span class="s">kind: Certificate
-</span><span class="s">metadata:
-</span><span class="s">  name: javachen-space-cert
-</span><span class="s">spec:
-</span><span class="s">  secretName: javachen-space-cert
-</span><span class="s">  renewBefore: 240h
-</span><span class="s">  dnsNames:
-</span><span class="s">  - &#34;*.javachen.space&#34;
-</span><span class="s">  issuerRef:
-</span><span class="s">    name: javachen-space-letsencrypt-prod
-</span><span class="s">    kind: ClusterIssuer
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span><span class="sd">-   
+</span><span class="sd">apiVersion: cert-manager.io/v1alpha2</span><span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Certificate<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>javachen-space-cert<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>secretName<span class="p">:</span><span class="w"> </span>javachen-space-cert<span class="w">
+</span><span class="w">  </span>renewBefore<span class="p">:</span><span class="w"> </span>240h<span class="w">
+</span><span class="w">  </span>dnsNames<span class="p">:</span><span class="w">
+</span><span class="w">  </span>-<span class="w"> </span><span class="s2">&#34;*.javachen.space&#34;</span><span class="w">
+</span><span class="w">  </span>issuerRef<span class="p">:</span><span class="w">
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>javachen-space-letsencrypt-prod<span class="w">
+</span><span class="w">    </span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
 </div>
 <p>查看secret中tls.crt、tls.key是否有值</p>
@@ -1303,8 +1354,6 @@ kubectl describe Challenge javachen-space-cert-3747773282-2036746768-1798832172<
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del cert-manager-webhook-godaddy -n cert-manager
@@ -1316,9 +1365,7 @@ kubectl delete ServiceAccount,Service,Deployment cert-manager-webhook-godaddy -n
 kubectl delete Certificate,secret,Issuer -n cert-manager cert-manager-webhook-godaddy-ca cert-manager-webhook-godaddy-webhook-tls cert-manager-webhook-godaddy-selfsign
 
 kubectl delete ClusterIssuer,secret javachen-space-letsencrypt-prod -n cert-manager
-kubectl delete Certificate,secret javachen-space-cert
-
-kubectl delete APIService v1alpha1.acme.javachen.space </code></pre></td></tr></table>
+kubectl delete Certificate,secret javachen-space-cert</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="总结">总结</h1>
