@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-11-20T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-20T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4644">
+<meta itemprop="wordCount" content="5849">
 
 
 
@@ -132,8 +132,8 @@
         <div class="post-category">
             <a href="/categories/database/"> database </a>
             </div>
-          <span class="more-meta"> 约 4644 字 </span>
-          <span class="more-meta"> 预计阅读 10 分钟 </span>
+          <span class="more-meta"> 约 5849 字 </span>
+          <span class="more-meta"> 预计阅读 12 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -302,29 +302,31 @@ sed -i -e <span class="s1">&#39;s/^SELINUX=enforcing/SELINUX=disabled/g&#39;</sp
 </span><span class="lnt">19
 </span><span class="lnt">20
 </span><span class="lnt">21
+</span><span class="lnt">22
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i <span class="s2">&#34;/^server/ d&#34;</span> /etc/ntp.conf
-<span class="nb">echo</span> <span class="s2">&#34;
-</span><span class="s2">#在与上级时间服务器联系时所花费的时间，记录在driftfile参数后面的文件
-</span><span class="s2">driftfile /var/lib/ntp/drift
-</span><span class="s2">#默认关闭所有的 NTP 联机服务
-</span><span class="s2">restrict default ignore
-</span><span class="s2">restrict -6 default ignore
-</span><span class="s2">#如从loopback网口请求，则允许NTP的所有操作
-</span><span class="s2">restrict 127.0.0.1
-</span><span class="s2">restrict -6 ::1
-</span><span class="s2">#使用指定的时间服务器
-</span><span class="s2">server ntp1.aliyun.com
-</span><span class="s2">#允许指定的时间服务器查询本时间服务器的信息
-</span><span class="s2">restrict ntp1.aliyun.com nomodify notrap nopeer noquery
-</span><span class="s2">#其它认证信息
-</span><span class="s2">includefile /etc/ntp/crypto/pw
-</span><span class="s2">keys /etc/ntp/keys
-</span><span class="s2">&#34;</span> &gt; /etc/ntp.conf
-systemctl start ntpd
-systemctl <span class="nb">enable</span> ntpd
-<span class="nb">echo</span> <span class="s1">&#39;* */6 * * * /usr/sbin/ntpdate -u ntp1.aliyun.com &amp;&amp; /sbin/hwclock --systohc &gt; /dev/null 2&gt;&amp;1&#39;</span>&gt;&gt;/var/spool/cron/chenzj</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/ntp.conf <span class="s">&lt;&lt; EOF
+</span><span class="s">#在与上级时间服务器联系时所花费的时间，记录在driftfile参数后面的文件
+</span><span class="s">driftfile /var/lib/ntp/drift
+</span><span class="s">#默认关闭所有的 NTP 联机服务
+</span><span class="s">restrict default ignore
+</span><span class="s">restrict -6 default ignore
+</span><span class="s">#如从loopback网口请求，则允许NTP的所有操作
+</span><span class="s">restrict 127.0.0.1
+</span><span class="s">restrict -6 ::1
+</span><span class="s">#使用指定的时间服务器
+</span><span class="s">server ntp1.aliyun.com
+</span><span class="s">server ntp2.aliyun.com
+</span><span class="s">server ntp3.aliyun.com
+</span><span class="s">#允许指定的时间服务器查询本时间服务器的信息
+</span><span class="s">restrict ntp1.aliyun.com nomodify notrap nopeer noquery
+</span><span class="s">#其它认证信息
+</span><span class="s">includefile /etc/ntp/crypto/pw
+</span><span class="s">keys /etc/ntp/keys
+</span><span class="s">EOF</span>
+
+systemctl start ntpd <span class="o">&amp;&amp;</span> systemctl <span class="nb">enable</span> ntpd
+<span class="nb">echo</span> <span class="s1">&#39;* */6 * * * /usr/sbin/ntpdate -u ntp1.aliyun.com &amp;&amp; /sbin/hwclock --systohc &gt; /dev/null 2&gt;&amp;1&#39;</span> &gt;&gt; /var/spool/cron/<span class="sb">`</span>whoami<span class="sb">`</span></code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="配置sysctl-conf">配置sysctl.conf</h2>
@@ -364,19 +366,20 @@ systemctl <span class="nb">enable</span> ntpd
 </span><span class="lnt">30
 </span><span class="lnt">31
 </span><span class="lnt">32
+</span><span class="lnt">33
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#设置内核参数</span>
 cat &gt; greenplum.conf <span class="s">&lt;&lt;EOF
-</span><span class="s">kernel.shmmax = 500000000
+</span><span class="s">kernel.shmall = 2033299
+</span><span class="s">kernel.shmmax = 8328392704
 </span><span class="s">kernel.shmmni = 4096
-</span><span class="s">kernel.shmall = 126852
 </span><span class="s">kernel.sem = 500 1024000 200 4096
 </span><span class="s">kernel.sysrq = 1
 </span><span class="s">kernel.core_uses_pid = 1
 </span><span class="s">kernel.msgmnb = 65536
 </span><span class="s">kernel.msgmax = 65536
-</span><span class="s">kernel.msgmni = 2048
+</span><span class="s">kernel.msgmni = 31764
 </span><span class="s">net.ipv4.tcp_syncookies = 1
 </span><span class="s">net.ipv4.conf.default.accept_source_route = 0
 </span><span class="s">net.ipv4.tcp_tw_recycle = 1
@@ -388,8 +391,9 @@ cat &gt; greenplum.conf <span class="s">&lt;&lt;EOF
 </span><span class="s">net.core.wmem_max = 2097152
 </span><span class="s">vm.overcommit_memory = 2
 </span><span class="s">vm.overcommit_ratio = 95 
-</span><span class="s">vm.swappiness = 10
+</span><span class="s">vm.swappiness = 0
 </span><span class="s">vm.zone_reclaim_mode = 0
+</span><span class="s">#这个时候，后台进行在脏数据达到3%时就开始异步清理，但在10%之前系统不会强制同步写磁盘。刷脏进程3秒起来一次，脏数据存活超过10秒就会开始刷。
 </span><span class="s">vm.dirty_expire_centisecs = 500
 </span><span class="s">vm.dirty_writeback_centisecs = 100
 </span><span class="s">vm.dirty_background_ratio = 3
@@ -836,9 +840,13 @@ gpssh -h gp-node002 -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/maste
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">gpssh -f hostfile_segment -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/{primary,mirror} &amp;&amp; sudo chown gpadmin:gpadmin /data/greenplum/{primary,mirror}&#39;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">gpssh -f hostfile_segment -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/{primary,mirror} &amp;&amp; sudo chown -R gpadmin:gpadmin /data/greenplum&#39;</span>
+
+gpssh -f hostfile_segment -e <span class="s1">&#39;sudo mkdir -p /data2/greenplum/{primary,mirror} &amp;&amp; sudo chown -R gpadmin:gpadmin /data2/greenplum&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="初始化数据库">初始化数据库</h1>
@@ -888,8 +896,8 @@ gpssh -h gp-node002 -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/maste
 </span><span class="s">SEG_PREFIX=gpseg
 </span><span class="s">#Primary Segment起始的端口号
 </span><span class="s">PORT_BASE=40000
-</span><span class="s">#指定Primary Segment的数据目录
-</span><span class="s">declare -a DATA_DIRECTORY=(/data/greenplum/primary /data/greenplum/primary)
+</span><span class="s">#指定Primary Segment的数据目录,配置几次资源目录就是每个子节点有几个实例（推荐4-8个，这里配置了4个，primary与mirror文件夹个数对应）
+</span><span class="s">declare -a DATA_DIRECTORY=(/data2/greenplum/primary /data2/greenplum/primary /data2/greenplum/primary /data2/greenplum/primary)
 </span><span class="s">#Master所在机器的Hostname
 </span><span class="s">MASTER_HOSTNAME=gp-node001 
 </span><span class="s">#指定Master的数据目录
@@ -909,8 +917,8 @@ gpssh -h gp-node002 -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/maste
 </span><span class="s">REPLICATION_PORT_BASE=42000
 </span><span class="s">#Mirror Segment主备同步的起始端口号
 </span><span class="s">MIRROR_REPLICATION_PORT_BASE=43000
-</span><span class="s">#Mirror Segment的数据目录
-</span><span class="s">declare -a MIRROR_DATA_DIRECTORY=(/data/greenplum/mirror /data/greenplum/mirror)
+</span><span class="s">#Mirror Segment的数据目录,配置几次资源目录就是每个子节点有几个实例（推荐4-8个，这里配置了4个，primary与mirror文件夹个数对应）
+</span><span class="s">declare -a MIRROR_DATA_DIRECTORY=(/data2/greenplum/mirror /data2/greenplum/mirror /data2/greenplum/mirror /data2/greenplum/mirror)
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -936,6 +944,23 @@ gpssh -h gp-node002 -e <span class="s1">&#39;sudo mkdir -p /data/greenplum/maste
 </div>
 <p>如果不想手动确认，可以添加 <code>-a</code> 参数。</p>
 
+<p>后期添加standby master：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#在不同机器增加standby master节点</span>
+gpinitstandby -S /data/greenplum/master/gpseg-1 -s gp-node002 
+
+<span class="c1">#在同一机器增加standby master节点</span>
+gpinitstandby -S /data/greenplum/master/gpseg-1 -P <span class="m">5433</span> -s gp-node001 </code></pre></td></tr></table>
+</div>
+</div>
 <h2 id="设置数据库时区">设置数据库时区</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -991,7 +1016,7 @@ ssh gp-node002 <span class="s2">&#34;source ~/.bashrc&#34;</span></code></pre></
 </div>
 <h2 id="检查参数设置">检查参数设置</h2>
 
-<p>检查catalog</p>
+<p>1、检查catalog</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1000,7 +1025,7 @@ ssh gp-node002 <span class="s2">&#34;source ~/.bashrc&#34;</span></code></pre></
 <pre class="chroma"><code class="language-bash" data-lang="bash">gpcheckcat</code></pre></td></tr></table>
 </div>
 </div>
-<p>检查网络：</p>
+<p>2、检查网络：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -1063,7 +1088,7 @@ Summary:
 
 <p>测试时运行一个网络测试程序从当前主机向远程主机传输5秒钟的数据流。缺省时，数据并行传输到每个远程主机，报告出传输的最小、最大、平均和中值速率，单位为MB/S。如果主体的传输速率低于预期(小于100MB/S)，可以使用-r n参数运行串行的网络测试以得到每个主机的结果。要运行矩阵测试，指定-r M参数，使得每个主机发送接收指定的所有其他主机的数据，这个测试可以验证网络层能否承受全矩阵工作负载。</p>
 
-<p>检查io：</p>
+<p>3、检查io：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1074,23 +1099,196 @@ Summary:
 </div>
 <p>因为当前环境所有主机都挂载在/data目录，所以直接-d /data即可验证所有主机/data磁盘IO，若主机目录不一样。验证每台需要-d 按hostfile_segment中填写的顺序单独执行路径</p>
 
-<p>##查看状态</p>
+<p>4、检查磁盘空间使用</p>
 
-<p>查看状态：</p>
+<p>一个数据库管理员最重要的监控任务是确保Master和Segment数据目录所在的文件系统的使用率不会超过 70%的。完全占满的数据磁盘不会导致数据损坏，但是可能会妨碍数据库的正常操作。如果磁盘占用得太满， 可能会导致数据库服务器关闭。</p>
+
+<p>可以使用gp_toolkit管理模式中的gp_disk_free外部表 来检查Segment主机文件系统中的剩余空闲空间（以KB为计量单位）。例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">dw_lps</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">gp_toolkit</span><span class="p">.</span><span class="n">gp_disk_free</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">dfsegment</span><span class="p">;</span>
+ <span class="n">dfsegment</span> <span class="o">|</span>    <span class="n">dfhostname</span>    <span class="o">|</span> <span class="n">dfdevice</span>  <span class="o">|</span>  <span class="n">dfspace</span>
+<span class="c1">-----------+------------------+-----------+-----------
+</span><span class="c1"></span>         <span class="mi">0</span> <span class="o">|</span>  <span class="n">dw</span><span class="o">-</span><span class="n">test</span><span class="o">-</span><span class="n">node001</span> <span class="o">|</span>  <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">sdb</span> <span class="o">|</span> <span class="mi">471670156</span>
+         <span class="mi">1</span> <span class="o">|</span>  <span class="n">dw</span><span class="o">-</span><span class="n">test</span><span class="o">-</span><span class="n">node001</span> <span class="o">|</span>  <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">sdb</span> <span class="o">|</span> <span class="mi">471670156</span>
+<span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>5、查看数据库的磁盘空间使用情况</p>
+
+<p>要查看一个数据库的总大小（以字节计），使用*gp_toolkit*管理模式中的<em>gp_size_of_database</em> 视图。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">dw_lps</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">gp_toolkit</span><span class="p">.</span><span class="n">gp_size_of_database</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">sodddatname</span><span class="p">;</span>
+ <span class="n">sodddatname</span> <span class="o">|</span> <span class="n">sodddatsize</span>
+<span class="c1">-------------+-------------
+</span><span class="c1"></span> <span class="n">dw_lps</span>      <span class="o">|</span>  <span class="mi">4048421788</span>
+ <span class="n">gpperfmon</span>   <span class="o">|</span>    <span class="mi">62718612</span>
+<span class="p">(</span><span class="mi">2</span> <span class="k">rows</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>6、查看一个表的磁盘空间使用情况</p>
+
+<p>*gp_toolkit*管理模式包含几个检查表大小的视图。表大小视图根据对象ID （而不是名称）列出表。要根据一个表的名称检查其尺寸，必须在*pg_class*表中查找关系名称 （relname）。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">dw_lps</span><span class="o">=#</span> <span class="k">SELECT</span> <span class="n">relname</span> <span class="k">AS</span> <span class="n">name</span><span class="p">,</span> <span class="n">sotdsize</span> <span class="k">AS</span> <span class="k">size</span><span class="p">,</span> <span class="n">sotdtoastsize</span>
+<span class="n">dw_lps</span><span class="o">-#</span>    <span class="k">AS</span> <span class="k">toast</span><span class="p">,</span> <span class="n">sotdadditionalsize</span> <span class="k">AS</span> <span class="n">other</span>
+<span class="n">dw_lps</span><span class="o">-#</span>    <span class="k">FROM</span> <span class="n">gp_toolkit</span><span class="p">.</span><span class="n">gp_size_of_table_disk</span> <span class="k">as</span> <span class="n">sotd</span><span class="p">,</span> <span class="n">pg_class</span>
+<span class="n">dw_lps</span><span class="o">-#</span>    <span class="k">WHERE</span> <span class="n">sotd</span><span class="p">.</span><span class="n">sotdoid</span><span class="o">=</span><span class="n">pg_class</span><span class="p">.</span><span class="n">oid</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">relname</span><span class="p">;</span>
+             <span class="n">name</span>             <span class="o">|</span>    <span class="k">size</span>    <span class="o">|</span> <span class="k">toast</span> <span class="o">|</span> <span class="n">other</span>
+<span class="c1">------------------------------+------------+-------+--------
+</span><span class="c1"></span> <span class="n">ods_lps_bill</span>                 <span class="o">|</span> <span class="mi">1040342384</span> <span class="o">|</span> <span class="mi">98304</span> <span class="o">|</span> <span class="mi">327680</span>
+ <span class="n">ods_lps_event</span>                <span class="o">|</span> <span class="mi">1280960368</span> <span class="o">|</span> <span class="mi">98304</span> <span class="o">|</span> <span class="mi">327680</span>
+<span class="p">(</span><span class="mi">5</span> <span class="k">rows</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看某个表占用空间：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">gpstate -e <span class="c1">#查看mirror的状态</span>
-gpstate -f <span class="c1">#查看standby master的状态</span>
-gpstate -s <span class="c1">#查看整个GP群集的状态</span>
-gpstate -i <span class="c1">#查看GP的版本</span>
-gpstate --help <span class="c1">#帮助文档，可以查看gpstate更多用法</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">dw_lps</span><span class="o">=#</span> <span class="k">select</span> <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_relation_size</span><span class="p">(</span><span class="s1">&#39;ods_lps_bill&#39;</span><span class="p">));</span>
+ <span class="n">pg_size_pretty</span>
+<span class="c1">----------------
+</span><span class="c1"></span> <span class="mi">804</span> <span class="n">MB</span>
+<span class="p">(</span><span class="mi">1</span> <span class="k">row</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>7、查看索引的磁盘空间使用情况</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">=&gt;</span> <span class="k">SELECT</span> <span class="n">soisize</span><span class="p">,</span> <span class="n">relname</span> <span class="k">as</span> <span class="n">indexname</span>
+   <span class="k">FROM</span> <span class="n">pg_class</span><span class="p">,</span> <span class="n">gp_toolkit</span><span class="p">.</span><span class="n">gp_size_of_index</span>
+   <span class="k">WHERE</span> <span class="n">pg_class</span><span class="p">.</span><span class="n">oid</span><span class="o">=</span><span class="n">gp_size_of_index</span><span class="p">.</span><span class="n">soioid</span> 
+   <span class="k">AND</span> <span class="n">pg_class</span><span class="p">.</span><span class="n">relkind</span><span class="o">=</span><span class="s1">&#39;i&#39;</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>8、查看表的元数据</p>
+
+<p>要查看一个表中被用作数据分布键的列，可以使用psql中的\d+ 元命令来检查表的定义。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">=#</span> <span class="err">\</span><span class="n">d</span><span class="o">+</span> <span class="n">sales</span>
+                <span class="k">Table</span> <span class="s2">&#34;retail.sales&#34;</span>
+ <span class="k">Column</span>      <span class="o">|</span>     <span class="k">Type</span>     <span class="o">|</span> <span class="n">Modifiers</span> <span class="o">|</span> <span class="n">Description</span>
+<span class="c1">-------------+--------------+-----------+-------------
+</span><span class="c1"></span> <span class="n">sale_id</span>     <span class="o">|</span> <span class="nb">integer</span>      <span class="o">|</span>           <span class="o">|</span>
+ <span class="n">amt</span>         <span class="o">|</span> <span class="nb">float</span>        <span class="o">|</span>           <span class="o">|</span>
+ <span class="nb">date</span>        <span class="o">|</span> <span class="nb">date</span>         <span class="o">|</span>           <span class="o">|</span>
+<span class="n">Has</span> <span class="k">OIDs</span><span class="p">:</span> <span class="k">no</span>
+<span class="n">Distributed</span> <span class="k">by</span><span class="p">:</span> <span class="p">(</span><span class="n">sale_id</span><span class="p">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>当我们创建复制表时，Greenplum数据库会在每个Segment上都存储一份完整的表数据。复制表没有分布键。 \d+元命令会展示分布表的分布键，复制表展示状态为Distributed Replicated。</p>
+
+<p>9、查看数据分布</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">SELECT</span> <span class="n">gp_segment_id</span><span class="p">,</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> 
+   <span class="k">FROM</span> <span class="n">ods_lps_bill</span> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">gp_segment_id</span><span class="p">;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>##查看状态</p>
+
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#查看简短状态</span>
+gpstate
+
+<span class="c1">#查看详细状态</span>
+gpstate -s
+
+<span class="c1">#查看standby master的状态</span>
+gpstate -f 
+
+<span class="c1">#查看mirror的状态</span>
+gpstate -e 
+
+<span class="c1">#查看镜像状态</span>
+gpstate -m 
+
+<span class="c1">#查看主Segment到镜像Segment的映射</span>
+gpstate -c
+
+<span class="c1">#查看GP的版本</span>
+gpstate -i </code></pre></td></tr></table>
 </div>
 </div>
 <blockquote>
@@ -1259,7 +1457,7 @@ e_location <span class="p">|</span> flush_location <span class="p">|</span> repl
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ createdb testDB -E utf-8</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ createdb <span class="nb">test</span> -E utf-8</code></pre></td></tr></table>
 </div>
 </div>
 <p>没有设置PGDATABASE这个环境变量时，使用psql进行登录，默认的数据库是与操作系统用户名一致的，这时候会报错：</p>
@@ -1273,7 +1471,7 @@ e_location <span class="p">|</span> flush_location <span class="p">|</span> repl
 psql: FATAL: database <span class="s2">&#34;gpadmin&#34;</span> does not exist</code></pre></td></tr></table>
 </div>
 </div>
-<p>然后设置（export）环境变量PGDATABASE=testDB，这样就默认登录testDB数据库：</p>
+<p>然后设置（export）环境变量PGDATABASE=test，这样就默认登录test数据库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1285,13 +1483,13 @@ psql: FATAL: database <span class="s2">&#34;gpadmin&#34;</span> does not exist</
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">PGDATABASE</span><span class="o">=</span>testDB 
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">PGDATABASE</span><span class="o">=</span><span class="nb">test</span> 
 
 $ psql
 psql <span class="o">(</span><span class="m">9</span>.4.24<span class="o">)</span>
 Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 
-<span class="nv">testDB</span><span class="o">=</span>#</code></pre></td></tr></table>
+<span class="nv">test</span><span class="o">=</span>#</code></pre></td></tr></table>
 </div>
 </div>
 <p>查询数据库版本并创建一张简单的表：</p>
@@ -1302,8 +1500,8 @@ Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">testDB</span><span class="o">=</span><span class="c1"># select version();</span>
-<span class="nv">testDB</span><span class="o">=</span><span class="c1"># create table test01(id int primary key,name varchar(128));</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">test</span><span class="o">=</span><span class="c1"># select version();</span>
+<span class="nv">test</span><span class="o">=</span><span class="c1"># create table test01(id int primary key,name varchar(128));</span>
 CREATE TABLE</code></pre></td></tr></table>
 </div>
 </div>
@@ -1346,6 +1544,15 @@ GRANT ALL privileges ON DATABASE dw_lps TO gpadmin<span class="p">;</span></code
 gpstop -M fast</code></pre></td></tr></table>
 </div>
 </div>
+<p>重启数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">gpstop -ar</code></pre></td></tr></table>
+</div>
+</div>
 <p>重新加载配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1353,6 +1560,39 @@ gpstop -M fast</code></pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"> gpstop -u</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置开机启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; greenplum.service <span class="s">&lt;&lt;EOF 
+</span><span class="s">[Unit]
+</span><span class="s">Description=greenplum server daemon
+</span><span class="s">
+</span><span class="s">[Service]
+</span><span class="s">Restart=on-failure
+</span><span class="s">ExecStart=/usr/local/greenplum-db/bin/gpstart -a
+</span><span class="s"> 
+</span><span class="s">[Install]
+</span><span class="s">WantedBy=multi-user.target
+</span><span class="s">EOF</span>
+
+sudo mv greenplum.service /usr/lib/systemd/system/</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="清空数据">清空数据</h1>
@@ -1368,7 +1608,7 @@ gpstop -M fast</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#如有报错需重新初始化，清理以下内容：</span>
 <span class="nb">kill</span> -9 <span class="k">$(</span>ps -ef <span class="p">|</span>grep greenplum<span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="k">)</span>
 gpssh -f hostfile_all -e <span class="s2">&#34;rm -rf /data/greenplum/master/*&#34;</span>
-gpssh -f hostfile_segment -e <span class="s2">&#34;rm -rf /data/greenplum/{mirror*,primary*}/*&#34;</span>
+gpssh -f hostfile_segment -e <span class="s2">&#34;rm -rf /{data,data2}/greenplum/{mirror*,primary*}/*&#34;</span>
 rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 </div>
 </div>
@@ -1386,6 +1626,8 @@ rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 </div>
 </div>
 <p>2、停止数据库</p>
+
+<p>master节点执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1394,16 +1636,25 @@ rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">gpstop -a</code></pre></td></tr></table>
 </div>
 </div>
-<p>3、安装新版本：</p>
+<p>3、删除软链接</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install greenplum-db-6.2.1-rhel7-x86_64.rpm</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rm -rf /usr/local/greenplum-db</code></pre></td></tr></table>
 </div>
 </div>
-<p>4、设置目录权限</p>
+<p>4、安装新版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install greenplum-db-6.2.1-rhel7-x86_64.rpm -y</code></pre></td></tr></table>
+</div>
+</div>
+<p>5、设置目录权限</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1412,7 +1663,7 @@ rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo chown -R gpadmin:gpadmin /usr/local/greenplum*</code></pre></td></tr></table>
 </div>
 </div>
-<p>5、设置环境变量</p>
+<p>6、设置环境变量</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
@@ -1421,13 +1672,15 @@ rm  -f /tmp/.s.PGSQL*.lock</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">source</span> ~/.bashrc</code></pre></td></tr></table>
 </div>
 </div>
-<p>6、启动数据库</p>
+<p>7、启动数据库</p>
+
+<p>master节点执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">gpstart</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">gpstart -a</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="参考文章">参考文章</h1>
