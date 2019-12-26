@@ -51,7 +51,7 @@
 
 <meta itemprop="datePublished" content="2019-12-24T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-12-24T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="8699">
+<meta itemprop="wordCount" content="8813">
 
 
 
@@ -132,7 +132,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 8699 字 </span>
+          <span class="more-meta"> 约 8813 字 </span>
           <span class="more-meta"> 预计阅读 18 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -183,7 +183,8 @@
 <li><a href="#开启prometheus-metrics">开启prometheus metrics</a></li>
 <li><a href="#traefik开启tls">Traefik开启TLS</a></li>
 <li><a href="#给应用配置letsencrypt证书">给应用配置LetsEncrypt证书</a></li>
-<li><a href="#测试tcp路由">测试TCP路由</a></li>
+<li><a href="#测试mongo-tcp路由">测试Mongo TCP路由</a></li>
+<li><a href="#测试mysql-tcp路由">测试Mysql TCP路由</a></li>
 </ul></li>
 <li><a href="#参考文章">参考文章</a></li>
 </ul>
@@ -3227,7 +3228,7 @@ X-Real-Ip: <span class="m">172</span>.22.0.1</code></pre></td></tr></table>
 
 <p><img src="https://tva1.sinaimg.cn/large/006tNbRwgy1ga9c5u46qxj316c0jm0x2.jpg" alt="image-20191225222647700" /></p>
 
-<h2 id="测试tcp路由">测试TCP路由</h2>
+<h2 id="测试mongo-tcp路由">测试Mongo TCP路由</h2>
 
 <p>以 <a href="https://github.com/containous/slides/tree/master/demo/traefik-v2">https://github.com/containous/slides/tree/master/demo/traefik-v2</a> 为例子进行测试。</p>
 
@@ -3957,6 +3958,111 @@ mongo --host mongo2.local --port <span class="m">27017</span> --ssl --sslCAFile<
 
 <p>证书不受信任，需要将 minica.pem ROOT CA证书加到浏览器。</p>
 
+<p>清理：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker-compose down -v</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="测试mysql-tcp路由">测试Mysql TCP路由</h2>
+
+<p>1、测试简单TCP路由</p>
+
+<p>docker-compose.yml</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">version<span class="p">:</span><span class="w"> </span><span class="s1">&#39;3&#39;</span><span class="w">
+</span><span class="w"></span>services<span class="p">:</span><span class="w">
+</span><span class="w">  </span>reverse-proxy<span class="p">:</span><span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>traefik<span class="p">:</span>latest<span class="w">
+</span><span class="w">    </span>command<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>--api<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>--api.insecure<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>--providers.docker<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>--entrypoints.mysql.address=<span class="p">:</span><span class="m">3306</span><span class="w">
+</span><span class="w">    </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span><span class="s2">&#34;3306:3306&#34;</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span><span class="s2">&#34;8080:8080&#34;</span><span class="w">
+</span><span class="w">    </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span>/var/run/docker.sock<span class="p">:</span>/var/run/docker.sock<span class="w">
+</span><span class="w">
+</span><span class="w">  </span>mysql<span class="p">:</span><span class="w">
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>mysql<span class="p">:</span><span class="m">5.7</span><span class="w">
+</span><span class="w">    </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span><span class="s2">&#34;traefik.tcp.routers.mysql.rule=HostSNI(`*`)&#34;</span><span class="w">
+</span><span class="w">      </span>-<span class="w"> </span><span class="s2">&#34;traefik.tcp.routers.mysql.entrypoints=mysql&#34;</span><span class="w">
+</span><span class="w">    </span>command<span class="p">:</span><span class="w"> </span>--character-set-server=utf8mb4<span class="w"> </span>--collation-server=utf8mb4_unicode_ci<span class="w">
+</span><span class="w">    </span>environment<span class="p">:</span><span class="w">
+</span><span class="w">      </span>MYSQL_ROOT_PASSWORD<span class="p">:</span><span class="w"> </span><span class="m">123456</span><span class="w">
+</span><span class="w">      </span>MYSQL_DATABASE<span class="p">:</span><span class="w"> </span>gogs<span class="w">
+</span><span class="w">      </span>MYSQL_USER<span class="p">:</span><span class="w"> </span>gogs<span class="w">
+</span><span class="w">      </span>MYSQL_PASSWORD<span class="p">:</span><span class="w"> </span><span class="m">123456</span><span class="w">
+</span><span class="w">      </span>TZ<span class="p">:</span><span class="w"> </span>Asia/Shanghai</code></pre></td></tr></table>
+</div>
+</div>
+<p>启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker-compose up -d</code></pre></td></tr></table>
+</div>
+</div>
+<p>设置/etc/hosts:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">127.0.0.1 mysql.local</pre></td></tr></table>
+</div>
+</div>
+<p>使用mongo客户端连接：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">mysql -h <span class="m">127</span>.0.0.1 -uroot -P3306 -p
+&gt; show databases<span class="p">;</span>
+&gt; exit</code></pre></td></tr></table>
+</div>
+</div>
 <p>清理：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
