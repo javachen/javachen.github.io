@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/11/14/config-secured-impala-with-sentry/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-11-14T08:00:00+08:00" />
 <meta itemprop="name" content="配置安全的Impala集群集成Sentry">
 <meta itemprop="description" content="本文主要记录配置安全的Impala集群集成Sentry的过程。">
-
-
 <meta itemprop="datePublished" content="2014-11-14T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-11-14T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="924">
 
 
 
-<meta itemprop="keywords" content="sentry,kerberos,hive," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="sentry,kerberos,hive," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="配置安全的Impala集群集成Sentry"/>
 <meta name="twitter:description" content="本文主要记录配置安全的Impala集群集成Sentry的过程。"/>
 
@@ -141,81 +138,63 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#1-环境说明">1. 环境说明</a></li>
-<li><a href="#2-修改impala配置">2. 修改Impala配置</a></li>
-<li><a href="#3-重启impala服务">3. 重启Impala服务</a></li>
-<li><a href="#4-测试">4. 测试</a></li>
-<li><a href="#5-其他说明">5. 其他说明</a></li>
-<li><a href="#6-参考文章">6. 参考文章</a></li>
-<li><a href="#7-相关文章">7. 相关文章</a></li>
-</ul>
-</nav>
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>本文主要记录配置安全的Impala集群集成Sentry的过程。Impala集群上配置了Kerberos认证，并且需要提前配置好Hive与Kerberos和Sentry的集成：</p>
-
+      <p>本文主要记录配置安全的Impala集群集成Sentry的过程。Impala集群上配置了Kerberos认证，并且需要提前配置好Hive与Kerberos和Sentry的集成：</p>
 <ul>
 <li><a href="/2013/04/06/install-cloudera-cdh-by-yum">使用yum安装CDH Hadoop集群</a></li>
 <li><a href="/2014/11/06/config-kerberos-in-cdh-hive">Hive配置kerberos认证</a></li>
 <li><a href="/2014/11/06/config-kerberos-in-cdh-impala">Impala配置kerberos认证</a></li>
 <li><a href="/2014/11/14/config-secured-hive-with-sentry">配置安全的Hive集群集成Sentry</a></li>
 </ul>
-
-<h1 id="1-环境说明">1. 环境说明</h1>
-
+<h1 id="1-">1. 环境说明</h1>
 <p>系统环境：</p>
-
 <ul>
 <li>操作系统：CentOs 6.6</li>
 <li>Hadoop版本：<code>CDH5.4</code></li>
 <li>JDK版本：<code>1.7.0_71</code></li>
 <li>运行用户：root</li>
 </ul>
-
 <p>集群各节点角色规划为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
 192.168.56.122        cdh2     DataNode、NodeManager、HBase、Hiveserver2、Impala Server
-192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hiveserver2、Impala Server</pre></td></tr></table>
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hiveserver2、Impala Server
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="2-修改impala配置">2. 修改Impala配置</h1>
-
+</div><h1 id="2-impala">2. 修改Impala配置</h1>
 <p>修改 /etc/default/impala 文件中的 <code>IMPALA_SERVER_ARGS</code> 参数，添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">-server_name<span class="o">=</span>server1
--sentry_config<span class="o">=</span>/etc/hive/conf/sentry-site.xml</code></pre></td></tr></table>
+-sentry_config<span class="o">=</span>/etc/hive/conf/sentry-site.xml
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>在 <code>IMPALA_CATALOG_ARGS</code> 中添加：</p>
+</div><p>在 <code>IMPALA_CATALOG_ARGS</code> 中添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">-sentry_config<span class="o">=</span>/etc/hive/conf/sentry-site.xml</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">-sentry_config<span class="o">=</span>/etc/hive/conf/sentry-site.xml
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>/etc/hive/conf/sentry-site.xml 内容如下：</p>
+</div><p>/etc/hive/conf/sentry-site.xml 内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -253,67 +232,63 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-<span class="nt">&lt;configuration&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-port<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>8038<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;configuration</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-port<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>8038<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-address<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-address<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-connection-timeout<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>200000<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-connection-timeout<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>200000<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.provider<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.file.HadoopGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.provider<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.file.HadoopGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.db.SimpleDBProviderBackend<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.db.SimpleDBProviderBackend<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.metastore.service.users<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span><span class="c">&lt;!--queries made by hive user (beeline) skip meta store check--&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.metastore.service.users<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>hive<span class="nt">&lt;/value&gt;</span><span class="c">&lt;!--</span><span class="c">queries made by hive user (beeline) skip meta store check</span><span class="c">--&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.hive.server<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.server<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property&gt;</span>
-        <span class="nt">&lt;name&gt;</span>sentry.hive.testing.mode<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.testing.mode<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
+<span class="nt">&lt;/configuration&gt;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="3-重启impala服务">3. 重启Impala服务</h1>
-
+</div><h1 id="3-impala">3. 重启Impala服务</h1>
 <p>在cdh1节点</p>
-
-<h1 id="4-测试">4. 测试</h1>
-
-<h1 id="5-其他说明">5. 其他说明</h1>
-
+<h1 id="4-">4. 测试</h1>
+<h1 id="5-">5. 其他说明</h1>
 <p>如果要使用基于文件存储的方式配置Sentry store，则需要修改 /etc/default/impala 文件中的 <code>IMPALA_SERVER_ARGS</code> 参数，添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties">-server_name=server1
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">-server_name=server1
 -authorization_policy_file=/user/hive/sentry/sentry-provider.ini
--authorization_policy_provider_class=org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider</code></pre></td></tr></table>
+-authorization_policy_provider_class=org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建 sentry-provider.ini 文件并将其上传到 hdfs 的 /user/hive/sentry/ 目录：</p>
+</div><p>创建 sentry-provider.ini 文件并将其上传到 hdfs 的 /user/hive/sentry/ 目录：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -336,9 +311,9 @@
 </span><span class="lnt">21
 </span><span class="lnt">22
 </span><span class="lnt">23
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ cat /tmp/sentry-provider.ini
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ cat /tmp/sentry-provider.ini
 [databases]
 # Defines the location of the per DB policy file for the customers DB/schema
 #db1 = hdfs://cdh1:8020/user/hive/sentry/db1.ini
@@ -360,19 +335,15 @@ hive= hive
 $ hdfs dfs -rm -r /user/hive/sentry/sentry-provider.ini
 $ hdfs dfs -put /tmp/sentry-provider.ini /user/hive/sentry/
 $ hdfs dfs -chown hive:hive /user/hive/sentry/sentry-provider.ini
-$ hdfs dfs -chmod 640 /user/hive/sentry/sentry-provider.ini</pre></td></tr></table>
+$ hdfs dfs -chmod 640 /user/hive/sentry/sentry-provider.ini
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>注意：server1 必须和 sentry-provider.ini 文件中的保持一致。</p>
-
-<h1 id="6-参考文章">6. 参考文章</h1>
-
+</div><p>注意：server1 必须和 sentry-provider.ini 文件中的保持一致。</p>
+<h1 id="6-">6. 参考文章</h1>
 <ul>
-<li><a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a><br /></li>
+<li><a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a></li>
 </ul>
-
-<h1 id="7-相关文章">7. 相关文章</h1>
-
+<h1 id="7-">7. 相关文章</h1>
 <ul>
 <li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
 <li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
@@ -502,7 +473,7 @@ $ hdfs dfs -chmod 640 /user/hive/sentry/sentry-provider.ini</pre></td></tr></tab
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

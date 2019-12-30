@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2015/03/26/spark-sql-dataframe/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2015-03-26T08:00:00+08:00" />
 <meta itemprop="name" content="Spark SQL中的DataFrame">
 <meta itemprop="description" content="在 Spark 1.3 中，SchemaRDD 改为叫做 DataFrame，DataFrame 与关系型数据库中的表很相似，可以通过存在的 RDD、一个 Parquet 文件、结构化的文件、外部数据库、或者对存储在 Apache Hive 中的数据执行 HiveSQL 查询中创建。">
-
-
 <meta itemprop="datePublished" content="2015-03-26T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2015-03-26T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="4091">
 
 
 
-<meta itemprop="keywords" content="spark-sql,spark," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="spark-sql,spark," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Spark SQL中的DataFrame"/>
 <meta name="twitter:description" content="在 Spark 1.3 中，SchemaRDD 改为叫做 DataFrame，DataFrame 与关系型数据库中的表很相似，可以通过存在的 RDD、一个 Parquet 文件、结构化的文件、外部数据库、或者对存储在 Apache Hive 中的数据执行 HiveSQL 查询中创建。"/>
 
@@ -142,42 +139,29 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#创建-sqlcontext">创建 SQLContext</a></li>
-<li><a href="#创建-dataframe">创建 DataFrame</a>
-<ul>
-<li><a href="#dataframe-操作">DataFrame 操作</a></li>
-<li><a href="#运行-sql-查询">运行 SQL 查询</a>
-<ul>
-<li><a href="#利用反射推断模式">利用反射推断模式</a></li>
-<li><a href="#编程指定模式">编程指定模式</a></li>
-</ul></li>
-</ul></li>
-<li><a href="#总结">总结</a></li>
-<li><a href="#参考文章">参考文章</a></li>
-</ul>
+  <ul>
+    <li><a href="#dataframe-">DataFrame 操作</a></li>
+    <li><a href="#-sql-">运行 SQL 查询</a>
+      <ul>
+        <li><a href="#heading">利用反射推断模式</a></li>
+        <li><a href="#heading-1">编程指定模式</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>在2014年7月1日的 Spark Summit 上，Databricks 宣布终止对 Shark 的开发，将重点放到 Spark SQL 上。在会议上，Databricks 表示，Shark 更多是对 Hive 的改造，替换了 Hive 的物理执行引擎，因此会有一个很快的速度。然而，不容忽视的是，Shark 继承了大量的 Hive 代码，因此给优化和维护带来了大量的麻烦。随着性能优化和先进分析整合的进一步加深，基于 MapReduce 设计的部分无疑成为了整个项目的瓶颈。 详细内容请参看 <a href="http://databricks.com/blog/2014/07/01/shark-spark-sql-hive-on-spark-and-the-future-of-sql-on-spark.html">Shark, Spark SQL, Hive on Spark, and the future of SQL on Spark</a>。</p>
-
+      <p>在2014年7月1日的 Spark Summit 上，Databricks 宣布终止对 Shark 的开发，将重点放到 Spark SQL 上。在会议上，Databricks 表示，Shark 更多是对 Hive 的改造，替换了 Hive 的物理执行引擎，因此会有一个很快的速度。然而，不容忽视的是，Shark 继承了大量的 Hive 代码，因此给优化和维护带来了大量的麻烦。随着性能优化和先进分析整合的进一步加深，基于 MapReduce 设计的部分无疑成为了整个项目的瓶颈。 详细内容请参看 <a href="http://databricks.com/blog/2014/07/01/shark-spark-sql-hive-on-spark-and-the-future-of-sql-on-spark.html">Shark, Spark SQL, Hive on Spark, and the future of SQL on Spark</a>。</p>
 <p>Spark SQL 允许 Spark 执行用 SQL, HiveQL 或者 Scala 表示的关系查询。在 Spark 1.3 之前，这个模块的核心是一个新类型的 RDD-<a href="http:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.sql.SchemaRDD">SchemaRDD</a>。 SchemaRDDs 由<a href="http:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.sql.package@Row:org.apache.spark.sql.catalyst.expressions.Row.type">行</a>对象组成，行对象拥有一个模式（scheme） 来描述行中每一列的数据类型。SchemaRDD 与关系型数据库中的表很相似，可以通过存在的 RDD、一个 <a href="http://parquet.io/">Parquet</a> 文件、结构化的文件、外部数据库、或者对存储在 Apache Hive 中的数据执行 HiveSQL 查询中创建。</p>
-
 <p>当前 Spark SQL 还处于 alpha 阶段，一些 API 在将将来的版本中可能会有所改变。例如，<a href="http://www.infoq.com/cn/news/2015/03/apache-spark-1.3-released">Apache Spark 1.3发布，新增Data Frames API，改进Spark SQL和MLlib</a>。在 Spark 1.3 中，SchemaRDD 改为叫做 DataFrame。</p>
-
 <p>本文是基于 Spark 1.3 写成，特此说明。</p>
-
-<h1 id="创建-sqlcontext">创建 SQLContext</h1>
-
+<h1 id="-sqlcontext">创建 SQLContext</h1>
 <p>Spark SQL 中所有相关功能的入口点是 <a href="http:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.sql.SQLContext">SQLContext</a> 类或者它的子类， 创建一个 SQLContext 的所有需要仅仅是一个 SparkContext。</p>
-
 <p>使用 Scala 创建方式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -188,54 +172,50 @@
 </span><span class="c1"></span><span class="k">val</span> <span class="n">sqlContext</span> <span class="k">=</span> <span class="k">new</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="nc">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span>
 
 <span class="c1">// this is used to implicitly convert an RDD to a DataFrame.
-</span><span class="c1"></span><span class="k">import</span> <span class="nn">sqlContext.implicits._</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="k">import</span> <span class="nn">sqlContext.implicits._</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用 Java 创建方式如下：</p>
+</div><p>使用 Java 创建方式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaSparkContext</span> <span class="nf">sc</span> <span class="o">=</span> <span class="p">...;</span> <span class="c1">// An existing JavaSparkContext.
-</span><span class="c1"></span><span class="n">SQLContext</span> <span class="nf">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">);</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaSparkContext</span> <span class="n">sc</span> <span class="o">=</span> <span class="o">.</span><span class="o">.</span><span class="o">.</span><span class="o">;</span> <span class="c1">// An existing JavaSparkContext.
+</span><span class="c1"></span><span class="n">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span><span class="o">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用 Python 创建方式如下：</p>
+</div><p>使用 Python 创建方式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SQLContext</span>
-<span class="n">sqlContext</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span></code></pre></td></tr></table>
+<span class="n">sqlContext</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>除了一个基本的 SQLContext，你也能够创建一个 HiveContext，它支持基本 SQLContext 所支持功能的一个超集。它的额外的功能包括用更完整的 HiveQL 分析器写查询去访问 HiveUDFs 的能力、 从 Hive 表读取数据的能力。用 HiveContext 你不需要一个已经存在的 Hive 开启，SQLContext 可用的数据源对 HiveContext 也可用。HiveContext 分开打包是为了避免在 Spark 构建时包含了所有 的 Hive 依赖。如果对你的应用程序来说，这些依赖不存在问题，Spark 1.3 推荐使用 HiveContext。以后的稳定版本将专注于为 SQLContext 提供与 HiveContext 等价的功能。</p>
-
-<p>用来解析查询语句的特定 SQL 变种语言可以通过 <code>spark.sql.dialect</code> 选项来选择。这个参数可以通过两种方式改变，一种方式是通过 <code>setConf</code> 方法设定，另一种方式是在 SQL 命令中通过 <code>SET key=value</code> 来设定。对于 SQLContext，唯一可用的方言是 “sql”，它是 Spark SQL 提供的一个简单的 SQL 解析器。在 HiveContext 中，虽然也支持&rdquo;sql&rdquo;，但默认的方言是 “hiveql”，这是因为 HiveQL 解析器更完整。</p>
-
-<h1 id="创建-dataframe">创建 DataFrame</h1>
-
+</div><p>除了一个基本的 SQLContext，你也能够创建一个 HiveContext，它支持基本 SQLContext 所支持功能的一个超集。它的额外的功能包括用更完整的 HiveQL 分析器写查询去访问 HiveUDFs 的能力、 从 Hive 表读取数据的能力。用 HiveContext 你不需要一个已经存在的 Hive 开启，SQLContext 可用的数据源对 HiveContext 也可用。HiveContext 分开打包是为了避免在 Spark 构建时包含了所有 的 Hive 依赖。如果对你的应用程序来说，这些依赖不存在问题，Spark 1.3 推荐使用 HiveContext。以后的稳定版本将专注于为 SQLContext 提供与 HiveContext 等价的功能。</p>
+<p>用来解析查询语句的特定 SQL 变种语言可以通过 <code>spark.sql.dialect</code> 选项来选择。这个参数可以通过两种方式改变，一种方式是通过 <code>setConf</code> 方法设定，另一种方式是在 SQL 命令中通过 <code>SET key=value</code> 来设定。对于 SQLContext，唯一可用的方言是 “sql”，它是 Spark SQL 提供的一个简单的 SQL 解析器。在 HiveContext 中，虽然也支持&quot;sql&rdquo;，但默认的方言是 “hiveql”，这是因为 HiveQL 解析器更完整。</p>
+<h1 id="-dataframe">创建 DataFrame</h1>
 <p>使用 SQLContext，应用可以从一个存在的 RDD、Hive 表或者数据源中创建 DataFrame。</p>
-
 <p>下载测试数据 <a href="https://raw.githubusercontent.com/apache/master/examples/src/main/resources/people.json">people.json</a>，并将其上传到 HDFS 上：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget https://raw.githubusercontent.com/apache/master/examples/src/main/resources/people.json
-$ hadoop fs -put people.json</code></pre></td></tr></table>
+$ hadoop fs -put people.json
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>下面是使用 Scala 创建方式：</p>
+</div><p>下面是使用 Scala 创建方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -248,13 +228,13 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <span class="k">val</span> <span class="n">df</span> <span class="k">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">jsonFile</span><span class="o">(</span><span class="s">&#34;people.json&#34;</span><span class="o">)</span>
 
 <span class="c1">// Displays the content of the DataFrame to stdout
-</span><span class="c1"></span><span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="o">()</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>下面是使用 Java 创建方式：</p>
+</div><p>下面是使用 Java 创建方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -263,19 +243,19 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaSparkContext</span> <span class="nf">sc</span> <span class="o">=</span> <span class="p">...;</span> <span class="c1">// An existing JavaSparkContext.
-</span><span class="c1"></span><span class="n">SQLContext</span> <span class="nf">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">);</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">JavaSparkContext</span> <span class="n">sc</span> <span class="o">=</span> <span class="o">.</span><span class="o">.</span><span class="o">.</span><span class="o">;</span> <span class="c1">// An existing JavaSparkContext.
+</span><span class="c1"></span><span class="n">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span><span class="o">;</span>
 
-<span class="n">DataFrame</span> <span class="nf">df</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="p">.</span><span class="na">jsonFile</span><span class="p">(</span><span class="s">&#34;people.json&#34;</span><span class="p">);</span>
+<span class="n">DataFrame</span> <span class="n">df</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">jsonFile</span><span class="o">(</span><span class="s">&#34;people.json&#34;</span><span class="o">)</span><span class="o">;</span>
 
 <span class="c1">// Displays the content of the DataFrame to stdout
-</span><span class="c1"></span><span class="n">df</span><span class="p">.</span><span class="na">show</span><span class="p">();</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="n">df</span><span class="o">.</span><span class="na">show</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>下面是使用 Python 创建方式：</p>
+</div><p>下面是使用 Python 创建方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -287,20 +267,18 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SQLContext</span>
 <span class="n">sqlContext</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 
-<span class="n">df</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">jsonFile</span><span class="p">(</span><span class="s2">&#34;people.json&#34;</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">jsonFile</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">people.json</span><span class="s2">&#34;</span><span class="p">)</span>
 
 <span class="c1"># Displays the content of the DataFrame to stdout</span>
-<span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></code></pre></td></tr></table>
+<span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>DataFrame API 请参考 <a href="https:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.sql.DataFrame">Scala</a>、<a href="https:/.apache.org/docs/latest/api/java/index.html?org/apache/sql/DataFrame.html">Java</a> 以及 <a href="https:/.apache.org/docs/latest/api/python/pyspark.sql.html#pyspark.sql.DataFrame">Python</a>。</p>
-
-<h2 id="dataframe-操作">DataFrame 操作</h2>
-
+</div><p>DataFrame API 请参考 <a href="https:/.apache.org/docs/latest/api/scala/index.html#org.apache.spark.sql.DataFrame">Scala</a>、<a href="https:/.apache.org/docs/latest/api/java/index.html?org/apache/sql/DataFrame.html">Java</a> 以及 <a href="https:/.apache.org/docs/latest/api/python/pyspark.sql.html#pyspark.sql.DataFrame">Python</a>。</p>
+<h2 id="dataframe-">DataFrame 操作</h2>
 <p>运行 spark-shell 执行下面代码进行测试，运行的代码和输出结果如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -388,46 +366,46 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <span class="c1">// Create the DataFrame
 </span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="k">val</span> <span class="n">df</span> <span class="k">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">jsonFile</span><span class="o">(</span><span class="s">&#34;people.json&#34;</span><span class="o">)</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">count</span><span class="o">()</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">count</span><span class="o">(</span><span class="o">)</span>
 <span class="n">res1</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="mi">3</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">first</span><span class="o">()</span>
-<span class="n">res2</span><span class="k">:</span> <span class="kt">org.apache.spark.sql.Row</span> <span class="o">=</span> <span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">first</span><span class="o">(</span><span class="o">)</span>
+<span class="n">res2</span><span class="k">:</span> <span class="kt">org</span><span class="kt">.</span><span class="kt">apache</span><span class="kt">.</span><span class="kt">spark</span><span class="kt">.</span><span class="kt">sql</span><span class="kt">.</span><span class="kt">Row</span> <span class="o">=</span> <span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="o">()</span>
-<span class="n">res3</span><span class="k">:</span> <span class="kt">org.apache.spark.sql.Row</span> <span class="o">=</span> <span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="o">(</span><span class="o">)</span>
+<span class="n">res3</span><span class="k">:</span> <span class="kt">org</span><span class="kt">.</span><span class="kt">apache</span><span class="kt">.</span><span class="kt">spark</span><span class="kt">.</span><span class="kt">sql</span><span class="kt">.</span><span class="kt">Row</span> <span class="o">=</span> <span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">collect</span><span class="o">()</span>
-<span class="n">res4</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">org.apache.spark.sql.Row</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">([</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">],</span> <span class="o">[</span><span class="err">30</span>,<span class="kt">Andy</span><span class="o">],</span> <span class="o">[</span><span class="err">19</span>,<span class="kt">Justin</span><span class="o">])</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">collect</span><span class="o">(</span><span class="o">)</span>
+<span class="n">res4</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">org</span><span class="kt">.</span><span class="kt">apache</span><span class="kt">.</span><span class="kt">spark</span><span class="kt">.</span><span class="kt">sql</span><span class="kt">.</span><span class="kt">Row</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span><span class="o">,</span> <span class="o">[</span><span class="err">3</span><span class="err">0</span>,<span class="kt">Andy</span><span class="o">]</span><span class="o">,</span> <span class="o">[</span><span class="err">1</span><span class="err">9</span>,<span class="kt">Justin</span><span class="o">]</span><span class="o">)</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">collectAsList</span><span class="o">()</span>
-<span class="n">res5</span><span class="k">:</span> <span class="kt">java.util.List</span><span class="o">[</span><span class="kt">org.apache.spark.sql.Row</span><span class="o">]</span> <span class="k">=</span> <span class="o">[[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>, <span class="o">[</span><span class="err">30</span>,<span class="kt">Andy</span><span class="o">]</span>, <span class="o">[</span><span class="err">19</span>,<span class="kt">Justin</span><span class="o">]]</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">collectAsList</span><span class="o">(</span><span class="o">)</span>
+<span class="n">res5</span><span class="k">:</span> <span class="kt">java.util.List</span><span class="o">[</span><span class="kt">org</span><span class="kt">.</span><span class="kt">apache</span><span class="kt">.</span><span class="kt">spark</span><span class="kt">.</span><span class="kt">sql</span><span class="kt">.</span><span class="kt">Row</span><span class="o">]</span> <span class="k">=</span> <span class="o">[</span><span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span>, <span class="o">[</span><span class="err">3</span><span class="err">0</span>,<span class="kt">Andy</span><span class="o">]</span>, <span class="o">[</span><span class="err">1</span><span class="err">9</span>,<span class="kt">Justin</span><span class="o">]</span><span class="o">]</span>
 
 <span class="c1">// Show the content of the DataFrame
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
 <span class="n">age</span>  <span class="n">name</span>
 <span class="kc">null</span> <span class="nc">Michael</span>
 <span class="mi">30</span>   <span class="nc">Andy</span>
 <span class="mi">19</span>   <span class="nc">Justin</span>
 
 <span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">take</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
-<span class="n">res6</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">org.apache.spark.sql.Row</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">([</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">],</span> <span class="o">[</span><span class="err">30</span>,<span class="kt">Andy</span><span class="o">])</span>
+<span class="n">res6</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">org</span><span class="kt">.</span><span class="kt">apache</span><span class="kt">.</span><span class="kt">spark</span><span class="kt">.</span><span class="kt">sql</span><span class="kt">.</span><span class="kt">Row</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="o">[</span><span class="kt">null</span>,<span class="kt">Michael</span><span class="o">]</span><span class="o">,</span> <span class="o">[</span><span class="err">3</span><span class="err">0</span>,<span class="kt">Andy</span><span class="o">]</span><span class="o">)</span>
 
 <span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span>
 <span class="n">res7</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="n">age</span><span class="o">,</span> <span class="n">name</span><span class="o">)</span>
 
 <span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">dtypes</span>
-<span class="n">res8</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[(</span><span class="kt">String</span>, <span class="kt">String</span><span class="o">)]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">((</span><span class="n">age</span><span class="o">,</span><span class="nc">LongType</span><span class="o">),</span> <span class="o">(</span><span class="n">name</span><span class="o">,</span><span class="nc">StringType</span><span class="o">))</span>
+<span class="n">res8</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="o">(</span><span class="kt">String</span>, <span class="kt">String</span><span class="o">)</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Array</span><span class="o">(</span><span class="o">(</span><span class="n">age</span><span class="o">,</span><span class="nc">LongType</span><span class="o">)</span><span class="o">,</span> <span class="o">(</span><span class="n">name</span><span class="o">,</span><span class="nc">StringType</span><span class="o">)</span><span class="o">)</span>
 
 <span class="c1">// Print the schema in a tree format
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">printSchema</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">printSchema</span><span class="o">(</span><span class="o">)</span>
 <span class="n">root</span>
  <span class="o">|--</span> <span class="n">age</span><span class="k">:</span> <span class="kt">long</span> <span class="o">(</span><span class="kt">nullable</span> <span class="o">=</span> <span class="kt">true</span><span class="o">)</span>
  <span class="o">|--</span> <span class="n">name</span><span class="k">:</span> <span class="kt">string</span> <span class="o">(</span><span class="kt">nullable</span> <span class="o">=</span> <span class="kt">true</span><span class="o">)</span>
 
-<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">explain</span><span class="o">()</span>
+<span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">explain</span><span class="o">(</span><span class="o">)</span>
 <span class="o">==</span> <span class="nc">Physical</span> <span class="nc">Plan</span> <span class="o">==</span>
-<span class="nc">PhysicalRDD</span> <span class="o">[</span><span class="kt">age</span><span class="k">#</span><span class="err">0</span><span class="kt">L</span>,<span class="kt">name</span><span class="k">#</span><span class="err">1</span><span class="o">],</span> <span class="nc">MapPartitionsRDD</span><span class="o">[</span><span class="err">96</span><span class="o">]</span> <span class="n">at</span> <span class="n">map</span> <span class="n">at</span> <span class="nc">JsonRDD</span><span class="o">.</span><span class="n">scala</span><span class="k">:</span><span class="err">41</span>
+<span class="nc">PhysicalRDD</span> <span class="o">[</span><span class="kt">age</span><span class="k">#</span><span class="err">0</span><span class="kt">L</span>,<span class="kt">name</span><span class="k">#</span><span class="err">1</span><span class="o">]</span><span class="o">,</span> <span class="nc">MapPartitionsRDD</span><span class="o">[</span><span class="err">9</span><span class="err">6</span><span class="o">]</span> <span class="n">at</span> <span class="n">map</span> <span class="n">at</span> <span class="nc">JsonRDD</span><span class="o">.</span><span class="n">scala</span><span class="k">:</span><span class="err">4</span><span class="err">1</span>
 
 <span class="c1">// age column
 </span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="k">val</span> <span class="n">ageCol</span> <span class="k">=</span> <span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span>  
@@ -436,57 +414,51 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span> <span class="o">+</span> <span class="mi">10</span> 
 
 <span class="c1">// Select only the &#34;name&#34; column
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="o">(</span><span class="s">&#34;name&#34;</span><span class="o">).</span><span class="n">show</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="o">(</span><span class="s">&#34;name&#34;</span><span class="o">)</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
 <span class="n">name</span>
 <span class="nc">Michael</span>
 <span class="nc">Andy</span>
 <span class="nc">Justin</span>
 
 <span class="c1">// Select everybody, but increment the age by 1
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="o">(</span><span class="n">df</span><span class="o">(</span><span class="s">&#34;name&#34;</span><span class="o">),</span> <span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)+</span><span class="mi">1</span><span class="o">).</span><span class="n">show</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="o">(</span><span class="n">df</span><span class="o">(</span><span class="s">&#34;name&#34;</span><span class="o">)</span><span class="o">,</span> <span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span><span class="o">+</span><span class="mi">1</span><span class="o">)</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
 <span class="n">name</span>    <span class="o">(</span><span class="n">age</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
 <span class="nc">Michael</span> <span class="kc">null</span>
 <span class="nc">Andy</span>    <span class="mi">31</span>
 <span class="nc">Justin</span>  <span class="mi">20</span>
 
 <span class="c1">// Select people older than 21
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="o">(</span><span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span> <span class="o">&gt;</span> <span class="mi">21</span><span class="o">).</span><span class="n">show</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="o">(</span><span class="n">df</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span> <span class="o">&gt;</span> <span class="mi">21</span><span class="o">)</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
 <span class="n">age</span> <span class="n">name</span>
 <span class="mi">30</span>  <span class="nc">Andy</span>
 
 <span class="c1">// Count people by age
-</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">groupBy</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">).</span><span class="n">count</span><span class="o">().</span><span class="n">show</span><span class="o">()</span>
+</span><span class="c1"></span><span class="n">scala</span><span class="o">&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">groupBy</span><span class="o">(</span><span class="s">&#34;age&#34;</span><span class="o">)</span><span class="o">.</span><span class="n">count</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="o">)</span>
 <span class="n">age</span>  <span class="n">count</span>
 <span class="kc">null</span> <span class="mi">1</span>
 <span class="mi">19</span>   <span class="mi">1</span>
-<span class="mi">30</span>   <span class="mi">1</span></code></pre></td></tr></table>
+<span class="mi">30</span>   <span class="mi">1</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="运行-sql-查询">运行 SQL 查询</h2>
-
+</div><h2 id="-sql-">运行 SQL 查询</h2>
 <p>SQLContext 有一个 sql 方法，可以运行 SQL 查询。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">sqlContext</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT * FROM table&#34;</span><span class="p">)</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">sqlContext</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT * FROM table&#34;</span><span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>Spark SQL 支持两种方法将存在的 RDD 转换为 DataFrame 。第一种方法使用反射来推断包含特定对象类型的 RDD 的模式。在你写 spark 程序的同时，当你已经知道了模式，这种基于反射的方法可以使代码更简洁并且程序工作得更好。</p>
-
+</div><p>Spark SQL 支持两种方法将存在的 RDD 转换为 DataFrame 。第一种方法使用反射来推断包含特定对象类型的 RDD 的模式。在你写 spark 程序的同时，当你已经知道了模式，这种基于反射的方法可以使代码更简洁并且程序工作得更好。</p>
 <p>第二种方法是通过一个编程接口来实现，这个接口允许你构造一个模式，然后在存在的 RDD 上使用它。虽然这种方法更冗长，但是它允许你在运行期之前不知道列以及列的类型的情况下构造 DataFrame。</p>
-
 <p>SQLContext 的 API 见 <a href="https:/.apache.org/docs/1.3.0/api/scala/index.html#org.apache.spark.sql.SQLContext">SQLContext</a> 。</p>
-
-<h3 id="利用反射推断模式">利用反射推断模式</h3>
-
+<h3 id="heading">利用反射推断模式</h3>
 <p>Spark SQL的 Scala 接口支持将包含样本类的 RDD 自动转换为 DataFrame。这个样本类定义了表的模式。样本类的参数名字通过反射来读取，然后作为列的名字。样本类可以嵌套或者包含复杂的类型如序列或者数组。这个 RDD 可以隐式转化为一个 DataFrame，然后注册为一个表，表可以在后续的 sql 语句中使用。</p>
-
 <p>以 <a href="https://raw.githubusercontent.com/apache/master/examples/src/main/resources/people.txt">people.txt</a> 作为测试数据，使用 Scala 语言来创建 DataFrame：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -514,26 +486,26 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="c1"></span><span class="k">import</span> <span class="nn">sqlContext.implicits._</span>
 
 <span class="c1">// Define the schema using a case class.
-</span><span class="c1">// Note: Case classes in Scala 2.10 can support only up to 22 fields. To work around this limit,
-</span><span class="c1">// you can use custom classes that implement the Product interface.
+</span><span class="c1"></span><span class="c1">// Note: Case classes in Scala 2.10 can support only up to 22 fields. To work around this limit,
+</span><span class="c1"></span><span class="c1">// you can use custom classes that implement the Product interface.
 </span><span class="c1"></span><span class="k">case</span> <span class="k">class</span> <span class="nc">People</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">age</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
 
 <span class="c1">// Create an RDD of Person objects and register it as a table.
-</span><span class="c1"></span><span class="k">val</span> <span class="n">people</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;people.txt&#34;</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="nc">People</span><span class="o">(</span><span class="n">p</span><span class="o">(</span><span class="mi">0</span><span class="o">),</span> <span class="n">p</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">trim</span><span class="o">.</span><span class="n">toInt</span><span class="o">)).</span><span class="n">toDF</span><span class="o">()</span>
+</span><span class="c1"></span><span class="k">val</span> <span class="n">people</span> <span class="k">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="o">(</span><span class="s">&#34;people.txt&#34;</span><span class="o">)</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="nc">People</span><span class="o">(</span><span class="n">p</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span><span class="o">,</span> <span class="n">p</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span><span class="o">.</span><span class="n">trim</span><span class="o">.</span><span class="n">toInt</span><span class="o">)</span><span class="o">)</span><span class="o">.</span><span class="n">toDF</span><span class="o">(</span><span class="o">)</span>
 <span class="n">people</span><span class="o">.</span><span class="n">registerTempTable</span><span class="o">(</span><span class="s">&#34;people&#34;</span><span class="o">)</span>
 
 <span class="c1">// SQL statements can be run by using the sql methods provided by sqlContext.
 </span><span class="c1"></span><span class="k">val</span> <span class="n">teenagers</span> <span class="k">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="o">)</span>
 
 <span class="c1">// The results of SQL queries are DataFrames and support all the normal RDD operations.
-</span><span class="c1">// The columns of a row in the result can be accessed by ordinal.
-</span><span class="c1"></span><span class="n">teenagers</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">t</span> <span class="k">=&gt;</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">t</span><span class="o">(</span><span class="mi">0</span><span class="o">)).</span><span class="n">collect</span><span class="o">().</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="c1">// The columns of a row in the result can be accessed by ordinal.
+</span><span class="c1"></span><span class="n">teenagers</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">t</span> <span class="k">=&gt;</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">t</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span><span class="o">)</span><span class="o">.</span><span class="n">collect</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>对于 Java 语言，需要创建一个 JavaBean，然后在将数据映射到它上面：</p>
+</div><p>对于 Java 语言，需要创建一个 JavaBean，然后在将数据映射到它上面：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -555,32 +527,32 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="lnt">20
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">static</span> <span class="kd">class</span> <span class="nf">People</span> <span class="kd">implements</span> <span class="nf">Serializable</span> <span class="p">{</span>
-  <span class="kd">private</span> <span class="nf">String</span> <span class="n">name</span><span class="p">;</span>
-  <span class="kd">private</span> <span class="nf">int</span> <span class="n">age</span><span class="p">;</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">People</span> <span class="kd">implements</span> <span class="n">Serializable</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kt">int</span> <span class="n">age</span><span class="o">;</span>
 
-  <span class="kd">public</span> <span class="nf">String</span> <span class="n">getName</span><span class="p">()</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="n">name</span><span class="p">;</span>
-  <span class="p">}</span>
+  <span class="kd">public</span> <span class="n">String</span> <span class="nf">getName</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+  <span class="o">}</span>
 
-  <span class="kd">public</span> <span class="nf">void</span> <span class="n">setName</span><span class="p">(</span><span class="n">String</span> <span class="nf">name</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">this</span><span class="p">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">;</span>
-  <span class="p">}</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setName</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+  <span class="o">}</span>
 
-  <span class="kd">public</span> <span class="nf">int</span> <span class="n">getAge</span><span class="p">()</span> <span class="p">{</span>
-    <span class="k">return</span> <span class="n">age</span><span class="p">;</span>
-  <span class="p">}</span>
+  <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getAge</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">age</span><span class="o">;</span>
+  <span class="o">}</span>
 
-  <span class="kd">public</span> <span class="nf">void</span> <span class="n">setAge</span><span class="p">(</span><span class="kt">int</span> <span class="nf">age</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">this</span><span class="p">.</span><span class="na">age</span> <span class="o">=</span> <span class="n">age</span><span class="p">;</span>
-  <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setAge</span><span class="o">(</span><span class="kt">int</span> <span class="n">age</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">age</span> <span class="o">=</span> <span class="n">age</span><span class="o">;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>然后，使用 sqlContext 的 createDataFrame 方法，从 JavaBean 和数据上创建一个 DataFrame 并注册一个表，下面是一个比较完整的例子：</p>
+</div><p>然后，使用 sqlContext 的 createDataFrame 方法，从 JavaBean 和数据上创建一个 DataFrame 并注册一个表，下面是一个比较完整的例子：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">  1
+<pre class="chroma"><code><span class="lnt">  1
 </span><span class="lnt">  2
 </span><span class="lnt">  3
 </span><span class="lnt">  4
@@ -724,154 +696,154 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="lnt">142
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">SparkConf</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">JavaRDD</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">JavaSparkContext</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">function</span><span class="p">.</span><span class="na">Function</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">DataFrame</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">Row</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">SQLContext</span><span class="p">;</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">org.apache.spark.SparkConf</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaRDD</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaSparkContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.function.Function</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.DataFrame</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Row</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span><span class="o">;</span>
 
-<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">Serializable</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Arrays</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.io.Serializable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Arrays</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="o">;</span>
 
-<span class="kd">public</span> <span class="nf">class</span> <span class="n">JavaSparkSQLByReflection</span> <span class="p">{</span>
-    <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="p">[]</span> <span class="nf">args</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
-        <span class="n">SparkConf</span> <span class="nf">sparkConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SparkConf</span><span class="p">().</span><span class="na">setAppName</span><span class="p">(</span><span class="s">&#34;JavaSparkSQLByReflection&#34;</span><span class="p">);</span>
-        <span class="n">JavaSparkContext</span> <span class="nf">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JavaSparkContext</span><span class="p">(</span><span class="n">sparkConf</span><span class="p">);</span>
-        <span class="n">SQLContext</span> <span class="nf">sqlCtx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JavaSparkSQLByReflection</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">SparkConf</span> <span class="n">sparkConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SparkConf</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">setAppName</span><span class="o">(</span><span class="s">&#34;JavaSparkSQLByReflection&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">JavaSparkContext</span> <span class="n">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JavaSparkContext</span><span class="o">(</span><span class="n">sparkConf</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">SQLContext</span> <span class="n">sqlCtx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SQLContext</span><span class="o">(</span><span class="n">ctx</span><span class="o">)</span><span class="o">;</span>
 
-        <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&#34;=== Data source: RDD ===&#34;</span><span class="p">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;=== Data source: RDD ===&#34;</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">// Load a text file and convert each line to a Java Bean.
-</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">People</span><span class="o">&gt;</span> <span class="nf">people</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;people.txt&#34;</span><span class="p">).</span><span class="na">map</span><span class="p">(</span>
-                <span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">People</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">People</span><span class="o">&gt;</span> <span class="n">people</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">textFile</span><span class="o">(</span><span class="s">&#34;people.txt&#34;</span><span class="o">)</span><span class="o">.</span><span class="na">map</span><span class="o">(</span>
+                <span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">People</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
                     <span class="nd">@Override</span>
-                    <span class="kd">public</span> <span class="nf">People</span> <span class="n">call</span><span class="p">(</span><span class="n">String</span> <span class="nf">line</span><span class="p">)</span> <span class="p">{</span>
-                        <span class="n">String</span><span class="p">[]</span> <span class="nf">parts</span> <span class="o">=</span> <span class="n">line</span><span class="p">.</span><span class="na">split</span><span class="p">(</span><span class="s">&#34;,&#34;</span><span class="p">);</span>
+                    <span class="kd">public</span> <span class="n">People</span> <span class="nf">call</span><span class="o">(</span><span class="n">String</span> <span class="n">line</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span><span class="o">;</span>
 
-                        <span class="n">People</span> <span class="nf">people</span> <span class="o">=</span> <span class="k">new</span> <span class="n">People</span><span class="p">();</span>
-                        <span class="n">people</span><span class="p">.</span><span class="na">setName</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="n">0</span><span class="p">]);</span>
-                        <span class="n">people</span><span class="p">.</span><span class="na">setAge</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">parseInt</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="n">1</span><span class="p">].</span><span class="na">trim</span><span class="p">()));</span>
-                        <span class="k">return</span> <span class="n">people</span><span class="p">;</span>
-                    <span class="p">}</span>
-                <span class="p">});</span>
+                        <span class="n">People</span> <span class="n">people</span> <span class="o">=</span> <span class="k">new</span> <span class="n">People</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+                        <span class="n">people</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="n">parts</span><span class="o">[</span><span class="n">0</span><span class="o">]</span><span class="o">)</span><span class="o">;</span>
+                        <span class="n">people</span><span class="o">.</span><span class="na">setAge</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">parts</span><span class="o">[</span><span class="n">1</span><span class="o">]</span><span class="o">.</span><span class="na">trim</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+                        <span class="k">return</span> <span class="n">people</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Apply a schema to an RDD of Java Beans and register it as a table.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">schemaPeople</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">createDataFrame</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">People</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
-        <span class="n">schemaPeople</span><span class="p">.</span><span class="na">registerTempTable</span><span class="p">(</span><span class="s">&#34;people&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">schemaPeople</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">createDataFrame</span><span class="o">(</span><span class="n">people</span><span class="o">,</span> <span class="n">People</span><span class="o">.</span><span class="na">class</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">schemaPeople</span><span class="o">.</span><span class="na">registerTempTable</span><span class="o">(</span><span class="s">&#34;people&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// SQL can be run over RDDs that have been registered as tables.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">teenagers</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">teenagers</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// The results of SQL queries are DataFrames and support all the normal RDD operations.
 </span><span class="c1"></span>        <span class="c1">// The columns of a row in the result can be accessed by ordinal.
-</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers</span><span class="p">.</span><span class="na">toJavaRDD</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
             <span class="nd">@Override</span>
-            <span class="kd">public</span> <span class="nf">String</span> <span class="n">call</span><span class="p">(</span><span class="n">Row</span> <span class="nf">row</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">0</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}).</span><span class="na">collect</span><span class="p">();</span>
+            <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">Row</span> <span class="n">row</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">0</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span><span class="o">)</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
 
-        <span class="k">for</span> <span class="p">(</span><span class="n">String</span> <span class="nf">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="p">)</span> <span class="p">{</span>
-            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
-        <span class="p">}</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">name</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
 
 
-        <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&#34;=== Data source: Parquet File ===&#34;</span><span class="p">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;=== Data source: Parquet File ===&#34;</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">// DataFrames can be saved as parquet files, maintaining the schema information.
-</span><span class="c1"></span>        <span class="n">schemaPeople</span><span class="p">.</span><span class="na">saveAsParquetFile</span><span class="p">(</span><span class="s">&#34;people.parquet&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">schemaPeople</span><span class="o">.</span><span class="na">saveAsParquetFile</span><span class="o">(</span><span class="s">&#34;people.parquet&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Read in the parquet file created above.
 </span><span class="c1"></span>        <span class="c1">// Parquet files are self-describing so the schema is preserved.
 </span><span class="c1"></span>        <span class="c1">// The result of loading a parquet file is also a DataFrame.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">parquetFile</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">parquetFile</span><span class="p">(</span><span class="s">&#34;people.parquet&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">parquetFile</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">parquetFile</span><span class="o">(</span><span class="s">&#34;people.parquet&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">//Parquet files can also be registered as tables and then used in SQL statements.
-</span><span class="c1"></span>        <span class="n">parquetFile</span><span class="p">.</span><span class="na">registerTempTable</span><span class="p">(</span><span class="s">&#34;parquetFile&#34;</span><span class="p">);</span>
-        <span class="n">DataFrame</span> <span class="nf">teenagers2</span> <span class="o">=</span>
-                <span class="n">sqlCtx</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT name FROM parquetFile WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="p">);</span>
-        <span class="n">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers2</span><span class="p">.</span><span class="na">toJavaRDD</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="c1"></span>        <span class="n">parquetFile</span><span class="o">.</span><span class="na">registerTempTable</span><span class="o">(</span><span class="s">&#34;parquetFile&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">DataFrame</span> <span class="n">teenagers2</span> <span class="o">=</span>
+                <span class="n">sqlCtx</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM parquetFile WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers2</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
             <span class="nd">@Override</span>
-            <span class="kd">public</span> <span class="nf">String</span> <span class="n">call</span><span class="p">(</span><span class="n">Row</span> <span class="nf">row</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">0</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}).</span><span class="na">collect</span><span class="p">();</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">String</span> <span class="nf">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="p">)</span> <span class="p">{</span>
-            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
-        <span class="p">}</span>
+            <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">Row</span> <span class="n">row</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">0</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span><span class="o">)</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">name</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
 
-        <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&#34;=== Data source: JSON Dataset ===&#34;</span><span class="p">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;=== Data source: JSON Dataset ===&#34;</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">// A JSON dataset is pointed by path.
 </span><span class="c1"></span>        <span class="c1">// The path can be either a single text file or a directory storing text files.
-</span><span class="c1"></span>        <span class="n">String</span> <span class="nf">path</span> <span class="o">=</span> <span class="s">&#34;people.json&#34;</span><span class="p">;</span>
+</span><span class="c1"></span>        <span class="n">String</span> <span class="n">path</span> <span class="o">=</span> <span class="s">&#34;people.json&#34;</span><span class="o">;</span>
         <span class="c1">// Create a DataFrame from the file(s) pointed by path
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">peopleFromJsonFile</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">jsonFile</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">peopleFromJsonFile</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">jsonFile</span><span class="o">(</span><span class="n">path</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Because the schema of a JSON dataset is automatically inferred, to write queries,
 </span><span class="c1"></span>        <span class="c1">// it is better to take a look at what is the schema.
-</span><span class="c1"></span>        <span class="n">peopleFromJsonFile</span><span class="p">.</span><span class="na">printSchema</span><span class="p">();</span>
+</span><span class="c1"></span>        <span class="n">peopleFromJsonFile</span><span class="o">.</span><span class="na">printSchema</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">// The schema of people is ...
 </span><span class="c1"></span>        <span class="c1">// root
 </span><span class="c1"></span>        <span class="c1">//  |-- age: IntegerType
 </span><span class="c1"></span>        <span class="c1">//  |-- name: StringType
 </span><span class="c1"></span>
         <span class="c1">// Register this DataFrame as a table.
-</span><span class="c1"></span>        <span class="n">peopleFromJsonFile</span><span class="p">.</span><span class="na">registerTempTable</span><span class="p">(</span><span class="s">&#34;people&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">peopleFromJsonFile</span><span class="o">.</span><span class="na">registerTempTable</span><span class="o">(</span><span class="s">&#34;people&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// SQL statements can be run by using the sql methods provided by sqlCtx.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">teenagers3</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">teenagers3</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// The results of SQL queries are DataFrame and support all the normal RDD operations.
 </span><span class="c1"></span>        <span class="c1">// The columns of a row in the result can be accessed by ordinal.
-</span><span class="c1"></span>        <span class="n">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers3</span><span class="p">.</span><span class="na">toJavaRDD</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="c1"></span>        <span class="n">teenagerNames</span> <span class="o">=</span> <span class="n">teenagers3</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
             <span class="nd">@Override</span>
-            <span class="kd">public</span> <span class="nf">String</span> <span class="n">call</span><span class="p">(</span><span class="n">Row</span> <span class="nf">row</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">0</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}).</span><span class="na">collect</span><span class="p">();</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">String</span> <span class="nf">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="p">)</span> <span class="p">{</span>
-            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
-        <span class="p">}</span>
+            <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">Row</span> <span class="n">row</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">0</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span><span class="o">)</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">name</span> <span class="o">:</span> <span class="n">teenagerNames</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">name</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
 
         <span class="c1">// Alternatively, a DataFrame can be created for a JSON dataset represented by
 </span><span class="c1"></span>        <span class="c1">// a RDD[String] storing one JSON object per string.
-</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">jsonData</span> <span class="o">=</span> <span class="n">Arrays</span><span class="p">.</span><span class="na">asList</span><span class="p">(</span>
-                <span class="s">&#34;{\&#34;name\&#34;:\&#34;Yin\&#34;,\&#34;address\&#34;:{\&#34;city\&#34;:\&#34;Columbus\&#34;,\&#34;state\&#34;:\&#34;Ohio\&#34;}}&#34;</span><span class="p">);</span>
-        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">anotherPeopleRDD</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">.</span><span class="na">parallelize</span><span class="p">(</span><span class="n">jsonData</span><span class="p">);</span>
-        <span class="n">DataFrame</span> <span class="nf">peopleFromJsonRDD</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">jsonRDD</span><span class="p">(</span><span class="n">anotherPeopleRDD</span><span class="p">.</span><span class="na">rdd</span><span class="p">());</span>
+</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">jsonData</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+                <span class="s">&#34;{\&#34;name\&#34;:\&#34;Yin\&#34;,\&#34;address\&#34;:{\&#34;city\&#34;:\&#34;Columbus\&#34;,\&#34;state\&#34;:\&#34;Ohio\&#34;}}&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">anotherPeopleRDD</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">parallelize</span><span class="o">(</span><span class="n">jsonData</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">DataFrame</span> <span class="n">peopleFromJsonRDD</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">jsonRDD</span><span class="o">(</span><span class="n">anotherPeopleRDD</span><span class="o">.</span><span class="na">rdd</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
 
 
         <span class="c1">// Take a look at the schema of this new DataFrame.
-</span><span class="c1"></span>        <span class="n">peopleFromJsonRDD</span><span class="p">.</span><span class="na">printSchema</span><span class="p">();</span>
+</span><span class="c1"></span>        <span class="n">peopleFromJsonRDD</span><span class="o">.</span><span class="na">printSchema</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">// The schema of anotherPeople is ...
 </span><span class="c1"></span>        <span class="c1">// root
 </span><span class="c1"></span>        <span class="c1">//  |-- address: StructType
 </span><span class="c1"></span>        <span class="c1">//  |    |-- city: StringType
 </span><span class="c1"></span>        <span class="c1">//  |    |-- state: StringType
 </span><span class="c1"></span>        <span class="c1">//  |-- name: StringType
-</span><span class="c1"></span>        <span class="n">peopleFromJsonRDD</span><span class="p">.</span><span class="na">registerTempTable</span><span class="p">(</span><span class="s">&#34;people2&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">peopleFromJsonRDD</span><span class="o">.</span><span class="na">registerTempTable</span><span class="o">(</span><span class="s">&#34;people2&#34;</span><span class="o">)</span><span class="o">;</span>
 
-        <span class="n">DataFrame</span> <span class="nf">peopleWithCity</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT name, address.city FROM people2&#34;</span><span class="p">);</span>
-        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">nameAndCity</span> <span class="o">=</span> <span class="n">peopleWithCity</span><span class="p">.</span><span class="na">toJavaRDD</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">DataFrame</span> <span class="n">peopleWithCity</span> <span class="o">=</span> <span class="n">sqlCtx</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT name, address.city FROM people2&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">nameAndCity</span> <span class="o">=</span> <span class="n">peopleWithCity</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
             <span class="nd">@Override</span>
-            <span class="kd">public</span> <span class="nf">String</span> <span class="n">call</span><span class="p">(</span><span class="n">Row</span> <span class="nf">row</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">0</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#34;, City: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">1</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}).</span><span class="na">collect</span><span class="p">();</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">String</span> <span class="nf">name</span> <span class="o">:</span> <span class="n">nameAndCity</span><span class="p">)</span> <span class="p">{</span>
-            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
-        <span class="p">}</span>
+            <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">Row</span> <span class="n">row</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">&#34;, City: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">1</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span><span class="o">)</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">name</span> <span class="o">:</span> <span class="n">nameAndCity</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">name</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
 
-        <span class="n">ctx</span><span class="p">.</span><span class="na">stop</span><span class="p">();</span>
-    <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+        <span class="n">ctx</span><span class="o">.</span><span class="na">stop</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用 Python 语言则需要用到 sqlContext 的 inferSchema 方法：</p>
+</div><p>使用 Python 语言则需要用到 sqlContext 的 inferSchema 方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -898,37 +870,34 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <span class="n">sqlContext</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 
 <span class="c1"># Load a text file and convert each line to a Row.</span>
-<span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="s2">&#34;people.txt&#34;</span><span class="p">)</span>
-<span class="n">parts</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;,&#34;</span><span class="p">))</span>
-<span class="n">people</span> <span class="o">=</span> <span class="n">parts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">age</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">people.txt</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">parts</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">,</span><span class="s2">&#34;</span><span class="p">)</span><span class="p">)</span>
+<span class="n">people</span> <span class="o">=</span> <span class="n">parts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
 
 <span class="c1"># Infer the schema, and register the DataFrame as a table.</span>
 <span class="n">schemaPeople</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">inferSchema</span><span class="p">(</span><span class="n">people</span><span class="p">)</span>
-<span class="n">schemaPeople</span><span class="o">.</span><span class="n">registerTempTable</span><span class="p">(</span><span class="s2">&#34;people&#34;</span><span class="p">)</span>
+<span class="n">schemaPeople</span><span class="o">.</span><span class="n">registerTempTable</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">people</span><span class="s2">&#34;</span><span class="p">)</span>
 
 <span class="c1"># SQL can be run over DataFrames that have been registered as a table.</span>
-<span class="n">teenagers</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&#34;SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19&#34;</span><span class="p">)</span>
+<span class="n">teenagers</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">SELECT name FROM people WHERE age &gt;= 13 AND age &lt;= 19</span><span class="s2">&#34;</span><span class="p">)</span>
 
 <span class="c1"># The results of SQL queries are RDDs and support all the normal RDD operations.</span>
-<span class="n">teenNames</span> <span class="o">=</span> <span class="n">teenagers</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="s2">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">teenName</span> <span class="ow">in</span> <span class="n">teenNames</span><span class="o">.</span><span class="n">collect</span><span class="p">():</span>
-  <span class="k">print</span> <span class="n">teenName</span></code></pre></td></tr></table>
+<span class="n">teenNames</span> <span class="o">=</span> <span class="n">teenagers</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">Name: </span><span class="s2">&#34;</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">teenName</span> <span class="ow">in</span> <span class="n">teenNames</span><span class="o">.</span><span class="n">collect</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">print</span> <span class="n">teenName</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h3 id="编程指定模式">编程指定模式</h3>
-
+</div><h3 id="heading-1">编程指定模式</h3>
 <p>当样本类不能提前确定（例如，记录的结构是经过编码的字符串，或者一个文本集合将会被解析，不同的字段投影给不同的用户），一个 DataFrame 可以通过三步来创建。</p>
-
 <ul>
 <li>从原来的 RDD 创建一个行的 RDD</li>
 <li>创建由一个 StructType 表示的模式与第一步创建的 RDD 的行结构相匹配</li>
 <li>在行 RDD 上通过 applySchema 方法应用模式</li>
 </ul>
-
 <p>直接贴出代码，Scala 语言创建方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -962,7 +931,7 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">sc</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">SparkContext</span><span class="o">(</span><span class="k">new</span> <span class="nc">SparkConf</span><span class="o">().</span><span class="n">setAppName</span><span class="o">(</span><span class="s">&#34;ScalaSparkSQL&#34;</span><span class="o">))</span>
+<pre class="chroma"><code class="language-scala" data-lang="scala"><span class="k">val</span> <span class="n">sc</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">SparkContext</span><span class="o">(</span><span class="k">new</span> <span class="nc">SparkConf</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="n">setAppName</span><span class="o">(</span><span class="s">&#34;ScalaSparkSQL&#34;</span><span class="o">)</span><span class="o">)</span>
 <span class="k">val</span> <span class="n">sqlContext</span> <span class="k">=</span> <span class="k">new</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="nc">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span>
 
 <span class="c1">// Create an RDD
@@ -977,10 +946,10 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <span class="c1">// Generate the schema based on the string of schema
 </span><span class="c1"></span><span class="k">val</span> <span class="n">schema</span> <span class="k">=</span>
   <span class="nc">StructType</span><span class="o">(</span>
-    <span class="n">schemaString</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34; &#34;</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="n">fieldName</span> <span class="k">=&gt;</span> <span class="nc">StructField</span><span class="o">(</span><span class="n">fieldName</span><span class="o">,</span> <span class="nc">StringType</span><span class="o">,</span> <span class="kc">true</span><span class="o">)))</span>
+    <span class="n">schemaString</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34; &#34;</span><span class="o">)</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">fieldName</span> <span class="k">=&gt;</span> <span class="nc">StructField</span><span class="o">(</span><span class="n">fieldName</span><span class="o">,</span> <span class="nc">StringType</span><span class="o">,</span> <span class="kc">true</span><span class="o">)</span><span class="o">)</span><span class="o">)</span>
 
 <span class="c1">// Convert records of the RDD (people) to Rows.
-</span><span class="c1"></span><span class="k">val</span> <span class="n">rowRDD</span> <span class="k">=</span> <span class="n">people</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)).</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="nc">Row</span><span class="o">(</span><span class="n">p</span><span class="o">(</span><span class="mi">0</span><span class="o">),</span> <span class="n">p</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="n">trim</span><span class="o">))</span>
+</span><span class="c1"></span><span class="k">val</span> <span class="n">rowRDD</span> <span class="k">=</span> <span class="n">people</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="nc">Row</span><span class="o">(</span><span class="n">p</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span><span class="o">,</span> <span class="n">p</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span><span class="o">.</span><span class="n">trim</span><span class="o">)</span><span class="o">)</span>
 
 <span class="c1">// Apply the schema to the RDD.
 </span><span class="c1"></span><span class="k">val</span> <span class="n">peopleDataFrame</span> <span class="k">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">createDataFrame</span><span class="o">(</span><span class="n">rowRDD</span><span class="o">,</span> <span class="n">schema</span><span class="o">)</span>
@@ -992,14 +961,14 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="c1"></span><span class="k">val</span> <span class="n">results</span> <span class="k">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM people&#34;</span><span class="o">)</span>
 
 <span class="c1">// The results of SQL queries are DataFrames and support all the normal RDD operations.
-</span><span class="c1">// The columns of a row in the result can be accessed by ordinal.
-</span><span class="c1"></span><span class="n">results</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">t</span> <span class="k">=&gt;</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">t</span><span class="o">(</span><span class="mi">0</span><span class="o">)).</span><span class="n">collect</span><span class="o">().</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="c1">// The columns of a row in the result can be accessed by ordinal.
+</span><span class="c1"></span><span class="n">results</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">t</span> <span class="k">=&gt;</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">t</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span><span class="o">)</span><span class="o">.</span><span class="n">collect</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="n">foreach</span><span class="o">(</span><span class="n">println</span><span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>Java 创建的方式或许对一个 Java 程序员来说，更容易理解：</p>
+</div><p>Java 创建的方式或许对一个 Java 程序员来说，更容易理解：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1055,70 +1024,72 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 </span><span class="lnt">54
 </span><span class="lnt">55
 </span><span class="lnt">56
+</span><span class="lnt">57
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">SparkConf</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">JavaRDD</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">JavaSparkContext</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">api</span><span class="p">.</span><span class="na">java</span><span class="p">.</span><span class="na">function</span><span class="p">.</span><span class="na">Function</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">DataFrame</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">Row</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">SQLContext</span><span class="p">;</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">org.apache.spark.SparkConf</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaRDD</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaSparkContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.function.Function</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.DataFrame</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Row</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span><span class="o">;</span>
 
-<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="o">;</span>
 
-<span class="kd">public</span> <span class="nf">class</span> <span class="n">JavaSparkSQLBySchema</span> <span class="p">{</span>
-    <span class="kd">public</span> <span class="nf">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="p">[]</span> <span class="nf">args</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
-        <span class="n">SparkConf</span> <span class="nf">sparkConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SparkConf</span><span class="p">().</span><span class="na">setAppName</span><span class="p">(</span><span class="s">&#34;JavaSparkSQLBySchema&#34;</span><span class="p">);</span>
-        <span class="n">JavaSparkContext</span> <span class="nf">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JavaSparkContext</span><span class="p">(</span><span class="n">sparkConf</span><span class="p">);</span>
-        <span class="n">SQLContext</span> <span class="nf">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">spark</span><span class="p">.</span><span class="na">sql</span><span class="p">.</span><span class="na">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">);</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JavaSparkSQLBySchema</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">SparkConf</span> <span class="n">sparkConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SparkConf</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">setAppName</span><span class="o">(</span><span class="s">&#34;JavaSparkSQLBySchema&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">JavaSparkContext</span> <span class="n">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JavaSparkContext</span><span class="o">(</span><span class="n">sparkConf</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">SQLContext</span><span class="o">(</span><span class="n">sc</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Load a text file and convert each line to a JavaBean.
-</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">people</span> <span class="o">=</span> <span class="n">sc</span><span class="p">.</span><span class="na">textFile</span><span class="p">(</span><span class="s">&#34;people.txt&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">people</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="na">textFile</span><span class="o">(</span><span class="s">&#34;people.txt&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// The schema is encoded in a string
-</span><span class="c1"></span>        <span class="n">String</span> <span class="nf">schemaString</span> <span class="o">=</span> <span class="s">&#34;name age&#34;</span><span class="p">;</span>
+</span><span class="c1"></span>        <span class="n">String</span> <span class="n">schemaString</span> <span class="o">=</span> <span class="s">&#34;name age&#34;</span><span class="o">;</span>
 
         <span class="c1">// Generate the schema based on the string of schema
-</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">StructField</span><span class="o">&gt;</span> <span class="nf">fields</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">StructField</span><span class="o">&gt;</span><span class="p">();</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">String</span> <span class="nf">fieldName</span> <span class="o">:</span> <span class="n">schemaString</span><span class="p">.</span><span class="na">split</span><span class="p">(</span><span class="s">&#34; &#34;</span><span class="p">))</span> <span class="p">{</span>
-            <span class="n">fields</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">DataType</span><span class="p">.</span><span class="na">createStructField</span><span class="p">(</span><span class="n">fieldName</span><span class="p">,</span> <span class="n">DataType</span><span class="p">.</span><span class="na">StringType</span><span class="p">,</span> <span class="kc">true</span><span class="p">));</span>
-        <span class="p">}</span>
-        <span class="n">StructType</span> <span class="nf">schema</span> <span class="o">=</span> <span class="n">DataType</span><span class="p">.</span><span class="na">createStructType</span><span class="p">(</span><span class="n">fields</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">StructField</span><span class="o">&gt;</span> <span class="n">fields</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">StructField</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">fieldName</span> <span class="o">:</span> <span class="n">schemaString</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&#34; &#34;</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">fields</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">DataType</span><span class="o">.</span><span class="na">createStructField</span><span class="o">(</span><span class="n">fieldName</span><span class="o">,</span> <span class="n">DataType</span><span class="o">.</span><span class="na">StringType</span><span class="o">,</span> <span class="kc">true</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">StructType</span> <span class="n">schema</span> <span class="o">=</span> <span class="n">DataType</span><span class="o">.</span><span class="na">createStructType</span><span class="o">(</span><span class="n">fields</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Convert records of the RDD (people) to Rows.
-</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">&gt;</span> <span class="nf">rowRDD</span> <span class="o">=</span> <span class="n">people</span><span class="p">.</span><span class="na">map</span><span class="p">(</span>
-                <span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Row</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
-                    <span class="kd">public</span> <span class="nf">Row</span> <span class="n">call</span><span class="p">(</span><span class="n">String</span> <span class="nf">record</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
-                        <span class="n">String</span><span class="p">[]</span> <span class="nf">fields</span> <span class="o">=</span> <span class="n">record</span><span class="p">.</span><span class="na">split</span><span class="p">(</span><span class="s">&#34;,&#34;</span><span class="p">);</span>
-                        <span class="k">return</span> <span class="n">Row</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="n">0</span><span class="p">],</span> <span class="n">fields</span><span class="p">[</span><span class="n">1</span><span class="p">].</span><span class="na">trim</span><span class="p">());</span>
-                    <span class="p">}</span>
-                <span class="p">});</span>
+</span><span class="c1"></span>        <span class="n">JavaRDD</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">&gt;</span> <span class="n">rowRDD</span> <span class="o">=</span> <span class="n">people</span><span class="o">.</span><span class="na">map</span><span class="o">(</span>
+                <span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Row</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="kd">public</span> <span class="n">Row</span> <span class="nf">call</span><span class="o">(</span><span class="n">String</span> <span class="n">record</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                        <span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">fields</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&#34;,&#34;</span><span class="o">)</span><span class="o">;</span>
+                        <span class="k">return</span> <span class="n">Row</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">fields</span><span class="o">[</span><span class="n">0</span><span class="o">]</span><span class="o">,</span> <span class="n">fields</span><span class="o">[</span><span class="n">1</span><span class="o">]</span><span class="o">.</span><span class="na">trim</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Apply the schema to the RDD.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">peopleDataFrame</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="p">.</span><span class="na">createDataFrame</span><span class="p">(</span><span class="n">rowRDD</span><span class="p">,</span> <span class="n">schema</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">peopleDataFrame</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">createDataFrame</span><span class="o">(</span><span class="n">rowRDD</span><span class="o">,</span> <span class="n">schema</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// Register the DataFrame as a table.
-</span><span class="c1"></span>        <span class="n">peopleDataFrame</span><span class="p">.</span><span class="na">registerTempTable</span><span class="p">(</span><span class="s">&#34;people&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">peopleDataFrame</span><span class="o">.</span><span class="na">registerTempTable</span><span class="o">(</span><span class="s">&#34;people&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// SQL can be run over RDDs that have been registered as tables.
-</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="nf">results</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="p">.</span><span class="na">sql</span><span class="p">(</span><span class="s">&#34;SELECT name FROM people&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">DataFrame</span> <span class="n">results</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">sql</span><span class="o">(</span><span class="s">&#34;SELECT name FROM people&#34;</span><span class="o">)</span><span class="o">;</span>
 
         <span class="c1">// The results of SQL queries are DataFrames and support all the normal RDD operations.
 </span><span class="c1"></span>        <span class="c1">// The columns of a row in the result can be accessed by ordinal.
-</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="nf">names</span> <span class="o">=</span> <span class="n">results</span><span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="p">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="p">()</span> <span class="p">{</span>
-            <span class="kd">public</span> <span class="nf">String</span> <span class="n">call</span><span class="p">(</span><span class="n">Row</span> <span class="nf">row</span><span class="p">)</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="n">0</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">}).</span><span class="na">collect</span><span class="p">();</span>
-    <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span>        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">names</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Function</span><span class="o">&lt;</span><span class="n">Row</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kd">public</span> <span class="n">String</span> <span class="nf">call</span><span class="o">(</span><span class="n">Row</span> <span class="n">row</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="s">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">0</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span><span class="o">)</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>Python 语言的例子：</p>
+</div><p>Python 语言的例子：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1157,37 +1128,34 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
 <span class="n">sqlContext</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 
 <span class="c1"># Load a text file and convert each line to a tuple.</span>
-<span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="s2">&#34;people.txt&#34;</span><span class="p">)</span>
-<span class="n">parts</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;,&#34;</span><span class="p">))</span>
-<span class="n">people</span> <span class="o">=</span> <span class="n">parts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()))</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">textFile</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">people.txt</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">parts</span> <span class="o">=</span> <span class="n">lines</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">,</span><span class="s2">&#34;</span><span class="p">)</span><span class="p">)</span>
+<span class="n">people</span> <span class="o">=</span> <span class="n">parts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
 
 <span class="c1"># The schema is encoded in a string.</span>
-<span class="n">schemaString</span> <span class="o">=</span> <span class="s2">&#34;name age&#34;</span>
+<span class="n">schemaString</span> <span class="o">=</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">name age</span><span class="s2">&#34;</span>
 
-<span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">StructField</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(),</span> <span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">schemaString</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+<span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">StructField</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(</span><span class="p">)</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">schemaString</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="p">)</span><span class="p">]</span>
 <span class="n">schema</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
 
 <span class="c1"># Apply the schema to the RDD.</span>
 <span class="n">schemaPeople</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span><span class="n">people</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
 
 <span class="c1"># Register the DataFrame as a table.</span>
-<span class="n">schemaPeople</span><span class="o">.</span><span class="n">registerTempTable</span><span class="p">(</span><span class="s2">&#34;people&#34;</span><span class="p">)</span>
+<span class="n">schemaPeople</span><span class="o">.</span><span class="n">registerTempTable</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">people</span><span class="s2">&#34;</span><span class="p">)</span>
 
 <span class="c1"># SQL can be run over DataFrames that have been registered as a table.</span>
-<span class="n">results</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&#34;SELECT name FROM people&#34;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">SELECT name FROM people</span><span class="s2">&#34;</span><span class="p">)</span>
 
 <span class="c1"># The results of SQL queries are RDDs and support all the normal RDD operations.</span>
-<span class="n">names</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="s2">&#34;Name: &#34;</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="o">.</span><span class="n">collect</span><span class="p">():</span>
-  <span class="k">print</span> <span class="n">name</span></code></pre></td></tr></table>
+<span class="n">names</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">Name: </span><span class="s2">&#34;</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="o">.</span><span class="n">collect</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">print</span> <span class="n">name</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="总结">总结</h1>
-
+</div><h1 id="heading-2">总结</h1>
 <p>本文主要介绍了 DataFrame 是什么以及两种从 RDD 创建 DataFrame 的方法，完整的代码见 <a href="https://github.com/javachen-examples">Github</a>。</p>
-
-<h1 id="参考文章">参考文章</h1>
-
+<h1 id="heading-3">参考文章</h1>
 <ul>
 <li><a href="https:/.apache.org/docs/latest/sql-programming-guide.html#dataframes">Spark SQL and DataFrame Guide</a></li>
 <li><a href="http://endymecy.gitbooks.io-programming-guide-zh-cn/content-sql/README.html">Spark 编程指南简体中文版-Spark SQL</a></li>
@@ -1309,7 +1277,7 @@ $ hadoop fs -put people.json</code></pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/11/22/install-mysql-fdw-for-postgresql/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2019-11-22T08:00:00+08:00" />
 <meta itemprop="name" content="PostgreSQL安装并测试mysql_fdw">
 <meta itemprop="description" content="mysql_fdw PostgreSQL外部MySQL表功能的扩展，所谓外部表，就是在PG数据库中通过SQL访问外部数据源数据，就像访问本地数据库一样，下面就">
-
-
 <meta itemprop="datePublished" content="2019-11-22T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-22T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1311">
 
 
 
-<meta itemprop="keywords" content="postgresql," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="postgresql," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="PostgreSQL安装并测试mysql_fdw"/>
 <meta name="twitter:description" content="mysql_fdw PostgreSQL外部MySQL表功能的扩展，所谓外部表，就是在PG数据库中通过SQL访问外部数据源数据，就像访问本地数据库一样，下面就"/>
 
@@ -142,36 +139,26 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#安装postgresql">安装PostgreSQL</a></li>
-<li><a href="#安装mysql-fdw">安装mysql_fdw</a></li>
-<li><a href="#测试mysql-fdw">测试mysql_fdw</a>
-<ul>
-<li><a href="#安装扩展">安装扩展</a></li>
-<li><a href="#创建外部服务器">创建外部服务器</a></li>
-<li><a href="#创建用户映射">创建用户映射</a></li>
-<li><a href="#创建外部表">创建外部表</a></li>
-<li><a href="#查询外部表">查询外部表</a></li>
-<li><a href="#反写数据">反写数据</a></li>
-<li><a href="#物化数据">物化数据</a></li>
-<li><a href="#卸载">卸载</a></li>
-</ul></li>
-<li><a href="#参考文章">参考文章</a></li>
-</ul>
+  <ul>
+    <li><a href="#heading">安装扩展</a></li>
+    <li><a href="#heading-1">创建外部服务器</a></li>
+    <li><a href="#heading-2">创建用户映射</a></li>
+    <li><a href="#heading-3">创建外部表</a></li>
+    <li><a href="#heading-4">查询外部表</a></li>
+    <li><a href="#heading-5">反写数据</a></li>
+    <li><a href="#heading-6">物化数据</a></li>
+    <li><a href="#heading-7">卸载</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>mysql_fdw PostgreSQL外部MySQL表功能的扩展，所谓外部表，就是在PG数据库中通过SQL访问外部数据源数据，就像访问本地数据库一样，下面就来测试一下使用mysql_fdw 来访问mysql中的数据。</p>
-
-<h1 id="安装postgresql">安装PostgreSQL</h1>
-
+      <p>mysql_fdw PostgreSQL外部MySQL表功能的扩展，所谓外部表，就是在PG数据库中通过SQL访问外部数据源数据，就像访问本地数据库一样，下面就来测试一下使用mysql_fdw 来访问mysql中的数据。</p>
+<h1 id="postgresql">安装PostgreSQL</h1>
 <p>参考<a href="/2014/04/07/install-postgresql-on-rhel-system/">RHEL系统安装PostgreSQL</a>，安装PostgreSQL 12：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -188,58 +175,52 @@ sudo yum install postgresql12 postgresql12-server -y
 sudo /usr/pgsql-12/bin/postgresql-12-setup initdb
 
 sudo systemctl <span class="nb">enable</span> postgresql-12
-sudo systemctl start postgresql-12</code></pre></td></tr></table>
+sudo systemctl start postgresql-12
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装mysql-fdw">安装mysql_fdw</h1>
-
-<p>可以从源码编译安装，也可以从rpm安装，因为我使用的是PostgreSQL 12，所以对应的rpm下载地址为：<a href="https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/">https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/</a> ，你可以根据你的情况去对应的下载地址。</p>
-
+</div><h1 id="mysql-fdw">安装mysql_fdw</h1>
+<p>可以从源码编译安装，也可以从rpm安装，因为我使用的是PostgreSQL 12，所以对应的rpm下载地址为：https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/ ，你可以根据你的情况去对应的下载地址。</p>
 <p>查看下载页面，可以看到已经编译好的mysql_fdw和mongo_fdw rpm文件：</p>
-
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g96licnmmtj30z20nc7ek.jpg" alt="image-20191122101308298" /></p>
-
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g96licnmmtj30z20nc7ek.jpg" alt="image-20191122101308298"></p>
 <p>下载文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">wget https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/mysql_fdw_12-2.5.3-1.rhel7.x86_64.rpm
 
-wget https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/mysql_fdw_12-debuginfo-2.5.3-1.rhel7.x86_64.rpm</code></pre></td></tr></table>
+wget https://download.postgresql.org/pub/repos/yum/12/redhat/rhel-7.7-x86_64/mysql_fdw_12-debuginfo-2.5.3-1.rhel7.x86_64.rpm
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>安装：</p>
+</div><p>安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">yum install mysql_fdw_12-2.5.3-1.rhel7.x86_64.rpm mysql_fdw_12-debuginfo-2.5.3-1.rhel7.x86_64.rpm -y</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install mysql_fdw_12-2.5.3-1.rhel7.x86_64.rpm mysql_fdw_12-debuginfo-2.5.3-1.rhel7.x86_64.rpm -y
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>如果提示找不到 mariadb-devel.x86_64 1:5.5.64-1.el7，则在网上搜索：</p>
+</div><p>如果提示找不到 mariadb-devel.x86_64 1:5.5.64-1.el7，则在网上搜索：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">ftp://ftp.pbone.net/mirror/ftp.centos.org/7.7.1908/os/x86_64/Packages/mariadb-devel-5.5.64-1.el7.x86_64.rpm
-ftp://ftp.pbone.net/mirror/ftp.centos.org/7.7.1908/os/x86_64/Packages/mariadb-libs-5.5.64-1.el7.x86_64.rpm</code></pre></td></tr></table>
+ftp://ftp.pbone.net/mirror/ftp.centos.org/7.7.1908/os/x86_64/Packages/mariadb-libs-5.5.64-1.el7.x86_64.rpm
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="测试mysql-fdw">测试mysql_fdw</h1>
-
-<h2 id="安装扩展">安装扩展</h2>
-
+</div><h1 id="mysql-fdw-1">测试mysql_fdw</h1>
+<h2 id="heading">安装扩展</h2>
 <p>进入PostgreSQL数据库，并安装扩展mysql_fdw：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -248,17 +229,17 @@ ftp://ftp.pbone.net/mirror/ftp.centos.org/7.7.1908/os/x86_64/Packages/mariadb-li
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo -u postgres psql
-psql <span class="o">(</span><span class="m">12</span>.1<span class="o">)</span>
+psql <span class="o">(</span>12.1<span class="o">)</span>
 Type <span class="s2">&#34;help&#34;</span> <span class="k">for</span> help.
 
 <span class="nv">postgres</span><span class="o">=</span><span class="c1"># create extension mysql_fdw;</span>
-CREATE EXTENSION</code></pre></td></tr></table>
+CREATE EXTENSION
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看已经安装的扩展：</p>
+</div><p>查看已经安装的扩展：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -272,27 +253,27 @@ CREATE EXTENSION</code></pre></td></tr></table>
                             List of installed extensions
    Name    <span class="p">|</span> Version <span class="p">|</span>   Schema   <span class="p">|</span>                   Description
 -----------+---------+------------+--------------------------------------------------
- file_fdw  <span class="p">|</span> <span class="m">1</span>.0     <span class="p">|</span> public     <span class="p">|</span> foreign-data wrapper <span class="k">for</span> flat file access
- mysql_fdw <span class="p">|</span> <span class="m">1</span>.1     <span class="p">|</span> public     <span class="p">|</span> Foreign data wrapper <span class="k">for</span> querying a MySQL server
- plpgsql   <span class="p">|</span> <span class="m">1</span>.0     <span class="p">|</span> pg_catalog <span class="p">|</span> PL/pgSQL procedural language
-<span class="o">(</span><span class="m">3</span> rows<span class="o">)</span></code></pre></td></tr></table>
+ file_fdw  <span class="p">|</span> 1.0     <span class="p">|</span> public     <span class="p">|</span> foreign-data wrapper <span class="k">for</span> flat file access
+ mysql_fdw <span class="p">|</span> 1.1     <span class="p">|</span> public     <span class="p">|</span> Foreign data wrapper <span class="k">for</span> querying a MySQL server
+ plpgsql   <span class="p">|</span> 1.0     <span class="p">|</span> pg_catalog <span class="p">|</span> PL/pgSQL procedural language
+<span class="o">(</span><span class="m">3</span> rows<span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="创建外部服务器">创建外部服务器</h2>
+</div><h2 id="heading-1">创建外部服务器</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">postgres</span><span class="o">=</span><span class="c1"># CREATE SERVER mysql_server_test FOREIGN DATA WRAPPER mysql_fdw OPTIONS (HOST &#39;192.168.1.75&#39;, PORT &#39;3306&#39;);</span>
-CREATE SERVER</code></pre></td></tr></table>
+CREATE SERVER
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看外部服务器：</p>
+</div><p>查看外部服务器：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -307,46 +288,45 @@ CREATE SERVER</code></pre></td></tr></table>
 -------------------+----------+----------------------
  mysql_server_test <span class="p">|</span> postgres <span class="p">|</span> mysql_fdw
  server_file_fdw   <span class="p">|</span> postgres <span class="p">|</span> file_fdw
-<span class="o">(</span><span class="m">2</span> rows<span class="o">)</span></code></pre></td></tr></table>
+<span class="o">(</span><span class="m">2</span> rows<span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="创建用户映射">创建用户映射</h2>
+</div><h2 id="heading-2">创建用户映射</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">postgres</span><span class="o">=</span><span class="c1"># CREATE USER MAPPING FOR postgres SERVER mysql_server_test OPTIONS (username &#39;root&#39;, password &#39;123456&#39;);</span>
-CREATE USER MAPPING</code></pre></td></tr></table>
+CREATE USER MAPPING
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>OPTIONS 是指外部拓展的选项，指定了访问外部数据标的本地用户和远程用户信息。</p>
-
+</div><p>OPTIONS 是指外部拓展的选项，指定了访问外部数据标的本地用户和远程用户信息。</p>
 <p>如果想修改密码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">alter user MAPPING FOR public server mysql_server options <span class="o">(</span> <span class="nb">set</span> password <span class="s1">&#39;xxxxxx&#39;</span><span class="o">)</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">alter user MAPPING FOR public server mysql_server options <span class="o">(</span> <span class="nb">set</span> password <span class="s1">&#39;xxxxxx&#39;</span><span class="o">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="创建外部表">创建外部表</h2>
+</div><h2 id="heading-3">创建外部表</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">postgres</span><span class="o">=</span><span class="c1"># create foreign table user(user_id int,username text,status int,email text ) server mysql_server_test options(dbname &#39;test&#39;,table_name &#39;user&#39;);</span>
-CREATE FOREIGN TABLE</code></pre></td></tr></table>
+CREATE FOREIGN TABLE
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="查询外部表">查询外部表</h2>
+</div><h2 id="heading-4">查询外部表</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -359,41 +339,36 @@ CREATE FOREIGN TABLE</code></pre></td></tr></table>
 ---------+----------+--------+--------------------
        <span class="m">1</span> <span class="p">|</span> a    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> a@test.com
        <span class="m">2</span> <span class="p">|</span> b  	<span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> b@test.com
-       <span class="m">3</span> <span class="p">|</span> c    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> c@test.com</code></pre></td></tr></table>
+       <span class="m">3</span> <span class="p">|</span> c    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> c@test.com
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>此时mysql端发生的变化，PG 再次查询时这边马上就能看到</p>
-
-<h2 id="反写数据">反写数据</h2>
-
+</div><p>此时mysql端发生的变化，PG 再次查询时这边马上就能看到</p>
+<h2 id="heading-5">反写数据</h2>
 <p>一般情况下，如果没有唯一键限制，反写数据就会报错</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ERROR: first column of remote table must be unique for INSERT/UPDATE/DELETE operation</pre></td></tr></table>
-</div>
-</div>
-<p>如果想反写到mysql，需要在mysql上添加表的限制</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ALTER TABLE user ADD CONSTRAINT idx_id UNIQUE <span class="o">(</span>id<span class="o">)</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ERROR: first column of remote table must be unique for INSERT/UPDATE/DELETE operation
+</code></pre></td></tr></table>
 </div>
+</div><p>如果想反写到mysql，需要在mysql上添加表的限制</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ALTER TABLE user ADD CONSTRAINT idx_id UNIQUE <span class="o">(</span>id<span class="o">)</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-<p>我这边是ID已经是主键唯一键了，所以直接能使用。</p>
-
+</div><p>我这边是ID已经是主键唯一键了，所以直接能使用。</p>
 <p>事实上现在不仅仅是支持insert语句，update与delete语句均支持，前提是提供给PG的mysql用户是有这些权限的。</p>
-
-<h2 id="物化数据">物化数据</h2>
-
+<h2 id="heading-6">物化数据</h2>
 <p>mysql_fdw 实现的一个关键特性就是支持持久连接的能力。查询执行后，不会删除与远程MySQL的连接。相反，它保留来自同一会话的下次查询连接。然而，在某些情况下，因为网络查询等原因不能及时查询数据，则可以考虑在本地实现数据保留。可以通过外部表创建物化视图，如下</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -416,13 +391,13 @@ SELECT <span class="m">3</span>
  public <span class="p">|</span> user		     <span class="p">|</span> foreign table     <span class="p">|</span> postgres
  public <span class="p">|</span> tb10         <span class="p">|</span> table             <span class="p">|</span> postgres
  public <span class="p">|</span> test_view    <span class="p">|</span> materialized view <span class="p">|</span> postgres
-<span class="o">(</span><span class="m">4</span> rows<span class="o">)</span></code></pre></td></tr></table>
+<span class="o">(</span><span class="m">4</span> rows<span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查询物化视图：</p>
+</div><p>查询物化视图：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -435,22 +410,22 @@ SELECT <span class="m">3</span>
 ---------+----------+--------+--------------------
        <span class="m">1</span> <span class="p">|</span> a    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> a@test.com
        <span class="m">2</span> <span class="p">|</span> b  	<span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> b@test.com
-       <span class="m">3</span> <span class="p">|</span> c    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> c@test.com</code></pre></td></tr></table>
+       <span class="m">3</span> <span class="p">|</span> c    <span class="p">|</span>      <span class="m">1</span> <span class="p">|</span> c@test.com
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>可以将刷新任务放到定时任务中，定时去刷新视图</p>
+</div><p>可以将刷新任务放到定时任务中，定时去刷新视图</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">REFRESH</span> <span class="n">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">test_view</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">REFRESH</span> <span class="n">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">test_view</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="卸载">卸载</h2>
+</div><h2 id="heading-7">卸载</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -459,20 +434,19 @@ SELECT <span class="m">3</span>
 <pre class="chroma"><code class="language-bash" data-lang="bash">drop foreign table user<span class="p">;</span>
 drop user mapping <span class="k">for</span> postgres server mysql_server_test <span class="p">;</span>
 drop server mysql_server_test <span class="p">;</span>
-drop extension mysql_fdw</code></pre></td></tr></table>
+drop extension mysql_fdw
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>也可以级联删除：</p>
+</div><p>也可以级联删除：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">drop</span> <span class="n">extension</span> <span class="n">mysql_fdw</span> <span class="k">CASCADE</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">drop</span> <span class="n">extension</span> <span class="n">mysql_fdw</span> <span class="k">CASCADE</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="参考文章">参考文章</h1>
-
+</div><h1 id="heading-8">参考文章</h1>
 <ul>
 <li><a href="https://yq.aliyun.com/articles/713076">PostgreSQL外部数据插件：mysql_fdw</a></li>
 </ul>
@@ -592,7 +566,7 @@ drop extension mysql_fdw</code></pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

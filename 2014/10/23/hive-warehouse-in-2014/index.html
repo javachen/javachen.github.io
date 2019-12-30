@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/10/23/hive-warehouse-in-2014/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-10-23T08:00:00+08:00" />
 <meta itemprop="name" content="当前数据仓库建设过程">
 <meta itemprop="description" content="一个典型的企业数据仓库通常包含数据采集、数据加工和存储、数据展现等几个过程，本篇文章将按照这个顺序记录部门当前建设数据仓库的过程。">
-
-
 <meta itemprop="datePublished" content="2014-10-23T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-10-23T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2519">
+<meta itemprop="wordCount" content="2516">
 
 
 
-<meta itemprop="keywords" content="hive," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hive," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="当前数据仓库建设过程"/>
 <meta name="twitter:description" content="一个典型的企业数据仓库通常包含数据采集、数据加工和存储、数据展现等几个过程，本篇文章将按照这个顺序记录部门当前建设数据仓库的过程。"/>
 
@@ -132,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hive/"> hive </a>
             </div>
-          <span class="more-meta"> 约 2519 字 </span>
+          <span class="more-meta"> 约 2516 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -142,43 +139,31 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#1-数据采集和存储">1. 数据采集和存储</a>
-<ul>
-<li><a href="#使用-sqoop">使用 Sqoop</a></li>
-</ul></li>
-<li><a href="#2-数据加工">2. 数据加工</a>
-<ul>
-<li><a href="#任务调度">任务调度</a></li>
-</ul></li>
-<li><a href="#3-数据展现">3. 数据展现</a></li>
-<li><a href="#4-总结">4. 总结</a></li>
-</ul>
+  <ul>
+    <li><a href="#-sqoop">使用 Sqoop</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#heading">任务调度</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>一个典型的企业数据仓库通常包含数据采集、数据加工和存储、数据展现等几个过程，本篇文章将按照这个顺序记录部门当前建设数据仓库的过程。</p>
-
-<h1 id="1-数据采集和存储">1. 数据采集和存储</h1>
-
+      <p>一个典型的企业数据仓库通常包含数据采集、数据加工和存储、数据展现等几个过程，本篇文章将按照这个顺序记录部门当前建设数据仓库的过程。</p>
+<h1 id="1-">1. 数据采集和存储</h1>
 <p>采集数据之前，先要定义数据如何存放在 hadoop 以及一些相关约束。约束如下：</p>
-
 <ul>
 <li>所有的日志数据都存放在 hdfs 上的 <code>/logroot</code> 路径下面</li>
 <li>hive 中数据库命名方式为 <code>dw_XXXX</code>，例如：dw_srclog 存放外部来源的原始数据，dw_stat 存放统计结果的数据</li>
 <li>原始数据都加工成为结构化的文本文件，字段分隔符统一使用制表符，并在 lzo 压缩之后上传到 hdfs 中。</li>
 <li>hive 中使用外部表保存数据，数据存放在 <code>/logroot</code> 下，如果不是分区表，则文件名为表名；如果是分区表，则按月和天分区，每天分区下的文件名为<code>表名_日期</code>，例如：<code>test_20141023</code></li>
 </ul>
-
 <p>数据采集的来源可能是关系数据库或者一些系统日志，采集工具可以是日志采集系统，例如：flume、sqoop 、storm以及一些 ETL 工具等等。</p>
-
 <p>目前，主要是从 mysql 中导出数据然后在导入到 hdfs 中，对于存储不需要按天分区的表，这部分过程代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -270,20 +255,19 @@ chmod +x <span class="nv">$srcdb</span>.sql
 <span class="nv">file</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">table</span><span class="si">}</span><span class="s2">&#34;</span>
 <span class="nv">sql_var</span><span class="o">=</span><span class="s2">&#34; -r -quick --default-character-set=utf8  --skip-column&#34;</span>
 
-mysql <span class="nv">$sql_var</span> -h<span class="si">${</span><span class="nv">db_host</span><span class="si">}</span> -u<span class="si">${</span><span class="nv">db_user</span><span class="si">}</span> -p<span class="si">${</span><span class="nv">db_pass</span><span class="si">}</span> -P<span class="si">${</span><span class="nv">db_port</span><span class="si">}</span> -D<span class="si">${</span><span class="nv">db_name</span><span class="si">}</span> -e <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/NULL/\\\\N/g&#34;</span>&gt; <span class="nv">$file</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+mysql <span class="nv">$sql_var</span> -h<span class="si">${</span><span class="nv">db_host</span><span class="si">}</span> -u<span class="si">${</span><span class="nv">db_user</span><span class="si">}</span> -p<span class="si">${</span><span class="nv">db_pass</span><span class="si">}</span> -P<span class="si">${</span><span class="nv">db_port</span><span class="si">}</span> -D<span class="si">${</span><span class="nv">db_name</span><span class="si">}</span> -e <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/NULL/\\\\N/g&#34;</span>&gt; <span class="nv">$file</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span>
 
 lzop -U <span class="nv">$file</span>
 hadoop fs -mkdir -p /logroot/<span class="nv">$table</span>
-hadoop fs -ls /logroot/<span class="nv">$table</span> <span class="p">|</span>grep lzo<span class="p">|</span>awk <span class="s1">&#39;{print $8}&#39;</span><span class="p">|</span>xargs -i hadoop fs -rm <span class="o">{}</span> 
+hadoop fs -ls /logroot/<span class="nv">$table</span> <span class="p">|</span>grep lzo<span class="p">|</span>awk <span class="s1">&#39;{print $8}&#39;</span><span class="p">|</span>xargs -i hadoop fs -rm <span class="o">{</span><span class="o">}</span> 
 hadoop fs -moveFromLocal <span class="nv">$file</span>.lzo /logroot/<span class="nv">$table</span>/
-hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer  /logroot/<span class="nv">$table</span>/<span class="nv">$file</span>.lzo <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer  /logroot/<span class="nv">$table</span>/<span class="nv">$file</span>.lzo 2&gt;<span class="p">&amp;</span><span class="m">1</span>
 
 <span class="nb">echo</span> <span class="s2">&#34;create table if not exists&#34;</span>
-hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class="s2">;&#34;</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> </code></pre></td></tr></table>
+hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class="s2">;</span><span class="s2">&#34;</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span> 
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>上面 bash 代码逻辑如下：</p>
-
+</div><p>上面 bash 代码逻辑如下：</p>
 <ul>
 <li>1、判断是否输入参数，如果没有参数，则取昨天，意思是每天读取 mysql 数据库中昨天的数据。</li>
 <li>2、定义 mysql 中 select 查询语句</li>
@@ -293,11 +277,10 @@ hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class=
 <li>6、lzo 压缩文件并上传到 hdfs，并且创建 lzo 索引</li>
 <li>7、最后删除本地文件</li>
 </ul>
-
 <p>对于分区表来说，建表语句如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -318,19 +301,19 @@ hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class=
   <span class="n">name</span> <span class="nb">int</span>
 <span class="p">)</span>
 <span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="n">key_ym</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key_ymd</span> <span class="nb">int</span><span class="p">)</span>
-<span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;\t&#39;</span>
+<span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;</span><span class="s1">\t</span><span class="s1">&#39;</span>
 <span class="n">STORED</span> <span class="k">AS</span> <span class="n">INPUTFORMAT</span>
-  <span class="s1">&#39;com.hadoop.mapred.DeprecatedLzoTextInputFormat&#39;</span>
+  <span class="s1">&#39;</span><span class="s1">com.hadoop.mapred.DeprecatedLzoTextInputFormat</span><span class="s1">&#39;</span>
 <span class="n">OUTPUTFORMAT</span>
-  <span class="s1">&#39;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&#39;</span>
+  <span class="s1">&#39;</span><span class="s1">org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat</span><span class="s1">&#39;</span>
 <span class="k">LOCATION</span>
-  <span class="s1">&#39;/logroot/test_p&#39;</span><span class="p">;</span></code></pre></td></tr></table>
+  <span class="s1">&#39;</span><span class="s1">/logroot/test_p</span><span class="s1">&#39;</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>从 mysql 导出文件并上传到 hdfs 命令如下：</p>
+</div><p>从 mysql 导出文件并上传到 hdfs 命令如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -355,66 +338,60 @@ chmod +x <span class="nv">$srcdb</span>.sql
 <span class="nv">file</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">table</span><span class="si">}</span><span class="s2">_</span><span class="nv">$logday</span><span class="s2">&#34;</span>
 <span class="nv">sql_var</span><span class="o">=</span><span class="s2">&#34; -r -quick --default-character-set=utf8  --skip-column&#34;</span>
 
-mysql <span class="nv">$sql_var</span> -h<span class="si">${</span><span class="nv">db_host</span><span class="si">}</span> -u<span class="si">${</span><span class="nv">db_user</span><span class="si">}</span> -p<span class="si">${</span><span class="nv">db_pass</span><span class="si">}</span> -P<span class="si">${</span><span class="nv">db_port</span><span class="si">}</span> -D<span class="si">${</span><span class="nv">db_name</span><span class="si">}</span> -e <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/NULL/\\\\N/g&#34;</span>&gt; <span class="nv">$file</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+mysql <span class="nv">$sql_var</span> -h<span class="si">${</span><span class="nv">db_host</span><span class="si">}</span> -u<span class="si">${</span><span class="nv">db_user</span><span class="si">}</span> -p<span class="si">${</span><span class="nv">db_pass</span><span class="si">}</span> -P<span class="si">${</span><span class="nv">db_port</span><span class="si">}</span> -D<span class="si">${</span><span class="nv">db_name</span><span class="si">}</span> -e <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">&#34;</span> <span class="p">|</span> sed <span class="s2">&#34;s/NULL/\\\\N/g&#34;</span>&gt; <span class="nv">$file</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span>
 
 lzop -U <span class="nv">$file</span>
 hadoop fs -mkdir -p /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>
-hadoop fs -ls /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>/ <span class="p">|</span>grep lzo<span class="p">|</span>awk <span class="s1">&#39;{print $8}&#39;</span><span class="p">|</span>xargs -i hadoop fs -rm <span class="o">{}</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+hadoop fs -ls /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>/ <span class="p">|</span>grep lzo<span class="p">|</span>awk <span class="s1">&#39;{print $8}&#39;</span><span class="p">|</span>xargs -i hadoop fs -rm <span class="o">{</span><span class="o">}</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span>
 hadoop fs -moveFromLocal <span class="nv">$file</span>.lzo /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>/
-hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer  /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>/<span class="nv">$file</span>.lzo <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer  /logroot/<span class="nv">$table</span>/key_ym<span class="o">=</span><span class="nv">$logmonth</span>/key_ymd<span class="o">=</span><span class="nv">$logday</span>/<span class="nv">$file</span>.lzo 2&gt;<span class="p">&amp;</span><span class="m">1</span>
 
-hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class="s2">;ALTER TABLE </span><span class="nv">$table</span><span class="s2"> ADD IF NOT EXISTS PARTITION(key_ym=</span><span class="nv">$logmonth</span><span class="s2">,key_ymd=</span><span class="nv">$logday</span><span class="s2">) location &#39;/logroot/</span><span class="nv">$table</span><span class="s2">/key_ym=</span><span class="nv">$logmonth</span><span class="s2">/key_ymd=</span><span class="nv">$logday</span><span class="s2">&#39; &#34;</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span></code></pre></td></tr></table>
+hive -v -e <span class="s2">&#34;</span><span class="nv">$hql</span><span class="s2">;ALTER TABLE </span><span class="nv">$table</span><span class="s2"> ADD IF NOT EXISTS PARTITION(key_ym=</span><span class="nv">$logmonth</span><span class="s2">,key_ymd=</span><span class="nv">$logday</span><span class="s2">) location &#39;/logroot/</span><span class="nv">$table</span><span class="s2">/key_ym=</span><span class="nv">$logmonth</span><span class="s2">/key_ymd=</span><span class="nv">$logday</span><span class="s2">&#39; </span><span class="s2">&#34;</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>通过上面的两个命令就可以实现将 mysql 中的数据导入到 hdfs 中。</p>
-
+</div><p>通过上面的两个命令就可以实现将 mysql 中的数据导入到 hdfs 中。</p>
 <p>这里需要注意以下几点：</p>
-
 <ul>
 <li>1、 hive 中原始日志使用默认的 textfile 方式存储，是为了保证日志的可读性，方便以后从 hdfs 下载来之后能够很方便的转换为结构化的文本文件并能浏览文件内容。</li>
 <li>2、使用 lzo 压缩是为了节省存储空间</li>
 <li>3、使用外包表建表，在删除表结构之后数据不会删，方便修改表结构和分区。</li>
 </ul>
-
-<h2 id="使用-sqoop">使用 Sqoop</h2>
-
+<h2 id="-sqoop">使用 Sqoop</h2>
 <p>使用 sqoop 主要是用于从 oracle 中通过 jdbc 方式导出数据到 hdfs，sqoop 命令如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sqoop import --connect jdbc:oracle:thin:@192.168.56.121:2154:db --username bi_user_limit --password <span class="s1">&#39;XXXX&#39;</span> --query <span class="s2">&#34;select * from test where  \$CONDITIONS&#34;</span> --split-by id  -m <span class="m">5</span> --fields-terminated-by <span class="s1">&#39;\t&#39;</span> --lines-terminated-by <span class="s1">&#39;\n&#39;</span>  --null-string <span class="s1">&#39;\\N&#39;</span> --null-non-string <span class="s1">&#39;\\N&#39;</span> --target-dir <span class="s2">&#34;/logroot/test/key_ymd=20140315&#34;</span>  --delete-target-dir</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sqoop import --connect jdbc:oracle:thin:@192.168.56.121:2154:db --username bi_user_limit --password <span class="s1">&#39;XXXX&#39;</span> --query <span class="s2">&#34;select * from test where  \$CONDITIONS&#34;</span> --split-by id  -m <span class="m">5</span> --fields-terminated-by <span class="s1">&#39;\t&#39;</span> --lines-terminated-by <span class="s1">&#39;\n&#39;</span>  --null-string <span class="s1">&#39;\\N&#39;</span> --null-non-string <span class="s1">&#39;\\N&#39;</span> --target-dir <span class="s2">&#34;/logroot/test/key_ymd=20140315&#34;</span>  --delete-target-dir
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="2-数据加工">2. 数据加工</h1>
-
+</div><h1 id="2-">2. 数据加工</h1>
 <p>对于数据量比较小任务可以使用 impala 处理，对于数据量大的任务使用 hive hql 来处理。</p>
-
 <p>impala 处理数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">impala-shell -i <span class="s1">&#39;192.168.56.121:21000&#39;</span> -r -q <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">;&#34;</span> </code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">impala-shell -i <span class="s1">&#39;192.168.56.121:21000&#39;</span> -r -q <span class="s2">&#34;</span><span class="nv">$sql</span><span class="s2">;</span><span class="s2">&#34;</span> 
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>有时候需要使用 impala 导出数据：</p>
+</div><p>有时候需要使用 impala 导出数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">impala-shell -i &#39;192.168.56.121:21000&#39; -r -q &#34;$sql;&#34; -B --output_delimiter=&#34;\t&#34; -o $file
-sed -i &#39;1d&#39; $file  #导出的第一行有不可见的字符</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">impala-shell -i &#39;192.168.56.121:21000&#39; -r -q &#34;$sql;&#34; -B --output_delimiter=&#34;\t&#34; -o $file
+sed -i &#39;1d&#39; $file  #导出的第一行有不可见的字符
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用 hive 处理数据生成结果表：</p>
+</div><p>使用 hive 处理数据生成结果表：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -461,7 +438,7 @@ sed -i &#39;1d&#39; $file  #导出的第一行有不可见的字符</pre></td></
   <span class="nv">DAY</span><span class="o">=</span><span class="s2">&#34;yesterday&#34;</span>
 <span class="k">fi</span>
 
-<span class="nb">echo</span> <span class="s2">&#34;DAY=</span><span class="nv">$DAY</span><span class="s2">&#34;</span>
+<span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">DAY=</span><span class="nv">$DAY</span><span class="s2">&#34;</span>
 
 <span class="nv">datestr</span><span class="o">=</span><span class="sb">`</span>date +%Y-%m-%d -d<span class="s2">&#34;</span><span class="nv">$DAY</span><span class="s2">&#34;</span><span class="sb">`</span><span class="p">;</span>
 <span class="nv">logday</span><span class="o">=</span><span class="sb">`</span>date +%Y%m%d -d<span class="s2">&#34;</span><span class="nv">$DAY</span><span class="s2">&#34;</span><span class="sb">`</span><span class="p">;</span>
@@ -469,9 +446,9 @@ sed -i &#39;1d&#39; $file  #导出的第一行有不可见的字符</pre></td></
 
 <span class="c1">#target table</span>
 <span class="nv">table</span><span class="o">=</span>stat_test_p
-<span class="nv">sql</span><span class="o">=</span><span class="s2">&#34;use dw_srclog;insert OVERWRITE table stat_test_p partition(key_ym=</span><span class="nv">$logmonth</span><span class="s2">,key_ymd=</span><span class="nv">$logday</span><span class="s2">)
+<span class="nv">sql</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">use dw_srclog;insert OVERWRITE table stat_test_p partition(key_ym=</span><span class="nv">$logmonth</span><span class="s2">,key_ymd=</span><span class="nv">$logday</span><span class="s2">)
 </span><span class="s2">select id,count(name) from test_p where key_ymd=</span><span class="nv">$logday</span><span class="s2"> group by id
-</span><span class="s2">&#34;</span>
+</span><span class="s2"></span><span class="s2">&#34;</span>
 
 <span class="nv">hql</span><span class="o">=</span><span class="s2">&#34;
 </span><span class="s2">use dw_web;
@@ -483,62 +460,53 @@ sed -i &#39;1d&#39; $file  #导出的第一行有不可见的字符</pre></td></
 </span><span class="s2">LOCATION &#39;/logroot/stat_test_p&#39;;
 </span><span class="s2">&#34;</span>
 <span class="c1">#begin</span>
-hive -v -e <span class="s2">&#34;
+hive -v -e <span class="s2">&#34;</span><span class="s2">
 </span><span class="s2"></span><span class="nv">$hql</span><span class="s2">;
 </span><span class="s2">SET hive.exec.compress.output=true;
 </span><span class="s2">SET mapreduce.input.fileinputformat.split.maxsize=128000000;
 </span><span class="s2">SET mapred.output.compression.type=BLOCK;
 </span><span class="s2">SET mapred.output.compression.codec=org.apache.hadoop.io.compress.SnappyCodec;
-</span><span class="s2"></span><span class="nv">$sql</span><span class="s2">&#34;</span> <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> </code></pre></td></tr></table>
+</span><span class="s2"></span><span class="nv">$sql</span><span class="s2">&#34;</span> 2&gt;<span class="p">&amp;</span><span class="m">1</span> 
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>这里主要是先判断是否创建外包表（外包表存储为 RCFILE 格式），然后设置 map 的输出结果使用 snappy 压缩，并设置每个 map 的大小，最后运行 insert 语句。结果表存储为 RCFILE 的原因是，*在 CDH 5.2 之前，该格式的表可以被 impala 读取*。</p>
-
-<h2 id="任务调度">任务调度</h2>
-
+</div><p>这里主要是先判断是否创建外包表（外包表存储为 RCFILE 格式），然后设置 map 的输出结果使用 snappy 压缩，并设置每个 map 的大小，最后运行 insert 语句。结果表存储为 RCFILE 的原因是，<em>在 CDH 5.2 之前，该格式的表可以被 impala 读取</em>。</p>
+<h2 id="heading">任务调度</h2>
 <p>当任务多了之后，每个任务之间会有一些依赖，为了保证任务的先后执行顺序，这里使用的是 azkaban 任务调度框架。</p>
-
 <p>该框架的使用方式很简单：</p>
-
 <ul>
 <li>首先创建一个 bi_etl 目录，用于存放执行脚本。</li>
 <li>在 bi_etl 目录下创建一个 properties 文件，文件名称任意，文件内容为：<code>DAY=yesterday</code>，这是一个系统默认参数，即默认 DAY 变量的值为 yesterday，该变量在运行时可以被覆盖：在 azkaban 的 web 管理界面，运行一个 Flow 时，添加一个 <code>Flow Parameters</code> 参数，Name 为 DAY，Value 为你想要指定的值，例如：20141023。</li>
 <li>创建一个 bash 脚本 test.sh，文件内容如第一章节内容，需要注意的是该脚本中会判断是否有输出参数。</li>
-
-<li><p>针对 bash 脚本，创建 azkaban 需要的 job 文件，文件内容如下（azkaban 运行该 job 时候，会替换 <code>${DAY}</code> 变量为实际的值 ）：</p>
+<li>针对 bash 脚本，创建 azkaban 需要的 job 文件，文件内容如下（azkaban 运行该 job 时候，会替换 <code>${DAY}</code> 变量为实际的值 ）：</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties">type=command
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">type=command
 command=sh test.sh ${DAY}
 failure.emails=XXX@163.com
-dependencies=xxx</code></pre></td></tr></table>
+dependencies=xxx
+</code></pre></td></tr></table>
 </div>
-</div></li>
-
-<li><p>最后，将 bi_etl 目录打包成 zip 文件，然后上传到 azkaban 管理界面上去，就可以运行或者是设置调度任务了。</p></li>
+</div><ul>
+<li>最后，将 bi_etl 目录打包成 zip 文件，然后上传到 azkaban 管理界面上去，就可以运行或者是设置调度任务了。</li>
 </ul>
-
 <p>使用上面的方式编写 bash 脚本和 azkaban 的 job 的好处是：</p>
-
 <ul>
 <li>azkaban 的 job 可以指定参数来控制运行哪一天的任务</li>
 <li>job 中实际上运行的是 bash 脚本，这些脚本脱离了 azkaban 也能正常运行，同样也支持传参数。</li>
 </ul>
-
-<h1 id="3-数据展现">3. 数据展现</h1>
-
+<h1 id="3-">3. 数据展现</h1>
 <p>目前是将 hive 或者 impala 的处理结果推送到关系数据库中，由传统的 BI 报表工具展示数据或者直接通过 impala 查询数据生成报表并发送邮件。</p>
-
 <p>为了保证报表的正常发送，需要监控任务的正常运行，当任务失败的时候能够发送邮件，这部分通过 azkaban 可以做到。另外，还需要监控每天运行的任务同步的记录数，下面脚本是统计记录数为0的任务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -595,7 +563,7 @@ dependencies=xxx</code></pre></td></tr></table>
   <span class="nv">DAY</span><span class="o">=</span><span class="s2">&#34;yesterday&#34;</span>
 <span class="k">fi</span>
 
-<span class="nb">echo</span> <span class="s2">&#34;DAY=</span><span class="nv">$DAY</span><span class="s2">&#34;</span>
+<span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">DAY=</span><span class="nv">$DAY</span><span class="s2">&#34;</span>
 
 <span class="nv">datestr</span><span class="o">=</span><span class="sb">`</span>date +%Y-%m-%d -d<span class="s2">&#34;</span><span class="nv">$DAY</span><span class="s2">&#34;</span><span class="sb">`</span><span class="p">;</span>
 <span class="nv">logday</span><span class="o">=</span><span class="sb">`</span>date +%Y%m%d -d<span class="s2">&#34;</span><span class="nv">$DAY</span><span class="s2">&#34;</span><span class="sb">`</span><span class="p">;</span>
@@ -605,15 +573,15 @@ dependencies=xxx</code></pre></td></tr></table>
 rm -rf /tmp/stat_table_day_count_<span class="nv">$logday</span>
 touch /tmp/stat_table_day_count_<span class="nv">$logday</span>
 <span class="k">for</span> db in <span class="sb">`</span>hadoop fs -ls /user/hive/warehouse<span class="p">|</span>grep -vE <span class="s1">&#39;testdb|dw_etl&#39;</span><span class="p">|</span>grep <span class="s1">&#39;.db&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{print $8}&#39;</span><span class="p">|</span>awk -F <span class="s1">&#39;/&#39;</span> <span class="s1">&#39;{print $5}&#39;</span> <span class="p">|</span>awk -F <span class="s1">&#39;.&#39;</span> <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span><span class="p">;</span><span class="k">do</span>
-    <span class="k">for</span> table in <span class="sb">`</span>hive -S -e <span class="s2">&#34;set hive.cli.print.header=false; use </span><span class="nv">$db</span><span class="s2">;show tables&#34;</span> <span class="sb">`</span> <span class="p">;</span><span class="k">do</span>
+    <span class="k">for</span> table in <span class="sb">`</span>hive -S -e <span class="s2">&#34;</span><span class="s2">set hive.cli.print.header=false; use </span><span class="nv">$db</span><span class="s2">;show tables</span><span class="s2">&#34;</span> <span class="sb">`</span> <span class="p">;</span><span class="k">do</span>
         <span class="nv">count_new</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
-        <span class="nv">result</span><span class="o">=</span><span class="sb">`</span>hive -S -e <span class="s2">&#34;set hive.cli.print.header=false; use </span><span class="nv">$db</span><span class="s2">;show create table </span><span class="nv">$table</span><span class="s2">;&#34;</span>  <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep PARTITIONED<span class="sb">`</span>
+        <span class="nv">result</span><span class="o">=</span><span class="sb">`</span>hive -S -e <span class="s2">&#34;</span><span class="s2">set hive.cli.print.header=false; use </span><span class="nv">$db</span><span class="s2">;show create table </span><span class="nv">$table</span><span class="s2">;</span><span class="s2">&#34;</span>  2&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep PARTITIONED<span class="sb">`</span>
         <span class="k">if</span> <span class="o">[</span> <span class="si">${#</span><span class="nv">result</span><span class="si">}</span> -gt <span class="m">0</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
       <span class="nv">is_part</span><span class="o">=</span><span class="m">1</span>
-      <span class="nv">count_new</span><span class="o">=</span><span class="sb">`</span>impala-shell -k -i <span class="m">10</span>.168.35.127:21089 --quiet -B --output_delimiter<span class="o">=</span><span class="s2">&#34;\t&#34;</span> -q <span class="s2">&#34;select count(1) from </span><span class="si">${</span><span class="nv">db</span><span class="si">}</span><span class="s2">.</span><span class="nv">$table</span><span class="s2"> where key_ymd=</span><span class="nv">$logday</span><span class="s2"> &#34;</span><span class="sb">`</span>
+      <span class="nv">count_new</span><span class="o">=</span><span class="sb">`</span>impala-shell -k -i 10.168.35.127:21089 --quiet -B --output_delimiter<span class="o">=</span><span class="s2">&#34;\t&#34;</span> -q <span class="s2">&#34;</span><span class="s2">select count(1) from </span><span class="si">${</span><span class="nv">db</span><span class="si">}</span><span class="s2">.</span><span class="nv">$table</span><span class="s2"> where key_ymd=</span><span class="nv">$logday</span><span class="s2"> </span><span class="s2">&#34;</span><span class="sb">`</span>
         <span class="k">else</span>
       <span class="nv">is_part</span><span class="o">=</span><span class="m">0</span>
-      <span class="nv">count_new</span><span class="o">=</span><span class="sb">`</span>impala-shell -k -i <span class="m">10</span>.168.35.127:21089 --quiet -B --output_delimiter<span class="o">=</span><span class="s2">&#34;\t&#34;</span> -q <span class="s2">&#34;select count(1) from </span><span class="si">${</span><span class="nv">db</span><span class="si">}</span><span class="s2">.</span><span class="nv">$table</span><span class="s2">; &#34;</span><span class="sb">`</span>
+      <span class="nv">count_new</span><span class="o">=</span><span class="sb">`</span>impala-shell -k -i 10.168.35.127:21089 --quiet -B --output_delimiter<span class="o">=</span><span class="s2">&#34;\t&#34;</span> -q <span class="s2">&#34;</span><span class="s2">select count(1) from </span><span class="si">${</span><span class="nv">db</span><span class="si">}</span><span class="s2">.</span><span class="nv">$table</span><span class="s2">; </span><span class="s2">&#34;</span><span class="sb">`</span>
         <span class="k">fi</span>
         <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$db</span><span class="s2">,</span><span class="nv">$table</span><span class="s2">,</span><span class="nv">$is_part</span><span class="s2">,</span><span class="nv">$count_new</span><span class="s2">&#34;</span> &gt;&gt; /tmp/stat_table_day_count_<span class="nv">$logday</span>
     <span class="k">done</span>
@@ -630,16 +598,14 @@ sed -i <span class="s1">&#39;s/\x1B//g&#39;</span> /tmp/stat_table_day_count_<sp
 
 <span class="nb">echo</span> <span class="nv">$res</span>
 
-hive -e <span class="s2">&#34;use dw_default;
+hive -e <span class="s2">&#34;</span><span class="s2">use dw_default;
 </span><span class="s2">LOAD DATA LOCAL INPATH &#39;/tmp/stat_table_day_count_</span><span class="nv">$logday</span><span class="s2">&#39; overwrite INTO TABLE stat_table_day_count  PARTITION (key_ym=</span><span class="nv">$logmonth</span><span class="s2">,key_ymd=</span><span class="nv">$logday</span><span class="s2">)
-</span><span class="s2">&#34;</span>
-python mail.py <span class="s2">&#34;Count is 0 in </span><span class="nv">$datestr</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="nv">$res</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+</span><span class="s2"></span><span class="s2">&#34;</span>
+python mail.py <span class="s2">&#34;</span><span class="s2">Count is 0 in </span><span class="nv">$datestr</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="nv">$res</span><span class="s2">&#34;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="4-总结">4. 总结</h1>
-
+</div><h1 id="4-">4. 总结</h1>
 <p>上面介绍了数据采集、加工和任务调度的过程，有些地方还可以改进：</p>
-
 <ul>
 <li>引入 ETL 工具实现关系数据库导入到 hadoop，例如：Kettle 工具</li>
 <li>目前是每天一次从 mysql 同步数据到 hadoop，以后需要修改同步频率，做到更实时</li>
@@ -761,7 +727,7 @@ python mail.py <span class="s2">&#34;Count is 0 in </span><span class="nv">$date
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

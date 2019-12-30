@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/10/31/install-harbor-with-helm/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2019-10-31T08:00:00+08:00" />
 <meta itemprop="name" content="使用Helm安装Harbor">
 <meta itemprop="description" content="Harbor是构建企业级私有docker镜像的仓库的开源解决方案，它是Docker Registry的更高级封装，它除了提供友好的Web UI界">
-
-
 <meta itemprop="datePublished" content="2019-10-31T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-31T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2478">
 
 
 
-<meta itemprop="keywords" content="kubernetes,helm,harbor," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="kubernetes,helm,harbor," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用Helm安装Harbor"/>
 <meta name="twitter:description" content="Harbor是构建企业级私有docker镜像的仓库的开源解决方案，它是Docker Registry的更高级封装，它除了提供友好的Web UI界"/>
 
@@ -142,54 +139,39 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#准备工作">准备工作</a>
-<ul>
-<li><a href="#创建存储池">创建存储池</a></li>
-<li><a href="#创建命名空间">创建命名空间</a></li>
-<li><a href="#添加仓库">添加仓库</a></li>
-<li><a href="#创建证书">创建证书</a>
-<ul>
-<li><a href="#使用letsencrypt生成证书文件">使用letsencrypt生成证书文件</a></li>
-</ul></li>
-</ul></li>
-<li><a href="#安装harbor">安装Harbor</a></li>
-<li><a href="#查看状态">查看状态</a></li>
-<li><a href="#查看证书">查看证书</a></li>
-<li><a href="#浏览器访问服务">浏览器访问服务</a></li>
-<li><a href="#docker-登陆验证"><strong>docker 登陆验证</strong></a></li>
-<li><a href="#上传下载测试">上传下载测试</a></li>
-<li><a href="#卸载">卸载</a></li>
-</ul>
+  <ul>
+    <li><a href="#heading-1">创建存储池</a></li>
+    <li><a href="#heading-2">创建命名空间</a></li>
+    <li><a href="#heading-3">添加仓库</a></li>
+    <li><a href="#heading-4">创建证书</a>
+      <ul>
+        <li><a href="#letsencrypt">使用letsencrypt生成证书文件</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>Harbor是构建企业级私有docker镜像的仓库的开源解决方案，它是Docker Registry的更高级封装，它除了提供友好的Web UI界面，角色和用户权限管理，用户操作审计等功能外，它还整合了K8s的插件(Add-ons)仓库。</p>
-
-<h1 id="准备工作">准备工作</h1>
-
-<p>详细配置参数，参考：<a href="https://github.com/goharbor/harbor-helm">https://github.com/goharbor/harbor-helm</a></p>
-
-<h2 id="创建存储池">创建存储池</h2>
-
+      <p>Harbor是构建企业级私有docker镜像的仓库的开源解决方案，它是Docker Registry的更高级封装，它除了提供友好的Web UI界面，角色和用户权限管理，用户操作审计等功能外，它还整合了K8s的插件(Add-ons)仓库。</p>
+<h1 id="heading">准备工作</h1>
+<p>详细配置参数，参考：https://github.com/goharbor/harbor-helm</p>
+<h2 id="heading-1">创建存储池</h2>
 <p>这里使用storageClass，则需要先创建storageClass，请参考ceph。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cmd.sh <span class="s2">&#34;sudo modprobe rbd&#34;</span>
-ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></table>
+ceph osd pool create k8s <span class="m">256</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建秘钥：</p>
+</div><p>创建秘钥：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -208,13 +190,13 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="s">type: &#34;kubernetes.io/rbd&#34;
 </span><span class="s">data:
 </span><span class="s">  key: $(grep key /etc/ceph/ceph.client.admin.keyring |awk &#39;{printf &#34;%s&#34;, $NF}&#39;|base64)
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建存储类：</p>
+</div><p>创建存储类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -255,46 +237,44 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="s">reclaimPolicy: Retain
 </span><span class="s"># 添加动态扩容
 </span><span class="s">allowVolumeExpansion: true
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>将存储类设置为默认：</p>
+</div><p>将存储类设置为默认：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl patch storageclass ceph-rbd -p <span class="se">\
-</span><span class="se"></span>	<span class="s1">&#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;true&#34;}}}&#39;</span></code></pre></td></tr></table>
+</span><span class="se"></span>	<span class="s1">&#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;true&#34;}}}&#39;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="创建命名空间">创建命名空间</h2>
+</div><h2 id="heading-2">创建命名空间</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace harbor</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace harbor
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="添加仓库">添加仓库</h2>
+</div><h2 id="heading-3">添加仓库</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm repo add harbor https://helm.goharbor.io</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm repo add harbor https://helm.goharbor.io
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="创建证书">创建证书</h2>
-
-<h3 id="使用letsencrypt生成证书文件">使用letsencrypt生成证书文件</h3>
-
+</div><h2 id="heading-4">创建证书</h2>
+<h3 id="letsencrypt">使用letsencrypt生成证书文件</h3>
 <p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> ，先要创建一个ClusterIssuer：javachen-space-letsencrypt-prod。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -345,13 +325,13 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="w">            </span>authApiSecret<span class="p">:</span><span class="w"> </span>QsHuDdnnCbzp5DmEQzq4ts<span class="w">
 </span><span class="w">            </span>production<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">            </span>ttl<span class="p">:</span><span class="w"> </span><span class="m">600</span><span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>因为证书是有命名空间的，所以需要在harbor命名空间创建证书：</p>
+</div><p>因为证书是有命名空间的，所以需要在harbor命名空间创建证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -369,8 +349,8 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="lnt">16
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span><span class="sd">-   
-</span><span class="sd">apiVersion: cert-manager.io/v1alpha2</span><span class="w">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span><span class="sd">-   </span><span class="sd">
+</span><span class="sd"></span><span class="sd">apiVersion: cert-manager.io/v1alpha2</span><span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Certificate<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>harbor-cert-prod<span class="w">
@@ -384,15 +364,14 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="w">  </span>issuerRef<span class="p">:</span><span class="w">
 </span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>javachen-space-letsencrypt-prod<span class="w">
 </span><span class="w">    </span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装harbor">安装Harbor</h1>
-
+</div><h1 id="harbor">安装Harbor</h1>
 <p>不配置存储，使用默认的证书，禁用clair、notary、chartmuseum，通过helm3安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -411,13 +390,13 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="se"></span>  --set clair.enabled<span class="o">=</span><span class="nb">false</span> <span class="se">\
 </span><span class="se"></span>  --set notary.enabled<span class="o">=</span><span class="nb">false</span> <span class="se">\
 </span><span class="se"></span>  --set chartmuseum.enabled<span class="o">=</span><span class="nb">false</span> <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123</code></pre></td></tr></table>
+</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>配置存储，使用默认的证书，通过helm3安装：</p>
+</div><p>配置存储，使用默认的证书，通过helm3安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -442,13 +421,13 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.size<span class="o">=</span>5Gi <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.redis.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123</code></pre></td></tr></table>
+</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>配置存储，使用前面letsencrypt生成的harbor-javachen-space-cert证书，通过helm3安装：</p>
+</div><p>配置存储，使用前面letsencrypt生成的harbor-javachen-space-cert证书，通过helm3安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -477,15 +456,14 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.database.size<span class="o">=</span>5Gi <span class="se">\
 </span><span class="se"></span>  --set persistence.persistentVolumeClaim.redis.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
-</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123</code></pre></td></tr></table>
+</span><span class="se"></span>  --set <span class="nv">harborAdminPassword</span><span class="o">=</span>admin123
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>配置存储，使用ingress自动生成证书（参考 <a href="https://lusyoe.github.io/2019/06/22/结合Cert-Manager完成Harbor的Https证书自动签发/">结合Cert-Manager完成Harbor的Https证书自动签发</a>），通过helm3安装：</p>
-
+</div><p>配置存储，使用ingress自动生成证书（参考 <a href="https://lusyoe.github.io/2019/06/22/%E7%BB%93%E5%90%88Cert-Manager%E5%AE%8C%E6%88%90Harbor%E7%9A%84Https%E8%AF%81%E4%B9%A6%E8%87%AA%E5%8A%A8%E7%AD%BE%E5%8F%91/">结合Cert-Manager完成Harbor的Https证书自动签发</a>），通过helm3安装：</p>
 <p>创建harbor-values.yaml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -548,22 +526,22 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 </span><span class="w">      </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd<span class="w">
 </span><span class="w">      </span>size<span class="p">:</span><span class="w"> </span>5Gi<span class="w">
 </span><span class="w">    </span>redis<span class="p">:</span><span class="w">
-</span><span class="w">      </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd</code></pre></td></tr></table>
+</span><span class="w">      </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>运行安装：</p>
+</div><p>运行安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install harbor harbor/harbor --namespace harbor -f harbor-values.yaml</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install harbor harbor/harbor --namespace harbor -f harbor-values.yaml
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="查看状态">查看状态</h1>
+</div><h1 id="heading-5">查看状态</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -576,24 +554,24 @@ ceph osd pool create k8s <span class="m">256</span></code></pre></td></tr></tabl
 <span class="c1">#如果pod初始化很慢，可以查看具体日志：</span>
 kubectl describe pod harbor-harbor-database-0 -n harbor
 
-kubectl get pod,pv,pvc,sc,ingress,deployment,ingress -n harbor</code></pre></td></tr></table>
+kubectl get pod,pv,pvc,sc,ingress,deployment,ingress -n harbor
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>如果下载镜像慢，则手动下载：</p>
+</div><p>如果下载镜像慢，则手动下载：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">docker pull busybox:latest
-docker pull goharbor/harbor-db:v1.9.3</code></pre></td></tr></table>
+docker pull goharbor/harbor-db:v1.9.3
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看rbd上创建的块：</p>
+</div><p>查看rbd上创建的块：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -606,28 +584,25 @@ kubernetes-dynamic-pvc-44f0325a-ec2e-414c-bc93-34503050fa1d
 kubernetes-dynamic-pvc-76dedc13-a83d-485e-a4cb-41280cd0e7d0
 kubernetes-dynamic-pvc-99414704-8eac-4adc-aa65-9a458fe859ec
 kubernetes-dynamic-pvc-c8dd8c01-07b1-4d31-9b82-0aecf9f76f3c
-kubernetes-dynamic-pvc-f9b96d83-3859-4942-8c25-c72c515bb997</code></pre></td></tr></table>
+kubernetes-dynamic-pvc-f9b96d83-3859-4942-8c25-c72c515bb997
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看Rancher上创建的pvc：</p>
-
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ipm4dhmuj318w0fogp7.jpg" alt="image-20191101182137146" /></p>
-
+</div><p>查看Rancher上创建的pvc：</p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ipm4dhmuj318w0fogp7.jpg" alt="image-20191101182137146"></p>
 <p>在ceph节点上查看挂载信息</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cmd.sh <span class="s2">&#34;mount |grep rbd|grep /var/lib/kubelet/pods&#34;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">cmd.sh <span class="s2">&#34;mount |grep rbd|grep /var/lib/kubelet/pods&#34;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ipnpnmxuj316a0gmgoc.jpg" alt="image-20191101182311225" /></p>
-
-<h1 id="查看证书">查看证书</h1>
+</div><p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8ipnpnmxuj316a0gmgoc.jpg" alt="image-20191101182311225"></p>
+<h1 id="heading-6">查看证书</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -636,102 +611,96 @@ kubernetes-dynamic-pvc-f9b96d83-3859-4942-8c25-c72c515bb997</code></pre></td></t
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret -n harbor
 
 kubectl get secret -n harbor harbor-harbor-ingress <span class="se">\
-</span><span class="se"></span>    -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.ca\.crt}&#34;</span> <span class="p">|</span> base64 --decode</code></pre></td></tr></table>
+</span><span class="se"></span>    -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.ca\.crt}&#34;</span> <span class="p">|</span> base64 --decode
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>可以将证书导入到docker证书目录下面，这样docker就会信任该镜像仓库</p>
+</div><p>可以将证书导入到docker证书目录下面，这样docker就会信任该镜像仓库</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret -n harbor harbor-harbor-ingress <span class="se">\
 </span><span class="se"></span>    -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.ca\.crt}&#34;</span> <span class="p">|</span> base64 --decode <span class="p">|</span> <span class="se">\
-</span><span class="se"></span>    sudo tee /etc/docker/certs.d/harbor.javachen.space/ca.crt</code></pre></td></tr></table>
+</span><span class="se"></span>    sudo tee /etc/docker/certs.d/harbor.javachen.space/ca.crt
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>可以查看harbor密码：</p>
+</div><p>可以查看harbor密码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get secret -n harbor harbor-harbor-core -o <span class="se">\
-</span><span class="se"></span>	<span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.HARBOR_ADMIN_PASSWORD}&#34;</span> <span class="p">|</span> base64 --decode</code></pre></td></tr></table>
+</span><span class="se"></span>	<span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.HARBOR_ADMIN_PASSWORD}&#34;</span> <span class="p">|</span> base64 --decode
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="浏览器访问服务">浏览器访问服务</h1>
-
-<p>浏览器访问harbor：<a href="https://harbor.javachen.space/">https://harbor.javachen.space/</a> ，用户名和密码：admin/admin123，可以看到证书是被浏览器信任的。</p>
-
-<h1 id="docker-登陆验证"><strong>docker 登陆验证</strong></h1>
-
+</div><h1 id="heading-7">浏览器访问服务</h1>
+<p>浏览器访问harbor：https://harbor.javachen.space/ ，用户名和密码：admin/admin123，可以看到证书是被浏览器信任的。</p>
+<h1 id="docker-"><strong>docker 登陆验证</strong></h1>
 <p>docker登陆：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ docker login harbor.javachen.space
 Username: admin
-Password:</code></pre></td></tr></table>
+Password:
+</code></pre></td></tr></table>
 </div>
-</div>
-<p><strong>在kubernetes中使用harbor，为了避免输入账号密码，需要创建secret</strong>。以下操作在master上执行：</p>
-
+</div><p><strong>在kubernetes中使用harbor，为了避免输入账号密码，需要创建secret</strong>。以下操作在master上执行：</p>
 <p>创建secret</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">kubectl create secret docker-registry harbor-registry-secret \
-	--docker-server=harbor.javachen.space -n harbor --docker-username=admin \
-	--docker-password=admin123</pre></td></tr></table>
-</div>
-</div>
-<p>创建完成后，可以用以下命令查看：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">kubectl get secret  -n harbor</pre></td></tr></table>
-</div>
-</div>
-<p>出现异常：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">x509: certificate is valid for ingress.local, not harbor.javachen.space</pre></td></tr></table>
-</div>
-</div>
-<p>参考：<a href="https://lusyoe.github.io/2019/06/22/解决harbor-cert-manager出现ingress-nginx-x509-certificate-is-valid-for-ingress-local/">解决harbor+cert-manager出现ingress-nginx x509: certificate is valid for ingress.local</a></p>
-
-<p>原因：在于证书的CA签发组织不对，使用Helm生成的证书默认域名是ingress.local，不是harbor.javachen.space。</p>
-
-<p>出现异常：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">Error response from daemon: Get https://harbor.javachen.space/v2/: x509: certificate signed by unknown authority</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl create secret docker-registry harbor-registry-secret \
+	--docker-server=harbor.javachen.space -n harbor --docker-username=admin \
+	--docker-password=admin123
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>参考前面，将harbor证书导入到docker证书目录下面，这样docker就会信任该镜像仓库</p>
+</div><p>创建完成后，可以用以下命令查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl get secret  -n harbor
+</code></pre></td></tr></table>
+</div>
+</div><p>出现异常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">x509: certificate is valid for ingress.local, not harbor.javachen.space
+</code></pre></td></tr></table>
+</div>
+</div><p>参考：<a href="https://lusyoe.github.io/2019/06/22/%E8%A7%A3%E5%86%B3harbor-cert-manager%E5%87%BA%E7%8E%B0ingress-nginx-x509-certificate-is-valid-for-ingress-local/">解决harbor+cert-manager出现ingress-nginx x509: certificate is valid for ingress.local</a></p>
+<p>原因：在于证书的CA签发组织不对，使用Helm生成的证书默认域名是ingress.local，不是harbor.javachen.space。</p>
+<p>出现异常：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">Error response from daemon: Get https://harbor.javachen.space/v2/: x509: certificate signed by unknown authority
+</code></pre></td></tr></table>
+</div>
+</div><p>参考前面，将harbor证书导入到docker证书目录下面，这样docker就会信任该镜像仓库</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -742,17 +711,15 @@ Password:</code></pre></td></tr></table>
 
 kubectl get secret -n harbor harbor-harbor-ingress <span class="se">\
 </span><span class="se"></span>    -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.ca\.crt}&#34;</span> <span class="p">|</span> base64 --decode <span class="p">|</span> <span class="se">\
-</span><span class="se"></span>    sudo tee /etc/docker/certs.d/harbor.javachen.space/ca.crt</code></pre></td></tr></table>
+</span><span class="se"></span>    sudo tee /etc/docker/certs.d/harbor.javachen.space/ca.crt
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="上传下载测试">上传下载测试</h1>
-
+</div><h1 id="heading-8">上传下载测试</h1>
 <p>在harbor管理界面，创建一个soft项目</p>
-
 <p>上传镜像：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -764,22 +731,21 @@ kubectl get secret -n harbor harbor-harbor-ingress <span class="se">\
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ docker images
-rancher/pause     <span class="m">3</span>.1       da86e6ba6ca1        <span class="m">21</span> months ago       742kB
+rancher/pause     3.1       da86e6ba6ca1        <span class="m">21</span> months ago       742kB
 
 
 docker tag rancher/pause:3.1 harbor.javachen.space/soft/pause:3.2
 docker push harbor.javachen.space/soft/pause:3.2
 
 docker tag rancher/pause:3.1 harbor.javachen.space/soft/pause:latest
-docker push harbor.javachen.space/soft/pause:latest</code></pre></td></tr></table>
+docker push harbor.javachen.space/soft/pause:latest
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>然后，在harbor管理界面中查看上传的镜像。</p>
-
-<h1 id="卸载">卸载</h1>
+</div><p>然后，在harbor管理界面中查看上传的镜像。</p>
+<h1 id="heading-9">卸载</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -818,7 +784,8 @@ kubectl delete pod,service,deploy,statefulset,ingress,secret,pvc,replicaset,<spa
 kubectl delete Certificate,secret harbor-javachen-space-cert -n harbor
 
 <span class="c1">#还要删除rbd上的块</span>
-rbd list k8s</code></pre></td></tr></table>
+rbd list k8s
+</code></pre></td></tr></table>
 </div>
 </div>
     </div>
@@ -938,7 +905,7 @@ rbd list k8s</code></pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

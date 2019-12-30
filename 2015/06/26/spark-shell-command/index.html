@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2015/06/26/spark-shell-command/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2015-06-26T08:00:00+08:00" />
 <meta itemprop="name" content="spark-shell脚本分析">
 <meta itemprop="description" content="本文主要分析spark-shell脚本的运行逻辑，涉及到spark-submit、spark-class等脚本的分析，希望通过分析脚本以了解spark中各个进程的参数、JVM参数和内存大小如何设置。">
-
-
 <meta itemprop="datePublished" content="2015-06-26T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2015-06-26T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="3228">
 
 
 
-<meta itemprop="keywords" content="spark," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="spark," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="spark-shell脚本分析"/>
 <meta name="twitter:description" content="本文主要分析spark-shell脚本的运行逻辑，涉及到spark-submit、spark-class等脚本的分析，希望通过分析脚本以了解spark中各个进程的参数、JVM参数和内存大小如何设置。"/>
 
@@ -141,28 +138,17 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#spark-shell">spark-shell</a></li>
-<li><a href="#spark-submit">spark-submit</a></li>
-<li><a href="#spark-class">spark-class</a></li>
-</ul>
-</nav>
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>本文主要分析spark-shell脚本的运行逻辑，涉及到spark-submit、spark-class等脚本的分析，希望通过分析脚本以了解spark中各个进程的参数、JVM参数和内存大小如何设置。</p>
-
+      <p>本文主要分析spark-shell脚本的运行逻辑，涉及到spark-submit、spark-class等脚本的分析，希望通过分析脚本以了解spark中各个进程的参数、JVM参数和内存大小如何设置。</p>
 <h1 id="spark-shell">spark-shell</h1>
-
 <p>使用yum安装spark之后，你可以直接在终端运行spark-shell命令，或者在spark的home目录/usr/lib下运行bin-shell命令，这样就可以进入到spark命令行交互模式。</p>
-
 <p><strong>spark-shell 脚本是如何运行的呢</strong>？该脚本代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -255,7 +241,7 @@
 
 <span class="nv">cygwin</span><span class="o">=</span><span class="nb">false</span>
 <span class="k">case</span> <span class="s2">&#34;`uname`&#34;</span> in
-  CYGWIN*<span class="o">)</span> <span class="nv">cygwin</span><span class="o">=</span>true<span class="p">;;</span>
+  CYGWIN*<span class="o">)</span> <span class="nv">cygwin</span><span class="o">=</span>true<span class="p">;</span><span class="p">;</span>
 <span class="k">esac</span>
 
 <span class="c1"># Enter posix mode for bash</span>
@@ -264,13 +250,13 @@
 <span class="c1">## Global script variables</span>
 <span class="nv">FWDIR</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span><span class="nb">cd</span> <span class="s2">&#34;`dirname &#34;</span><span class="nv">$0</span><span class="s2">&#34;`&#34;</span>/..<span class="p">;</span> <span class="nb">pwd</span><span class="k">)</span><span class="s2">&#34;</span>
 
-<span class="k">function</span> usage<span class="o">()</span> <span class="o">{</span>
+<span class="k">function</span> usage<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
   <span class="nb">echo</span> <span class="s2">&#34;Usage: ./bin-shell [options]&#34;</span>
-  <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --help <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep -v Usage <span class="m">1</span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+  <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --help 2&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep -v Usage 1&gt;<span class="p">&amp;</span><span class="m">2</span>
   <span class="nb">exit</span> <span class="m">0</span>
 <span class="o">}</span>
 
-<span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *--help <span class="o">]]</span> <span class="o">||</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *-h <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *--help <span class="o">]</span><span class="o">]</span> <span class="o">||</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *-h <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
   usage
 <span class="k">fi</span>
 
@@ -283,19 +269,19 @@ gatherSparkSubmitOpts <span class="s2">&#34;</span><span class="nv">$@</span><sp
 <span class="c1"># do this specifically for the Spark shell because the scala REPL</span>
 <span class="c1"># has its own class loader, and any additional classpath specified</span>
 <span class="c1"># through spark.driver.extraClassPath is not automatically propagated.</span>
-<span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Dscala.usejavacp=true&#34;</span>
+<span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Dscala.usejavacp=true</span><span class="s2">&#34;</span>
 
-<span class="k">function</span> main<span class="o">()</span> <span class="o">{</span>
+<span class="k">function</span> main<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
   <span class="k">if</span> <span class="nv">$cygwin</span><span class="p">;</span> <span class="k">then</span>
     <span class="c1"># Workaround for issue involving JLine and Cygwin</span>
     <span class="c1"># (see http://sourceforge.net/p/jline/bugs/40/).</span>
     <span class="c1"># If you&#39;re using the Mintty terminal emulator in Cygwin, may need to set the</span>
     <span class="c1"># &#34;Backspace sends ^H&#34; setting in &#34;Keys&#34; section of the Mintty options</span>
     <span class="c1"># (see https://github.com/sbt/sbt/issues/562).</span>
-    stty -icanon min <span class="m">1</span> -echo &gt; /dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-    <span class="nb">export</span> <span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Djline.terminal=unix&#34;</span>
+    stty -icanon min <span class="m">1</span> -echo &gt; /dev/null 2&gt;<span class="p">&amp;</span><span class="m">1</span>
+    <span class="nb">export</span> <span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Djline.terminal=unix</span><span class="s2">&#34;</span>
     <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --class org.apache.spark.repl.Main <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SUBMISSION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span> spark-shell <span class="s2">&#34;</span><span class="si">${</span><span class="nv">APPLICATION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span>
-    stty icanon <span class="nb">echo</span> &gt; /dev/null <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+    stty icanon <span class="nb">echo</span> &gt; /dev/null 2&gt;<span class="p">&amp;</span><span class="m">1</span>
   <span class="k">else</span>
     <span class="nb">export</span> SPARK_SUBMIT_OPTS
     <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --class org.apache.spark.repl.Main <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SUBMISSION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span> spark-shell <span class="s2">&#34;</span><span class="si">${</span><span class="nv">APPLICATION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span>
@@ -308,13 +294,13 @@ gatherSparkSubmitOpts <span class="s2">&#34;</span><span class="nv">$@</span><sp
 <span class="nv">saved_stty</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
 
 <span class="c1"># restore stty settings (echo in particular)</span>
-<span class="k">function</span> restoreSttySettings<span class="o">()</span> <span class="o">{</span>
+<span class="k">function</span> restoreSttySettings<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
   stty <span class="nv">$saved_stty</span>
   <span class="nv">saved_stty</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
 <span class="o">}</span>
 
-<span class="k">function</span> onExit<span class="o">()</span> <span class="o">{</span>
-  <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$saved_stty</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;&#34;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+<span class="k">function</span> onExit<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$saved_stty</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;&#34;</span> <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
     restoreSttySettings
   <span class="k">fi</span>
   <span class="nb">exit</span> <span class="nv">$exit_status</span>
@@ -324,9 +310,9 @@ gatherSparkSubmitOpts <span class="s2">&#34;</span><span class="nv">$@</span><sp
 <span class="nb">trap</span> onExit INT
 
 <span class="c1"># save terminal settings</span>
-<span class="nv">saved_stty</span><span class="o">=</span><span class="k">$(</span>stty -g <span class="m">2</span>&gt;/dev/null<span class="k">)</span>
+<span class="nv">saved_stty</span><span class="o">=</span><span class="k">$(</span>stty -g 2&gt;/dev/null<span class="k">)</span>
 <span class="c1"># clear on error so we don&#39;t later try to restore them</span>
-<span class="k">if</span> <span class="o">[[</span> ! <span class="nv">$?</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span><span class="o">[</span> ! <span class="nv">$?</span> <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
   <span class="nv">saved_stty</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
 <span class="k">fi</span>
 
@@ -335,13 +321,13 @@ main <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#3
 <span class="c1"># record the exit status lest it be overwritten:</span>
 <span class="c1"># then reenable echo and propagate the code.</span>
 <span class="nv">exit_status</span><span class="o">=</span><span class="nv">$?</span>
-onExit</code></pre></td></tr></table>
+onExit
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>从上往下一步步分析，首先是判断是否为cygwin，这里用到了bash中的<code>case</code>语法：</p>
+</div><p>从上往下一步步分析，首先是判断是否为cygwin，这里用到了bash中的<code>case</code>语法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -349,40 +335,38 @@ onExit</code></pre></td></tr></table>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">cygwin</span><span class="o">=</span><span class="nb">false</span>
 <span class="k">case</span> <span class="s2">&#34;`uname`&#34;</span> in
-  CYGWIN*<span class="o">)</span> <span class="nv">cygwin</span><span class="o">=</span>true<span class="p">;;</span>
-<span class="k">esac</span></code></pre></td></tr></table>
+  CYGWIN*<span class="o">)</span> <span class="nv">cygwin</span><span class="o">=</span>true<span class="p">;</span><span class="p">;</span>
+<span class="k">esac</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>在linux系统中，<code>uname</code>命令的运行结果为linux，其值不等于<code>CYGWIN*</code>，故cygwin=false。</p>
 </blockquote>
-
 <p>开启bash的posix模式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">set</span> -o posix</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">set</span> -o posix
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>获取上级目录绝对路径，这里使用到了<code>dirname</code>命令：</p>
+</div><p>获取上级目录绝对路径，这里使用到了<code>dirname</code>命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">FWDIR</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span><span class="nb">cd</span> <span class="s2">&#34;`dirname &#34;</span><span class="nv">$0</span><span class="s2">&#34;`&#34;</span>/..<span class="p">;</span> <span class="nb">pwd</span><span class="k">)</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">FWDIR</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span><span class="nb">cd</span> <span class="s2">&#34;`dirname &#34;</span><span class="nv">$0</span><span class="s2">&#34;`&#34;</span>/..<span class="p">;</span> <span class="nb">pwd</span><span class="k">)</span><span class="s2">&#34;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>提示：bash 中，$0 是获取脚本名称</p>
 </blockquote>
-
 <p>判断输入参数中是否有<code>--help</code>或者<code>-h</code>，如果有，则打印使用说明，实际上运行的是<code>/bin-submit --help</code>命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -393,68 +377,63 @@ onExit</code></pre></td></tr></table>
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="k">function</span> usage<span class="o">()</span> <span class="o">{</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="k">function</span> usage<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
   <span class="nb">echo</span> <span class="s2">&#34;Usage: ./bin-shell [options]&#34;</span>
-  <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --help <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep -v Usage <span class="m">1</span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+  <span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --help 2&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep -v Usage 1&gt;<span class="p">&amp;</span><span class="m">2</span>
   <span class="nb">exit</span> <span class="m">0</span>
 <span class="o">}</span>
 
-<span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *--help <span class="o">]]</span> <span class="o">||</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *-h <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *--help <span class="o">]</span><span class="o">]</span> <span class="o">||</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span> <span class="o">=</span> *-h <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
   usage
-<span class="k">fi</span></code></pre></td></tr></table>
+<span class="k">fi</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>提示：</p>
-
 <ul>
 <li>2&gt;&amp;1 的意思是将标准错误也输出到标准输出当中；1&gt;&amp;2是将标准输出输出到标准错误当中</li>
 <li>bash 中，$@ 是获取脚本所有的输入参数</li>
 </ul>
 </blockquote>
-
 <p>再往后面是定义了一个main方法，并将spark-shell的输入参数传给该方法运行，main方法中判断是否是cygwin模式，如果不是，则运行</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Dscala.usejavacp=true&#34;</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">SPARK_SUBMIT_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2"> -Dscala.usejavacp=true</span><span class="s2">&#34;</span>
 
 
 <span class="nb">export</span> SPARK_SUBMIT_OPTS
-<span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --class org.apache.spark.repl.Main <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SUBMISSION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span> spark-shell <span class="s2">&#34;</span><span class="si">${</span><span class="nv">APPLICATION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+<span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">&#34;</span>/bin-submit --class org.apache.spark.repl.Main <span class="s2">&#34;</span><span class="si">${</span><span class="nv">SUBMISSION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span> spark-shell <span class="s2">&#34;</span><span class="si">${</span><span class="nv">APPLICATION_OPTS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
-<p>提示：&rdquo;${SUBMISSION_OPTS[@]}&rdquo; 这是什么意思？</p>
+</div><blockquote>
+<p>提示：&ldquo;${SUBMISSION_OPTS[@]}&rdquo; 这是什么意思？</p>
 </blockquote>
-
 <p>从上面可以看到，其实最后调用的是spark-submit命令，并指定<code>--class</code>参数为<code>org.apache.spark.repl.Main</code>类，后面接的是spark-submit的提交参数，再后面是spark-shell，最后是传递应用的参数。</p>
-
 <p>最后，是获取main方法运行结果：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">exit_status</span><span class="o">=</span><span class="nv">$?</span>
-onExit</code></pre></td></tr></table>
+onExit
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>提示： bash 中，<code>$?</code>是获取上个命令运行结束返回的状态码</p>
 </blockquote>
-
 <p>如果以调试模式运行spark-shell，在不加参数的情况下，输出内容为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -484,9 +463,9 @@ onExit</code></pre></td></tr></table>
 </span><span class="lnt">28
 </span><span class="lnt">29
 </span><span class="lnt">30
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">+ cygwin=false
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">+ cygwin=false
 + case &#34;`uname`&#34; in
 ++ uname
 + set -o posix
@@ -515,21 +494,18 @@ onExit</code></pre></td></tr></table>
 + main
 + false
 + export SPARK_SUBMIT_OPTS
-+ /usr/lib/bin-submit --class org.apache.spark.repl.Main spark-shell</pre></td></tr></table>
++ /usr/lib/bin-submit --class org.apache.spark.repl.Main spark-shell
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>提示：通过运行<code>set -x</code>可以开启bash调试代码的特性。</p>
 </blockquote>
-
 <p>接下来就涉及到spark-submit命令的逻辑了。</p>
-
 <h1 id="spark-submit">spark-submit</h1>
-
 <p>完整的spark-submit脚本内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -588,12 +564,12 @@ onExit</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># NOTE: Any changes in this file must be reflected in SparkSubmitDriverBootstrapper.scala!</span>
 
 <span class="nb">export</span> <span class="nv">SPARK_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span><span class="nb">cd</span> <span class="s2">&#34;`dirname &#34;</span><span class="nv">$0</span><span class="s2">&#34;`&#34;</span>/..<span class="p">;</span> <span class="nb">pwd</span><span class="k">)</span><span class="s2">&#34;</span>
-<span class="nv">ORIG_ARGS</span><span class="o">=(</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="o">)</span>
+<span class="nv">ORIG_ARGS</span><span class="o">=</span><span class="o">(</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="o">)</span>
 
 <span class="c1"># Set COLUMNS for progress bar</span>
 <span class="nb">export</span> <span class="nv">COLUMNS</span><span class="o">=</span><span class="sb">`</span>tput cols<span class="sb">`</span>
 
-<span class="k">while</span> <span class="o">((</span><span class="nv">$#</span><span class="o">))</span><span class="p">;</span> <span class="k">do</span>
+<span class="k">while</span> <span class="o">(</span><span class="o">(</span><span class="nv">$#</span><span class="o">)</span><span class="o">)</span><span class="p">;</span> <span class="k">do</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> <span class="o">=</span> <span class="s2">&#34;--deploy-mode&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
     <span class="nv">SPARK_SUBMIT_DEPLOY_MODE</span><span class="o">=</span><span class="nv">$2</span>
   <span class="k">elif</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> <span class="o">=</span> <span class="s2">&#34;--properties-file&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
@@ -613,10 +589,10 @@ onExit</code></pre></td></tr></table>
 <span class="k">done</span>
 
 <span class="k">if</span> <span class="o">[</span> -z <span class="s2">&#34;</span><span class="nv">$SPARK_CONF_DIR</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-  <span class="nb">export</span> <span class="nv">SPARK_CONF_DIR</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_HOME</span><span class="s2">/conf&#34;</span>
+  <span class="nb">export</span> <span class="nv">SPARK_CONF_DIR</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_HOME</span><span class="s2">/conf</span><span class="s2">&#34;</span>
 <span class="k">fi</span>
-<span class="nv">DEFAULT_PROPERTIES_FILE</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_CONF_DIR</span><span class="s2">-defaults.conf&#34;</span>
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$MASTER</span><span class="s2">&#34;</span> <span class="o">==</span> <span class="s2">&#34;yarn-cluster&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+<span class="nv">DEFAULT_PROPERTIES_FILE</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_CONF_DIR</span><span class="s2">-defaults.conf</span><span class="s2">&#34;</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$MASTER</span><span class="s2">&#34;</span> <span class="o">=</span><span class="o">=</span> <span class="s2">&#34;yarn-cluster&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
   <span class="nv">SPARK_SUBMIT_DEPLOY_MODE</span><span class="o">=</span>cluster
 <span class="k">fi</span>
 <span class="nb">export</span> <span class="nv">SPARK_SUBMIT_DEPLOY_MODE</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_SUBMIT_DEPLOY_MODE</span><span class="k">:-</span><span class="s2">&#34;client&#34;</span><span class="si">}</span>
@@ -627,7 +603,7 @@ onExit</code></pre></td></tr></table>
 <span class="c1"># paths, library paths, java options and memory early on. Otherwise, it will</span>
 <span class="c1"># be too late by the time the driver JVM has started.</span>
 
-<span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_DEPLOY_MODE</span><span class="s2">&#34;</span> <span class="o">==</span> <span class="s2">&#34;client&#34;</span> <span class="o">&amp;&amp;</span> -f <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_PROPERTIES_FILE</span><span class="s2">&#34;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_DEPLOY_MODE</span><span class="s2">&#34;</span> <span class="o">=</span><span class="o">=</span> <span class="s2">&#34;client&#34;</span> <span class="o">&amp;&amp;</span> -f <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_PROPERTIES_FILE</span><span class="s2">&#34;</span> <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
   <span class="c1"># Parse the properties file only if the special configs exist</span>
   <span class="nv">contains_special_configs</span><span class="o">=</span><span class="k">$(</span>
     grep -e <span class="s2">&#34;spark.driver.extra*\|spark.driver.memory&#34;</span> <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_PROPERTIES_FILE</span><span class="s2">&#34;</span> <span class="p">|</span> <span class="se">\
@@ -638,48 +614,37 @@ onExit</code></pre></td></tr></table>
   <span class="k">fi</span>
 <span class="k">fi</span>
 
-<span class="nb">exec</span> <span class="s2">&#34;</span><span class="nv">$SPARK_HOME</span><span class="s2">&#34;</span>/bin-class org.apache.spark.deploy.SparkSubmit <span class="s2">&#34;</span><span class="si">${</span><span class="nv">ORIG_ARGS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+<span class="nb">exec</span> <span class="s2">&#34;</span><span class="nv">$SPARK_HOME</span><span class="s2">&#34;</span>/bin-class org.apache.spark.deploy.SparkSubmit <span class="s2">&#34;</span><span class="si">${</span><span class="nv">ORIG_ARGS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>首先是设置<code>SPARK_HOME</code>，并保留原始输入参数：</p>
+</div><p>首先是设置<code>SPARK_HOME</code>，并保留原始输入参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">SPARK_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span><span class="nb">cd</span> <span class="s2">&#34;`dirname &#34;</span><span class="nv">$0</span><span class="s2">&#34;`&#34;</span>/..<span class="p">;</span> <span class="nb">pwd</span><span class="k">)</span><span class="s2">&#34;</span>
-<span class="nv">ORIG_ARGS</span><span class="o">=(</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="o">)</span></code></pre></td></tr></table>
+<span class="nv">ORIG_ARGS</span><span class="o">=</span><span class="o">(</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="o">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>接下来，使用while语句配合<code>shift</code>命令，依次判断输入参数。</p>
-
+</div><p>接下来，使用while语句配合<code>shift</code>命令，依次判断输入参数。</p>
 <blockquote>
 <p>说明：shift是将输入参数位置向左移位</p>
 </blockquote>
-
 <p>设置<code>SPARK_CONF_DIR</code>变量，并判断spark-submit部署模式。</p>
-
 <p>如果<code>$SPARK_CONF_DIR-defaults.conf</code>文件存在，则检查是否设置<code>spark.driver.extra</code>开头的和<code>spark.driver.memory</code>变量，如果设置了，则<code>SPARK_SUBMIT_BOOTSTRAP_DRIVER</code>设为1。</p>
-
 <p>最后，执行的是spark-class命令，输入参数为<code>org.apache.spark.deploy.SparkSubmit</code>类名和原始参数。</p>
-
 <h1 id="spark-class">spark-class</h1>
-
 <p>该脚本首先还是判断是否是cygwin，并设置SPARK_HOME和SPARK_CONF_DIR变量。</p>
-
 <p>运行bin/load-spark-env.sh，加载spark环境变量。</p>
-
 <p>spark-class至少需要传递一个参数，如果没有，则会打印脚本使用说明<code>Usage: spark-class &lt;class&gt; [&lt;args&gt;]</code>。</p>
-
 <p>如果设置了<code>SPARK_MEM</code>变量，则提示<code>SPARK_MEM</code>变量过时，应该使用<code>spark.executor.memory</code>或者<code>spark.driver.memory</code>变量。</p>
-
 <p>设置默认内存<code>DEFAULT_MEM</code>为512M，如果<code>SPARK_MEM</code>变量存在，则使用<code>SPARK_MEM</code>的值。</p>
-
 <p>使用case语句判断spark-class传入的第一个参数的值：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -733,7 +698,7 @@ onExit</code></pre></td></tr></table>
 </span><span class="lnt">52
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">SPARK_DAEMON_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_DAEMON_JAVA_OPTS</span><span class="s2"> -Dspark.akka.logLifecycleEvents=true&#34;</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">SPARK_DAEMON_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_DAEMON_JAVA_OPTS</span><span class="s2"> -Dspark.akka.logLifecycleEvents=true</span><span class="s2">&#34;</span>
 
 <span class="c1"># Add java opts and memory settings for master, worker, history server, executors, and repl.</span>
 <span class="k">case</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> in
@@ -741,27 +706,27 @@ onExit</code></pre></td></tr></table>
   <span class="s1">&#39;org.apache.spark.deploy.master.Master&#39;</span><span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_DAEMON_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_MASTER_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_DAEMON_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
   <span class="s1">&#39;org.apache.spark.deploy.worker.Worker&#39;</span><span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_DAEMON_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_WORKER_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_DAEMON_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
   <span class="s1">&#39;org.apache.spark.deploy.history.HistoryServer&#39;</span><span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_DAEMON_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_HISTORY_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_DAEMON_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
 
   <span class="c1"># Executors use SPARK_JAVA_OPTS + SPARK_EXECUTOR_MEMORY.</span>
   <span class="s1">&#39;org.apache.spark.executor.CoarseGrainedExecutorBackend&#39;</span><span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_EXECUTOR_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_EXECUTOR_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
   <span class="s1">&#39;org.apache.spark.executor.MesosExecutorBackend&#39;</span><span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_EXECUTOR_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_EXECUTOR_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
     <span class="nb">export</span> <span class="nv">PYTHONPATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">/python:</span><span class="nv">$PYTHONPATH</span><span class="s2">&#34;</span>
     <span class="nb">export</span> <span class="nv">PYTHONPATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$FWDIR</span><span class="s2">/python/lib/py4j-0.8.2.1-src.zip:</span><span class="nv">$PYTHONPATH</span><span class="s2">&#34;</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
 
   <span class="c1"># Spark submit uses SPARK_JAVA_OPTS + SPARK_SUBMIT_OPTS +</span>
   <span class="c1"># SPARK_DRIVER_MEMORY + SPARK_SUBMIT_DRIVER_MEMORY.</span>
@@ -769,7 +734,7 @@ onExit</code></pre></td></tr></table>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_JAVA_OPTS</span><span class="s2"> </span><span class="nv">$SPARK_SUBMIT_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_DRIVER_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
     <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_LIBRARY_PATH</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-      <span class="k">if</span> <span class="o">[[</span> <span class="nv">$OSTYPE</span> <span class="o">==</span> darwin* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+      <span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="nv">$OSTYPE</span> <span class="o">=</span><span class="o">=</span> darwin* <span class="o">]</span><span class="o">]</span><span class="p">;</span> <span class="k">then</span>
        <span class="nb">export</span> <span class="nv">DYLD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_LIBRARY_PATH</span><span class="s2">:</span><span class="nv">$DYLD_LIBRARY_PATH</span><span class="s2">&#34;</span>
       <span class="k">else</span>
        <span class="nb">export</span> <span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_LIBRARY_PATH</span><span class="s2">:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="s2">&#34;</span>
@@ -778,17 +743,16 @@ onExit</code></pre></td></tr></table>
     <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_DRIVER_MEMORY</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
       <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_SUBMIT_DRIVER_MEMORY</span><span class="s2">&#34;</span>
     <span class="k">fi</span>
-    <span class="p">;;</span>
+    <span class="p">;</span><span class="p">;</span>
 
   *<span class="o">)</span>
     <span class="nv">OUR_JAVA_OPTS</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$SPARK_JAVA_OPTS</span><span class="s2">&#34;</span>
     <span class="nv">OUR_JAVA_MEM</span><span class="o">=</span><span class="si">${</span><span class="nv">SPARK_DRIVER_MEMORY</span><span class="k">:-</span><span class="nv">$DEFAULT_MEM</span><span class="si">}</span>
-    <span class="p">;;</span>
-<span class="k">esac</span></code></pre></td></tr></table>
+    <span class="p">;</span><span class="p">;</span>
+<span class="k">esac</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>可能存在以下几种情况：</p>
-
+</div><p>可能存在以下几种情况：</p>
 <ul>
 <li><code>org.apache.spark.deploy.master.Master</code></li>
 <li><code>org.apache.spark.deploy.worker.Worker</code></li>
@@ -797,9 +761,7 @@ onExit</code></pre></td></tr></table>
 <li><code>org.apache.spark.executor.MesosExecutorBackend</code></li>
 <li><code>org.apache.spark.deploy.SparkSubmit</code></li>
 </ul>
-
 <p>并分别设置每种情况下的Java运行参数和使用内存大小，以表格形式表示如下：</p>
-
 <table>
 <thead>
 <tr>
@@ -808,38 +770,32 @@ onExit</code></pre></td></tr></table>
 <th align="left">OUR_JAVA_MEM</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td align="left">Master</td>
 <td align="left">$SPARK_DAEMON_JAVA_OPTS $SPARK_MASTER_OPTS</td>
 <td align="left">${SPARK_DAEMON_MEMORY:-$DEFAULT_MEM}</td>
 </tr>
-
 <tr>
 <td align="left">Worker</td>
 <td align="left">$SPARK_DAEMON_JAVA_OPTS $SPARK_WORKER_OPTS</td>
 <td align="left">${SPARK_DAEMON_MEMORY:-$DEFAULT_MEM}</td>
 </tr>
-
 <tr>
 <td align="left">HistoryServer</td>
 <td align="left">$SPARK_DAEMON_JAVA_OPTS $SPARK_HISTORY_OPTS</td>
 <td align="left">${SPARK_DAEMON_MEMORY:-$DEFAULT_MEM}</td>
 </tr>
-
 <tr>
 <td align="left">CoarseGrainedExecutorBackend</td>
 <td align="left">$SPARK_JAVA_OPTS $SPARK_EXECUTOR_OPTS</td>
 <td align="left">${SPARK_EXECUTOR_MEMORY:-$DEFAULT_MEM}</td>
 </tr>
-
 <tr>
 <td align="left">MesosExecutorBackend</td>
 <td align="left">$SPARK_JAVA_OPTS $SPARK_EXECUTOR_OPTS</td>
 <td align="left">${SPARK_EXECUTOR_MEMORY:-$DEFAULT_MEM}</td>
 </tr>
-
 <tr>
 <td align="left">SparkSubmit</td>
 <td align="left">$SPARK_JAVA_OPTS $SPARK_SUBMIT_OPTS</td>
@@ -847,19 +803,12 @@ onExit</code></pre></td></tr></table>
 </tr>
 </tbody>
 </table>
-
 <p>通过上表就可以知道每一个spark中每个进程如何设置JVM参数和内存大小。</p>
-
 <p>接下来是查找JAVA_HOME并检查Java版本。</p>
-
 <p>设置SPARK_TOOLS_JAR变量。</p>
-
 <p>运行bin/compute-classpath.sh计算classpath。</p>
-
 <p>判断<code>SPARK_SUBMIT_BOOTSTRAP_DRIVER</code>变量值，如果该值为1，则运行<code>org.apache.spark.deploy.SparkSubmitDriverBootstrapper</code>类，以替换原来的<code>org.apache.spark.deploy.SparkSubmit</code>的类，执行的脚本为<code>exec &quot;$RUNNER&quot; org.apache.spark.deploy.SparkSubmitDriverBootstrapper &quot;$@&quot;</code>；否则，运行java命令<code>exec &quot;$RUNNER&quot; -cp &quot;$CLASSPATH&quot; $JAVA_OPTS &quot;$@&quot;</code>。</p>
-
 <p>从最后运行的脚本可以看到，spark-class脚本的作用主要是查找java命令、计算环境变量、设置<code>JAVA_OPTS</code>等，至于运行的是哪个java类的main方法，取决于<code>SPARK_SUBMIT_BOOTSTRAP_DRIVER</code>变量的值。</p>
-
 <p>接下来，就是要分析<code>org.apache.spark.deploy.SparkSubmitDriverBootstrapper</code>和<code>org.apache.spark.deploy.SparkSubmit</code>类的运行逻辑以及两者之间的区别，这部分内容见下篇文章。</p>
 
     </div>
@@ -977,7 +926,7 @@ onExit</code></pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

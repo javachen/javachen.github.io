@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/12/11/install-drone-with-gitlab-using-helm/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2019-12-11T08:00:00+08:00" />
 <meta itemprop="name" content="使用Helm安装Drone集成Gitlab">
 <meta itemprop="description" content="Drone 是用 Go 语言编写的基于 Docker 构建的开源轻量级 CI/CD 工具，可以和 Gitlab 集成使用。本文主要记录安装 Drone 的过程，并集成 Gitlab。 创建证书 参考 使用Cert Ma">
-
-
 <meta itemprop="datePublished" content="2019-12-11T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-12-11T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1332">
+<meta itemprop="wordCount" content="1333">
 
 
 
-<meta itemprop="keywords" content="kubernetes,drone,gitlab," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="kubernetes,drone,gitlab," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用Helm安装Drone集成Gitlab"/>
 <meta name="twitter:description" content="Drone 是用 Go 语言编写的基于 Docker 构建的开源轻量级 CI/CD 工具，可以和 Gitlab 集成使用。本文主要记录安装 Drone 的过程，并集成 Gitlab。 创建证书 参考 使用Cert Ma"/>
 
@@ -132,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1332 字 </span>
+          <span class="more-meta"> 约 1333 字 </span>
           <span class="more-meta"> 预计阅读 3 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -141,27 +138,16 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#创建证书">创建证书</a></li>
-<li><a href="#安装drone">安装Drone</a></li>
-<li><a href="#安装drone-cli">安装Drone CLI</a></li>
-<li><a href="#卸载drone">卸载Drone</a></li>
-</ul>
-</nav>
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>Drone 是用 Go 语言编写的基于 Docker 构建的开源轻量级 CI/CD 工具，可以和 Gitlab 集成使用。本文主要记录安装 Drone 的过程，并集成 Gitlab。</p>
-
-<h1 id="创建证书">创建证书</h1>
-
+      <p>Drone 是用 Go 语言编写的基于 Docker 构建的开源轻量级 CI/CD 工具，可以和 Gitlab 集成使用。本文主要记录安装 Drone 的过程，并集成 Gitlab。</p>
+<h1 id="heading">创建证书</h1>
 <p>参考 <a href="http://blog.javachen.space/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> 这篇完整，创建一个godaddy证书的签发机构：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -212,22 +198,22 @@
 </span><span class="w">            </span>authApiSecret<span class="p">:</span><span class="w"> </span>QsHuDdnnCbzp5DmEQzq4ts<span class="w">
 </span><span class="w">            </span>production<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">            </span>ttl<span class="p">:</span><span class="w"> </span><span class="m">600</span><span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>创建一个命名空间：</p>
+</div><p>创建一个命名空间：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace drone</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建一个证书：</p>
+</div><p>创建一个证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -258,13 +244,13 @@
 </span><span class="s">  issuerRef:
 </span><span class="s">    name: javachen-space-letsencrypt-prod
 </span><span class="s">    kind: ClusterIssuer
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看证书状态：</p>
+</div><p>查看证书状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -275,28 +261,26 @@
 kubectl describe secret drone-javachen-space-cert -n drone
 kubectl describe certificate drone-javachen-space-cert -n drone
 kubectl describe order drone-javachen-space-cert-2742582754 -n drone
-kubectl describe Challenge drone-javachen-space-cert-695846883-0 -n drone</code></pre></td></tr></table>
+kubectl describe Challenge drone-javachen-space-cert-695846883-0 -n drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装drone">安装Drone</h1>
-
+</div><h1 id="drone">安装Drone</h1>
 <p>查找chart</p>
-
 <p>这里使用我修改过的chart：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/javachen/charts
-<span class="nb">cd</span> charts</code></pre></td></tr></table>
+<span class="nb">cd</span> charts
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>根据chart中 values.yaml文件创建drone-gitlab-values.yaml：</p>
+</div><p>根据chart中 values.yaml文件创建drone-gitlab-values.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -385,17 +369,15 @@ kubectl describe Challenge drone-javachen-space-cert-695846883-0 -n drone</code>
 </span><span class="s">  enabled: true
 </span><span class="s">  storageClass: ceph-rbd
 </span><span class="s">  size: 5Gi
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>注意：</p>
-
+</div><p>注意：</p>
 <p>1、<code>nginx.ingress.kubernetes.io/proxy-body-size: 10m</code> 设置上传文件大小</p>
-
 <p>2、drone-gitlab-login-secrets 是设置获取gitlab仓库代码的用户名和密码的secret。创建过程如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -424,19 +406,16 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="s">data:
 </span><span class="s">  DRONE_GIT_USERNAME: YWRtaW4=
 </span><span class="s">  DRONE_GIT_PASSWORD: YWRtaW4=
-</span><span class="s">EOF</span></code></pre></td></tr></table>
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>3、<a href="http://gitlab.javachen.space">http://gitlab.javachen.space</a> 是gitlab服务的地址，clientID 和 clientSecretValue 是在gitlab中创建一个应用,设置重定向地址：<a href="https://drone.javachen.space/hook">https://drone.javachen.space/hook</a> ，得到的clientID 和 clientSecretValue</p>
-
+</div><p>3、http://gitlab.javachen.space 是gitlab服务的地址，clientID 和 clientSecretValue 是在gitlab中创建一个应用,设置重定向地址：https://drone.javachen.space/hook ，得到的clientID 和 clientSecretValue</p>
 <p>4、这里设置了persistence为启用，并且存储类为 ceph-rbd ，这个需要提前创建，可以参考我安装harbor的文章。</p>
-
 <p>5、你也可以去掉上面的注释，设置drone使用mysql数据库。</p>
-
 <p>使用helm3安装drone：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -445,37 +424,35 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm install drone <span class="se">\
 </span><span class="se"></span>     --namespace drone <span class="se">\
 </span><span class="se"></span>     -f drone-gitlab-values.yaml <span class="se">\
-</span><span class="se"></span>     ./drone</code></pre></td></tr></table>
+</span><span class="se"></span>     ./drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看状态：</p>
+</div><p>查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -n drone</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -n drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>浏览器输入  <a href="https://drone.javachen.space/">https://drone.javachen.space/</a> ，会跳转到 Gitlab 进行授权，接下来就可以同步仓库。</p>
-
-<h1 id="安装drone-cli">安装Drone CLI</h1>
-
+</div><p>浏览器输入  <a href="https://drone.javachen.space/">https://drone.javachen.space/</a> ，会跳转到 Gitlab 进行授权，接下来就可以同步仓库。</p>
+<h1 id="drone-cli">安装Drone CLI</h1>
 <p>安装drone cli：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">curl -L https://github.com/drone/drone-cli/releases/latest/download/drone_linux_amd64.tar.gz <span class="p">|</span> tar zx
-sudo install -t /usr/local/bin drone</code></pre></td></tr></table>
+sudo install -t /usr/local/bin drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="卸载drone">卸载Drone</h1>
+</div><h1 id="drone-1">卸载Drone</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -484,28 +461,27 @@ sudo install -t /usr/local/bin drone</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del drone -n drone
 kubectl delete pod,service,deploy,ingress,secret,pvc --all -n drone  
 
-kubectl delete secret,certificate drone-javachen-space-cert -n drone</code></pre></td></tr></table>
+kubectl delete secret,certificate drone-javachen-space-cert -n drone
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>drone安装成功后，在 <a href="https://drone.javachen.space/account">https://drone.javachen.space/account</a> 上获取 Drone 的TOKEN，查看drone信息：</p>
+</div><p>drone安装成功后，在 <a href="https://drone.javachen.space/account">https://drone.javachen.space/account</a> 上获取 Drone 的TOKEN，查看drone信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">DRONE_SERVER</span><span class="o">=</span> https://drone.javachen.space/account 
 <span class="nb">export</span> <span class="nv">DRONE_TOKEN</span><span class="o">=</span>0FJZSq9dYtAnOvyXlL3Os6aIoBPtxRaa
-drone info</code></pre></td></tr></table>
+drone info
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>上面会输出登陆gitlab的用户名和密码。</p>
-
+</div><p>上面会输出登陆gitlab的用户名和密码。</p>
 <p>drone 还提供了一些方法，例如可以创建 secret，参考 <a href="https://github.com/hectorqin/drone-kubectl">https://github.com/hectorqin/drone-kubectl</a> 这个插件，假设 drone 从gitlab同步了一个仓库 叫做 chenzj/test，则可以通过下面命令创建几个Secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -521,6 +497,7 @@ drone info</code></pre></td></tr></table>
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
+</span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">DEFAULT_SECRET</span><span class="o">=</span><span class="sb">`</span>kubectl get secret -n drone<span class="p">|</span>grep drone-deploy-token<span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
@@ -538,15 +515,15 @@ drone info
 
 drone secret add chenzj/test --name KUBERNETES_SERVER --data <span class="si">${</span><span class="nv">KUBERNETES_SERVER</span><span class="si">}</span> --allow-pull-request
 drone secret add chenzj/test --name KUBERNETES_CERT --data <span class="si">${</span><span class="nv">KUBERNETES_CERT</span><span class="si">}</span> --allow-pull-request
-drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${</span><span class="nv">KUBERNETES_TOKEN</span><span class="si">}</span> --allow-pull-request</code></pre></td></tr></table>
-</div>
-</div>
-<p>执行完成之后，在drone页面的 chenzj/test 仓库 SETTINGS 里面可以看到上面创建的三个 secret。</p>
+drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${</span><span class="nv">KUBERNETES_TOKEN</span><span class="si">}</span> --allow-pull-request
 
+</code></pre></td></tr></table>
+</div>
+</div><p>执行完成之后，在drone页面的 chenzj/test 仓库 SETTINGS 里面可以看到上面创建的三个 secret。</p>
 <p>然后，就可以在.drone.yaml中使用插件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -583,13 +560,13 @@ drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${<
 </span><span class="w">   </span>when<span class="p">:</span><span class="w">
 </span><span class="w">     </span>event<span class="p">:</span><span class="w">
 </span><span class="w">       </span>-<span class="w"> </span>push<span class="w">
-</span><span class="w">       </span>-<span class="w"> </span>tag</code></pre></td></tr></table>
+</span><span class="w">       </span>-<span class="w"> </span>tag<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>当然，还需要创建 RBAC ：</p>
+</div><p>当然，还需要创建 RBAC ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -629,8 +606,8 @@ drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${<
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>drone-deploy<span class="w">
 </span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>drone<span class="w">
 </span><span class="w"></span>--<span class="sd">-
-</span><span class="sd">
-</span><span class="sd">apiVersion: rbac.authorization.k8s.io/v1beta1</span><span class="w">
+</span><span class="sd"></span><span class="sd">
+</span><span class="sd"></span><span class="sd">apiVersion: rbac.authorization.k8s.io/v1beta1</span><span class="w">
 </span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ClusterRole<span class="w">
 </span><span class="w"></span>metadata<span class="p">:</span><span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>drone-deploy<span class="w">
@@ -652,7 +629,8 @@ drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${<
 </span><span class="w">  </span>kind<span class="p">:</span><span class="w"> </span>ClusterRole<span class="w">
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>drone-deploy<span class="w">
 </span><span class="w">  </span>apiGroup<span class="p">:</span><span class="w"> </span>rbac.authorization.k8s.io<span class="w">
-</span><span class="w"></span>EOF</code></pre></td></tr></table>
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
 </div>
 </div>
     </div>
@@ -772,7 +750,7 @@ drone secret add chenzj/test --name KUBERNETES_TOKEN --data <span class="si">${<
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

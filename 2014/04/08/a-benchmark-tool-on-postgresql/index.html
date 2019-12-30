@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/04/08/a-benchmark-tool-on-postgresql/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-04-08T08:00:00+08:00" />
 <meta itemprop="name" content="PostgreSQL测试工具PGbench">
 <meta itemprop="description" content="pgbench 是一个简单的给 PostgreSQL 做性能测试的程序。它反复运行同样的 SQL 命令序列，可能是在多个并发数据库会话上头，然后检查平均的事务速度（每秒的事务数 tps）。缺省的时候，pgbench 测试一个（松散的）接近 TPC-B 的情况，每个事务包括五个 SELECT，UPDATE，和 INSERT命令。不过，我们可以很轻松地使用自己的事务脚本文件来实现其它情况。">
-
-
 <meta itemprop="datePublished" content="2014-04-08T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-04-08T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2500">
 
 
 
-<meta itemprop="keywords" content="postgresql," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="postgresql," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="PostgreSQL测试工具PGbench"/>
 <meta name="twitter:description" content="pgbench 是一个简单的给 PostgreSQL 做性能测试的程序。它反复运行同样的 SQL 命令序列，可能是在多个并发数据库会话上头，然后检查平均的事务速度（每秒的事务数 tps）。缺省的时候，pgbench 测试一个（松散的）接近 TPC-B 的情况，每个事务包括五个 SELECT，UPDATE，和 INSERT命令。不过，我们可以很轻松地使用自己的事务脚本文件来实现其它情况。"/>
 
@@ -141,73 +138,55 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#1-pgbench测试库初始化">1. pgbench测试库初始化</a></li>
-<li><a href="#2-默认的测试脚本介绍">2. 默认的测试脚本介绍</a></li>
-<li><a href="#3-测试结果说明">3. 测试结果说明</a></li>
-<li><a href="#4-自定义测试环境">4. 自定义测试环境</a></li>
-<li><a href="#5-pgbench在参数调节上的辅助使用">5. pgbench在参数调节上的辅助使用</a></li>
-<li><a href="#参考文章">参考文章</a></li>
-</ul>
-</nav>
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>pgbench 是一个简单的给 PostgreSQL 做性能测试的程序。它反复运行同样的 SQL 命令序列，可能是在多个并发数据库会话上头，然后检查平均的事务速度（每秒的事务数 tps）。缺省的时候，pgbench 测试一个（松散的）接近 TPC-B 的情况，每个事务包括五个 SELECT，UPDATE，和 INSERT命令。不过，我们可以很轻松地使用自己的事务脚本文件来实现其它情况。</p>
-
+      <p>pgbench 是一个简单的给 PostgreSQL 做性能测试的程序。它反复运行同样的 SQL 命令序列，可能是在多个并发数据库会话上头，然后检查平均的事务速度（每秒的事务数 tps）。缺省的时候，pgbench 测试一个（松散的）接近 TPC-B 的情况，每个事务包括五个 SELECT，UPDATE，和 INSERT命令。不过，我们可以很轻松地使用自己的事务脚本文件来实现其它情况。</p>
 <p>典型的输出看上去会是这样：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">transaction type: TPC-B (sort of)
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">transaction type: TPC-B (sort of)
 scaling factor: 10
 number of clients: 10
 number of transactions per client: 1000
 number of transactions actually processed: 10000/10000
 tps = 85.184871 (including connections establishing)
-tps = 85.296346 (excluding connections establishing)</pre></td></tr></table>
+tps = 85.296346 (excluding connections establishing)
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>头四行只是报告一些最重要的参数设置。跟着的一行报告完成的事务数和期望完成的事务数（后者只是客户端数乘以事务数）；这两个会相等，除非在完成之前运行就失败了。最后两行报告 TPS 速率，分别有计算启动数据库会话时间和不计算启动会话时间的。</p>
-
+</div><p>头四行只是报告一些最重要的参数设置。跟着的一行报告完成的事务数和期望完成的事务数（后者只是客户端数乘以事务数）；这两个会相等，除非在完成之前运行就失败了。最后两行报告 TPS 速率，分别有计算启动数据库会话时间和不计算启动会话时间的。</p>
 <p><strong>使用环境：</strong></p>
-
 <p>在比较新的9.1，9.2，9.3数据库的发行版本中,pgbench是在安装contrib包时直接编译的,可以在postgres的bin目录下找到该命令，如果没有发现该命令可以在安装contrib的目录下找到pgbench的源码文件包，编译一下就可以使用。</p>
-
-<h1 id="1-pgbench测试库初始化">1. pgbench测试库初始化</h1>
+<h1 id="1-pgbench">1. pgbench测试库初始化</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">postgres$ pgbench --help                 <span class="c1"># 和postgres其他命令的使用方式一样，--help获取命令使用方式的简单介绍</span>
 postgres$ createdb pgbench               <span class="c1"># 创建测试库</span>
-postgres$ pgbench -i pgbench             <span class="c1"># 初始化测试库</span></code></pre></td></tr></table>
+postgres$ pgbench -i pgbench             <span class="c1"># 初始化测试库</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>默认会在测试库中建4张表<code>pgbench_accounts</code>，<code>pgbench_branches</code>，<code>pgbench_history</code>，<code>pgbench_tellers</code> 。当然也可以自己建表，自己写测试脚本，这四张表只是默认的测试脚本会用到。</p>
-
+</div><p>默认会在测试库中建4张表<code>pgbench_accounts</code>，<code>pgbench_branches</code>，<code>pgbench_history</code>，<code>pgbench_tellers</code> 。当然也可以自己建表，自己写测试脚本，这四张表只是默认的测试脚本会用到。</p>
 <p>pgbench在建默认库时 <code>-s</code> 参数设定测设表的大小，默认参数是1 。<code>pgbench_accounts</code> 总行数是10W,<code>-s</code>后面接具体数值如100，则<code>pgbench_accounts</code>中的测试数据将达到1千万行</p>
-
-<h1 id="2-默认的测试脚本介绍">2. 默认的测试脚本介绍</h1>
-
+<h1 id="2-">2. 默认的测试脚本介绍</h1>
 <p>默认的测试脚本可以在官方文档中找到（新的版本中不指定模板就会使用默认模板）</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -238,13 +217,11 @@ SELECT abalance FROM pgbench_accounts WHERE <span class="nv">aid</span> <span cl
 UPDATE pgbench_tellers SET <span class="nv">tbalance</span> <span class="o">=</span> tbalance + :delta WHERE <span class="nv">tid</span> <span class="o">=</span> :tid<span class="p">;</span>
 UPDATE pgbench_branches SET <span class="nv">bbalance</span> <span class="o">=</span> bbalance + :delta WHERE <span class="nv">bid</span> <span class="o">=</span> :bid<span class="p">;</span>
 INSERT INTO pgbench_history <span class="o">(</span>tid, bid, aid, delta, mtime<span class="o">)</span> VALUES <span class="o">(</span>:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP<span class="o">)</span><span class="p">;</span>
-END<span class="p">;</span></code></pre></td></tr></table>
+END<span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>脚本说明：</p>
-
+</div><p>脚本说明：</p>
 <p>可以看到脚本中的一个事物包含了update,select,insert操作，不同的操作起到不同的测试目的</p>
-
 <ul>
 <li>（1）UPDATE pgbench_accounts:作为最大的表，起到促发磁盘I/O的作用。</li>
 <li>（2）SELECT abalance:由于上一条UPDATE语句更新一些信息，存在于缓存内用于回应这个查询。</li>
@@ -252,11 +229,10 @@ END<span class="p">;</span></code></pre></td></tr></table>
 <li>（4）UPDATE pgbench_branches:作为更小的表，内容被缓存，如果用户的环境是数量较小的数据库和多个客户端时，对其锁操作可能会成为性能的瓶颈。</li>
 <li>（5）INSERT INTO pgbench_history:history表是个附加表，后续并不会进行更新或查询操作，而且也没有任何索引。相对于UPDATE语句，对其的插入操作对磁盘的写入成本也很小。</li>
 </ul>
-
-<h1 id="3-测试结果说明">3. 测试结果说明</h1>
+<h1 id="3-">3. 测试结果说明</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -292,36 +268,33 @@ query mode: simple
 number of clients: <span class="m">15</span>                                            <span class="c1">#-c参数控制并发量</span>
 number of threads: <span class="m">1</span>                                                    
 number of transactions per client: <span class="m">300</span>                           <span class="c1">#每个客户端执行事务的数量</span>
-number of transactions actually processed: <span class="m">4500</span>/4500             <span class="c1">#总执行量</span>
-<span class="nv">tps</span> <span class="o">=</span> <span class="m">453</span>.309203 <span class="o">(</span>including connections establishing<span class="o">)</span>            <span class="c1">#tps每秒钟处理的事务数包含网络开销</span>      
-<span class="nv">tps</span> <span class="o">=</span> <span class="m">457</span>.358998 <span class="o">(</span>excluding connections establishing<span class="o">)</span>            <span class="c1">#不包含网络开销</span>
+number of transactions actually processed: 4500/4500             <span class="c1">#总执行量</span>
+<span class="nv">tps</span> <span class="o">=</span> 453.309203 <span class="o">(</span>including connections establishing<span class="o">)</span>            <span class="c1">#tps每秒钟处理的事务数包含网络开销</span>      
+<span class="nv">tps</span> <span class="o">=</span> 457.358998 <span class="o">(</span>excluding connections establishing<span class="o">)</span>            <span class="c1">#不包含网络开销</span>
 statement latencies in milliseconds:                             <span class="c1">#带-r的效果，每个客户端事务具体的执行时间，单位是毫秒</span>
-<span class="m">0</span>.005198 <span class="se">\s</span>et nbranches <span class="m">1</span> * :scale                               
-<span class="m">0</span>.001144 <span class="se">\s</span>et ntellers <span class="m">10</span> * :scale
-<span class="m">0</span>.001088 <span class="se">\s</span>et naccounts <span class="m">100000</span> * :scale                     
-<span class="m">0</span>.001400 <span class="se">\s</span>etrandom aid <span class="m">1</span> :naccounts
-<span class="m">0</span>.000814 <span class="se">\s</span>etrandom bid <span class="m">1</span> :nbranches
-<span class="m">0</span>.000929 <span class="se">\s</span>etrandom tid <span class="m">1</span> :ntellers
-<span class="m">0</span>.000981 <span class="se">\s</span>etrandom delta -5000 <span class="m">5000</span>
-<span class="m">0</span>.613757 BEGIN<span class="p">;</span>
-<span class="m">1</span>.027969 UPDATE pgbench_accounts SET <span class="nv">abalance</span> <span class="o">=</span> abalance + :delta WHERE <span class="nv">aid</span> <span class="o">=</span> :aid<span class="p">;</span>
-<span class="m">0</span>.754162 SELECT abalance FROM pgbench_accounts WHERE <span class="nv">aid</span> <span class="o">=</span> :aid<span class="p">;</span>
-<span class="m">14</span>.167980 UPDATE pgbench_tellers SET <span class="nv">tbalance</span> <span class="o">=</span> tbalance + :delta WHERE <span class="nv">tid</span> <span class="o">=</span> :tid<span class="p">;</span>
-<span class="m">13</span>.587156 UPDATE pgbench_branches SET <span class="nv">bbalance</span> <span class="o">=</span> bbalance + :delta WHERE <span class="nv">bid</span> <span class="o">=</span> :bid<span class="p">;</span>
-<span class="m">0</span>.582075 INSERT INTO pgbench_history <span class="o">(</span>tid, bid, aid, delta, mtime<span class="o">)</span> VALUES <span class="o">(</span>:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP<span class="o">)</span><span class="p">;</span>
-<span class="m">1</span>.628262 END<span class="p">;</span></code></pre></td></tr></table>
+0.005198 <span class="se">\s</span>et nbranches <span class="m">1</span> * :scale                               
+0.001144 <span class="se">\s</span>et ntellers <span class="m">10</span> * :scale
+0.001088 <span class="se">\s</span>et naccounts <span class="m">100000</span> * :scale                     
+0.001400 <span class="se">\s</span>etrandom aid <span class="m">1</span> :naccounts
+0.000814 <span class="se">\s</span>etrandom bid <span class="m">1</span> :nbranches
+0.000929 <span class="se">\s</span>etrandom tid <span class="m">1</span> :ntellers
+0.000981 <span class="se">\s</span>etrandom delta -5000 <span class="m">5000</span>
+0.613757 BEGIN<span class="p">;</span>
+1.027969 UPDATE pgbench_accounts SET <span class="nv">abalance</span> <span class="o">=</span> abalance + :delta WHERE <span class="nv">aid</span> <span class="o">=</span> :aid<span class="p">;</span>
+0.754162 SELECT abalance FROM pgbench_accounts WHERE <span class="nv">aid</span> <span class="o">=</span> :aid<span class="p">;</span>
+14.167980 UPDATE pgbench_tellers SET <span class="nv">tbalance</span> <span class="o">=</span> tbalance + :delta WHERE <span class="nv">tid</span> <span class="o">=</span> :tid<span class="p">;</span>
+13.587156 UPDATE pgbench_branches SET <span class="nv">bbalance</span> <span class="o">=</span> bbalance + :delta WHERE <span class="nv">bid</span> <span class="o">=</span> :bid<span class="p">;</span>
+0.582075 INSERT INTO pgbench_history <span class="o">(</span>tid, bid, aid, delta, mtime<span class="o">)</span> VALUES <span class="o">(</span>:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP<span class="o">)</span><span class="p">;</span>
+1.628262 END<span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>默认的基准测试给出了一个指标TPS，同样的测试参数，tps的值越高，相对来说服务器的性能越好。上面的测试由于数据量的问题，表的内容全部缓存进了内存,磁盘io对上面的结果影响较小。</p>
-
-<h1 id="4-自定义测试环境">4. 自定义测试环境</h1>
-
+</div><p>默认的基准测试给出了一个指标TPS，同样的测试参数，tps的值越高，相对来说服务器的性能越好。上面的测试由于数据量的问题，表的内容全部缓存进了内存,磁盘io对上面的结果影响较小。</p>
+<h1 id="4-">4. 自定义测试环境</h1>
 <p>在实际的应用中测试可以自己定义测试环境，模拟生产需求。</p>
-
 <p>测试举例</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -332,13 +305,13 @@ statement latencies in milliseconds:                             <span class="c1
 postgres<span class="nv">$cat</span> pg_test.sql
 <span class="nv">pgbench</span><span class="o">=</span><span class="c1"># insert into pg_test(a2,a3,a4) select (random()*(2*10^5)),substr(&#39;abcdefghijklmnopqrstuvwxyz&#39;,1, (random()*26)::integer),now();</span>
                                                                                                       <span class="c1">#每个事务插入一条数据</span> 
-postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span class="m">10</span> pgbench -r -f pg_test.sql                                                   <span class="c1">#90个并发测试每秒插入的数据量</span></code></pre></td></tr></table>
+postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span class="m">10</span> pgbench -r -f pg_test.sql                                                   <span class="c1">#90个并发测试每秒插入的数据量</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>测试结果截取：</p>
+</div><p>测试结果截取：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -348,9 +321,9 @@ postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span c
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">number of transactions actually processed: 20196             #10秒钟90并发用户共插入20196条数据，每条数据插入费时42ms，平均每秒插入2000条数据 
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">number of transactions actually processed: 20196             #10秒钟90并发用户共插入20196条数据，每条数据插入费时42ms，平均每秒插入2000条数据 
 tps = 1997.514876 (including connections establishing)
 tps = 2119.279239 (excluding connections establishing)
 statement latencies in milliseconds:
@@ -359,15 +332,14 @@ statement latencies in milliseconds:
 pgbench=# select count(*) from pg_test;
 count 
 -------
-20196</pre></td></tr></table>
+20196
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="5-pgbench在参数调节上的辅助使用">5. pgbench在参数调节上的辅助使用</h1>
-
+</div><h1 id="5-pgbench">5. pgbench在参数调节上的辅助使用</h1>
 <p>简单举例：<code>work_mem</code></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -376,26 +348,26 @@ count
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">postgres</span><span class="o">=</span><span class="c1"># show work_mem ;                                              #数据库当前的work_mem</span>
 work_mem 
 ----------
-1MB</code></pre></td></tr></table>
+1MB
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查询样本：</p>
+</div><p>查询样本：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">postgres<span class="nv">$cat</span> <span class="k">select</span>.sql
 SELECT customerid FROM customers ORDER BY zip<span class="p">;</span>                          <span class="c1">#orders表是一张postgres样例表，样例库全名dellstore2</span>
-postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span class="m">5</span> pgbench -r -f <span class="k">select</span>.sql                    <span class="c1">#多用户并发做单表排序操作单个事务执行的时间可能会很大，但是平均事务执行时间和单个用户的执行时间差距没那么明显。</span></code></pre></td></tr></table>
+postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span class="m">5</span> pgbench -r -f <span class="k">select</span>.sql                    <span class="c1">#多用户并发做单表排序操作单个事务执行的时间可能会很大，但是平均事务执行时间和单个用户的执行时间差距没那么明显。</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>执行结果截取</p>
+</div><p>执行结果截取</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -403,22 +375,22 @@ postgres<span class="nv">$pgbench</span> -c <span class="m">90</span> -T <span c
 </span><span class="lnt">6
 </span><span class="lnt">7
 </span><span class="lnt">8
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">number of clients: 90
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">number of clients: 90
 number of threads: 1
 duration: 5 s
 number of transactions actually processed: 150
 tps = 26.593887 (including connections establishing)
 tps = 27.972988 (excluding connections establishing)
 statement latencies in milliseconds:
-3115.754673 SELECT customerid FROM customers ORDER BY zip;</pre></td></tr></table>
+3115.754673 SELECT customerid FROM customers ORDER BY zip;
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>测试环境相同调节<code>work_mem</code>参数为2M试试</p>
+</div><p>测试环境相同调节<code>work_mem</code>参数为2M试试</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -426,22 +398,22 @@ statement latencies in milliseconds:
 </span><span class="lnt">6
 </span><span class="lnt">7
 </span><span class="lnt">8
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">number of clients: 90
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">number of clients: 90
 number of threads: 1
 duration: 5 s
 number of transactions actually processed: 243
 tps = 44.553026 (including connections establishing)
 tps = 47.027276 (excluding connections establishing)
 statement latencies in milliseconds:
-1865.636761 SELECT customerid FROM customers ORDER BY zip;             #5s内事务执行的总量明显增加一共做了243次单表排序</pre></td></tr></table>
+1865.636761 SELECT customerid FROM customers ORDER BY zip;             #5s内事务执行的总量明显增加一共做了243次单表排序
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>原因分析，由于排序操作会关系到<code>work_mem</code>，排序操作能全在缓存中进行当然速度会明显加快，查看执行计划</p>
+</div><p>原因分析，由于排序操作会关系到<code>work_mem</code>，排序操作能全在缓存中进行当然速度会明显加快，查看执行计划</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -454,25 +426,22 @@ statement latencies in milliseconds:
 </span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=#</span> <span class="k">explain</span> <span class="k">analyze</span> <span class="k">SELECT</span> <span class="n">customerid</span> <span class="k">FROM</span> <span class="n">customers</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">zip</span><span class="p">;</span>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">postgres</span><span class="o">=</span><span class="o">#</span> <span class="k">explain</span> <span class="k">analyze</span> <span class="k">SELECT</span> <span class="n">customerid</span> <span class="k">FROM</span> <span class="n">customers</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">zip</span><span class="p">;</span>
 <span class="n">QUERY</span> <span class="n">PLAN</span> 
 
 <span class="c1">--------------------------------------------------------------------------------------------
-</span><span class="c1"></span><span class="n">Sort</span> <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">2116</span><span class="p">.</span><span class="mi">77</span><span class="p">..</span><span class="mi">2166</span><span class="p">.</span><span class="mi">77</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">width</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">42</span><span class="p">.</span><span class="mi">536</span><span class="p">..</span><span class="mi">46</span><span class="p">.</span><span class="mi">117</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">loo</span>
+</span><span class="c1"></span><span class="n">Sort</span> <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">2116</span><span class="p">.</span><span class="mi">77</span><span class="p">.</span><span class="p">.</span><span class="mi">2166</span><span class="p">.</span><span class="mi">77</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">width</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">42</span><span class="p">.</span><span class="mi">536</span><span class="p">.</span><span class="p">.</span><span class="mi">46</span><span class="p">.</span><span class="mi">117</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">loo</span>
 <span class="n">ps</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">Sort</span> <span class="k">Key</span><span class="p">:</span> <span class="n">zip</span>
 <span class="n">Sort</span> <span class="k">Method</span><span class="p">:</span> <span class="k">external</span> <span class="n">sort</span> <span class="n">Disk</span><span class="p">:</span> <span class="mi">352</span><span class="n">kB</span>
-<span class="o">-&gt;</span> <span class="n">Seq</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">customers</span> <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">..</span><span class="mi">688</span><span class="p">.</span><span class="mi">00</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">width</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">013</span><span class="p">..</span><span class="mi">8</span><span class="p">.</span><span class="mi">9</span>
+<span class="o">-</span><span class="o">&gt;</span> <span class="n">Seq</span> <span class="n">Scan</span> <span class="k">on</span> <span class="n">customers</span> <span class="p">(</span><span class="n">cost</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span><span class="p">.</span><span class="p">.</span><span class="mi">688</span><span class="p">.</span><span class="mi">00</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">width</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">actual</span> <span class="n">time</span><span class="o">=</span><span class="mi">0</span><span class="p">.</span><span class="mi">013</span><span class="p">.</span><span class="p">.</span><span class="mi">8</span><span class="p">.</span><span class="mi">9</span>
 <span class="mi">42</span> <span class="k">rows</span><span class="o">=</span><span class="mi">20000</span> <span class="n">loops</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">Total</span> <span class="n">runtime</span><span class="p">:</span> <span class="mi">48</span><span class="p">.</span><span class="mi">858</span> <span class="n">ms</span></code></pre></td></tr></table>
+<span class="n">Total</span> <span class="n">runtime</span><span class="p">:</span> <span class="mi">48</span><span class="p">.</span><span class="mi">858</span> <span class="n">ms</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>由上面的执行计划可以看出在<code>work_mem</code>大小为1M的时候排序一共需要1.352M空间做排序,所以加大<code>work_mem</code>参数排序速度明显增加。</p>
-
+</div><p>由上面的执行计划可以看出在<code>work_mem</code>大小为1M的时候排序一共需要1.352M空间做排序,所以加大<code>work_mem</code>参数排序速度明显增加。</p>
 <p>这只是个简单的例子，<code>work_mem</code>的大小调节还有很多其他方面要考虑的，比如在高并发的情况下，需要为每个用户分配同样大小的排序空间，会占用大量的内存空间。参数调节在任何时候保持一个均衡才是应该考虑的。</p>
-
-<h1 id="参考文章">参考文章</h1>
-
+<h1 id="heading">参考文章</h1>
 <ul>
 <li>[1] <a href="http://www.pgsqldb.com:8079/mwiki/index.php/PGbench">PGbench</a></li>
 </ul>
@@ -592,7 +561,7 @@ statement latencies in milliseconds:
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

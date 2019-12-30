@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/03/14/broadleaf-project-with-solrcloud/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-03-14T08:00:00+08:00" />
 <meta itemprop="name" content="BroadLeaf项目集成SolrCloud">
 <meta itemprop="description" content="主要介绍 BroadLeaf 项目如何集成 SolrCloud 集群">
-
-
 <meta itemprop="datePublished" content="2014-03-14T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-03-14T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1341">
 
 
 
-<meta itemprop="keywords" content="solr,solrcloud,broadleaf," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="solr,solrcloud,broadleaf," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="BroadLeaf项目集成SolrCloud"/>
 <meta name="twitter:description" content="主要介绍 BroadLeaf 项目如何集成 SolrCloud 集群"/>
 
@@ -141,36 +138,20 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents">
-<ul>
-<li><a href="#1-solrcloud环境搭建">1、SolrCloud环境搭建</a></li>
-<li><a href="#2-扩展searcheservice类">2、扩展SearcheService类</a></li>
-<li><a href="#3-修改solr相关配置文件">3、修改Solr相关配置文件</a></li>
-<li><a href="#4-重写rebuildindex方法">4、重写rebuildIndex方法</a></li>
-<li><a href="#5-修改定时任务">5、修改定时任务</a></li>
-</ul>
-</nav>
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>这篇文章主要介绍 BroadLeaf 项目如何集成 SolrCloud 集群。</p>
-
-<h1 id="1-solrcloud环境搭建">1、SolrCloud环境搭建</h1>
-
+      <p>这篇文章主要介绍 BroadLeaf 项目如何集成 SolrCloud 集群。</p>
+<h1 id="1solrcloud">1、SolrCloud环境搭建</h1>
 <p>参考 《<a href="/2014/03/10/how-to-install-solrcloud.html">Apache SolrCloud安装</a>》，搭建Solr集群环境，将 Demosite 所用的 Solr 配置文件 solrconfig.xml 和 schema.xml 上传到 zookeeper 集群中，保证成功启动 Solr 集群。</p>
-
-<h1 id="2-扩展searcheservice类">2、扩展SearcheService类</h1>
-
+<h1 id="2searcheservice">2、扩展SearcheService类</h1>
 <p>扩展SearchService类的步骤与单节点集成一致，此处不再叙述。</p>
-
-<h1 id="3-修改solr相关配置文件">3、修改Solr相关配置文件</h1>
-
+<h1 id="3solr">3、修改Solr相关配置文件</h1>
 <p>a) 删除site模块中的site/src/main/webapp/WEB-INF/applicationContext.xml中的以下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -185,24 +166,24 @@
 <span class="nt">&lt;bean</span> <span class="na">id=</span><span class="s">&#34;blSearchService&#34;</span> <span class="na">class=</span><span class="s">&#34;org.broadleafcommerce.core.search.service.solr.SolrSearchServiceImpl&#34;</span><span class="nt">&gt;</span>
         <span class="nt">&lt;constructor-arg</span> <span class="na">name=</span><span class="s">&#34;solrServer&#34;</span> <span class="na">ref=</span><span class="s">&#34;${solr.source}&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;constructor-arg</span> <span class="na">name=</span><span class="s">&#34;reindexServer&#34;</span> <span class="na">ref=</span><span class="s">&#34;${solr.source.reindex}&#34;</span> <span class="nt">/&gt;</span>
-<span class="nt">&lt;/bean&gt;</span></code></pre></td></tr></table>
+<span class="nt">&lt;/bean&gt;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>b)删除site模块的site/src/main/resources/runtime-properties/common.properties中以下代码：</p>
+</div><p>b)删除site模块的site/src/main/resources/runtime-properties/common.properties中以下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties">solr.source=solrEmbedded
-solr.source.reindex=solrEmbedded</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">solr.source=solrEmbedded
+solr.source.reindex=solrEmbedded
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>c)在core模块中core/src/main/resources/applicationContext.xml添加如下代码：</p>
+</div><p>c)在core模块中core/src/main/resources/applicationContext.xml添加如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -235,34 +216,32 @@ solr.source.reindex=solrEmbedded</code></pre></td></tr></table>
 <span class="nt">&lt;bean</span> <span class="na">id=</span><span class="s">&#34;blSearchService&#34;</span>         <span class="na">class=</span><span class="s">&#34;org.broadleafcommerce.core.search.service.solr.ExtSolrSearchServiceImpl&#34;</span><span class="nt">&gt;</span>
         <span class="nt">&lt;constructor-arg</span> <span class="na">name=</span><span class="s">&#34;solrServer&#34;</span> <span class="na">ref=</span><span class="s">&#34;${solr.source}&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;constructor-arg</span> <span class="na">name=</span><span class="s">&#34;reindexServer&#34;</span> <span class="na">ref=</span><span class="s">&#34;${solr.source.reindex}&#34;</span><span class="nt">/&gt;</span>
-<span class="nt">&lt;/bean&gt;</span></code></pre></td></tr></table>
+<span class="nt">&lt;/bean&gt;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>注：上述配置中的defaultCollection的值product对应solr集群的collection名字，根据实际情况修改此处的值。</p>
 </blockquote>
-
 <p>d) 在 core模块中core/src/main/resources/runtime-properties/common-shared.properties添加如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties">solr.url=192.168.56.121\:2181,192.168.56.122\:2181,1192.168.56.123\:2181
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">solr.url=192.168.56.121\:2181,192.168.56.122\:2181,1192.168.56.123\:2181
 solr.url.reindex=192.168.56.121\:2181,192.168.56.122\:2181,1192.168.56.123\:2181
 solr.source=solrServer
-solr.source.reindex=solrReindexServer</code></pre></td></tr></table>
+solr.source.reindex=solrReindexServer
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="4-重写rebuildindex方法">4、重写rebuildIndex方法</h1>
-
+</div><h1 id="4rebuildindex">4、重写rebuildIndex方法</h1>
 <p>在core模块的org.broadleafcommerce.core.search.service.solr包下添加LLSolrIndexServiceImpl，重写源码broadleaf-framework/SolrIndexServiceImpl中的rebuildIndex()方法，屏蔽如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -271,36 +250,34 @@ solr.source.reindex=solrReindexServer</code></pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">//      // Swap the active and the reindex cores
-</span><span class="c1">//      shs.swapActiveCores();
-</span><span class="c1">//      // If we are not in single core mode, we delete the documents for the unused core after swapping
-</span><span class="c1">//      if (!SolrContext.isSingleCoreMode()) {
-</span><span class="c1">//          deleteAllDocuments();
-</span><span class="c1"></span><span class="o">//</span>      <span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span><span class="c1">//      shs.swapActiveCores();
+</span><span class="c1"></span><span class="c1">//      // If we are not in single core mode, we delete the documents for the unused core after swapping
+</span><span class="c1"></span><span class="c1">//      if (!SolrContext.isSingleCoreMode()) {
+</span><span class="c1"></span><span class="c1">//          deleteAllDocuments();
+</span><span class="c1"></span><span class="c1">//      }
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="5-修改定时任务">5、修改定时任务</h1>
-
+</div><h1 id="5">5、修改定时任务</h1>
 <p>web系统启动时候，会查询数据库中商品，然后重建索引。该功能在applicationContext.xml中已经定义了定时任务，修改rebuildIndexJobDetail中的targetObject，对应rebuildIndex所在的服务类，如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;bean</span> <span class="na">id=</span><span class="s">&#34;rebuildIndexJobDetail&#34;</span> <span class="na">class=</span><span class="s">&#34;org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean&#34;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&#34;targetObject&#34;</span> <span class="na">ref=</span><span class="s">&#34;llSolrIndexService&#34;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&#34;targetMethod&#34;</span> <span class="na">value=</span><span class="s">&#34;rebuildIndex&#34;</span> <span class="nt">/&gt;</span>
-    <span class="nt">&lt;/bean&gt;</span> </code></pre></td></tr></table>
+       <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&#34;targetObject&#34;</span> <span class="na">ref=</span><span class="s">&#34;llSolrIndexService&#34;</span> <span class="nt">/&gt;</span>
+       <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&#34;targetMethod&#34;</span> <span class="na">value=</span><span class="s">&#34;rebuildIndex&#34;</span> <span class="nt">/&gt;</span>
+   <span class="nt">&lt;/bean&gt;</span> 
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>如果需要手动创建索引，则需要取消applicationContext.xml中定义的定时任务，步骤如下：</p>
-
+</div><p>如果需要手动创建索引，则需要取消applicationContext.xml中定义的定时任务，步骤如下：</p>
 <p>a）去掉如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -329,47 +306,46 @@ solr.source.reindex=solrReindexServer</code></pre></td></tr></table>
 <span class="nt">&lt;/bean&gt;</span>
 <span class="nt">&lt;bean</span> <span class="na">class=</span><span class="s">&#34;org.springframework.scheduling.quartz.SchedulerFactoryBean&#34;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&#34;triggers&#34;</span><span class="nt">&gt;</span>
-     <span class="nt">&lt;list&gt;</span>
+     <span class="nt">&lt;list</span><span class="nt">&gt;</span>
         <span class="nt">&lt;ref</span> <span class="na">bean=</span><span class="s">&#34;rebuildIndexTrigger&#34;</span> <span class="nt">/&gt;</span>
      <span class="nt">&lt;/list&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;/bean&gt;</span></code></pre></td></tr></table>
+<span class="nt">&lt;/bean&gt;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>b）编写main方法，打成jar包，然后编写shell脚本，用于手动重建索引或者设置定时任务。该类需要获取一个名称为blSearchService的bean，然后调用该bean的rebuildIndex方法，主要代码如下：</p>
+</div><p>b）编写main方法，打成jar包，然后编写shell脚本，用于手动重建索引或者设置定时任务。该类需要获取一个名称为blSearchService的bean，然后调用该bean的rebuildIndex方法，主要代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;blSearchService&#34;</span><span class="p">)</span>
-<span class="kd">private</span> <span class="nf">SearchService</span> <span class="n">extSolrSe</span> <span class="nf">earchService</span><span class="p">;</span>
-<span class="kd">public</span> <span class="nf">void</span> <span class="n">doRebuild</span><span class="p">(){</span>
-    <span class="n">extSolrSearchService</span><span class="p">.</span><span class="na">rebuildIndex</span><span class="p">();</span>
-<span class="p">}</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Resource</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;blSearchService&#34;</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">SearchService</span> <span class="n">extSolrSe</span> <span class="n">earchService</span><span class="o">;</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">doRebuild</span><span class="o">(</span><span class="o">)</span><span class="o">{</span>
+    <span class="n">extSolrSearchService</span><span class="o">.</span><span class="na">rebuildIndex</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>6、扩展CatalogService</p>
-
+</div><p>6、扩展CatalogService</p>
 <p>添加如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Resource</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;blSearchService&#34;</span><span class="p">)</span>
-<span class="kd">private</span> <span class="nf">ExtSolrSearchService</span> <span class="n">extSolrSearchService</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Resource</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;blSearchService&#34;</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">ExtSolrSearchService</span> <span class="n">extSolrSearchService</span><span class="o">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>修改该类的saveProduct方法如下：</p>
+</div><p>修改该类的saveProduct方法如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -387,20 +363,21 @@ solr.source.reindex=solrReindexServer</code></pre></td></tr></table>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Override</span>
-<span class="nd">@Transactional</span><span class="p">(</span><span class="s">&#34;blTransactionManager&#34;</span><span class="p">)</span>
-<span class="kd">public</span> <span class="nf">Product</span> <span class="n">saveProduct</span><span class="p">(</span><span class="n">Product</span> <span class="nf">product</span><span class="p">)</span> <span class="p">{</span>
-    <span class="n">Product</span> <span class="nf">dbProduct</span> <span class="o">=</span> <span class="n">catalogService</span><span class="p">.</span><span class="na">saveProduct</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
-    <span class="k">try</span> <span class="p">{</span>
-        <span class="n">extSolrSearchService</span><span class="p">.</span><span class="na">addProductIndex</span><span class="p">(</span><span class="n">dbProduct</span><span class="p">);</span>
-    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">ServiceException</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">e</span><span class="p">.</span><span class="na">printStackTrace</span><span class="p">();</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">IOException</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">e</span><span class="p">.</span><span class="na">printStackTrace</span><span class="p">();</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="n">dbProduct</span><span class="p">;</span>
-<span class="p">}</span></code></pre></td></tr></table>
+<span class="nd">@Transactional</span><span class="o">(</span><span class="s">&#34;blTransactionManager&#34;</span><span class="o">)</span>
+<span class="kd">public</span> <span class="n">Product</span> <span class="nf">saveProduct</span><span class="o">(</span><span class="n">Product</span> <span class="n">product</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Product</span> <span class="n">dbProduct</span> <span class="o">=</span> <span class="n">catalogService</span><span class="o">.</span><span class="na">saveProduct</span><span class="o">(</span><span class="n">product</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">extSolrSearchService</span><span class="o">.</span><span class="na">addProductIndex</span><span class="o">(</span><span class="n">dbProduct</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ServiceException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="o">(</span><span class="n">e</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="o">(</span><span class="n">e</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">dbProduct</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
 </div>
     </div>
@@ -520,7 +497,7 @@ solr.source.reindex=solrReindexServer</code></pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

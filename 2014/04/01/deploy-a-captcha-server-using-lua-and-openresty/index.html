@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/04/01/deploy-a-captcha-server-using-lua-and-openresty/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-04-01T08:00:00+08:00" />
 <meta itemprop="name" content="使用Lua和OpenResty搭建验证码服务器">
 <meta itemprop="description" content="使用Lua和OpenResty搭建验证码服务器">
-
-
 <meta itemprop="datePublished" content="2014-04-01T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-04-01T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="4356">
 
 
 
-<meta itemprop="keywords" content="lua,nginx,redis," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="lua,nginx,redis," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用Lua和OpenResty搭建验证码服务器"/>
 <meta name="twitter:description" content="使用Lua和OpenResty搭建验证码服务器"/>
 
@@ -142,42 +139,24 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#安装lua">安装lua</a></li>
-<li><a href="#安装-gd">安装 gd</a></li>
-<li><a href="#安装-lua-gd-库">安装 Lua-gd 库</a></li>
-<li><a href="#安装-md5">安装 md5</a></li>
-<li><a href="#安装-lua-resty-uuid-库">安装 Lua-resty-UUID 库</a></li>
-<li><a href="#下载nginx-sysguard模块">下载nginx sysguard模块</a></li>
-<li><a href="#安装-openresty">安装 OpenResty</a></li>
-<li><a href="#安装-redis-server">安装 Redis Server</a></li>
-<li><a href="#安装-luasocket-库">安装 LuaSocket 库</a></li>
-<li><a href="#安装-redis-lua-库">安装 redis-lua 库</a></li>
-<li><a href="#安装-zklua">安装 zklua</a></li>
-<li><a href="#修改配置文件">修改配置文件</a>
-<ul>
-<li><a href="#配置openresty">配置openresty</a></li>
-<li><a href="#配置nginx">配置nginx</a></li>
-<li><a href="#配置redis">配置redis</a></li>
-<li><a href="#配置验证码服务器">配置验证码服务器</a></li>
-</ul></li>
-<li><a href="#测试">测试</a>
-<ul>
-<li><a href="#生成验证码">生成验证码</a></li>
-<li><a href="#验证码校验">验证码校验</a></li>
-<li><a href="#验证码删除">验证码删除</a></li>
-</ul></li>
-</ul>
+  <ul>
+    <li><a href="#openresty">配置openresty</a></li>
+    <li><a href="#nginx">配置nginx</a></li>
+    <li><a href="#redis">配置redis</a></li>
+    <li><a href="#heading-1">配置验证码服务器</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#heading-3">生成验证码</a></li>
+    <li><a href="#heading-4">验证码校验</a></li>
+    <li><a href="#heading-5">验证码删除</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p><a href="http://www.lua.org/">Lua</a>下有个<a href="http://lua-gd.luaforge.net/">Lua-GD</a>图形库，通过简单的Lua语句就能控制、生成图片。</p>
-
+      <p><a href="http://www.lua.org/">Lua</a>下有个<a href="http://lua-gd.luaforge.net/">Lua-GD</a>图形库，通过简单的Lua语句就能控制、生成图片。</p>
 <p><strong>环境说明：</strong></p>
-
 <ul>
 <li>操作系统：RHEL6.4</li>
 <li>RHEL系统默认已安装RPM包的<a href="http://www.lua.org/ftp/lua-5.1.4.tar.gz">Lua-5.1.4</a>，但其只具有Lua基本功能，不提供 <code>lua.h</code> 等，但 Lua-GD 编译需要用到 <code>lua.h</code>，故 Lua 需要编译安装。</li>
@@ -185,13 +164,9 @@
 <li>因生成gif的lua脚本中用到md5加密，故需编译安装md5。</li>
 <li>因为生成图片需要唯一命名，故依赖 UUID</li>
 </ul>
-
 <p><strong>另外：</strong></p>
-
 <p>以下操作均以root用户运行，并且以下脚本的当前目录为<code>/opt</code>，即所有的下载的文件都会保存在<code>/opt</code>目录下。</p>
-
 <p>需要安装的软件如下：</p>
-
 <ul>
 <li>OpenResty：WEB应用服务器，部署lua代码，提供URL供用户调用和访问</li>
 <li>LuaJIT：LUA代码解释器，使用OpenResty中集成的版本</li>
@@ -200,22 +175,20 @@
 <li>Lua-Resty-UUID库：用于生成UUID，保证图片命名唯一性</li>
 <li>LuaSocket：lua 的 socket 库</li>
 </ul>
-
-<h1 id="安装lua">安装lua</h1>
-
+<h1 id="lua">安装lua</h1>
 <p>安装编译所需软件包:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install -y make gcc</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install -y make gcc
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>下载并编译安装 lua-5.1：</p>
+</div><p>下载并编译安装 lua-5.1：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -228,17 +201,15 @@ $ wget http://www.lua.org/ftp/lua-5.1.4.tar.gz
 $ tar lua-5.1.4.tar.gz
 $ <span class="nb">cd</span> lua-5.1.4
 $ make linux
-$ make linux install </code></pre></td></tr></table>
+$ make linux install 
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-gd">安装 gd</h1>
-
+</div><h1 id="-gd">安装 gd</h1>
 <p>GD版本：gd-2.0.33</p>
-
 <p>下载地址: <a href="http://www.boutell.com/gd/http/gd-2.0.33.tar.gz">http://www.boutell.com/gd/http/gd-2.0.33.tar.gz</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -253,76 +224,68 @@ $ wget http://www.boutell.com/gd/http/gd-2.0.33.tar.gz
 $ tar zvxf gd-2.0.33.tar.gz
 $ <span class="nb">cd</span> gd-2.0.33
 $ ./configure
-$ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+$ make <span class="o">&amp;&amp;</span> make install
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-lua-gd-库">安装 Lua-gd 库</h1>
-
+</div><h1 id="-lua-gd-">安装 Lua-gd 库</h1>
 <p>Lua-GD版本：lua-gd-2.0.33r2</p>
-
 <p>下载地址: <a href="http://jaist.dl.sourceforge.net/project/lua-gd/lua-gd/lua-gd-2.0.33r2%20%28for%20Lua%205.1%29/lua-gd-2.0.33r2.tar.gz">http://jaist.dl.sourceforge.net/project/lua-gd/lua-gd/lua-gd-2.0.33r2%20%28for%20Lua%205.1%29/lua-gd-2.0.33r2.tar.gz</a></p>
-
 <p>开发手册可参考: <a href="http://ittner.github.io/lua-gd/manual.html">http://ittner.github.io/lua-gd/manual.html</a></p>
-
 <blockquote>
 <p>说明：</p>
-
 <p>须先完成gd的安装，且版本号必须为gd-2.0.33
 调用Lua-GD库的lua代码须由OpenResty中集成的LuaJIT解释执行</p>
 </blockquote>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget http://sourceforge.net/projects/lua-gd/files/lua-gd/lua-gd-2.0.33r2%20<span class="o">(</span><span class="k">for</span>%20Lua%205.1<span class="o">)</span>/lua-gd-2.0.33r2.tar.gz/download?use_mirror<span class="o">=</span>jaist
 $ tar zvxf lua-gd-2.0.33r2.tar.gz
-$ <span class="nb">cd</span> lua-gd-2.0.33r2</code></pre></td></tr></table>
+$ <span class="nb">cd</span> lua-gd-2.0.33r2
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>接写来修改Makefile文件：</p>
-
+</div><p>接写来修改Makefile文件：</p>
 <ul>
 <li>注释第36～42行</li>
-
-<li><p>打开第48～52行注释，并做如下修改</p>
+<li>打开第48～52行注释，并做如下修改</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">OUTFILE=gd.so
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">OUTFILE=gd.so
 CFLAGS=-Wall `gdlib-config --cflags` -I/usr/local/include/lua -O3    //第49行，修改 lua 的 C 库头文件所在路径
 GDFEATURES=`gdlib-config --features |sed -e &#34;s/GD_/-DGD_/g&#34;`
 LFLAGS=-shared `gdlib-config --ldflags` `gdlib-config --libs` -llua -lgd  //第51行，取消lua库版本号51
 INSTALL_PATH=/usr/local/lib/lua/5.1    //第52行，设置 gd.so 的安装路径
 
-$(CC) -fPIC -o ...  //第70行，gcc 编译，添加 -fPIC 参数</pre></td></tr></table>
+$(CC) -fPIC -o ...  //第70行，gcc 编译，添加 -fPIC 参数
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<p>然后编译：</p>
+</div><p>然后编译：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ make <span class="o">&amp;&amp;</span> make install
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-md5">安装 md5</h1>
+</div><h1 id="-md5">安装 md5</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -335,17 +298,15 @@ $(CC) -fPIC -o ...  //第70行，gcc 编译，添加 -fPIC 参数</pre></td></tr
 $ wget https://github.com/keplerproject/md5/archive/master.zip -O md5-master.zip
 $ unzip md5-master.zip
 $ <span class="nb">cd</span> md5-master
-$ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+$ make <span class="o">&amp;&amp;</span> make install
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-lua-resty-uuid-库">安装 Lua-resty-UUID 库</h1>
-
+</div><h1 id="-lua-resty-uuid-">安装 Lua-resty-UUID 库</h1>
 <p>调用系统的UUID模块生成的由32位16进制（0-f）数组成的的串，本模块进一步压缩为62进制。正如你所想，生成的UUID越长，理论冲突率就越小，请根据业务需要自行斟酌。 基本思想为把系统生成的16字节（128bit）的UUID转换为62进制（a-zA-Z0-9），同时根据业务需要进行截断。</p>
-
 <p>下载地址: <a href="https://github.com/dcshi/lua-resty-UUID/archive/master.zip">https://github.com/dcshi/lua-resty-UUID/archive/master.zip</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -356,45 +317,39 @@ $ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></ta
 $ wget https://github.com/dcshi/lua-resty-UUID/archive/master.zip -O lua-resty-UUID-master.zip
 $ unzip lua-resty-UUID-master.zip
 $ <span class="nb">cd</span> lua-resty-UUID-master/clib
-$ make</code></pre></td></tr></table>
+$ make
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="下载nginx-sysguard模块">下载nginx sysguard模块</h1>
-
+</div><h1 id="nginx-sysguard">下载nginx sysguard模块</h1>
 <blockquote>
 <p>如果nginx被攻击或者访问量突然变大，nginx会因为负载变高或者内存不够用导致服务器宕机，最终导致站点无法访问。
 今天要谈到的解决方法来自淘宝开发的模块nginx-http-sysguard，主要用于当负载和内存达到一定的阀值之时，会执行相应的动作，比如直接返回503,504或者其他的。一直等到内存或者负载回到阀值的范围内，站点恢复可用。简单的说，这几个模块是让nginx有个缓冲时间，缓缓。</p>
 </blockquote>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget https://github.com/alibaba/nginx-http-sysguard/archive/master.zip -O nginx-http-sysguard-master.zip
-$ unzip nginx-http-sysguard-master.zip</code></pre></td></tr></table>
+$ unzip nginx-http-sysguard-master.zip
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-openresty">安装 OpenResty</h1>
-
+</div><h1 id="-openresty">安装 OpenResty</h1>
 <blockquote>
 <p>OpenResty（也称为 ngx_openresty）是一个全功能的 Web 应用服务器。它打包了标准的 Nginx 核心，很多的常用的第三方模块，以及它们的大多数依赖项。
 OpenResty 中的 LuaJIT 组件默认未激活，需使用 <code>--with-luajit</code> 选项在编译 OpenResty 时激活,使用<code>--add-module</code>，添加上sysguard模块</p>
 </blockquote>
-
 <p>安装的版本：1.2.7.6</p>
-
 <p>下载地址：</p>
-
 <ul>
 <li><a href="http://openresty.org/#Download">http://openresty.org/#Download</a></li>
 <li><a href="http://openresty.org/download/ngx_openresty-1.2.7.6.tar.gz">http://openresty.org/download/ngx_openresty-1.2.7.6.tar.gz</a></li>
 </ul>
-
 <p>先安装依赖软件，然后在编译代码，编译时使用<code>--perfix</code>选项指定 OpenResty 的安装目录，<code>--with-luajit</code> 选项激活 LuaJIT 组件。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -409,26 +364,25 @@ $ wget http://openresty.org/download/ngx_openresty-1.2.7.6.tar.gz
 $ tar zvxf ngx_openresty-1.2.7.6.tar.gz
 $ <span class="nb">cd</span> ngx_openresty-1.2.7.6
 $ ./configure --with-luajit --with-http_stub_status_module --add-module<span class="o">=</span>/opt/nginx-http-sysguard-master/
-$ gmake <span class="o">&amp;&amp;</span> gmake install</code></pre></td></tr></table>
+$ gmake <span class="o">&amp;&amp;</span> gmake install
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建软连接：</p>
+</div><p>创建软连接：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ ln -s /usr/local/openresty/nginx/sbin/nginx /usr/sbin/nginx</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ ln -s /usr/local/openresty/nginx/sbin/nginx /usr/sbin/nginx
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-redis-server">安装 Redis Server</h1>
-
+</div><h1 id="-redis-server">安装 Redis Server</h1>
 <blockquote>
 <p>Lua 脚本功能是 Reids 2.6 版本的最大亮点， 通过内嵌对 Lua 环境的支持， Redis 解决了长久以来不能高效地处理 CAS （check-and-set）命令的缺点， 并且可以通过组合使用多个命令， 轻松实现以前很难实现或者不能高效实现的模式。</p>
 </blockquote>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -443,21 +397,18 @@ $ <span class="nb">cd</span> redis-2.6.14
 $ make <span class="o">&amp;&amp;</span> make install
 
 $ mkdir -p /usr/local/redis/conf
-$ cp redis.conf /usr/local/redis/conf/</code></pre></td></tr></table>
+$ cp redis.conf /usr/local/redis/conf/
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-luasocket-库">安装 LuaSocket 库</h1>
-
+</div><h1 id="-luasocket-">安装 LuaSocket 库</h1>
 <blockquote>
 <p>LuaSocket是一个Lua扩展库，它能很方便地提供SMTP、HTTP、FTP等网络议访问操作。</p>
 </blockquote>
-
 <p>LuaSocket版本：luasocket-2.0-beta2</p>
-
 <p>下载地址: <a href="http://files.luaforge.net/releases/luasocket/luasocket/luasocket-2.0-beta2/luasocket-2.0-beta2.tar.gz">http://files.luaforge.net/releases/luasocket/luasocket/luasocket-2.0-beta2/luasocket-2.0-beta2.tar.gz</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -466,47 +417,42 @@ $ cp redis.conf /usr/local/redis/conf/</code></pre></td></tr></table>
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget http://files.luaforge.net/releases/luasocket/luasocket/luasocket-2.0.2/luasocket-2.0.2.tar.gz
 $ tar zvxf luasocket-2.0.2.tar.gz
 $ <span class="nb">cd</span> luasocket-2.0.2
-$ make -f makefile.Linux</code></pre></td></tr></table>
+$ make -f makefile.Linux
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-redis-lua-库">安装 redis-lua 库</h1>
-
+</div><h1 id="-redis-lua-">安装 redis-lua 库</h1>
 <p>Redis-Lua版本：2.0</p>
-
 <p>下载地址: <a href="https://github.com/nrk/redis-lua/archive/version-2.0.zip">https://github.com/nrk/redis-lua/archive/version-2.0.zip</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget https://github.com/nrk/redis-lua/archive/version-2.0.zip
 $ unzip redis-lua-version-2.0.zip
-$ <span class="nb">cd</span> redis-lua-version-2.0</code></pre></td></tr></table>
+$ <span class="nb">cd</span> redis-lua-version-2.0
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>然后，拷贝redis.lua至所需目录。</p>
-
+</div><p>然后，拷贝redis.lua至所需目录。</p>
 <p>lua调用方式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">local redis = require(“redis”)</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">local redis = require(“redis”)
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="安装-zklua">安装 zklua</h1>
-
+</div><h1 id="-zklua">安装 zklua</h1>
 <blockquote>
 <p>zklua 仅依赖 zookeeper c API 实现，一般存在于 <code>zookeeper-X.Y.Z/src/c</code>， 因此你需要首先安装 zookeeper c API。</p>
 </blockquote>
-
 <p>zookeeper c API 安装:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -517,13 +463,13 @@ $ <span class="nb">cd</span> redis-lua-version-2.0</code></pre></td></tr></table
 $ tar zvxf zookeeper-3.4.5
 $ <span class="nb">cd</span> zookeeper-3.4.5/src/c
 $ ./configure
-$ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+$ make <span class="o">&amp;&amp;</span> make install
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>然后安装zklua：</p>
+</div><p>然后安装zklua：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -532,17 +478,15 @@ $ make <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></ta
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ wget https://github.com/forhappy/zklua/archive/master.zip -O zklua-master.zip
 $ unzip zklua-master.zip
 $ <span class="nb">cd</span> zklua-master
-$ make  <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></table>
+$ make  <span class="o">&amp;&amp;</span> make install
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="修改配置文件">修改配置文件</h1>
-
-<h2 id="配置openresty">配置openresty</h2>
-
+</div><h1 id="heading">修改配置文件</h1>
+<h2 id="openresty">配置openresty</h2>
 <p>openresty安装在<code>/usr/local/openresty</code>目录，在其目录下创建lualib，用于存放上面安装的一些动态连接库</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -553,9 +497,9 @@ $ make  <span class="o">&amp;&amp;</span> make install</code></pre></td></tr></t
 </span><span class="lnt"> 9
 </span><span class="lnt">10
 </span><span class="lnt">11
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">mkdir -p  /usr/local/openresty/lualib/captcha
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">mkdir -p  /usr/local/openresty/lualib/captcha
 cp lua-resty-UUID-master/clib/libuuidx.so /usr/local/openresty/lualib/captcha/  #拷贝uuid的库文件
 cp -r lua-resty-UUID-master/lib/* /usr/local/openresty/lualib/captcha/
 
@@ -565,24 +509,23 @@ ln -s  /usr/local/openresty/lualib/captcha/luasocket.so.2.0 /usr/local/openresty
 cp redis-lua-version-2.0/src/redis.lua /usr/local/openresty/lualib/captcha/     #拷贝reis.lua到/usr/local/openresty/lualib/captcha/
 
 mkdir -p /usr/local/openresty/lualib/zklua										#拷贝zklua文件到/usr/local/openresty/lualib/captcha/
-cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></table>
+cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="配置nginx">配置nginx</h2>
-
+</div><h2 id="nginx">配置nginx</h2>
 <p>创建www用户：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">useradd -M -s /sbin/nologin www</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">useradd -M -s /sbin/nologin www
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>编辑ngnix.conf，内容如下：</p>
+</div><p>编辑ngnix.conf，内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">  1
+<pre class="chroma"><code><span class="lnt">  1
 </span><span class="lnt">  2
 </span><span class="lnt">  3
 </span><span class="lnt">  4
@@ -695,9 +638,9 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 </span><span class="lnt">111
 </span><span class="lnt">112
 </span><span class="lnt">113
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">    user  www;
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">    user  www;
     worker_processes  31;
     error_log  logs/error.log;
     pid        logs/nginx.pid;
@@ -809,15 +752,14 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
         }
     }
 
-}</pre></td></tr></table>
+}
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>上面将 ngnix 的端口修改为10002。</p>
-
+</div><p>上面将 ngnix 的端口修改为10002。</p>
 <p>/usr/local/openresty/nginx/luascripts/luajit/captcha.lua 是用于生成验证码，内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-lua" data-lang="lua"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -887,13 +829,13 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <span class="c1">--</span>
 
 <span class="c1">----------------------------------------------------------------------------------------------</span>
-<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;&#34;</span>
-<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;&#34;</span>
+<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;</span><span class="s2">&#34;</span>
+<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;</span><span class="s2">&#34;</span>
 <span class="c1">----------------------------------------------------------------------------------------------</span>
 
 <span class="c1">--设置随机种子</span>
-<span class="kd">local</span> <span class="n">resty_uuid</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;resty.uuid&#34;</span><span class="p">)</span>
-<span class="n">math.randomseed</span><span class="p">(</span><span class="n">tonumber</span><span class="p">(</span><span class="n">resty_uuid.gennum20</span><span class="p">()))</span>
+<span class="kd">local</span> <span class="n">resty_uuid</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">resty.uuid</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">math.randomseed</span><span class="p">(</span><span class="n">tonumber</span><span class="p">(</span><span class="n">resty_uuid.gennum20</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
 
 <span class="c1">-----------------------------------------------------------------------------------------</span>
 <span class="c1">--</span>
@@ -903,12 +845,12 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
         
     <span class="c1">--在redis的预先生成key中随机选择keyid</span>
     <span class="kd">local</span> <span class="n">kid</span><span class="o">=</span><span class="n">math.random</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ngx.var</span><span class="p">.</span><span class="n">pregencount</span><span class="p">)</span>
-        <span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;/redisGetImg&#39;</span><span class="p">,{</span> <span class="n">args</span> <span class="o">=</span> <span class="p">{</span> <span class="n">key</span> <span class="o">=</span> <span class="n">kid</span> <span class="p">}</span> <span class="p">})</span>
+        <span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">/redisGetImg</span><span class="s1">&#39;</span><span class="p">,</span><span class="p">{</span> <span class="n">args</span> <span class="o">=</span> <span class="p">{</span> <span class="n">key</span> <span class="o">=</span> <span class="n">kid</span> <span class="p">}</span> <span class="p">}</span><span class="p">)</span>
         
     <span class="kr">if</span> <span class="n">res.status</span><span class="o">==</span><span class="mi">200</span> <span class="kr">then</span>
-            <span class="kd">local</span> <span class="n">parser</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;redis.parser&#34;</span><span class="p">)</span>
+            <span class="kd">local</span> <span class="n">parser</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">redis.parser</span><span class="s2">&#34;</span><span class="p">)</span>
                 <span class="kd">local</span> <span class="n">pic</span><span class="o">=</span><span class="n">parser.parse_reply</span><span class="p">(</span><span class="n">res.body</span><span class="p">)</span>
-                <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;application/octet-stream&#34;</span>
+                <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">application/octet-stream</span><span class="s2">&#34;</span>
         
         <span class="c1">--在header中返回用于去redis中查找记录的key</span>
                 <span class="n">ngx.header</span><span class="p">.</span><span class="n">picgid</span><span class="o">=</span><span class="n">kid</span>
@@ -929,9 +871,9 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <span class="kd">local</span> <span class="n">mode</span><span class="o">=</span><span class="n">math.random</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">ngx.var</span><span class="p">.</span><span class="n">modecount</span><span class="p">)</span>
 
 <span class="c1">--调用modeX.lua，生成captcha</span>
-<span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s2">&#34;/mode&#34;</span><span class="o">..</span><span class="n">mode</span><span class="p">)</span>
+<span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">/mode</span><span class="s2">&#34;</span><span class="o">..</span><span class="n">mode</span><span class="p">)</span>
 <span class="kr">if</span> <span class="n">res.status</span><span class="o">==</span><span class="mi">200</span> <span class="kr">then</span>
-    <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;application/octet-stream&#34;</span>
+    <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">application/octet-stream</span><span class="s2">&#34;</span>
 
     <span class="c1">--在header中返回用于去redis中查找记录的key</span>
     <span class="n">ngx.header</span><span class="p">.</span><span class="n">picgid</span><span class="o">=</span><span class="n">res.header</span><span class="p">.</span><span class="n">picgid</span>
@@ -940,13 +882,13 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
     <span class="n">ngx.say</span><span class="p">(</span><span class="n">res.body</span><span class="p">)</span>
 
         <span class="n">ngx.exit</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
-<span class="kr">end</span></code></pre></td></tr></table>
+<span class="kr">end</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>/usr/local/openresty/nginx/luascripts/luajit/captcha-check.lua 用于校验验证码：</p>
+</div><p>/usr/local/openresty/nginx/luascripts/luajit/captcha-check.lua 用于校验验证码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-lua" data-lang="lua"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -983,41 +925,41 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <pre class="chroma"><code class="language-lua" data-lang="lua"><span class="cm">--[[captcha check]]</span>
 
 <span class="c1">----------------------------------------------------------------------------------------------</span>
-<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;&#34;</span>
-<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;&#34;</span>
+<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;</span><span class="s2">&#34;</span>
+<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;</span><span class="s2">&#34;</span>
 <span class="c1">----------------------------------------------------------------------------------------------</span>
 
 <span class="c1">--获取请求中参数</span>
-<span class="kd">local</span> <span class="n">uriargs</span> <span class="o">=</span> <span class="n">ngx.req</span><span class="p">.</span><span class="n">get_uri_args</span><span class="p">()</span>
-<span class="kd">local</span> <span class="n">picgid</span> <span class="o">=</span> <span class="n">uriargs</span><span class="p">[</span><span class="s2">&#34;image&#34;</span><span class="p">]</span>
-<span class="kd">local</span> <span class="n">ustr</span><span class="o">=</span><span class="n">string.lower</span><span class="p">(</span><span class="n">uriargs</span><span class="p">[</span><span class="s2">&#34;str&#34;</span><span class="p">])</span>
+<span class="kd">local</span> <span class="n">uriargs</span> <span class="o">=</span> <span class="n">ngx.req</span><span class="p">.</span><span class="n">get_uri_args</span><span class="p">(</span><span class="p">)</span>
+<span class="kd">local</span> <span class="n">picgid</span> <span class="o">=</span> <span class="n">uriargs</span><span class="p">[</span><span class="s2">&#34;</span><span class="s2">image</span><span class="s2">&#34;</span><span class="p">]</span>
+<span class="kd">local</span> <span class="n">ustr</span><span class="o">=</span><span class="n">string.lower</span><span class="p">(</span><span class="n">uriargs</span><span class="p">[</span><span class="s2">&#34;</span><span class="s2">str</span><span class="s2">&#34;</span><span class="p">]</span><span class="p">)</span>
 
 <span class="c1">--查找redis中key为picgid的记录</span>
-<span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;/redisGetStr&#39;</span><span class="p">,{</span> <span class="n">args</span> <span class="o">=</span> <span class="p">{</span> <span class="n">key</span> <span class="o">=</span> <span class="n">picgid</span> <span class="p">}</span> <span class="p">})</span>
+<span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">/redisGetStr</span><span class="s1">&#39;</span><span class="p">,</span><span class="p">{</span> <span class="n">args</span> <span class="o">=</span> <span class="p">{</span> <span class="n">key</span> <span class="o">=</span> <span class="n">picgid</span> <span class="p">}</span> <span class="p">}</span><span class="p">)</span>
 <span class="kr">if</span> <span class="n">res.status</span><span class="o">==</span><span class="mi">200</span> <span class="kr">then</span>
-    <span class="kd">local</span> <span class="n">parser</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;redis.parser&#34;</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">parser</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">redis.parser</span><span class="s2">&#34;</span><span class="p">)</span>
     <span class="kd">local</span> <span class="n">reply</span><span class="o">=</span><span class="n">parser.parse_reply</span><span class="p">(</span><span class="n">res.body</span><span class="p">)</span>
     <span class="kd">local</span> <span class="n">rstr</span><span class="o">=</span><span class="n">string.lower</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
     
     <span class="c1">--匹配用户输入字符串与redis中记录的字符串，一致返回True，否则返回False</span>
-    <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;text/plain&#34;</span>
+    <span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">text/plain</span><span class="s2">&#34;</span>
     <span class="kr">if</span> <span class="n">ustr</span> <span class="o">==</span> <span class="n">rstr</span> <span class="kr">then</span>
-        <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;True&#34;</span><span class="p">)</span>
+        <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">True</span><span class="s2">&#34;</span><span class="p">)</span>
     <span class="kr">else</span>
-        <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;False&#34;</span><span class="p">)</span>
+        <span class="n">ngx.say</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">False</span><span class="s2">&#34;</span><span class="p">)</span>
     <span class="kr">end</span>
     
     <span class="c1">--匹配操作后删除redis中该key记录</span>
-    <span class="kd">local</span> <span class="n">redis</span> <span class="o">=</span> <span class="n">require</span><span class="p">(</span><span class="s1">&#39;redis&#39;</span><span class="p">)</span>
-    <span class="kd">local</span> <span class="n">client</span> <span class="o">=</span> <span class="n">redis.connect</span><span class="p">(</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="mi">10005</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">redis</span> <span class="o">=</span> <span class="n">require</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">redis</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">client</span> <span class="o">=</span> <span class="n">redis.connect</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">127.0.0.1</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mi">10005</span><span class="p">)</span>
     <span class="n">client</span><span class="p">:</span><span class="n">del</span><span class="p">(</span><span class="n">picgid</span><span class="p">)</span>
-<span class="kr">end</span></code></pre></td></tr></table>
+<span class="kr">end</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>/usr/local/openresty/nginx/luascripts/luajit/mode/mode1.lua 是生成静态验证码图片：</p>
+</div><p>/usr/local/openresty/nginx/luascripts/luajit/mode/mode1.lua 是生成静态验证码图片：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-lua" data-lang="lua"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1106,13 +1048,13 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <pre class="chroma"><code class="language-lua" data-lang="lua"><span class="c1">--静态图片</span>
 
 <span class="c1">------------------------------------------------------------------------------------------------</span>
-<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;&#34;</span>
-<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;&#34;</span>
+<span class="n">package.path</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.lua;/usr/local/openresty/lualib/captcha/?.lua;</span><span class="s2">&#34;</span>
+<span class="n">package.cpath</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">/usr/local/openresty/lualib/?.so;/usr/local/openresty/lualib/captcha/?.so;</span><span class="s2">&#34;</span>
 <span class="c1">------------------------------------------------------------------------------------------------</span>
 
 <span class="c1">--Redis中插入记录方法</span>
 <span class="kr">function</span> <span class="nf">setRedis</span><span class="p">(</span><span class="n">skey</span><span class="p">,</span> <span class="n">sval</span><span class="p">)</span>
-        <span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;/redisSetQueue&#39;</span><span class="p">,</span> <span class="p">{</span><span class="n">args</span><span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="o">=</span><span class="n">skey</span><span class="p">,</span><span class="n">val</span><span class="o">=</span><span class="n">sval</span><span class="p">}})</span>
+        <span class="kd">local</span> <span class="n">res</span> <span class="o">=</span> <span class="n">ngx.location</span><span class="p">.</span><span class="n">capture</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">/redisSetQueue</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">{</span><span class="n">args</span><span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="o">=</span><span class="n">skey</span><span class="p">,</span><span class="n">val</span><span class="o">=</span><span class="n">sval</span><span class="p">}</span><span class="p">}</span><span class="p">)</span>
         <span class="kr">if</span> <span class="n">res.status</span> <span class="o">==</span> <span class="mi">200</span> <span class="kr">then</span>
                 <span class="kr">return</span> <span class="kc">true</span>
         <span class="kr">else</span>
@@ -1121,54 +1063,54 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <span class="kr">end</span>
 
 <span class="c1">--设置随机种子</span>
-<span class="kd">local</span> <span class="n">resty_uuid</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;resty.uuid&#34;</span><span class="p">)</span>
-<span class="n">math.randomseed</span><span class="p">(</span><span class="n">tonumber</span><span class="p">(</span><span class="n">resty_uuid.gennum20</span><span class="p">()))</span>
+<span class="kd">local</span> <span class="n">resty_uuid</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s2">&#34;</span><span class="s2">resty.uuid</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">math.randomseed</span><span class="p">(</span><span class="n">tonumber</span><span class="p">(</span><span class="n">resty_uuid.gennum20</span><span class="p">(</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
 
 <span class="c1">--在32个备选字符中随机筛选4个作为captcha字符串</span>
-<span class="kd">local</span> <span class="n">dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">,</span><span class="s1">&#39;C&#39;</span><span class="p">,</span><span class="s1">&#39;D&#39;</span><span class="p">,</span><span class="s1">&#39;E&#39;</span><span class="p">,</span><span class="s1">&#39;F&#39;</span><span class="p">,</span><span class="s1">&#39;G&#39;</span><span class="p">,</span><span class="s1">&#39;H&#39;</span><span class="p">,</span><span class="s1">&#39;J&#39;</span><span class="p">,</span><span class="s1">&#39;K&#39;</span><span class="p">,</span><span class="s1">&#39;L&#39;</span><span class="p">,</span><span class="s1">&#39;M&#39;</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">,</span><span class="s1">&#39;P&#39;</span><span class="p">,</span><span class="s1">&#39;Q&#39;</span><span class="p">,</span><span class="s1">&#39;R&#39;</span><span class="p">,</span><span class="s1">&#39;S&#39;</span><span class="p">,</span><span class="s1">&#39;T&#39;</span><span class="p">,</span><span class="s1">&#39;U&#39;</span><span class="p">,</span><span class="s1">&#39;V&#39;</span><span class="p">,</span><span class="s1">&#39;W&#39;</span><span class="p">,</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="s1">&#39;4&#39;</span><span class="p">,</span><span class="s1">&#39;5&#39;</span><span class="p">,</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="s1">&#39;7&#39;</span><span class="p">,</span><span class="s1">&#39;8&#39;</span><span class="p">,</span><span class="s1">&#39;9&#39;</span><span class="p">}</span>
-<span class="kd">local</span> <span class="n">stringmark</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
+<span class="kd">local</span> <span class="n">dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;</span><span class="s1">A</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">B</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">C</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">D</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">E</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">F</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">G</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">H</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">J</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">K</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">L</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">M</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">N</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">P</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">Q</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">R</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">S</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">T</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">U</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">V</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">W</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">X</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">Y</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">Z</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">2</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">3</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">4</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">5</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">6</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">7</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">8</span><span class="s1">&#39;</span><span class="p">,</span><span class="s1">&#39;</span><span class="s1">9</span><span class="s1">&#39;</span><span class="p">}</span>
+<span class="kd">local</span> <span class="n">stringmark</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">&#34;</span>
 <span class="kr">for</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span> <span class="kr">do</span>
-       <span class="n">stringmark</span><span class="o">=</span><span class="n">stringmark</span><span class="o">..</span><span class="n">dict</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">32</span><span class="p">)]</span>
+       <span class="n">stringmark</span><span class="o">=</span><span class="n">stringmark</span><span class="o">..</span><span class="n">dict</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span><span class="p">]</span>
 <span class="kr">end</span>
 
 <span class="c1">--图片基本info</span>
 <span class="c1">--picgid</span>
-<span class="kd">local</span> <span class="n">filename</span><span class="o">=</span> <span class="s2">&#34;1&#34;</span><span class="o">..</span><span class="n">resty_uuid.gen20</span><span class="p">()</span><span class="o">..</span><span class="s2">&#34;.png&#34;</span>
+<span class="kd">local</span> <span class="n">filename</span><span class="o">=</span> <span class="s2">&#34;</span><span class="s2">1</span><span class="s2">&#34;</span><span class="o">..</span><span class="n">resty_uuid.gen20</span><span class="p">(</span><span class="p">)</span><span class="o">..</span><span class="s2">&#34;</span><span class="s2">.png</span><span class="s2">&#34;</span>
 <span class="c1">--图片78x26</span>
 <span class="kd">local</span> <span class="n">xsize</span> <span class="o">=</span> <span class="mi">78</span>
 <span class="kd">local</span> <span class="n">ysize</span> <span class="o">=</span> <span class="mi">26</span>
 <span class="c1">--字体大小</span>
 <span class="kd">local</span> <span class="n">wsize</span> <span class="o">=</span> <span class="mf">17.5</span>
 <span class="c1">--干扰线(yes/no)</span>
-<span class="kd">local</span> <span class="n">line</span> <span class="o">=</span> <span class="s2">&#34;yes&#34;</span>
+<span class="kd">local</span> <span class="n">line</span> <span class="o">=</span> <span class="s2">&#34;</span><span class="s2">yes</span><span class="s2">&#34;</span>
 
 <span class="c1">--加载模块</span>
-<span class="kd">local</span> <span class="n">gd</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s1">&#39;gd&#39;</span><span class="p">)</span>
+<span class="kd">local</span> <span class="n">gd</span><span class="o">=</span><span class="n">require</span><span class="p">(</span><span class="s1">&#39;</span><span class="s1">gd</span><span class="s1">&#39;</span><span class="p">)</span>
 <span class="c1">--创建面板</span>
 <span class="kd">local</span> <span class="n">im</span> <span class="o">=</span> <span class="n">gd.createTrueColor</span><span class="p">(</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">)</span>
 <span class="c1">--定义颜色</span>
 <span class="kd">local</span> <span class="n">black</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">colorAllocate</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 <span class="kd">local</span> <span class="n">grey</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">colorAllocate</span><span class="p">(</span><span class="mi">202</span><span class="p">,</span><span class="mi">202</span><span class="p">,</span><span class="mi">202</span><span class="p">)</span>
-<span class="kd">local</span> <span class="n">color</span><span class="o">=</span><span class="p">{}</span>
+<span class="kd">local</span> <span class="n">color</span><span class="o">=</span><span class="p">{</span><span class="p">}</span>
 <span class="kr">for</span> <span class="n">c</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span> <span class="kr">do</span>
-        <span class="n">color</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">colorAllocate</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+        <span class="n">color</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">colorAllocate</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">)</span>
 <span class="kr">end</span>
 <span class="c1">--画背景</span>
-<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">sizeXY</span><span class="p">()</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">im</span><span class="p">:</span><span class="n">sizeXY</span><span class="p">(</span><span class="p">)</span>
 <span class="n">im</span><span class="p">:</span><span class="n">filledRectangle</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">grey</span><span class="p">)</span>
 <span class="c1">--画字符</span>
 <span class="n">gd.useFontConfig</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
 <span class="kr">for</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span> <span class="kr">do</span>
     <span class="n">k</span><span class="o">=</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">16</span><span class="o">+</span><span class="mi">3</span>
-    <span class="n">im</span><span class="p">:</span><span class="n">stringFT</span><span class="p">(</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)],</span><span class="s2">&#34;Arial:bold&#34;</span><span class="p">,</span><span class="n">wsize</span><span class="p">,</span><span class="n">math.rad</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span><span class="n">k</span><span class="p">,</span><span class="mi">22</span><span class="p">,</span><span class="n">string.sub</span><span class="p">(</span><span class="n">stringmark</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+    <span class="n">im</span><span class="p">:</span><span class="n">stringFT</span><span class="p">(</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">]</span><span class="p">,</span><span class="s2">&#34;</span><span class="s2">Arial:bold</span><span class="s2">&#34;</span><span class="p">,</span><span class="n">wsize</span><span class="p">,</span><span class="n">math.rad</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span><span class="p">)</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="mi">22</span><span class="p">,</span><span class="n">string.sub</span><span class="p">(</span><span class="n">stringmark</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">)</span><span class="p">)</span>
 <span class="kr">end</span>
 <span class="c1">--干扰线点</span>
-<span class="kr">if</span> <span class="n">line</span><span class="o">==</span><span class="s2">&#34;yes&#34;</span> <span class="kr">then</span>
+<span class="kr">if</span> <span class="n">line</span><span class="o">==</span><span class="s2">&#34;</span><span class="s2">yes</span><span class="s2">&#34;</span> <span class="kr">then</span>
     <span class="kr">for</span> <span class="n">j</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="kr">do</span>
-        <span class="n">im</span><span class="p">:</span><span class="n">line</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">),</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)])</span>
+        <span class="n">im</span><span class="p">:</span><span class="n">line</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">)</span><span class="p">,</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">]</span><span class="p">)</span>
     <span class="kr">end</span>
     <span class="kr">for</span> <span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="mi">20</span> <span class="kr">do</span>
-            <span class="n">im</span><span class="p">:</span><span class="n">setPixel</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">),</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">),</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)])</span>
+            <span class="n">im</span><span class="p">:</span><span class="n">setPixel</span><span class="p">(</span><span class="n">math.random</span><span class="p">(</span><span class="n">xsize</span><span class="p">)</span><span class="p">,</span><span class="n">math.random</span><span class="p">(</span><span class="n">ysize</span><span class="p">)</span><span class="p">,</span><span class="n">color</span><span class="p">[</span><span class="n">math.random</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="p">]</span><span class="p">)</span>
     <span class="kr">end</span>
 
 <span class="kr">end</span>
@@ -1179,22 +1121,21 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 <span class="n">setRedis</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">stringmark</span><span class="p">)</span>
 
 <span class="c1">--response header中传参picgid</span>
-<span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;text/plain&#34;</span>
+<span class="n">ngx.header</span><span class="p">.</span><span class="n">content_type</span><span class="o">=</span><span class="s2">&#34;</span><span class="s2">text/plain</span><span class="s2">&#34;</span>
 <span class="n">ngx.header</span><span class="p">.</span><span class="n">picgid</span><span class="o">=</span><span class="n">filename</span>
 
 <span class="c1">--页面返回pic</span>
 <span class="n">ngx.say</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
 
 <span class="c1">--nginx退出</span>
-<span class="n">ngx.exit</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span></code></pre></td></tr></table>
+<span class="n">ngx.exit</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="配置redis">配置redis</h2>
-
+</div><h2 id="redis">配置redis</h2>
 <p>在<code>/usr/local/openresty/redis/conf/</code>创建redis-10005.conf文件，内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1234,9 +1175,9 @@ cp cd zklua-master/zklua.so /usr/local/openresty/lualib/zklua/</pre></td></tr></
 </span><span class="lnt">38
 </span><span class="lnt">39
 </span><span class="lnt">40
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">daemonize yes
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">daemonize yes
 pidfile /usr/local/openresty/redis/redis-10005.pid
 port 10005
 timeout 300
@@ -1275,57 +1216,46 @@ activerehashing yes
 client-output-buffer-limit normal 0 0 0
 client-output-buffer-limit slave 256mb 64mb 60
 client-output-buffer-limit pubsub 32mb 8mb 60
-hz 10</pre></td></tr></table>
+hz 10
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="配置验证码服务器">配置验证码服务器</h2>
-
+</div><h2 id="heading-1">配置验证码服务器</h2>
 <p>在<code>/etc/ld.so.conf.d/</code>目录创建captcha.conf，内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ vim /etc/ld.so.conf.d/captcha.conf
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ vim /etc/ld.so.conf.d/captcha.conf
 /usr/local/lib
 /usr/local/openresty/lualib
 /usr/local/openresty/lualib/captcha
 /usr/local/openresty/lualib/zklua
-/usr/local/openresty/luajit/lib</pre></td></tr></table>
+/usr/local/openresty/luajit/lib
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="测试">测试</h1>
-
-<h2 id="生成验证码">生成验证码</h2>
-
-<p>URL：<a href="http://IP:10002/captcha">http://IP:10002/captcha</a></p>
-
+</div><h1 id="heading-2">测试</h1>
+<h2 id="heading-3">生成验证码</h2>
+<p>URL：http://IP:10002/captcha</p>
 <p>然后从响应Header中获取图片的picgid=XXXXX</p>
-
-<h2 id="验证码校验">验证码校验</h2>
-
-<p>URL：<a href="http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD">http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD</a>
-<a href="http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=true">http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=true</a>
+<h2 id="heading-4">验证码校验</h2>
+<p>URL：http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD
+http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=true
 或
-<a href="http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=false">http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=false</a></p>
-
+http://IP:10002/captcha-check?image=XXXXX&amp;str=ABCD&amp;delete=false</p>
 <p>参数说明如下：</p>
-
 <ul>
 <li>参数image：要校验的验证码图片的picgid。</li>
 <li>参数str：用户输入的验证码字符串。</li>
 <li>参数delete：当且仅当传该参数且参数值为false时，校验完成之后该验证码记录不被删除，验证码未过期之前可多次校验，用于异步校验应用中；否则，若不传该参数或者其值为true，校验完成之后该验证码记录删除。</li>
 </ul>
-
-<h2 id="验证码删除">验证码删除</h2>
-
-<p>URL：<a href="http://IP:10002/captcha-delete?image=XXXXX">http://IP:10002/captcha-delete?image=XXXXX</a></p>
-
+<h2 id="heading-5">验证码删除</h2>
+<p>URL：http://IP:10002/captcha-delete?image=XXXXX</p>
 <p>其中image为要删除的验证码图片的picgid。</p>
 
     </div>
@@ -1445,7 +1375,7 @@ hz 10</pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

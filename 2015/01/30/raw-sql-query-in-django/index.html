@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2015/01/30/raw-sql-query-in-django/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2015-01-30T08:00:00+08:00" />
 <meta itemprop="name" content="Django中SQL查询">
 <meta itemprop="description" content="当 Django 中模型提供的查询 API 不能满足要求时，你可能需要使用自定义的 sql 查询，这时候就需要用到  Manager.raw() 方法。">
-
-
 <meta itemprop="datePublished" content="2015-01-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2015-01-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="873">
+<meta itemprop="wordCount" content="872">
 
 
 
-<meta itemprop="keywords" content="python,django," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="python,django," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Django中SQL查询"/>
 <meta name="twitter:description" content="当 Django 中模型提供的查询 API 不能满足要求时，你可能需要使用自定义的 sql 查询，这时候就需要用到  Manager.raw() 方法。"/>
 
@@ -132,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/python/"> python </a>
             </div>
-          <span class="more-meta"> 约 873 字 </span>
+          <span class="more-meta"> 约 872 字 </span>
           <span class="more-meta"> 预计阅读 2 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -142,107 +139,99 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li><a href="#字段映射">字段映射</a></li>
-<li><a href="#延迟获取字段">延迟获取字段</a></li>
-<li><a href="#传递参数">传递参数</a></li>
-</ul></li>
-<li><a href="#your-code-here">Your code here&hellip;</a></li>
-</ul>
+  <ul>
+    <li><a href="#heading">字段映射</a></li>
+    <li><a href="#heading-1">延迟获取字段</a></li>
+    <li><a href="#heading-2">传递参数</a></li>
+    <li><a href="#-sql">运行自定义的 sql</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>当 Django 中模型提供的查询 API 不能满足要求时，你可能需要使用原始的 sql 查询，这时候就需要用到  <code>Manager.raw()</code> 方法。</p>
-
+      <p>当 Django 中模型提供的查询 API 不能满足要求时，你可能需要使用原始的 sql 查询，这时候就需要用到  <code>Manager.raw()</code> 方法。</p>
 <p><code>Manager</code> 类提供下面的一个方法，可以用于执行 sql：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">Manager</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">raw_query</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">translations</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">Manager</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">raw_query</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">translations</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用方法为：</p>
+</div><p>使用方法为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM myapp_person&#39;</span><span class="p">):</span>
-<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT * FROM myapp_person</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">:</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>     <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 <span class="n">John</span> <span class="n">Smith</span>
-<span class="n">Jane</span> <span class="n">Jones</span></code></pre></td></tr></table>
+<span class="n">Jane</span> <span class="n">Jones</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p><code>raw()</code> 可以通过名称自动将 sql 语句中的字段映射到模型，所以你不必考虑 sql 语句中的字段顺序：</p>
+</div><p><code>raw()</code> 可以通过名称自动将 sql 语句中的字段映射到模型，所以你不必考虑 sql 语句中的字段顺序：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT id, first_name, last_name, birth_date FROM myapp_person&#39;</span><span class="p">)</span>
-<span class="o">...</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT last_name, birth_date, first_name, id FROM myapp_person&#39;</span><span class="p">)</span>
-<span class="o">...</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT id, first_name, last_name, birth_date FROM myapp_person</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>
+<span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT last_name, birth_date, first_name, id FROM myapp_person</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="字段映射">字段映射</h2>
-
+</div><h2 id="heading">字段映射</h2>
 <p>如果一个表中有和 person 相同的数据，只是字段名称不一致，你可以使用 sql 语句中 的 <code>as</code> 关键字给字段取别名：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;SELECT first AS first_name,
-</span><span class="s1">...                              last AS last_name,
-</span><span class="s1">...                              bd AS birth_date,
-</span><span class="s1">...                              pk AS id,
-</span><span class="s1">...                       FROM some_other_table&#39;&#39;&#39;</span><span class="p">)</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;&#39;&#39;</span><span class="s1">SELECT first AS first_name,</span><span class="s1">
+</span><span class="s1"></span><span class="s1">...                              last AS last_name,</span><span class="s1">
+</span><span class="s1"></span><span class="s1">...                              bd AS birth_date,</span><span class="s1">
+</span><span class="s1"></span><span class="s1">...                              pk AS id,</span><span class="s1">
+</span><span class="s1"></span><span class="s1">...                       FROM some_other_table</span><span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>另外，你还可以添加 <code>translations</code> 参数，手动设置映射关系：</p>
+</div><p>另外，你还可以添加 <code>translations</code> 参数，手动设置映射关系：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">name_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;first&#39;</span><span class="p">:</span> <span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span> <span class="s1">&#39;last_name&#39;</span><span class="p">,</span> <span class="s1">&#39;bd&#39;</span><span class="p">:</span> <span class="s1">&#39;birth_date&#39;</span><span class="p">,</span> <span class="s1">&#39;pk&#39;</span><span class="p">:</span> <span class="s1">&#39;id&#39;</span><span class="p">}</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM some_other_table&#39;</span><span class="p">,</span> <span class="n">translations</span><span class="o">=</span><span class="n">name_map</span><span class="p">)</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">name_map</span> <span class="o">=</span> <span class="p">{</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">first</span><span class="s1">&#39;</span><span class="p">:</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">first_name</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">last</span><span class="s1">&#39;</span><span class="p">:</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">last_name</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">bd</span><span class="s1">&#39;</span><span class="p">:</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">birth_date</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">pk</span><span class="s1">&#39;</span><span class="p">:</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">id</span><span class="s1">&#39;</span><span class="p">}</span>
+<span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT * FROM some_other_table</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">translations</span><span class="o">=</span><span class="n">name_map</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="延迟获取字段">延迟获取字段</h2>
-
+</div><h2 id="heading-1">延迟获取字段</h2>
 <p>下面的查询：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">people</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT id, first_name FROM myapp_person&#39;</span><span class="p">)</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">people</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT id, first_name FROM myapp_person</span><span class="s1">&#39;</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>sql 语句中只包含两个字段，如果你从 people 中获取不在 sql 语句中的字段的值的时候，<strong>其会从数据库再查询一次</strong>：</p>
+</div><p>sql 语句中只包含两个字段，如果你从 people 中获取不在 sql 语句中的字段的值的时候，<strong>其会从数据库再查询一次</strong>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -250,146 +239,145 @@
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT id, first_name FROM myapp_person&#39;</span><span class="p">):</span>
-<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">first_name</span><span class="p">,</span> <span class="c1"># This will be retrieved by the original query</span>
-<span class="o">...</span>           <span class="n">p</span><span class="o">.</span><span class="n">last_name</span><span class="p">)</span> <span class="c1"># This will be retrieved on demand</span>
-<span class="o">...</span>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT id, first_name FROM myapp_person</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">:</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>     <span class="k">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">first_name</span><span class="p">,</span> <span class="c1"># This will be retrieved by the original query</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>           <span class="n">p</span><span class="o">.</span><span class="n">last_name</span><span class="p">)</span> <span class="c1"># This will be retrieved on demand</span>
+<span class="o">.</span><span class="o">.</span><span class="o">.</span>
 <span class="n">John</span> <span class="n">Smith</span>
-<span class="n">Jane</span> <span class="n">Jones</span></code></pre></td></tr></table>
+<span class="n">Jane</span> <span class="n">Jones</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>但是，需要记住的是 sql 语句中一定要包括主键，因为只有主键才能唯一标识数据库中的一条记录。</p>
 </blockquote>
-
-<h2 id="传递参数">传递参数</h2>
-
+<h2 id="heading-2">传递参数</h2>
 <p>如果你想给 sql 语句传递参数，你可以添加 <code>raw()</code> 的 <code>params</code> 参数。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">lname</span> <span class="o">=</span> <span class="s1">&#39;Doe&#39;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM myapp_person WHERE last_name = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">lname</span><span class="p">])</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">lname</span> <span class="o">=</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">Doe</span><span class="s1">&#39;</span>
+<span class="o">&gt;&gt;</span><span class="o">&gt;</span> <span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT * FROM myapp_person WHERE last_name = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">lname</span><span class="p">]</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
-<p><strong>记住：</strong>上面的 sql 语句一定不要写成下面的方式，因为这样可能会有 sql 注入的问题！</p>
+</div><blockquote>
+<p>**记住：**上面的 sql 语句一定不要写成下面的方式，因为这样可能会有 sql 注入的问题！</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="sa"></span><span class="s1">&#39;</span><span class="s1">SELECT * FROM myapp_person WHERE last_name = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">lname</span>
+</code></pre></td></tr></table>
+</div>
+</div></blockquote>
+<h2 id="-sql">运行自定义的 sql</h2>
+<p><code>Manager.raw()</code> 只能执行 sql 查询，确不能运行  <code>UPDATE</code>、<code>INSERT</code> 或 <code>DELETE</code> 查询，在这种情况下，你需要使用 <code>django.db.connection</code> 类。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"> <span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">connection</span>
+
+<span class="k">def</span> <span class="nf">my_custom_sql</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="p">:</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">(</span><span class="p">)</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">UPDATE bar SET foo = 1 WHERE baz = </span><span class="si">%s</span><span class="s2">&#34;</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">baz</span><span class="p">]</span><span class="p">)</span>
+
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">SELECT foo FROM bar WHERE baz = </span><span class="si">%s</span><span class="s2">&#34;</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">baz</span><span class="p">]</span><span class="p">)</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">(</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">row</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>在 Django 1.6 之后，修改数据之后会自动提交事务，而不用手动调用 <code>transaction.commit_unless_managed()</code> 了。</p>
+<p>如果 sql 中你想使用 <code>%</code> 字符 ，则你需要写两次：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">SELECT foo FROM bar WHERE baz = </span><span class="s2">&#39;</span><span class="s2">30</span><span class="s2">%</span><span class="s2">&#39;</span><span class="s2">&#34;</span><span class="p">)</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">SELECT foo FROM bar WHERE baz = </span><span class="s2">&#39;</span><span class="s2">30</span><span class="si">%%</span><span class="s2">&#39;</span><span class="s2"> AND id = </span><span class="si">%s</span><span class="s2">&#34;</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果有多个数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">connections</span>
+<span class="n">cursor</span> <span class="o">=</span> <span class="n">connections</span><span class="p">[</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">my_db_alias</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">cursor</span><span class="p">(</span><span class="p">)</span>
+<span class="c1"># Your code here...</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>默认情况下，Python 的 DB API 返回的结果只包括数据不包括每个字段的名称，你可以牺牲一点性能代价，将查询结果转换为字典：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;</span><span class="s1">&#39;SELECT * FROM myapp_person WHERE last_name = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">lname</span>
-<span class="o">&gt;~~~</span>
-
-<span class="c1">## 运行自定义的 sql</span>
-
- <span class="sb">`Manager.raw()`</span> <span class="err">只能执行</span> <span class="n">sql</span> <span class="err">查询，确不能运行</span>  <span class="sb">`UPDATE`</span><span class="err">、</span><span class="sb">`INSERT`</span> <span class="err">或</span> <span class="sb">`DELETE`</span> <span class="err">查询，在这种情况下，你需要使用</span> <span class="sb">`django.db.connection`</span> <span class="err">类。</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">dictfetchall</span><span class="p">(</span><span class="n">cursor</span><span class="p">)</span><span class="p">:</span>
+    <span class="sa"></span><span class="s2">&#34;</span><span class="s2">Returns all rows from a cursor as a dict</span><span class="s2">&#34;</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">description</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="p">[</span><span class="n">col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">desc</span><span class="p">]</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">(</span><span class="p">)</span>
+    <span class="p">]</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>python
- from django.db import connection</p>
-</blockquote>
-
-<p>def my_custom_sql(self):
-    cursor = connection.cursor()</p>
+</div><p>在 Django 1.7 中，可以使用 <code>cursor</code> 作为一个上下文管理器：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="k">with</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">(</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="o">.</span><span class="o">.</span><span class="o">.</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其等价于：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span><span class="lnt">6
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">cursor.execute(&#34;UPDATE bar SET foo = 1 WHERE baz = %s&#34;, [self.baz])
-
-cursor.execute(&#34;SELECT foo FROM bar WHERE baz = %s&#34;, [self.baz])
-row = cursor.fetchone()
-
-return row</pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">c</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">(</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="o">.</span><span class="o">.</span><span class="o">.</span><span class="p">)</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div><div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">在 Django 1.6 之后，修改数据之后会自动提交事务，而不用手动调用 `transaction.commit_unless_managed()` 了。
-
-如果 sql 中你想使用 `%` 字符 ，则你需要写两次：</pre></td></tr></table>
-</div>
-</div>
-<p>python
-cursor.execute(&ldquo;SELECT foo FROM bar WHERE baz = &lsquo;30%&rsquo;&rdquo;)
-cursor.execute(&ldquo;SELECT foo FROM bar WHERE baz = &lsquo;30%%&rsquo; AND id = %s&rdquo;, [self.id])</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">如果有多个数据库：</pre></td></tr></table>
-</div>
-</div>
-<p>python
-from django.db import connections
-cursor = connections[&lsquo;my_db_alias&rsquo;].cursor()</p>
-
-<h1 id="your-code-here">Your code here&hellip;</h1>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">默认情况下，Python 的 DB API 返回的结果只包括数据不包括每个字段的名称，你可以牺牲一点性能代价，将查询结果转换为字典：</pre></td></tr></table>
-</div>
-</div>
-<p>python
-def dictfetchall(cursor):
-    &ldquo;Returns all rows from a cursor as a dict&rdquo;
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">在 Django 1.7 中，可以使用 `cursor` 作为一个上下文管理器：</pre></td></tr></table>
-</div>
-</div>
-<p>python
-with connection.cursor() as c:
-    c.execute(&hellip;)</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">其等价于：</pre></td></tr></table>
-</div>
-</div>
-<p>python
-c = connection.cursor()
-try:
-    c.execute(&hellip;)
-finally:
-    c.close()
-~~~</p>
-
-<p>本文参考：<a href="https://docs.djangoproject.com/en/1.7/topics/db/sql/">Performing raw SQL queries</a>。</p>
+</div><p>本文参考：<a href="https://docs.djangoproject.com/en/1.7/topics/db/sql/">Performing raw SQL queries</a>。</p>
 
     </div>
 
@@ -507,7 +495,7 @@ finally:
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

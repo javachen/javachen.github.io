@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2016/04/21/how-to-parse-mybatis-configuration/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2016-04-21T08:00:00+08:00" />
 <meta itemprop="name" content="MyBatis源码分析：如何解析配置文件">
 <meta itemprop="description" content="MyBatis可以使用xml或者注解的方式进行配置，不管是哪种方式，最终会将获取到的配置参数设置到Configuration类中，例如，SqlSessionFactoryBuilder类中就是通过解析XML来创建Configuration。">
-
-
 <meta itemprop="datePublished" content="2016-04-21T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2016-04-21T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2221">
 
 
 
-<meta itemprop="keywords" content="mybatis," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="mybatis," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="MyBatis源码分析：如何解析配置文件"/>
 <meta name="twitter:description" content="MyBatis可以使用xml或者注解的方式进行配置，不管是哪种方式，最终会将获取到的配置参数设置到Configuration类中，例如，SqlSessionFactoryBuilder类中就是通过解析XML来创建Configuration。"/>
 
@@ -141,14 +138,14 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    
+    <nav id="TableOfContents"></nav>
   </div>
 </div>
     <div class="post-content">
       <p>MyBatis可以使用xml或者注解的方式进行配置，不管是哪种方式，最终会将获取到的配置参数设置到<code>Configuration</code>类中，例如，<code>SqlSessionFactoryBuilder</code>类中就是通过解析XML来创建<code>Configuration</code>。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -165,37 +162,32 @@
 </span><span class="lnt">15
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">SqlSessionFactory</span> <span class="n">build</span><span class="p">(</span><span class="n">InputStream</span> <span class="nf">inputStream</span><span class="p">,</span> <span class="n">String</span> <span class="nf">environment</span><span class="p">,</span> <span class="n">Properties</span> <span class="nf">properties</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">try</span> <span class="p">{</span>
-    <span class="n">XMLConfigBuilder</span> <span class="nf">parser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLConfigBuilder</span><span class="p">(</span><span class="n">inputStream</span><span class="p">,</span> <span class="n">environment</span><span class="p">,</span> <span class="n">properties</span><span class="p">);</span>
-    <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">parser</span><span class="p">.</span><span class="na">parse</span><span class="p">());</span>
-  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="p">.</span><span class="na">wrapException</span><span class="p">(</span><span class="s">&#34;Error building SqlSession.&#34;</span><span class="p">,</span> <span class="n">e</span><span class="p">);</span>
-  <span class="p">}</span> <span class="k">finally</span> <span class="p">{</span>
-    <span class="n">ErrorContext</span><span class="p">.</span><span class="na">instance</span><span class="p">().</span><span class="na">reset</span><span class="p">();</span>
-    <span class="k">try</span> <span class="p">{</span>
-      <span class="n">inputStream</span><span class="p">.</span><span class="na">close</span><span class="p">();</span>
-    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">IOException</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">try</span> <span class="o">{</span>
+    <span class="n">XMLConfigBuilder</span> <span class="n">parser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLConfigBuilder</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="n">properties</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">return</span> <span class="n">build</span><span class="o">(</span><span class="n">parser</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="o">.</span><span class="na">wrapException</span><span class="o">(</span><span class="s">&#34;Error building SqlSession.&#34;</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+    <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">reset</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="n">inputStream</span><span class="o">.</span><span class="na">close</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
       <span class="c1">// Intentionally ignore. Prefer previous error.
-</span><span class="c1"></span>    <span class="p">}</span>
-  <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span>    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>MyBatis通过SqlSessionFactoryBuilder作为入口，通过传入配置文件，使用了BaseBuilder实现类进行配置文件解析，具体实现类是<code>XMLConfigBuilder</code>，在这里MyBatis对配置的项进行了全面解析，只不过不是所有的解析都放在了XMLConfigBuilder，XMLConfigBuilder解析了二级节点，并作为一个总入口，还有另外几个类继承了<code>BaseBuilder</code>，用于解析不同的配置。而解析到的配置项信息，基本都保存在了Configuration这个类，可以看到多处地方依赖到它。</p>
-
+</div><p>MyBatis通过SqlSessionFactoryBuilder作为入口，通过传入配置文件，使用了BaseBuilder实现类进行配置文件解析，具体实现类是<code>XMLConfigBuilder</code>，在这里MyBatis对配置的项进行了全面解析，只不过不是所有的解析都放在了XMLConfigBuilder，XMLConfigBuilder解析了二级节点，并作为一个总入口，还有另外几个类继承了<code>BaseBuilder</code>，用于解析不同的配置。而解析到的配置项信息，基本都保存在了Configuration这个类，可以看到多处地方依赖到它。</p>
 <p>XMLConfigBuilder类位于<code>org.apache.ibatis.builder</code>中，我们来看看该包下有哪些类及每个类实现过程。</p>
-
 <p>XMLConfigBuilder是继承BaseBuilder的，BaseBuilder是一个抽象类，提供了一些protected的方法和三个属性：</p>
-
 <ul>
 <li><code>Configuration</code></li>
 <li><code>TypeAliasRegistry</code>：从Configuration中获取</li>
 <li><code>TypeHandlerRegistry</code>：从Configuration中获取</li>
 </ul>
-
 <p><code>BaseBuilder</code>的子类有：</p>
-
 <ul>
 <li><code>XMLConfigBuilder</code>：解析MyBatis config文件</li>
 <li><code>XMLMapperBuilder</code>：解析<code>SqlMap</code>映射文件</li>
@@ -204,15 +196,12 @@
 <li><code>MapperAnnotationBuilder</code>：解析注解</li>
 <li><code>MapperBuilderAssistant</code>：负责解析配置和<code>mapping</code>包下的接口交换</li>
 </ul>
-
 <p>这里为什么不使用接口呢？</p>
-
 <p>XMLConfigBuilder是用于解析XML配置文件，解析XML用的是<code>sax</code>方式，相关代码在<code>org.apache.ibatis.parsing</code>包下面，该包下面代码比较独立，可以复用到自己的项目中去，你懂的。</p>
-
 <p>XMLConfigBuilder提供了几个构造方法，主要是为了初始化<code>XPathParser</code>。真正开始解析文件从下面代码开始：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -222,20 +211,20 @@
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">Configuration</span> <span class="n">parse</span><span class="p">()</span> <span class="p">{</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">parsed</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="p">(</span><span class="s">&#34;Each XMLConfigBuilder can only be used once.&#34;</span><span class="p">);</span>
-  <span class="p">}</span>
-  <span class="n">parsed</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-  <span class="n">parseConfiguration</span><span class="p">(</span><span class="n">parser</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;/configuration&#34;</span><span class="p">));</span>
-  <span class="k">return</span> <span class="n">configuration</span><span class="p">;</span>
-<span class="p">}</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">Configuration</span> <span class="nf">parse</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">parsed</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="o">(</span><span class="s">&#34;Each XMLConfigBuilder can only be used once.&#34;</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span>
+  <span class="n">parsed</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+  <span class="n">parseConfiguration</span><span class="o">(</span><span class="n">parser</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;/configuration&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="n">configuration</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>该方法是调用<code>parseConfiguration</code>方法开始解析<code>/configuration</code>节点。</p>
+</div><p>该方法是调用<code>parseConfiguration</code>方法开始解析<code>/configuration</code>节点。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -258,31 +247,30 @@
 </span><span class="lnt">21
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="nf">void</span> <span class="n">parseConfiguration</span><span class="p">(</span><span class="n">XNode</span> <span class="nf">root</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">try</span> <span class="p">{</span>
-    <span class="n">Properties</span> <span class="nf">settings</span> <span class="o">=</span> <span class="n">settingsAsPropertiess</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;settings&#34;</span><span class="p">));</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">parseConfiguration</span><span class="o">(</span><span class="n">XNode</span> <span class="n">root</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">try</span> <span class="o">{</span>
+    <span class="n">Properties</span> <span class="n">settings</span> <span class="o">=</span> <span class="n">settingsAsPropertiess</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;settings&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//issue #117 read properties first
-</span><span class="c1"></span>    <span class="n">propertiesElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;properties&#34;</span><span class="p">));</span>
-    <span class="n">loadCustomVfs</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
-    <span class="n">typeAliasesElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;typeAliases&#34;</span><span class="p">));</span>
-    <span class="n">pluginElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;plugins&#34;</span><span class="p">));</span>
-    <span class="n">objectFactoryElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;objectFactory&#34;</span><span class="p">));</span>
-    <span class="n">objectWrapperFactoryElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;objectWrapperFactory&#34;</span><span class="p">));</span>
-    <span class="n">reflectionFactoryElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;reflectionFactory&#34;</span><span class="p">));</span>
-    <span class="n">settingsElement</span><span class="p">(</span><span class="n">settings</span><span class="p">);</span>
+</span><span class="c1"></span>    <span class="n">propertiesElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;properties&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">loadCustomVfs</span><span class="o">(</span><span class="n">settings</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">typeAliasesElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;typeAliases&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">pluginElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;plugins&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">objectFactoryElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;objectFactory&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">objectWrapperFactoryElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;objectWrapperFactory&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">reflectionFactoryElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;reflectionFactory&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">settingsElement</span><span class="o">(</span><span class="n">settings</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">// read it after objectFactory and objectWrapperFactory issue #631
-</span><span class="c1"></span>    <span class="n">environmentsElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;environments&#34;</span><span class="p">));</span>
-    <span class="n">databaseIdProviderElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;databaseIdProvider&#34;</span><span class="p">));</span>
-    <span class="n">typeHandlerElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;typeHandlers&#34;</span><span class="p">));</span>
-    <span class="n">mapperElement</span><span class="p">(</span><span class="n">root</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;mappers&#34;</span><span class="p">));</span>
-  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="p">(</span><span class="s">&#34;Error parsing SQL Mapper Configuration. Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="p">);</span>
-  <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span>    <span class="n">environmentsElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;environments&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">databaseIdProviderElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;databaseIdProvider&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">typeHandlerElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;typeHandlers&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">mapperElement</span><span class="o">(</span><span class="n">root</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;mappers&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="o">(</span><span class="s">&#34;Error parsing SQL Mapper Configuration. Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>该方法包括以下几个步骤：</p>
-
+</div><p>该方法包括以下几个步骤：</p>
 <ul>
 <li>解析settings节点</li>
 <li>解析properties</li>
@@ -295,11 +283,10 @@
 <li>解析typeHandlers</li>
 <li>解析mappers，调用XMLMapperBuilder进行解析</li>
 </ul>
-
 <p>其中，最复杂的是解析mappers：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -333,61 +320,60 @@
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="nf">void</span> <span class="n">mapperElement</span><span class="p">(</span><span class="n">XNode</span> <span class="nf">parent</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">Exception</span> <span class="p">{</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">parent</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">for</span> <span class="p">(</span><span class="n">XNode</span> <span class="nf">child</span> <span class="o">:</span> <span class="n">parent</span><span class="p">.</span><span class="na">getChildren</span><span class="p">())</span> <span class="p">{</span>
-      <span class="k">if</span> <span class="p">(</span><span class="s">&#34;package&#34;</span><span class="p">.</span><span class="na">equals</span><span class="p">(</span><span class="n">child</span><span class="p">.</span><span class="na">getName</span><span class="p">()))</span> <span class="p">{</span>
-        <span class="n">String</span> <span class="nf">mapperPackage</span> <span class="o">=</span> <span class="n">child</span><span class="p">.</span><span class="na">getStringAttribute</span><span class="p">(</span><span class="s">&#34;name&#34;</span><span class="p">);</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">mapperElement</span><span class="o">(</span><span class="n">XNode</span> <span class="n">parent</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">parent</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">XNode</span> <span class="n">child</span> <span class="o">:</span> <span class="n">parent</span><span class="o">.</span><span class="na">getChildren</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="s">&#34;package&#34;</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">child</span><span class="o">.</span><span class="na">getName</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">mapperPackage</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="na">getStringAttribute</span><span class="o">(</span><span class="s">&#34;name&#34;</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">//添加包下面的mapper
-</span><span class="c1"></span>        <span class="n">configuration</span><span class="p">.</span><span class="na">addMappers</span><span class="p">(</span><span class="n">mapperPackage</span><span class="p">);</span>
-      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-        <span class="n">String</span> <span class="nf">resource</span> <span class="o">=</span> <span class="n">child</span><span class="p">.</span><span class="na">getStringAttribute</span><span class="p">(</span><span class="s">&#34;resource&#34;</span><span class="p">);</span>
-        <span class="n">String</span> <span class="nf">url</span> <span class="o">=</span> <span class="n">child</span><span class="p">.</span><span class="na">getStringAttribute</span><span class="p">(</span><span class="s">&#34;url&#34;</span><span class="p">);</span>
-        <span class="n">String</span> <span class="nf">mapperClass</span> <span class="o">=</span> <span class="n">child</span><span class="p">.</span><span class="na">getStringAttribute</span><span class="p">(</span><span class="s">&#34;class&#34;</span><span class="p">);</span>
+</span><span class="c1"></span>        <span class="n">configuration</span><span class="o">.</span><span class="na">addMappers</span><span class="o">(</span><span class="n">mapperPackage</span><span class="o">)</span><span class="o">;</span>
+      <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">resource</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="na">getStringAttribute</span><span class="o">(</span><span class="s">&#34;resource&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">String</span> <span class="n">url</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="na">getStringAttribute</span><span class="o">(</span><span class="s">&#34;url&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">String</span> <span class="n">mapperClass</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="na">getStringAttribute</span><span class="o">(</span><span class="s">&#34;class&#34;</span><span class="o">)</span><span class="o">;</span>
         <span class="c1">//三个参数只能设置一个
-</span><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">resource</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">url</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mapperClass</span> <span class="o">==</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
-          <span class="n">ErrorContext</span><span class="p">.</span><span class="na">instance</span><span class="p">().</span><span class="na">resource</span><span class="p">(</span><span class="n">resource</span><span class="p">);</span>
-          <span class="n">InputStream</span> <span class="nf">inputStream</span> <span class="o">=</span> <span class="n">Resources</span><span class="p">.</span><span class="na">getResourceAsStream</span><span class="p">(</span><span class="n">resource</span><span class="p">);</span>
-          <span class="n">XMLMapperBuilder</span> <span class="nf">mapperParser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLMapperBuilder</span><span class="p">(</span><span class="n">inputStream</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">configuration</span><span class="p">.</span><span class="na">getSqlFragments</span><span class="p">());</span>
-          <span class="n">mapperParser</span><span class="p">.</span><span class="na">parse</span><span class="p">();</span>
-        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">resource</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">url</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mapperClass</span> <span class="o">==</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
-          <span class="n">ErrorContext</span><span class="p">.</span><span class="na">instance</span><span class="p">().</span><span class="na">resource</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
-          <span class="n">InputStream</span> <span class="nf">inputStream</span> <span class="o">=</span> <span class="n">Resources</span><span class="p">.</span><span class="na">getUrlAsStream</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
-          <span class="n">XMLMapperBuilder</span> <span class="nf">mapperParser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLMapperBuilder</span><span class="p">(</span><span class="n">inputStream</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">configuration</span><span class="p">.</span><span class="na">getSqlFragments</span><span class="p">());</span>
-          <span class="n">mapperParser</span><span class="p">.</span><span class="na">parse</span><span class="p">();</span>
-        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">resource</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">url</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mapperClass</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
-          <span class="n">Class</span><span class="o">&lt;?&gt;</span> <span class="n">mapperInterface</span> <span class="o">=</span> <span class="n">Resources</span><span class="p">.</span><span class="na">classForName</span><span class="p">(</span><span class="n">mapperClass</span><span class="p">);</span>
-          <span class="n">configuration</span><span class="p">.</span><span class="na">addMapper</span><span class="p">(</span><span class="n">mapperInterface</span><span class="p">);</span>
-        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-          <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="p">(</span><span class="s">&#34;A mapper element may only specify a url, resource or class, but not more than one.&#34;</span><span class="p">);</span>
-        <span class="p">}</span>
-      <span class="p">}</span>
-    <span class="p">}</span>
-  <span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">resource</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">url</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">mapperClass</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">resource</span><span class="o">(</span><span class="n">resource</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">InputStream</span> <span class="n">inputStream</span> <span class="o">=</span> <span class="n">Resources</span><span class="o">.</span><span class="na">getResourceAsStream</span><span class="o">(</span><span class="n">resource</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">XMLMapperBuilder</span> <span class="n">mapperParser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLMapperBuilder</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">,</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getSqlFragments</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">mapperParser</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">resource</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">url</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">mapperClass</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">resource</span><span class="o">(</span><span class="n">url</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">InputStream</span> <span class="n">inputStream</span> <span class="o">=</span> <span class="n">Resources</span><span class="o">.</span><span class="na">getUrlAsStream</span><span class="o">(</span><span class="n">url</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">XMLMapperBuilder</span> <span class="n">mapperParser</span> <span class="o">=</span> <span class="k">new</span> <span class="n">XMLMapperBuilder</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">url</span><span class="o">,</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getSqlFragments</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">mapperParser</span><span class="o">.</span><span class="na">parse</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">resource</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">url</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">mapperClass</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+          <span class="n">Class</span><span class="o">&lt;</span><span class="o">?</span><span class="o">&gt;</span> <span class="n">mapperInterface</span> <span class="o">=</span> <span class="n">Resources</span><span class="o">.</span><span class="na">classForName</span><span class="o">(</span><span class="n">mapperClass</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">configuration</span><span class="o">.</span><span class="na">addMapper</span><span class="o">(</span><span class="n">mapperInterface</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="o">(</span><span class="s">&#34;A mapper element may only specify a url, resource or class, but not more than one.&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>分析XMLMapperBuilder：</p>
+</div><p>分析XMLMapperBuilder：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="nf">XPathParser</span> <span class="n">parser</span><span class="p">;</span>
-<span class="kd">private</span> <span class="nf">MapperBuilderAssistant</span> <span class="n">builderAssistant</span><span class="p">;</span>
-<span class="kd">private</span> <span class="nf">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">;</span>
-<span class="kd">private</span> <span class="nf">String</span> <span class="n">resource</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="n">XPathParser</span> <span class="n">parser</span><span class="o">;</span>
+<span class="kd">private</span> <span class="n">MapperBuilderAssistant</span> <span class="n">builderAssistant</span><span class="o">;</span>
+<span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">;</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="n">resource</span><span class="o">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>XMLMapperBuilder有四个属性，一个XMLMapperBuilder对应一个资源文件，需要一个XPath解析器和一个Mapper构建的帮助类，并保存sql片段。</p>
-
+</div><p>XMLMapperBuilder有四个属性，一个XMLMapperBuilder对应一个资源文件，需要一个XPath解析器和一个Mapper构建的帮助类，并保存sql片段。</p>
 <p>提供了几个构造方法类初始化属性：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -419,40 +405,40 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Deprecated</span>
-<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="p">(</span><span class="n">Reader</span> <span class="nf">reader</span><span class="p">,</span> <span class="n">Configuration</span> <span class="nf">configuration</span><span class="p">,</span> <span class="n">String</span> <span class="nf">resource</span><span class="p">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">,</span> <span class="n">String</span> <span class="nf">namespace</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">sqlFragments</span><span class="p">);</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">builderAssistant</span><span class="p">.</span><span class="na">setCurrentNamespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">);</span>
-<span class="p">}</span>
+<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="o">(</span><span class="n">Reader</span> <span class="n">reader</span><span class="o">,</span> <span class="n">Configuration</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">,</span> <span class="n">String</span> <span class="n">namespace</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">this</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">,</span> <span class="n">sqlFragments</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">builderAssistant</span><span class="o">.</span><span class="na">setCurrentNamespace</span><span class="o">(</span><span class="n">namespace</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
 
 <span class="nd">@Deprecated</span>
-<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="p">(</span><span class="n">Reader</span> <span class="nf">reader</span><span class="p">,</span> <span class="n">Configuration</span> <span class="nf">configuration</span><span class="p">,</span> <span class="n">String</span> <span class="nf">resource</span><span class="p">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">(</span><span class="k">new</span> <span class="n">XPathParser</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="n">configuration</span><span class="p">.</span><span class="na">getVariables</span><span class="p">(),</span> <span class="k">new</span> <span class="n">XMLMapperEntityResolver</span><span class="p">()),</span>
-      <span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">sqlFragments</span><span class="p">);</span>
-<span class="p">}</span>
+<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="o">(</span><span class="n">Reader</span> <span class="n">reader</span><span class="o">,</span> <span class="n">Configuration</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">this</span><span class="o">(</span><span class="k">new</span> <span class="n">XPathParser</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getVariables</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="k">new</span> <span class="n">XMLMapperEntityResolver</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">,</span>
+      <span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">,</span> <span class="n">sqlFragments</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
 
-<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="p">(</span><span class="n">InputStream</span> <span class="nf">inputStream</span><span class="p">,</span> <span class="n">Configuration</span> <span class="nf">configuration</span><span class="p">,</span> <span class="n">String</span> <span class="nf">resource</span><span class="p">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">,</span> <span class="n">String</span> <span class="nf">namespace</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">(</span><span class="n">inputStream</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">sqlFragments</span><span class="p">);</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">builderAssistant</span><span class="p">.</span><span class="na">setCurrentNamespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">);</span>
-<span class="p">}</span>
+<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">Configuration</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">,</span> <span class="n">String</span> <span class="n">namespace</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">this</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">,</span> <span class="n">sqlFragments</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">builderAssistant</span><span class="o">.</span><span class="na">setCurrentNamespace</span><span class="o">(</span><span class="n">namespace</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
 
-<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="p">(</span><span class="n">InputStream</span> <span class="nf">inputStream</span><span class="p">,</span> <span class="n">Configuration</span> <span class="nf">configuration</span><span class="p">,</span> <span class="n">String</span> <span class="nf">resource</span><span class="p">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">this</span><span class="p">(</span><span class="k">new</span> <span class="n">XPathParser</span><span class="p">(</span><span class="n">inputStream</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="n">configuration</span><span class="p">.</span><span class="na">getVariables</span><span class="p">(),</span> <span class="k">new</span> <span class="n">XMLMapperEntityResolver</span><span class="p">()),</span>
-      <span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">sqlFragments</span><span class="p">);</span>
-<span class="p">}</span>
+<span class="kd">public</span> <span class="nf">XMLMapperBuilder</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">Configuration</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">this</span><span class="o">(</span><span class="k">new</span> <span class="n">XPathParser</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="kc">true</span><span class="o">,</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getVariables</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="k">new</span> <span class="n">XMLMapperEntityResolver</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">,</span>
+      <span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">,</span> <span class="n">sqlFragments</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
 
-<span class="kd">private</span> <span class="nf">XMLMapperBuilder</span><span class="p">(</span><span class="n">XPathParser</span> <span class="nf">parser</span><span class="p">,</span> <span class="n">Configuration</span> <span class="nf">configuration</span><span class="p">,</span> <span class="n">String</span> <span class="nf">resource</span><span class="p">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="nf">sqlFragments</span><span class="p">)</span> <span class="p">{</span>
-  <span class="kd">super</span><span class="p">(</span><span class="n">configuration</span><span class="p">);</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">builderAssistant</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperBuilderAssistant</span><span class="p">(</span><span class="n">configuration</span><span class="p">,</span> <span class="n">resource</span><span class="p">);</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">parser</span> <span class="o">=</span> <span class="n">parser</span><span class="p">;</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">sqlFragments</span> <span class="o">=</span> <span class="n">sqlFragments</span><span class="p">;</span>
-  <span class="k">this</span><span class="p">.</span><span class="na">resource</span> <span class="o">=</span> <span class="n">resource</span><span class="p">;</span>
-<span class="p">}</span></code></pre></td></tr></table>
+<span class="kd">private</span> <span class="nf">XMLMapperBuilder</span><span class="o">(</span><span class="n">XPathParser</span> <span class="n">parser</span><span class="o">,</span> <span class="n">Configuration</span> <span class="n">configuration</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">XNode</span><span class="o">&gt;</span> <span class="n">sqlFragments</span><span class="o">)</span> <span class="o">{</span>
+  <span class="kd">super</span><span class="o">(</span><span class="n">configuration</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">builderAssistant</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperBuilderAssistant</span><span class="o">(</span><span class="n">configuration</span><span class="o">,</span> <span class="n">resource</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">parser</span> <span class="o">=</span> <span class="n">parser</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">sqlFragments</span> <span class="o">=</span> <span class="n">sqlFragments</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">resource</span> <span class="o">=</span> <span class="n">resource</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>XMLMapperBuilder真正开始解析是在<code>parse</code>方法：</p>
+</div><p>XMLMapperBuilder真正开始解析是在<code>parse</code>方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -468,26 +454,26 @@
 </span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">void</span> <span class="n">parse</span><span class="p">()</span> <span class="p">{</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">parse</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
   <span class="c1">//先判断文件是否加载
-</span><span class="c1"></span>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">configuration</span><span class="p">.</span><span class="na">isResourceLoaded</span><span class="p">(</span><span class="n">resource</span><span class="p">))</span> <span class="p">{</span>
+</span><span class="c1"></span>  <span class="k">if</span> <span class="o">(</span><span class="o">!</span><span class="n">configuration</span><span class="o">.</span><span class="na">isResourceLoaded</span><span class="o">(</span><span class="n">resource</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
     <span class="c1">//解析/mapper节点
-</span><span class="c1"></span>    <span class="n">configurationElement</span><span class="p">(</span><span class="n">parser</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;/mapper&#34;</span><span class="p">));</span>
-    <span class="n">configuration</span><span class="p">.</span><span class="na">addLoadedResource</span><span class="p">(</span><span class="n">resource</span><span class="p">);</span>
+</span><span class="c1"></span>    <span class="n">configurationElement</span><span class="o">(</span><span class="n">parser</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;/mapper&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">configuration</span><span class="o">.</span><span class="na">addLoadedResource</span><span class="o">(</span><span class="n">resource</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//绑定mapper到命名空间
-</span><span class="c1"></span>    <span class="n">bindMapperForNamespace</span><span class="p">();</span>
-  <span class="p">}</span>
+</span><span class="c1"></span>    <span class="n">bindMapperForNamespace</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span>
 
-  <span class="n">parsePendingResultMaps</span><span class="p">();</span>
-  <span class="n">parsePendingChacheRefs</span><span class="p">();</span>
-  <span class="n">parsePendingStatements</span><span class="p">();</span>
-<span class="p">}</span></code></pre></td></tr></table>
+  <span class="n">parsePendingResultMaps</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">parsePendingChacheRefs</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">parsePendingStatements</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p><code>configurationElement</code>方法如下：</p>
+</div><p><code>configurationElement</code>方法如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -513,34 +499,33 @@
 </span><span class="lnt">24
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="nf">void</span> <span class="n">configurationElement</span><span class="p">(</span><span class="n">XNode</span> <span class="nf">context</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">try</span> <span class="p">{</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">configurationElement</span><span class="o">(</span><span class="n">XNode</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">try</span> <span class="o">{</span>
     <span class="c1">//设置命名空间
 </span><span class="c1"></span>
-    <span class="n">String</span> <span class="nf">namespace</span> <span class="o">=</span> <span class="n">context</span><span class="p">.</span><span class="na">getStringAttribute</span><span class="p">(</span><span class="s">&#34;namespace&#34;</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">namespace</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">namespace</span><span class="p">.</span><span class="na">equals</span><span class="p">(</span><span class="s">&#34;&#34;</span><span class="p">))</span> <span class="p">{</span>
-      <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="p">(</span><span class="s">&#34;Mapper&#39;s namespace cannot be empty&#34;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="n">builderAssistant</span><span class="p">.</span><span class="na">setCurrentNamespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">);</span>
+    <span class="n">String</span> <span class="n">namespace</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">getStringAttribute</span><span class="o">(</span><span class="s">&#34;namespace&#34;</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">namespace</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span> <span class="o">|</span><span class="o">|</span> <span class="n">namespace</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">&#34;&#34;</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="o">(</span><span class="s">&#34;Mapper&#39;s namespace cannot be empty&#34;</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="n">builderAssistant</span><span class="o">.</span><span class="na">setCurrentNamespace</span><span class="o">(</span><span class="n">namespace</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//cache-ref节点
-</span><span class="c1"></span>    <span class="n">cacheRefElement</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;cache-ref&#34;</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">cacheRefElement</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;cache-ref&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//cache节点
-</span><span class="c1"></span>    <span class="n">cacheElement</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNode</span><span class="p">(</span><span class="s">&#34;cache&#34;</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">cacheElement</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNode</span><span class="o">(</span><span class="s">&#34;cache&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//parameterMap节点
-</span><span class="c1"></span>    <span class="n">parameterMapElement</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNodes</span><span class="p">(</span><span class="s">&#34;/mapper/parameterMap&#34;</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">parameterMapElement</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNodes</span><span class="o">(</span><span class="s">&#34;/mapper/parameterMap&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//resultMap节点
-</span><span class="c1"></span>    <span class="n">resultMapElements</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNodes</span><span class="p">(</span><span class="s">&#34;/mapper/resultMap&#34;</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">resultMapElements</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNodes</span><span class="o">(</span><span class="s">&#34;/mapper/resultMap&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//sql节点
-</span><span class="c1"></span>    <span class="n">sqlElement</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNodes</span><span class="p">(</span><span class="s">&#34;/mapper/sql&#34;</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">sqlElement</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNodes</span><span class="o">(</span><span class="s">&#34;/mapper/sql&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
     <span class="c1">//select|insert|update|delete节点
-</span><span class="c1"></span>    <span class="n">buildStatementFromContext</span><span class="p">(</span><span class="n">context</span><span class="p">.</span><span class="na">evalNodes</span><span class="p">(</span><span class="s">&#34;select|insert|update|delete&#34;</span><span class="p">));</span>
-  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="nf">e</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="p">(</span><span class="s">&#34;Error parsing Mapper XML. Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="p">,</span> <span class="n">e</span><span class="p">);</span>
-  <span class="p">}</span></code></pre></td></tr></table>
+</span><span class="c1"></span>    <span class="n">buildStatementFromContext</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">evalNodes</span><span class="o">(</span><span class="s">&#34;select|insert|update|delete&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="n">BuilderException</span><span class="o">(</span><span class="s">&#34;Error parsing Mapper XML. Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>从上面例子可以看出<code>mapper</code>下面一共有以下几种节点：</p>
-
+</div><p>从上面例子可以看出<code>mapper</code>下面一共有以下几种节点：</p>
 <ul>
 <li>cache-ref</li>
 <li>cache</li>
@@ -552,7 +537,6 @@
 <li>update</li>
 <li>delete</li>
 </ul>
-
 <p>每个节点的解析过程请看具体的某一个方法，这里不做说明。</p>
 
     </div>
@@ -670,7 +654,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

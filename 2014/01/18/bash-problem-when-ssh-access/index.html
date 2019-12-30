@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/01/18/bash-problem-when-ssh-access/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-01-18T08:00:00+08:00" />
 <meta itemprop="name" content="SSH远程连接时环境变量问题">
 <meta itemprop="description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。">
-
-
 <meta itemprop="datePublished" content="2014-01-18T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-01-18T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1764">
 
 
 
-<meta itemprop="keywords" content="ssh,linux," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="ssh,linux," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="SSH远程连接时环境变量问题"/>
 <meta name="twitter:description" content="SSH (Secure SHell) 是一个加密的终端程序，用于替代类Unix操作系统上传统的 telnet 工具。SSH已经发展成为一组软件系列，除了提供用于远程终端访问的ssh这个主要的程序，还包括其他的工具如 scp (secure copy) 和 sftp (secure file transfer protocol)。最初，SSH并不是免费的。然而，当今最流行并成为实际标准的SSH实现是 OpenBSD 的OpenSSH，它在Gentoo中已预安装。"/>
 
@@ -142,82 +139,72 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#1-问题">1. 问题</a></li>
-<li><a href="#2-问题分析">2. 问题分析</a>
-<ul>
-<li><a href="#普通用户-user">普通用户 User</a>
-<ul>
-<li><a href="#场景1">场景1：</a></li>
-<li><a href="#场景2">场景2：</a></li>
-</ul></li>
-<li><a href="#场景3">场景3：</a></li>
-<li><a href="#对比-root-用户">对比 root 用户</a>
-<ul>
-<li><a href="#场景1-1">场景1：</a></li>
-<li><a href="#场景2-1">场景2：</a></li>
-<li><a href="#场景3-1">场景3</a></li>
-<li><a href="#关于-etc-profile-文件部分代码分析">关于/etc/profile 文件部分代码分析</a></li>
-</ul></li>
-</ul></li>
-<li><a href="#3-总结">3. 总结</a></li>
-</ul>
+  <ul>
+    <li><a href="#-user">普通用户 User</a>
+      <ul>
+        <li><a href="#1">场景1：</a></li>
+        <li><a href="#2">场景2：</a></li>
+      </ul>
+    </li>
+    <li><a href="#3">场景3：</a></li>
+    <li><a href="#-root-">对比 root 用户</a>
+      <ul>
+        <li><a href="#1-1">场景1：</a></li>
+        <li><a href="#2-1">场景2：</a></li>
+        <li><a href="#3-1">场景3</a></li>
+        <li><a href="#etcprofile-">关于/etc/profile 文件部分代码分析</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<h1 id="1-问题">1. 问题</h1>
-
+      <h1 id="1-">1. 问题</h1>
 <p>RHEL服务器A有个启动脚本（普通用户user01运行），里面使用ifconfig获取ip地址如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">Localhost_ip=$(ifconfig |awk -F &#39;addr:|Bcast&#39; &#39;/Bcast/{print $2}&#39;)</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">Localhost_ip=$(ifconfig |awk -F &#39;addr:|Bcast&#39; &#39;/Bcast/{print $2}&#39;)
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>由于普通用户user01不能直接识别ifconfig命令，只能使用全路径<code>/sbin/ifconfig</code>，目前处理方式为修改<code>~/.bash_profile</code>文件添加环境变量如下：</p>
+</div><p>由于普通用户user01不能直接识别ifconfig命令，只能使用全路径<code>/sbin/ifconfig</code>，目前处理方式为修改<code>~/.bash_profile</code>文件添加环境变量如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">PATH=$PATH:$HOME/bin</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">PATH=$PATH:$HOME/bin
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>改成如下：</p>
+</div><p>改成如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">PATH=$PATH:$HOME/bin:/sbin</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">PATH=$PATH:$HOME/bin:/sbin
+</code></pre></td></tr></table>
 </div>
-</div>
-<!-- more -->
-
+</div><!-- raw HTML omitted -->
 <p>经过如上配置后服务器本机user01用户登录执行XX.sh脚本可以识别ifconfig命令。</p>
-
 <p>出现如下问题：</p>
-
 <p>远程主机B通过ssh远程执行启动脚本XX.sh，报错如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">bash: ifconfg: command not found</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">bash: ifconfg: command not found
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="2-问题分析">2. 问题分析</h1>
-
+</div><h1 id="2-">2. 问题分析</h1>
 <p>测试前准备，追加调用说明语句，如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -229,9 +216,9 @@
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">/etc/profile
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">/etc/profile
 [root@node3 ~]# vim /etc/profile
 echo &#34;/etc/profile begin:&#34;
 echo &#34;$PATH&#34;
@@ -242,30 +229,32 @@ unset pathmunge
  
 echo &#34;invoke /etc/profile&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# vim /etc/bashrc
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# vim /etc/bashrc
 ...
 # vim:ts=4:sw=4
  
 echo &#34;invoke /etc/bashrc&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -273,20 +262,21 @@ echo &#34;&#34;</pre></td></tr></table>
 </span><span class="lnt">6
 </span><span class="lnt">7
 </span><span class="lnt">8
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# vim /root/.bash_profile
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# vim /root/.bash_profile
 # User specific environment and startup programs
 PATH=$PATH:$HOME/bin
 export PATH
  
 echo &#34;invoke ~/.bash_profile&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -296,9 +286,9 @@ echo &#34;&#34;</pre></td></tr></table>
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# vim /root/.bashrc
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# vim /root/.bashrc
 ...
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -307,11 +297,12 @@ fi
  
 echo &#34;invoke ~/.bashrc&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -320,9 +311,9 @@ echo &#34;&#34;</pre></td></tr></table>
 </span><span class="lnt">7
 </span><span class="lnt">8
 </span><span class="lnt">9
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# vim /home/user01/.bash_profile
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# vim /home/user01/.bash_profile
 ...
 # User specific environment and startup programs
 PATH=$PATH:$HOME/bin
@@ -330,57 +321,54 @@ export PATH
  
 echo &#34;invoke ~/.bashrc&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# vim /home/user01/.bashrc
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# vim /home/user01/.bashrc
 ...
 # User specific aliases and functions
  
 echo &#34;invoke ~/.bashrc&#34;
 echo &#34;$PATH&#34;
-echo &#34;&#34;</pre></td></tr></table>
+echo &#34;&#34;
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>分 user 和 root 用户，3 种场景进行测试，如下：</p>
-
-<h2 id="普通用户-user">普通用户 User</h2>
-
-<h3 id="场景1">场景1：</h3>
-
+</div><p>分 user 和 root 用户，3 种场景进行测试，如下：</p>
+<h2 id="-user">普通用户 User</h2>
+<h3 id="1">场景1：</h3>
 <p>本机使用 su 命令切换到普通用户 （属于 Login 方式）</p>
-
 <p>结论：</p>
-
 <ul>
 <li>Login 之前，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></li>
 <li>Login 方式，文件调用顺序为： <code>/etc/profile -&gt; /etc/bashrc -&gt; ~/.bashrc -&gt; ~/.bash_profile</code></li>
-
-<li><p>Login 之后，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</code></p>
+<li>Login 之后，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</code></li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">su - user
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">su - user
 [root@node3 ~]# hostname -i
-192.168.122.33</pre></td></tr></table>
+192.168.122.33
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -394,9 +382,9 @@ echo &#34;&#34;</pre></td></tr></table>
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# su - user01
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# su - user01
 /etc/profile begin:
 /usr/local/bin:/bin:/usr/bin
 invoke /etc/profile
@@ -409,33 +397,30 @@ invoke ~/.bashrc
 /usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
  
 invoke ~/.bash_profile
-/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</pre></td></tr></table>
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h3 id="场景2">场景2：</h3>
-
+</div><h3 id="2">场景2：</h3>
 <p>远程机使用 ssh 命令以普通用户身份登陆到主机 （属于 Login 方式）</p>
-
 <p>结论：</p>
-
 <ul>
-<li><p>与在本机使用 su 命令切换到普通用户的效果完全一样！</p>
+<li>与在本机使用 su 命令切换到普通用户的效果完全一样！</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">ssh user@remote_server_ip
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ssh user@remote_server_ip
 [root@node1 ~]# hostname -i
-192.168.122.31</pre></td></tr></table>
+192.168.122.31
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -451,9 +436,9 @@ invoke ~/.bash_profile
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node1 ~]# ssh user01@192.168.122.33
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node1 ~]# ssh user01@192.168.122.33
 user01@192.168.122.33&#39;s password: 
 Last login: Tue Jul  9 16:23:33 2013 from 192.168.122.31
 /etc/profile begin:
@@ -468,36 +453,32 @@ invoke ~/.bashrc
 /usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin
  
 invoke ~/.bash_profile
-/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin</pre></td></tr></table>
+/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/user01/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h2 id="场景3">场景3：</h2>
-
+</div><h2 id="3">场景3：</h2>
 <p>远程机使用 ssh 命令以普通用户身份连接到主机执行获取 PATH 的命令 （属于 NoLogin 方式）</p>
-
 <p>结论：</p>
-
 <ul>
 <li>NoLogin 方式，命令获取的 PATH 为该远程机的，并未拿到目标主机的 PATH</li>
 <li>NoLogin 方式，文件调用顺序为：<code>/etc/bashrc -&gt; ~/.bashrc</code></li>
-
-<li><p>NoLogin 方式，目标主机 User 用户 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></p>
+<li>NoLogin 方式，目标主机 User 用户 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">ssh user@remote_server_ip command
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ssh user@remote_server_ip command
 [root@node1 ~]# hostname -i
-192.168.122.31</pre></td></tr></table>
+192.168.122.31
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -510,9 +491,9 @@ invoke ~/.bash_profile
 </span><span class="lnt">11
 </span><span class="lnt">12
 </span><span class="lnt">13
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node1 ~]# echo $PATH
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node1 ~]# echo $PATH
 /usr/local/rabbitmq/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
  
 [root@node1 ~]# ssh user01@192.168.122.33 &#34;echo $PATH&#34;
@@ -524,38 +505,33 @@ invoke /etc/bashrc
 invoke ~/.bashrc
 /usr/local/bin:/bin:/usr/bin
  
-/usr/local/rabbitmq/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+/usr/local/rabbitmq/sbin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h2 id="对比-root-用户">对比 root 用户</h2>
-
-<h3 id="场景1-1">场景1：</h3>
-
+</div><h2 id="-root-">对比 root 用户</h2>
+<h3 id="1-1">场景1：</h3>
 <p>本机使用 su 命令切换到 root （属于 Login 方式）</p>
-
 <p>结论：</p>
-
 <ul>
 <li>Login 之前，系统 PATH 为：<code>/usr/local/bin:/bin:/usr/bin</code></li>
 <li>Login 方式，root 用户，文件调用顺序为：<code>/etc/profile -&gt; /etc/bashrc -&gt; ~/.bashrc -&gt; ~/.bash_profile</code></li>
-
-<li><p>Login 之后，系统 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</code></p>
+<li>Login 之后，系统 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</code></li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">su - root
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">su - root
 [root@node3 ~]# hostname -i
-192.168.122.33</pre></td></tr></table>
+192.168.122.33
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -569,9 +545,9 @@ invoke ~/.bashrc
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node3 ~]# su - root
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node3 ~]# su - root
 /etc/profile begin:
 /usr/local/bin:/bin:/usr/bin
 invoke /etc/profile
@@ -584,33 +560,30 @@ invoke ~/.bashrc
 /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
  
 invoke ~/.bash_profile
-/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h3 id="场景2-1">场景2：</h3>
-
+</div><h3 id="2-1">场景2：</h3>
 <p>远程机使用 ssh 命令以 root 用户身份登陆到主机 （属于 Login 方式）</p>
-
 <p>结论：</p>
-
 <ul>
-<li><p>与在本机使用 su 命令切换到 root 用户的效果完全一样！</p>
+<li>与在本机使用 su 命令切换到 root 用户的效果完全一样！</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">ssh root@remote_server_ip
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ssh root@remote_server_ip
 [root@node1 ~]# hostname -i
-192.168.122.31</pre></td></tr></table>
+192.168.122.31
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -626,9 +599,9 @@ invoke ~/.bash_profile
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node1 ~]# ssh root@192.168.122.33
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node1 ~]# ssh root@192.168.122.33
 root@192.168.122.33&#39;s password: 
 Last login: Tue Jul  9 15:54:53 2013 from 192.168.122.1
 /etc/profile begin:
@@ -643,36 +616,32 @@ invoke ~/.bashrc
 /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
  
 invoke ~/.bash_profile
-/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h3 id="场景3-1">场景3</h3>
-
+</div><h3 id="3-1">场景3</h3>
 <p>远程机使用 ssh 命令以 root 用户身份连接到主机执行获取 PATH 的命令 （属于 NoLogin 方式）</p>
-
 <p>结论：</p>
-
 <ul>
 <li>NoLogin 方式，命令获取的 PATH 为该远程机的，并未拿到目标主机的 PATH</li>
 <li>NoLogin 方式，文件调用顺序为：<code>/etc/bashrc -&gt; ~/.bashrc</code></li>
-
-<li><p>NoLogin 方式，目标主机 root 用户 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin</code></p>
+<li>NoLogin 方式，目标主机 root 用户 PATH 为：<code>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin</code></li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">ssh root@remote_server_ip command
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">ssh root@remote_server_ip command
 [root@node1 ~]# hostname -i
-192.168.122.31</pre></td></tr></table>
+192.168.122.31
+</code></pre></td></tr></table>
 </div>
 </div><div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -684,9 +653,9 @@ invoke ~/.bash_profile
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">[root@node1 ~]# echo $PATH
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@node1 ~]# echo $PATH
 /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
  
 [root@node1 ~]# ssh root@192.168.122.33 &#34;echo $PATH&#34;
@@ -697,20 +666,17 @@ invoke /etc/bashrc
 invoke ~/.bashrc
 /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
  
-/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</pre></td></tr></table>
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h3 id="关于-etc-profile-文件部分代码分析">关于/etc/profile 文件部分代码分析</h3>
-
+</div><h3 id="etcprofile-">关于/etc/profile 文件部分代码分析</h3>
 <p>结论：</p>
-
 <ul>
-<li><p>无论 root 还是 user ，只有调用此文件，其 PATH 中才会被追加 sbin 相关路径。而由以上测试场景可知，只有 Login 时，<code>/etc/profile</code> 文件才会被调用。</p>
+<li>无论 root 还是 user ，只有调用此文件，其 PATH 中才会被追加 sbin 相关路径。而由以上测试场景可知，只有 Login 时，<code>/etc/profile</code> 文件才会被调用。</li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -746,50 +712,47 @@ invoke ~/.bashrc
 </span><span class="lnt">34
 </span><span class="lnt">35
 </span><span class="lnt">36
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">pathmunge () {
-case &#34;:${PATH}:&#34; in
-    *:&#34;$1&#34;:*)
-        ;;
-    *)
-        if [ &#34;$2&#34; = &#34;after&#34; ] ; then
-            PATH=$PATH:$1
-        else
-            PATH=$1:$PATH
-        fi
-esac
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">pathmunge () {
+    case &#34;:${PATH}:&#34; in
+        *:&#34;$1&#34;:*)
+            ;;
+        *)
+            if [ &#34;$2&#34; = &#34;after&#34; ] ; then
+                PATH=$PATH:$1
+            else
+                PATH=$1:$PATH
+            fi
+    esac
 }
 
 if [ -x /usr/bin/id ]; then
-if [ -z &#34;$EUID&#34; ]; then
-    # ksh workaround
-    EUID=`id -u`
-    UID=`id -ru`
-fi
-USER=&#34;`id -un`&#34;
-LOGNAME=$USER
-MAIL=&#34;/var/spool/mail/$USER&#34;
+    if [ -z &#34;$EUID&#34; ]; then
+        # ksh workaround
+        EUID=`id -u`
+        UID=`id -ru`
+    fi
+    USER=&#34;`id -un`&#34;
+    LOGNAME=$USER
+    MAIL=&#34;/var/spool/mail/$USER&#34;
 fi
 
 
 # Path manipulation
 if [ &#34;$EUID&#34; = &#34;0&#34; ]; then
-pathmunge /sbin
-pathmunge /usr/sbin
-pathmunge /usr/local/sbin
+    pathmunge /sbin
+    pathmunge /usr/sbin
+    pathmunge /usr/local/sbin
 else
-pathmunge /usr/local/sbin after
-pathmunge /usr/sbin after
-pathmunge /sbin after
+    pathmunge /usr/local/sbin after
+    pathmunge /usr/sbin after
+    pathmunge /sbin after
 
-fi</pre></td></tr></table>
+fi
+</code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-
-<h1 id="3-总结">3. 总结</h1>
-
+</div><h1 id="3-">3. 总结</h1>
 <p>综上，如需修改 PATH，建议修改 bashrc 文件，从而保证任何方式访问时 PATH 的正确性。</p>
 
     </div>
@@ -908,7 +871,7 @@ fi</pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

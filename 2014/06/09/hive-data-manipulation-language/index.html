@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/06/09/hive-data-manipulation-language/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-06-09T08:00:00+08:00" />
 <meta itemprop="name" content="Hive中数据的加载和导出">
 <meta itemprop="description" content="记录 hive 的DML语法，并以实际的例子演示如何加载和导出数据">
-
-
 <meta itemprop="datePublished" content="2014-06-09T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-06-09T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2181">
+<meta itemprop="wordCount" content="2273">
 
 
 
-<meta itemprop="keywords" content="hive,mapreduce," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hive,mapreduce," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Hive中数据的加载和导出"/>
 <meta name="twitter:description" content="记录 hive 的DML语法，并以实际的例子演示如何加载和导出数据"/>
 
@@ -132,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hive/"> hive </a>
             </div>
-          <span class="more-meta"> 约 2181 字 </span>
+          <span class="more-meta"> 约 2273 字 </span>
           <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -142,46 +139,35 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#1-准备测试数据">1. 准备测试数据</a></li>
-<li><a href="#2-加载数据">2.加载数据</a>
-<ul>
-<li><a href="#2-1-测试">2.1 测试</a>
-<ul>
-<li><a href="#2-1-1-加载本地文件">2.1.1 加载本地文件</a></li>
-<li><a href="#2-1-2-加载hdfs上的文件">2.1.2 加载hdfs上的文件</a></li>
-</ul></li>
-</ul></li>
-<li><a href="#3-插入数据">3. 插入数据</a></li>
-<li><a href="#4-导出数据">4. 导出数据</a></li>
-</ul>
+  <ul>
+    <li><a href="#21-">2.1 测试</a>
+      <ul>
+        <li><a href="#211-">2.1.1 加载本地文件</a></li>
+        <li><a href="#212-hdfs">2.1.2 加载hdfs上的文件</a></li>
+      </ul>
+    </li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>关于 Hive DML 语法，你可以参考 apache 官方文档的说明:<a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML">Hive Data Manipulation Language</a>。</p>
-
+      <p>关于 Hive DML 语法，你可以参考 apache 官方文档的说明:<a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML">Hive Data Manipulation Language</a>。</p>
 <p>apache的hive版本现在应该是 0.13.0，而我使用的 hadoop 版本是 CDH5.0.1，其对应的 hive 版本是 0.12.0。故只能参考apache官方文档来看 cdh5.0.1 实现了哪些特性。</p>
-
 <p>因为 hive 版本会持续升级，故本篇文章不一定会和最新版本保持一致。</p>
-
-<h1 id="1-准备测试数据">1. 准备测试数据</h1>
-
+<h1 id="1-">1. 准备测试数据</h1>
 <p>首先创建普通表：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">table</span> <span class="n">test</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span><span class="p">,</span> <span class="n">name</span> <span class="n">string</span><span class="p">)</span> <span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;,&#39;</span> <span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span><span class="p">;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">create</span> <span class="k">table</span> <span class="n">test</span><span class="p">(</span><span class="n">id</span> <span class="nb">int</span><span class="p">,</span> <span class="n">name</span> <span class="n">string</span><span class="p">)</span> <span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;</span><span class="s1">,</span><span class="s1">&#39;</span> <span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>创建分区表：</p>
+</div><p>创建分区表：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -195,14 +181,14 @@
 <span class="n">name</span> <span class="n">string</span> 
 <span class="p">)</span>
 <span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="nb">date</span> <span class="n">STRING</span><span class="p">)</span>
-<span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;\,&#39;</span> <span class="n">LINES</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;\n&#39;</span> 
-<span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span><span class="p">;</span></code></pre></td></tr></table>
+<span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;</span><span class="s1">\,</span><span class="s1">&#39;</span> <span class="n">LINES</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;</span><span class="s1">\n</span><span class="s1">&#39;</span> 
+<span class="n">STORED</span> <span class="k">AS</span> <span class="n">TEXTFILE</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>准备数据文件：</p>
+</div><p>准备数据文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -210,60 +196,47 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>/tmp<span class="o">]</span><span class="c1"># cat test.txt</span> 
-<span class="m">1</span>,a
-<span class="m">2</span>,b
-<span class="m">3</span>,c
-<span class="m">4</span>,d</code></pre></td></tr></table>
+1,a
+2,b
+3,c
+4,d
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="2-加载数据">2.加载数据</h1>
-
+</div><h1 id="2">2.加载数据</h1>
 <p>语法如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">LOAD</span> <span class="k">DATA</span> <span class="p">[</span><span class="k">LOCAL</span><span class="p">]</span> <span class="n">INPATH</span> <span class="s1">&#39;filepath&#39;</span> <span class="p">[</span><span class="n">OVERWRITE</span><span class="p">]</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">...)]</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">LOAD</span> <span class="k">DATA</span> <span class="p">[</span><span class="k">LOCAL</span><span class="p">]</span> <span class="n">INPATH</span> <span class="s1">&#39;</span><span class="s1">filepath</span><span class="s1">&#39;</span> <span class="p">[</span><span class="n">OVERWRITE</span><span class="p">]</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span><span class="p">]</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>说明：</p>
-
+</div><p>说明：</p>
 <ul>
-<li>filepath 可能是：
-
-<ul>
+<li>filepath 可能是：</li>
 <li>一个相对路径</li>
-<li>一个绝对路径，例如：<code>/root/project/data1</code></li>
+<li>一个绝对路径，例如：<code>/root/project/data1 </code></li>
 <li>一个url地址，可选的可以带上授权信息，例如：<code>hdfs://namenode:9000/user/hive/project/data1</code></li>
-</ul></li>
 <li>目标可能是一个表或者分区，如果该表是分区，则必须制定分区列。</li>
 <li>filepath 可以是一个文件也可以是目录</li>
-<li>如果指定了 <code>LOCAL</code>，则：
-
-<ul>
+<li>如果指定了 <code>LOCAL</code>，则：</li>
 <li><code>load</code> 命令会在本地查找 filepath。如果 filepath 是相对路径，则相对于当前路径，也可以指定一个 url 或者本地文件，例如：<code>file:///user/hive/project/data1</code></li>
-</ul></li>
-<li>如果没有指定 <code>LOCAL</code> ，则hive会使用全路径的url，url 中如果没有制定 schema，则默认使用 <code>fs.default.name</code>的值；如果该路径不是绝对路径，则会相对于 <code>/user/&lt;username&gt;</code></li>
+<li>如果没有指定 <code>LOCAL</code> ，则hive会使用全路径的url，url 中如果没有制定 schema，则默认使用 <code>fs.default.name</code>的值；如果该路径不是绝对路径，则会相对于 <code>/user/&lt;username&gt; </code></li>
 <li>如果使用 <code>OVERWRITE</code> ，则会删除原来的数据，然后导入新的数据，否则，就是追加数据。</li>
 </ul>
-
 <p>需要注意的：</p>
-
 <ul>
 <li><code>filepath</code> 中不能包括子目录</li>
 <li>如果没有指定 <code>LOCAL</code>，则 <code>filepath</code> 指向目标表或者分区所在的文件系统。</li>
 <li>如果需要压缩，则参考 <a href="https://cwiki.apache.org/confluence/display/Hive/CompressedStorage"> CompressedStorage</a></li>
 </ul>
-
-<h2 id="2-1-测试">2.1 测试</h2>
-
-<h3 id="2-1-1-加载本地文件">2.1.1 加载本地文件</h3>
-
+<h2 id="21-">2.1 测试</h2>
+<h3 id="211-">2.1.1 加载本地文件</h3>
 <p>a) 加载到普通表中</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -272,32 +245,32 @@
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">load</span> <span class="k">data</span> <span class="k">local</span> <span class="n">inpath</span> <span class="s1">&#39;/tmp/test.txt&#39;</span> <span class="k">into</span> <span class="k">table</span> <span class="n">test</span><span class="p">;</span>                              
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">load</span> <span class="k">data</span> <span class="k">local</span> <span class="n">inpath</span> <span class="s1">&#39;</span><span class="s1">/tmp/test.txt</span><span class="s1">&#39;</span> <span class="k">into</span> <span class="k">table</span> <span class="n">test</span><span class="p">;</span>                              
 <span class="n">Copying</span> <span class="k">data</span> <span class="k">from</span> <span class="n">file</span><span class="p">:</span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">test</span><span class="p">.</span><span class="n">txt</span>
 <span class="n">Copying</span> <span class="n">file</span><span class="p">:</span> <span class="n">file</span><span class="p">:</span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">test</span><span class="p">.</span><span class="n">txt</span>
 <span class="n">Loading</span> <span class="k">data</span> <span class="k">to</span> <span class="k">table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span>
 <span class="k">Table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span> <span class="n">stats</span><span class="p">:</span> <span class="p">[</span><span class="n">num_partitions</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num_files</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_rows</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_size</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span> <span class="n">raw_data_size</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
 <span class="n">OK</span>
-<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">572</span> <span class="n">seconds</span></code></pre></td></tr></table>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">572</span> <span class="n">seconds</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看hdfs上的数据：</p>
+</div><p>查看hdfs上的数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ hadoop fs -ls /user/hive/warehouse/test
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ hadoop fs -ls /user/hive/warehouse/test
 Found 1 items
--rwxrwxrwt   3 hive hadoop         16 2014-06-09 18:36 /user/hive/warehouse/test/test.txt</pre></td></tr></table>
+-rwxrwxrwt   3 hive hadoop         16 2014-06-09 18:36 /user/hive/warehouse/test/test.txt
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看表中数据：</p>
+</div><p>查看表中数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -312,92 +285,88 @@ Found 1 items
 <span class="mi">2</span>	<span class="n">b</span>
 <span class="mi">3</span>	<span class="k">c</span>
 <span class="mi">4</span>	<span class="n">d</span>
-<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">562</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">4</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">562</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">4</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>b) 加载文件到分区表</p>
-
+</div><p>b) 加载文件到分区表</p>
 <p>通常是直接使用 load 命令加载：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">LOAD DATA LOCAL INPATH &#34;/tmp/test.txt&#34; INTO TABLE test_p PARTITION (date=20140722)</pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">LOAD DATA LOCAL INPATH &#34;/tmp/test.txt&#34; INTO TABLE test_p PARTITION (date=20140722)
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>注意：如果没有加上 <code>overwrite</code> 关键字，则加载相同文件最后会存在多个文件</p>
 </blockquote>
-
 <p>还有一种方法是：创建分区目录，手动上传文件，最后再添加新的分区，代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">hadoop fs -mkdir  /user/hive/warehouse/test/date=20140320
-ALTER TABLE test_p ADD IF NOT EXISTS PARTITION (date=20140320);
-
-hive hadoop fs -rm /user/hive/warehouse/test/date=20140320/test.txt
-hadoop fs -put /tmp/test.txt  /user/hive/warehouse/test/date=20140320</pre></td></tr></table>
-</div>
-</div>
-<p>同样，你也可以查看 hdfs 和表中的数据。</p>
-
-<h3 id="2-1-2-加载hdfs上的文件">2.1.2 加载hdfs上的文件</h3>
-
-<p>拷贝 test.txt 为test_1.txt 并将其上传到 <code>/user/hive/warehouse</code>:</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">$ cp test.txt test_1.txt
-$ sudo -u hive hadoop fs -put test_1.txt /user/hive/warehouse</pre></td></tr></table>
-</div>
-</div>
-<p>然后将 <code>/user/hive/warehouse/test_1.txt</code> 导入到test表中：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">load</span> <span class="k">data</span> <span class="n">inpath</span> <span class="s1">&#39;/user/hive/warehouse/test_1.txt&#39;</span> <span class="k">into</span> <span class="k">table</span> <span class="n">test</span><span class="p">;</span> 
-<span class="n">Loading</span> <span class="k">data</span> <span class="k">to</span> <span class="k">table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span>
-<span class="k">Table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span> <span class="n">stats</span><span class="p">:</span> <span class="p">[</span><span class="n">num_partitions</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num_files</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_rows</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_size</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span> <span class="n">raw_data_size</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
-<span class="n">OK</span>
-<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">2</span><span class="p">.</span><span class="mi">941</span> <span class="n">seconds</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">hadoop fs -mkdir  /user/hive/warehouse/test/date=20140320
+ALTER TABLE test_p ADD IF NOT EXISTS PARTITION (date=20140320);
+
+hive hadoop fs -rm /user/hive/warehouse/test/date=20140320/test.txt
+hadoop fs -put /tmp/test.txt  /user/hive/warehouse/test/date=20140320
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看hdfs上的数据：</p>
+</div><p>同样，你也可以查看 hdfs 和表中的数据。</p>
+<h3 id="212-hdfs">2.1.2 加载hdfs上的文件</h3>
+<p>拷贝 test.txt 为test_1.txt 并将其上传到 <code>/user/hive/warehouse</code>:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ cp test.txt test_1.txt
+$ sudo -u hive hadoop fs -put test_1.txt /user/hive/warehouse
+</code></pre></td></tr></table>
+</div>
+</div><p>然后将 <code>/user/hive/warehouse/test_1.txt</code> 导入到test表中：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></pre></td>
+</span><span class="lnt">5
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">$ hadoop fs -ls /user/hive/warehouse/test
-Found 2 items
--rwxr-xr-x   3 hive hadoop         16 2014-06-09 18:48 /user/hive/warehouse/test/test.txt
--rwxr-xr-x   3 hive hadoop         16 2014-06-09 18:45 /user/hive/warehouse/test/test_1.txt</pre></td></tr></table>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="n">hive</span><span class="o">&gt;</span> <span class="k">load</span> <span class="k">data</span> <span class="n">inpath</span> <span class="s1">&#39;</span><span class="s1">/user/hive/warehouse/test_1.txt</span><span class="s1">&#39;</span> <span class="k">into</span> <span class="k">table</span> <span class="n">test</span><span class="p">;</span> 
+<span class="n">Loading</span> <span class="k">data</span> <span class="k">to</span> <span class="k">table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span>
+<span class="k">Table</span> <span class="k">default</span><span class="p">.</span><span class="n">test</span> <span class="n">stats</span><span class="p">:</span> <span class="p">[</span><span class="n">num_partitions</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num_files</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num_rows</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">total_size</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span> <span class="n">raw_data_size</span><span class="p">:</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">OK</span>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">2</span><span class="p">.</span><span class="mi">941</span> <span class="n">seconds</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>查看表中数据：</p>
+</div><p>查看hdfs上的数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ hadoop fs -ls /user/hive/warehouse/test
+Found 2 items
+-rwxr-xr-x   3 hive hadoop         16 2014-06-09 18:48 /user/hive/warehouse/test/test.txt
+-rwxr-xr-x   3 hive hadoop         16 2014-06-09 18:45 /user/hive/warehouse/test/test_1.txt
+</code></pre></td></tr></table>
+</div>
+</div><p>查看表中数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -420,28 +389,27 @@ Found 2 items
 <span class="mi">2</span>	<span class="n">b</span>
 <span class="mi">3</span>	<span class="k">c</span>
 <span class="mi">4</span>	<span class="n">d</span>
-<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">302</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></code></pre></td></tr></table>
+<span class="n">Time</span> <span class="n">taken</span><span class="p">:</span> <span class="mi">0</span><span class="p">.</span><span class="mi">302</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Fetched</span><span class="p">:</span> <span class="mi">8</span> <span class="k">row</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="3-插入数据">3. 插入数据</h1>
-
+</div><h1 id="3-">3. 插入数据</h1>
 <p>标准语法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">...)</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]]</span> <span class="n">select_statement1</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]</span><span class="p">]</span> <span class="n">select_statement1</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
 
-<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">...)]</span> <span class="n">select_statement1</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span></code></pre></td></tr></table>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span><span class="p">]</span> <span class="n">select_statement1</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>扩展语法（多个insert）：</p>
+</div><p>扩展语法（多个insert）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -453,107 +421,86 @@ Found 2 items
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">FROM</span> <span class="n">from_statement</span>
-<span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">...)</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]]</span> <span class="n">select_statement1</span>
-<span class="p">[</span><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">...</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]]</span> <span class="n">select_statement2</span><span class="p">]</span>
-<span class="p">[</span><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">...]</span> <span class="n">select_statement2</span><span class="p">]</span> <span class="p">...;</span>
+<span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]</span><span class="p">]</span> <span class="n">select_statement1</span>
+<span class="p">[</span><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]</span><span class="p">]</span> <span class="n">select_statement2</span><span class="p">]</span>
+<span class="p">[</span><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">]</span> <span class="n">select_statement2</span><span class="p">]</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">;</span>
 
 <span class="k">FROM</span> <span class="n">from_statement</span>
-<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">...)]</span> <span class="n">select_statement1</span>
-<span class="p">[</span><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">...]</span> <span class="n">select_statement2</span><span class="p">]</span>
-<span class="p">[</span><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">...</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]]</span> <span class="n">select_statement2</span><span class="p">]</span> <span class="p">...;</span></code></pre></td></tr></table>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename1</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">partcol2</span><span class="o">=</span><span class="n">val2</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span><span class="p">]</span> <span class="n">select_statement1</span>
+<span class="p">[</span><span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">]</span> <span class="n">select_statement2</span><span class="p">]</span>
+<span class="p">[</span><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename2</span> <span class="p">[</span><span class="n">PARTITION</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span> <span class="p">[</span><span class="k">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]</span><span class="p">]</span> <span class="n">select_statement2</span><span class="p">]</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>扩展语法（动态分区insert）：</p>
+</div><p>扩展语法（动态分区insert）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="p">[</span><span class="o">=</span><span class="n">val1</span><span class="p">],</span> <span class="n">partcol2</span><span class="p">[</span><span class="o">=</span><span class="n">val2</span><span class="p">]</span> <span class="p">...)</span> <span class="n">select_statement</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="p">[</span><span class="o">=</span><span class="n">val1</span><span class="p">]</span><span class="p">,</span> <span class="n">partcol2</span><span class="p">[</span><span class="o">=</span><span class="n">val2</span><span class="p">]</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span> <span class="n">select_statement</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
 
-<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="p">[</span><span class="o">=</span><span class="n">val1</span><span class="p">],</span> <span class="n">partcol2</span><span class="p">[</span><span class="o">=</span><span class="n">val2</span><span class="p">]</span> <span class="p">...)</span> <span class="n">select_statement</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span></code></pre></td></tr></table>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tablename</span> <span class="n">PARTITION</span> <span class="p">(</span><span class="n">partcol1</span><span class="p">[</span><span class="o">=</span><span class="n">val1</span><span class="p">]</span><span class="p">,</span> <span class="n">partcol2</span><span class="p">[</span><span class="o">=</span><span class="n">val2</span><span class="p">]</span> <span class="p">.</span><span class="p">.</span><span class="p">.</span><span class="p">)</span> <span class="n">select_statement</span> <span class="k">FROM</span> <span class="n">from_statement</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>说明：</p>
-
+</div><p>说明：</p>
 <ul>
 <li>INSERT OVERWRITE 会覆盖存在的数据</li>
 <li>输出的格式和序列化类取决于表的元数据</li>
 <li><a href="https://issues.apache.org/jira/browse/HIVE-1180">hive 0.13.0</a>之后，select语句可以使用 CTEs 表达式，语法请参考 <a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Select#LanguageManualSelect-SelectSyntax"> SELECT syntax</a>，示例见 <a href="https://cwiki.apache.org/confluence/display/Hive/Common+Table+Expression#CommonTableExpression-CTEinViews,CTAS,andInsertStatements">Common Table Expression</a></li>
 </ul>
-
 <p><strong>Dynamic Partition Inserts</strong></p>
-
 <p>dynamic partition inserts在hive 0.6.0中引入。相关的配置参数有：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">hive.exec.dynamic.partition
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">hive.exec.dynamic.partition
 hive.exec.dynamic.partition.mode
 hive.exec.max.dynamic.partitions.pernode
 hive.exec.max.dynamic.partitions
 hive.exec.max.created.files
-hive.error.on.empty.partition</pre></td></tr></table>
+hive.error.on.empty.partition
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>一个示例：</p>
+</div><p>一个示例：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">FROM</span> <span class="n">page_view_stg</span> <span class="n">pvs</span>
-<span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">page_view</span> <span class="n">PARTITION</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;2008-06-08&#39;</span><span class="p">,</span> <span class="n">country</span><span class="p">)</span>
-       <span class="k">SELECT</span> <span class="n">pvs</span><span class="p">.</span><span class="n">viewTime</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">userid</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">page_url</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">referrer_url</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">ip</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">cnt</span></code></pre></td></tr></table>
+<span class="k">INSERT</span> <span class="n">OVERWRITE</span> <span class="k">TABLE</span> <span class="n">page_view</span> <span class="n">PARTITION</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;</span><span class="s1">2008-06-08</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">country</span><span class="p">)</span>
+       <span class="k">SELECT</span> <span class="n">pvs</span><span class="p">.</span><span class="n">viewTime</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">userid</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">page_url</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">referrer_url</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">ip</span><span class="p">,</span> <span class="n">pvs</span><span class="p">.</span><span class="n">cnt</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="4-导出数据">4. 导出数据</h1>
-
+</div><h1 id="4-">4. 导出数据</h1>
 <p>标准语法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">INSERT OVERWRITE [LOCAL] DIRECTORY directory1
   [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)
-  SELECT ... FROM ...</pre></td></tr></table>
+  SELECT ... FROM ...
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>扩展语法（多个insert）：</p>
-
-<p>~~~~~~
-FROM from_statement
-INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
-[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] &hellip;</p>
+</div><p>扩展语法（多个insert）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">row_format相关语法：</pre></td></tr></table>
-</div>
-</div>
-<p>sql
-DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
-        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
-        <a href="Note: Only available starting with Hive 0.13">NULL DEFINED AS char</a></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -563,9 +510,109 @@ DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMIN
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></pre></td>
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span><span class="lnt">97
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">说明：
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">FROM from_statement
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1
+[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...
+~~~
+
+row_format相关语法：
+
+~~~sql
+DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMINATED BY char]
+        [MAP KEYS TERMINATED BY char] [LINES TERMINATED BY char]
+        [NULL DEFINED AS char](Note: Only available starting with Hive 0.13)
+~~~
+
+说明：
 
 - Directory 可以是一个全路径的 url。
 - 如果指定 `LOCAL`，则会将数据写到本地文件系统。
@@ -574,14 +621,14 @@ DELIMITED [FIELDS TERMINATED BY char [ESCAPED BY char]] [COLLECTION ITEMS TERMIN
 
 ## 4.1 测试;
 
-### 4.1.1 导出到本地文件系统</pre></td></tr></table>
-</div>
-</div>
-<p>hive&gt; insert overwrite local directory &lsquo;/tmp/test&rsquo; select * from test;
+### 4.1.1 导出到本地文件系统
+
+~~~
+hive&gt; insert overwrite local directory &#39;/tmp/test&#39; select * from test;
 Total MapReduce jobs = 1
 Launching Job 1 out of 1
-Number of reduce tasks is set to 0 since there&rsquo;s no reduce operator
-Starting Job = job_1402248601715_0016, Tracking URL = <a href="http://cdh1:8088/proxy/application_1402248601715_0016/">http://cdh1:8088/proxy/application_1402248601715_0016/</a>
+Number of reduce tasks is set to 0 since there&#39;s no reduce operator
+Starting Job = job_1402248601715_0016, Tracking URL = http://cdh1:8088/proxy/application_1402248601715_0016/
 Kill Command = /usr/lib/hadoop/bin/hadoop job  -kill job_1402248601715_0016
 Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 0
 2014-06-09 19:25:12,896 Stage-1 map = 0%,  reduce = 0%
@@ -591,20 +638,17 @@ MapReduce Total cumulative CPU time: 990 msec
 Ended Job = job_1402248601715_0016
 Copying data to local directory /tmp/test
 Copying data to local directory /tmp/test
-MapReduce Jobs Launched:
+MapReduce Jobs Launched: 
 Job 0: Map: 1   Cumulative CPU: 0.99 sec   HDFS Read: 305 HDFS Write: 32 SUCCESS
 Total MapReduce CPU Time Spent: 990 msec
 OK
-Time taken: 18.438 seconds</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">导出后的数据预览如下：</pre></td></tr></table>
-</div>
-</div>
-<p>[/tmp]# vim test/000000_0
+Time taken: 18.438 seconds
+~~~
+
+导出后的数据预览如下：
+
+~~~
+[/tmp]# vim test/000000_0 
 1^Aa
 2^Ab
 3^Ac
@@ -612,26 +656,19 @@ Time taken: 18.438 seconds</p>
 1^Aa
 2^Ab
 3^Ac
-4^Ad</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">可以看到数据中的列与列之间的分隔符是`^A`(ascii码是`\00001`)，如果想修改分隔符，可以做如下修改：</pre></td></tr></table>
-</div>
-</div>
-<p>sql
-hive&gt; insert overwrite local directory &lsquo;/tmp/test&rsquo; row format delimited fields terminated by &lsquo;,&rsquo; select * from test;</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">再来查看数据：</pre></td></tr></table>
-</div>
-</div>
-<p>vim test/000000_3
+4^Ad
+~~~
+
+可以看到数据中的列与列之间的分隔符是`^A`(ascii码是`\00001`)，如果想修改分隔符，可以做如下修改：
+
+~~~sql
+hive&gt; insert overwrite local directory &#39;/tmp/test&#39; row format delimited fields terminated by &#39;,&#39; select * from test;
+~~~
+
+再来查看数据：
+
+~~~
+vim test/000000_3 
 1,a
 2,b
 3,c
@@ -639,39 +676,29 @@ hive&gt; insert overwrite local directory &lsquo;/tmp/test&rsquo; row format del
 1,a
 2,b
 3,c
-4,d</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">### 4.1.2 导出到 HDFS 中</pre></td></tr></table>
-</div>
-</div>
-<p>hive&gt; insert overwrite  directory &lsquo;/user/hive/tmp&rsquo; select * from test;</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">注意：
+4,d
+~~~
+
+### 4.1.2 导出到 HDFS 中
+
+~~~
+hive&gt; insert overwrite  directory &#39;/user/hive/tmp&#39; select * from test;
+~~~
+
+注意：
 
 和导出文件到本地文件系统的HQL少一个local，数据的存放路径不一样了。
 
 ### 4.1.3 导出到Hive的另一个表中
 
-在实际情况中，表的输出结果可能太多，不适于显示在控制台上，这时候，将Hive的查询输出结果直接存在一个新的表中是非常方便的，我们称这种情况为CTAS（ `create table .. as select`）如下：</pre></td></tr></table>
-</div>
-</div>
-<p>hive&gt; create table test2 as select * from test;
-~~~</p>
+在实际情况中，表的输出结果可能太多，不适于显示在控制台上，这时候，将Hive的查询输出结果直接存在一个新的表中是非常方便的，我们称这种情况为CTAS（ `create table .. as select`）如下：
 
+~~~
+hive&gt; create table test2 as select * from test;
+~~~
+</code></pre></td></tr></table>
+</div>
+</div>
     </div>
 
     <div class="post-copyright">
@@ -788,7 +815,7 @@ hive&gt; insert overwrite local directory &lsquo;/tmp/test&rsquo; row format del
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

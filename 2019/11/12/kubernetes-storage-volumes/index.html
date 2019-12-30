@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/11/12/kubernetes-storage-volumes/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2019-11-12T08:00:00+08:00" />
 <meta itemprop="name" content="Kubernetes存储之Volume">
 <meta itemprop="description" content="容器和Pod生命周期可能很短，会被频繁销毁和创建。容器销毁时，保存在容器的内部文件系统中的数据都会被清楚。 为了持久化保存容器的数据，可以使用">
-
-
 <meta itemprop="datePublished" content="2019-11-12T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-12T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4962">
+<meta itemprop="wordCount" content="4956">
 
 
 
-<meta itemprop="keywords" content="kubernetes," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="kubernetes," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Kubernetes存储之Volume"/>
 <meta name="twitter:description" content="容器和Pod生命周期可能很短，会被频繁销毁和创建。容器销毁时，保存在容器的内部文件系统中的数据都会被清楚。 为了持久化保存容器的数据，可以使用"/>
 
@@ -132,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 4962 字 </span>
+          <span class="more-meta"> 约 4956 字 </span>
           <span class="more-meta"> 预计阅读 10 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -142,47 +139,33 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#volume-类型">Volume 类型</a>
-<ul>
-<li><a href="#emptydir">emptyDir</a></li>
-<li><a href="#hostpath">hostPath</a></li>
-<li><a href="#local">local</a></li>
-<li><a href="#nfs">nfs</a></li>
-<li><a href="#gitrepo-已弃用">gitRepo (已弃用)</a></li>
-<li><a href="#project">Project</a>
-<ul>
-<li><a href="#secret">Secret</a></li>
-<li><a href="#configmap">ConfigMap</a></li>
-<li><a href="#downward">Downward</a></li>
-</ul></li>
-<li><a href="#rbd">rbd</a></li>
-<li><a href="#cephfs">cephfs</a></li>
-</ul></li>
-<li><a href="#使用-subpath">使用 subPath</a></li>
-<li><a href="#使用-subpathexpr">使用 <code>subPathExpr</code></a></li>
-<li><a href="#资源">资源</a></li>
-</ul>
+  <ul>
+    <li><a href="#emptydir">emptyDir</a></li>
+    <li><a href="#hostpath">hostPath</a></li>
+    <li><a href="#local">local</a></li>
+    <li><a href="#nfs">nfs</a></li>
+    <li><a href="#gitrepo-">gitRepo (已弃用)</a></li>
+    <li><a href="#project">Project</a>
+      <ul>
+        <li><a href="#secret">Secret</a></li>
+        <li><a href="#configmap">ConfigMap</a></li>
+        <li><a href="#downward">Downward</a></li>
+      </ul>
+    </li>
+    <li><a href="#rbd">rbd</a></li>
+    <li><a href="#cephfs">cephfs</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>容器和Pod生命周期可能很短，会被频繁销毁和创建。容器销毁时，保存在容器的内部文件系统中的数据都会被清楚。</p>
-
+      <p>容器和Pod生命周期可能很短，会被频繁销毁和创建。容器销毁时，保存在容器的内部文件系统中的数据都会被清楚。</p>
 <p>为了持久化保存容器的数据，可以使用 Kubernetes Volume。</p>
-
 <p>Volume 的生命周期独立于容器，Pod中的容器可能会销毁和重建，但Volume会被保留。</p>
-
 <p>使用卷时，Pod 声明中需要提供卷的类型 (<code>.spec.volumes</code> 字段)和卷挂载的位置 (<code>.spec.containers.volumeMounts</code> 字段)。</p>
-
-<h1 id="volume-类型">Volume 类型</h1>
-
+<h1 id="volume-">Volume 类型</h1>
 <p>本质上，Kubernetes Volume是一个目录，这一点与Docker Volume类似。当Volume被mount到Pod，Pod中的所有容器都可以访问这个Volume。</p>
-
 <p>Kubernetes提供了许多Volume类型：</p>
-
 <ul>
 <li><a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#awselasticblockstore">awsElasticBlockStore</a></li>
 <li><a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#azuredisk">azureDisk</a></li>
@@ -213,22 +196,17 @@
 <li><a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#storageos">storageos</a></li>
 <li><a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#vspherevolume">vsphereVolume</a></li>
 </ul>
-
 <h2 id="emptydir">emptyDir</h2>
-
 <p>emptyDir类型的Volume在Pod分配到Node上时被创建，Kubernetes会在Node上自动分配一个目录，因此无需指定宿主机Node上对应的目录文件。 这个目录的初始内容为空，当Pod从Node上移除时，emptyDir中的数据会被永久删除。</p>
-
 <p>emptyDir类型的volume适合于以下场景：</p>
-
 <ul>
 <li>临时空间。例如某些程序运行时所需的临时目录，无需永久保存。</li>
 <li>一个容器需要从另一容器中获取数据的目录（多容器共享目录）</li>
 </ul>
-
 <p>emptyDir.yml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -287,46 +265,47 @@
 </span><span class="w">
 </span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>shared-volume<span class="w">
-</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}</code></pre></td></tr></table>
+</span><span class="w">    </span>emptyDir<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<ul>
-<li><p><code>volumes</code> 定义了一个 <code>emptyDir</code> 类型的 volume，名字为 *shared-volume*。</p></li>
-
-<li><p>producer 容器把 <em>shared-volume</em> 挂载到自己的 */producer_dir*。</p></li>
-
-<li><p>producer 向 <em>/producer_dir/hello</em> 写数据。</p></li>
-
-<li><p>consumer 容器把 <em>shared-volume</em> 挂载到自己的 */consumer_dir*。</p></li>
-
-<li><p>consumer 读取 <em>/consumer_dir/hello</em> 内容。</p></li>
+</div><ul>
+<li>
+<p><code>volumes</code> 定义了一个 <code>emptyDir</code> 类型的 volume，名字为 <em>shared-volume</em>。</p>
+</li>
+<li>
+<p>producer 容器把 <em>shared-volume</em> 挂载到自己的 <em>/producer_dir</em>。</p>
+</li>
+<li>
+<p>producer 向 <em>/producer_dir/hello</em> 写数据。</p>
+</li>
+<li>
+<p>consumer 容器把 <em>shared-volume</em> 挂载到自己的 <em>/consumer_dir</em>。</p>
+</li>
+<li>
+<p>consumer 读取 <em>/consumer_dir/hello</em> 内容。</p>
+</li>
 </ul>
-
 <p>创建Pod查看日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">kubectl apply -f emptyDir.yml
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl apply -f emptyDir.yml
 
-kubectl logs producer-consumer consumer</pre></td></tr></table>
+kubectl logs producer-consumer consumer
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>输出了 producer 写入的内容，验证了 pod 中2个容器共享 emptyDir volume。</p>
-
+</div><p>输出了 producer 写入的内容，验证了 pod 中2个容器共享 emptyDir volume。</p>
 <p>因为 emptyDir 是Docker Volume里面的目录，其效果相当于执行了 docker run -v /producer_dir 和 docker run -v /consumer_dir ，通过docker inspect查看两个容器的详细信息，可以发现两个容器mount了同一个目录。</p>
-
 <h2 id="hostpath">hostPath</h2>
-
 <p>hostPath类型的volume允许用户挂在Node上的文件系统到Pod中，如果 Pod 需要使用 Node 上的文件，可以使用 hostPath。</p>
-
 <p>hostPath.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -367,11 +346,10 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>hostPath-volume<span class="w">
 </span><span class="w">    </span>hostPath<span class="p">:</span><span class="w"> 
 </span><span class="w">      </span>path<span class="p">:</span><span class="w"> </span>/data<span class="w">
-</span><span class="w">      </span>type<span class="p">:</span><span class="w"> </span>Directory</code></pre></td></tr></table>
+</span><span class="w">      </span>type<span class="p">:</span><span class="w"> </span>Directory<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>hostPath支持type属性，它的可选值如下：</p>
-
+</div><p>hostPath支持type属性，它的可选值如下：</p>
 <table>
 <thead>
 <tr>
@@ -379,77 +357,59 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 <th align="left">行为</th>
 </tr>
 </thead>
-
 <tbody>
 <tr>
 <td align="left"></td>
 <td align="left">空字符串（默认）是用于向后兼容，这意味着在挂接主机路径存储卷之前不执行任何检查。</td>
 </tr>
-
 <tr>
 <td align="left"><code>DirectoryOrCreate</code></td>
 <td align="left">如果path指定目录不存在，则会在宿主机上创建一个新的目录，并设置目录权限为0755，此目录与kubelet拥有一样的组和拥有者。</td>
 </tr>
-
 <tr>
 <td align="left"><code>Directory</code></td>
 <td align="left">path指定的目标必需存在</td>
 </tr>
-
 <tr>
 <td align="left"><code>FileOrCreate</code></td>
 <td align="left">如果path指定的文件不存在，则会在宿主机上创建一个空的文件，设置权限为0644，此文件与kubelet拥有一样的组和拥有者。</td>
 </tr>
-
 <tr>
 <td align="left"><code>File</code></td>
 <td align="left">path指定的文件必需存在</td>
 </tr>
-
 <tr>
 <td align="left"><code>Socket</code></td>
 <td align="left">path指定的UNIX socket必需存在</td>
 </tr>
-
 <tr>
 <td align="left"><code>CharDevice</code></td>
 <td align="left">path指定的字符设备必需存在</td>
 </tr>
-
 <tr>
 <td align="left"><code>BlockDevice</code></td>
 <td align="left">在path给定路径上必须存在块设备。</td>
 </tr>
 </tbody>
 </table>
-
 <p>hostPath volume通常用于以下场景：</p>
-
 <ul>
 <li>容器中的应用程序产生的日志文件需要永久保存，可以使用宿主机的文件系统进行存储。</li>
 <li>需要访问宿主机上Docker引擎内部数据结构的容器应用，通过定义hostPath为/var/lib/docker目录，使容器内应用可以直接访问Docker的文件系统。</li>
 </ul>
-
 <p>在使用hostPath volume时，需要注意：</p>
-
 <ul>
 <li>在不同的Node上具有相同配置的Pod，可能会因为宿主机上的目录和文件不同，而导致对Volume上目录和文件的访问结果不一致。</li>
 </ul>
-
 <h2 id="local">local</h2>
-
 <p><code>local</code> 卷指的是所挂载的某个本地存储设备，例如磁盘、分区或者目录。</p>
-
 <p><code>local</code> 卷只能用作静态创建的持久卷。尚不支持动态配置。</p>
-
 <p>相比 <code>hostPath</code> 卷，<code>local</code> 卷可以以持久和可移植的方式使用，而无需手动将 Pod 调度到节点，因为系统通过查看 PersistentVolume 所属节点的亲和性配置，就能了解卷的节点约束。</p>
-
 <p>然而，<code>local</code> 卷仍然取决于底层节点的可用性，并不是适合所有应用程序。 如果节点变得不健康，那么<code>local</code> 卷也将变得不可访问，并且使用它的 Pod 将不能运行。 使用 <code>local</code> 卷的应用程序必须能够容忍这种可用性的降低，以及因底层磁盘的耐用性特征而带来的潜在的数据丢失风险。</p>
-
 <p>下面是一个使用 <code>local</code> 卷和 <code>nodeAffinity</code> 的持久卷示例：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -496,25 +456,19 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 </span><span class="w">        </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span>kubernetes.io/hostname<span class="w">
 </span><span class="w">          </span>operator<span class="p">:</span><span class="w"> </span>In<span class="w">
 </span><span class="w">          </span>values<span class="p">:</span><span class="w">
-</span><span class="w">          </span>-<span class="w"> </span>example-node</code></pre></td></tr></table>
+</span><span class="w">          </span>-<span class="w"> </span>example-node<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>使用 <code>local</code> 卷时，需要使用 PersistentVolume 对象的 <code>nodeAffinity</code> 字段。 它使 Kubernetes 调度器能够将使用 <code>local</code> 卷的 Pod 正确地调度到合适的节点。</p>
-
+</div><p>使用 <code>local</code> 卷时，需要使用 PersistentVolume 对象的 <code>nodeAffinity</code> 字段。 它使 Kubernetes 调度器能够将使用 <code>local</code> 卷的 Pod 正确地调度到合适的节点。</p>
 <p>现在，可以将 PersistentVolume 对象的 <code>volumeMode</code> 字段设置为 “Block”（而不是默认值 “Filesystem”），以将 <code>local</code> 卷作为原始块设备暴露出来。 <code>volumeMode</code> 字段需要启用 Alpha 功能 <code>BlockVolume</code>。</p>
-
 <p>当使用 <code>local</code> 卷时，建议创建一个 StorageClass，将 <code>volumeBindingMode</code> 设置为 <code>WaitForFirstConsumer</code>。 请参考 <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/#local">示例</a>。 延迟卷绑定操作可以确保 Kubernetes 在为 PersistentVolumeClaim 作出绑定决策时，会评估 Pod 可能具有的其他节点约束，例如：如节点资源需求、节点选择器、Pod 亲和性和 Pod 反亲和性。</p>
-
 <p>您可以在 Kubernetes 之外单独运行静态驱动以改进对 local 卷的生命周期管理。 请注意，此驱动不支持动态配置。 有关如何运行外部 <code>local</code> 卷驱动的示例，请参考 <a href="https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner">local 卷驱动用户指南</a>。</p>
-
 <h2 id="nfs">nfs</h2>
-
 <p>在Kubernetes中，可以通过nfs类型的存储卷将现有的NFS（网络文件系统）到的挂接到Pod中。在移除Pod时，NFS存储卷中的内容被不会被删除，只是将存储卷卸载而已。这意味着在NFS存储卷总可以预先填充数据，并且可以在Pod之间共享数据。NFS可以被同时挂接到多个Pod中，并能同时进行写入。需要注意的是：在使用nfs存储卷之前，必须已正确部署和运行NFS服务器，并已经设置了共享目录。</p>
-
 <p>nfs.yaml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -556,22 +510,19 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 </span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nfs<span class="w">            </span><span class="c">#指定名称必须与上面一致</span><span class="w">
 </span><span class="w">      </span>nfs<span class="p">:</span><span class="w">            </span><span class="c">#nfs存储</span><span class="w">
-</span><span class="w">        </span>server<span class="p">:</span><span class="w"> </span><span class="m">192.168.66.50</span><span class="w">        </span><span class="c">#nfs服务器ip或是域名</span><span class="w">
-</span><span class="w">        </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/test&#34;</span><span class="w">                </span><span class="c">#nfs服务器共享的目录</span></code></pre></td></tr></table>
+</span><span class="w">        </span>server<span class="p">:</span><span class="w"> </span><span class="m">192.168</span><span class="m">.66</span><span class="m">.50</span><span class="w">        </span><span class="c">#nfs服务器ip或是域名</span><span class="w">
+</span><span class="w">        </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/test&#34;</span><span class="w">                </span><span class="c">#nfs服务器共享的目录</span><span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="gitrepo-已弃用">gitRepo (已弃用)</h2>
-
+</div><h2 id="gitrepo-">gitRepo (已弃用)</h2>
 <blockquote>
 <p><strong>警告：</strong></p>
-
 <p>gitRepo 卷类型已经被废弃。如果需要在容器中提供 git 仓库，请将一个 <a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#emptydir">EmptyDir</a> 卷挂载到 InitContainer 中，使用 git 命令完成仓库的克隆操作，然后将 <a href="https://kubernetes.io/zh/docs/concepts/storage/volumes/#emptydir">EmptyDir</a> 卷挂载到 Pod 的容器中。</p>
 </blockquote>
-
 <p><code>gitRepo</code> 卷是一个卷插件的例子。 该卷类型挂载了一个空目录，并将一个 Git 代码仓库克隆到这个目录中供您使用。 将来，这种卷可能被移动到一个更加解耦的模型中，而不是针对每个应用案例扩展 Kubernetes API。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -604,30 +555,24 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>git-volume<span class="w">
 </span><span class="w">    </span>gitRepo<span class="p">:</span><span class="w">
 </span><span class="w">      </span>repository<span class="p">:</span><span class="w"> </span><span class="s2">&#34;git@somewhere:me/my-git-repository.git&#34;</span><span class="w">
-</span><span class="w">      </span>revision<span class="p">:</span><span class="w"> </span><span class="s2">&#34;22f1d8406d464b0c0874075539c1f2e96c253775&#34;</span></code></pre></td></tr></table>
+</span><span class="w">      </span>revision<span class="p">:</span><span class="w"> </span><span class="s2">&#34;22f1d8406d464b0c0874075539c1f2e96c253775&#34;</span><span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h2 id="project">Project</h2>
-
+</div><h2 id="project">Project</h2>
 <p>除了hostPath、emptyDir还有一种Volume叫作Projected Volume（投射数据卷）。在Kubernetes中，有几种特殊的Volume，它们存在的意义不是为了存放容器里的数据，也不是用来进行容器间的数据共享。这些特殊Volume的作用是为容器提供预先定义好的数据。所以，从容器的角度来看，这些 Volume里的信息就是仿佛是被Kubernetes“投射”（Project）进入容器当中的。这正是 Projected Volume的含义。</p>
-
 <p>到目前为止，Kubernetes支持的Projected Volume一共有四种：</p>
-
 <ul>
 <li><strong>Secret</strong></li>
 <li><strong>ConfigMap</strong></li>
 <li><strong>Downward API</strong></li>
 <li><strong>ServiceAccountToken</strong></li>
 </ul>
-
 <h3 id="secret">Secret</h3>
-
 <p>Secret最典型的使用场景，莫过于存放用户名密码等敏感信息，比如下面这个例子：</p>
-
 <p>示例（8.pod-projected-secret.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -674,15 +619,14 @@ kubectl logs producer-consumer consumer</pre></td></tr></table>
 </span><span class="w">      </span>-<span class="w"> </span>secret<span class="p">:</span><span class="w">
 </span><span class="w">          </span>name<span class="p">:</span><span class="w"> </span>user<span class="w">
 </span><span class="w">      </span>-<span class="w"> </span>secret<span class="p">:</span><span class="w">
-</span><span class="w">          </span>name<span class="p">:</span><span class="w"> </span>pass</code></pre></td></tr></table>
+</span><span class="w">          </span>name<span class="p">:</span><span class="w"> </span>pass<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>在这个Pod中，它声明挂载的Volume，并不是常见的emptyDir或者hostPath类型，而是projected类型。而这个Volume的数据来源Secret对象，分别对应的是用户名和密码。</p>
-
+</div><p>在这个Pod中，它声明挂载的Volume，并不是常见的emptyDir或者hostPath类型，而是projected类型。而这个Volume的数据来源Secret对象，分别对应的是用户名和密码。</p>
 <p>这里用到的数据库的用户名、密码，正是以Secret对象的方式交给Kubernetes保存的。完成这个操作的指令，如下所示：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -697,13 +641,13 @@ $ cat ./pass.txt
 password
 
 $ kubectl create secret generic user --from-file<span class="o">=</span>./user.txt
-$ kubectl create secret generic pass --from-file<span class="o">=</span>./pass.txt</code></pre></td></tr></table>
+$ kubectl create secret generic pass --from-file<span class="o">=</span>./pass.txt
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>其中user.txt和pass.txt文件里，存放的就是用户名和密码；而user和pass，则是我为Secret对象指定的名字。我们可以通过kubectl get命令来查看Secret对象：</p>
+</div><p>其中user.txt和pass.txt文件里，存放的就是用户名和密码；而user和pass，则是我为Secret对象指定的名字。我们可以通过kubectl get命令来查看Secret对象：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -712,13 +656,13 @@ $ kubectl create secret generic pass --from-file<span class="o">=</span>./pass.t
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get secrets
 NAME           TYPE                                DATA      AGE
 user          Opaque                                <span class="m">1</span>         31s
-pass          Opaque                                <span class="m">1</span>         31s</code></pre></td></tr></table>
+pass          Opaque                                <span class="m">1</span>         31s
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>当然，除了使用<code>kubectl create secret</code>命令外，我也可以直接通过编写YAML文件的方式来创建这个Secret对象，比如：</p>
+</div><p>当然，除了使用<code>kubectl create secret</code>命令外，我也可以直接通过编写YAML文件的方式来创建这个Secret对象，比如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -735,17 +679,16 @@ pass          Opaque                                <span class="m">1</span>    
 </span><span class="w"></span>type<span class="p">:</span><span class="w"> </span>Opaque<span class="w"> 
 </span><span class="w"></span>data<span class="p">:</span><span class="w"> 
 </span><span class="w">  </span>user<span class="p">:</span><span class="w"> </span>YWRtaW4=<span class="w"> 
-</span><span class="w">  </span>pass<span class="p">:</span><span class="w"> </span>cGFzc3dvcmQK</code></pre></td></tr></table>
+</span><span class="w">  </span>pass<span class="p">:</span><span class="w"> </span>cGFzc3dvcmQK<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>注意: Secret对象要求这些数据必须是经过Base64转码的，以免出现明文密码的安全隐患。</p>
 </blockquote>
-
 <p>转码操作也很简单，比如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -754,23 +697,18 @@ pass          Opaque                                <span class="m">1</span>    
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> -n <span class="s1">&#39;admin&#39;</span> <span class="p">|</span> base64
 <span class="nv">YWRtaW4</span><span class="o">=</span>
 $ <span class="nb">echo</span> -n <span class="s1">&#39;password&#39;</span> <span class="p">|</span> base64
-cGFzc3dvcmQK</code></pre></td></tr></table>
+cGFzc3dvcmQK
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>这里需要注意的是，像这样创建的Secret对象，它里面的内容仅仅是经过了转码，而并没有被加密。在真正的生产环境中，你需要在Kubernetes中开启 Secret的加密插件，增强数据的安全性。</p>
-
+</div><p>这里需要注意的是，像这样创建的Secret对象，它里面的内容仅仅是经过了转码，而并没有被加密。在真正的生产环境中，你需要在Kubernetes中开启 Secret的加密插件，增强数据的安全性。</p>
 <h3 id="configmap">ConfigMap</h3>
-
 <p>与Secret类似的是ConfigMap，它与Secret的区别在于，ConfigMap保存的是不需要加密的的配置信息。而ConfigMap的用法几乎与Secret完全相同：你可以使用<code>kubectl create configmap</code>从文件或者目录创建ConfigMap，也可以直接编写ConfigMap对象的YAML文件。</p>
-
 <h3 id="downward">Downward</h3>
-
 <p>接下介绍Downward API，它的作用是：让Pod里的容器能够直接获取到这个Pod API对象本身的信息。</p>
-
 <p>示例（9.pod-projected-downwardapi.yaml）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -817,7 +755,7 @@ cGFzc3dvcmQK</code></pre></td></tr></table>
 </span><span class="w">      </span>command<span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&#34;sh&#34;</span><span class="p">,</span><span class="w"> </span><span class="s2">&#34;-c&#34;</span><span class="p">]</span><span class="w">
 </span><span class="w">      </span>args<span class="p">:</span><span class="w">
 </span><span class="w">      </span>-<span class="w"> </span>while<span class="w"> </span><span class="kc">true</span>;<span class="w"> </span>do<span class="w">
-</span><span class="w">          </span>if<span class="w"> </span><span class="p">[[</span><span class="w"> </span>-e<span class="w"> </span>/etc/podinfo/labels<span class="w"> </span><span class="p">]]</span>;<span class="w"> </span>then<span class="w">
+</span><span class="w">          </span>if<span class="w"> </span><span class="p">[</span><span class="p">[</span><span class="w"> </span>-e<span class="w"> </span>/etc/podinfo/labels<span class="w"> </span><span class="p">]</span><span class="p">]</span>;<span class="w"> </span>then<span class="w">
 </span><span class="w">            </span>echo<span class="w"> </span>-en<span class="w"> </span><span class="s1">&#39;\n\n&#39;</span>;<span class="w"> </span>cat<span class="w"> </span>/etc/podinfo/labels;<span class="w"> </span>fi;<span class="w">
 </span><span class="w">          </span>sleep<span class="w"> </span><span class="m">5</span>;<span class="w">
 </span><span class="w">        </span>done;<span class="w">
@@ -833,19 +771,16 @@ cGFzc3dvcmQK</code></pre></td></tr></table>
 </span><span class="w">            </span>items<span class="p">:</span><span class="w">
 </span><span class="w">            </span>-<span class="w"> </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;labels&#34;</span><span class="w">
 </span><span class="w">              </span>fieldRef<span class="p">:</span><span class="w">
-</span><span class="w">                </span>fieldPath<span class="p">:</span><span class="w"> </span>metadata.labels</code></pre></td></tr></table>
+</span><span class="w">                </span>fieldPath<span class="p">:</span><span class="w"> </span>metadata.labels<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<p>在这个Pod的YAML文件中，我定义了一个简单的容器，声明了一个projected类型的Volume。只不过这次Volume的数据来源，变成了Downward API。而这个Downward API Volume，则声明了要暴露Pod的metadata.labels信息给容器。</p>
-
+</div><p>在这个Pod的YAML文件中，我定义了一个简单的容器，声明了一个projected类型的Volume。只不过这次Volume的数据来源，变成了Downward API。而这个Downward API Volume，则声明了要暴露Pod的metadata.labels信息给容器。</p>
 <p>容器启动后，Pod的Labels字段的值就会被Kubernetes自动挂载成为容器里的/etc/podinfo/labels文件。然后/etc/podinfo/labels里的内容会被不断打印出来。</p>
-
 <p>目前，Downward API支持的字段已经非常丰富了，比如：</p>
-
 <p>使用fieldRef可以获取:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -856,9 +791,9 @@ cGFzc3dvcmQK</code></pre></td></tr></table>
 </span><span class="lnt"> 9
 </span><span class="lnt">10
 </span><span class="lnt">11
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">spec.nodeName - 宿主机名字
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">spec.nodeName - 宿主机名字
 status.hostIP - 宿主机IP
 metadata.name - Pod的名字
 metadata.namespace - Pod Namespace
@@ -868,40 +803,35 @@ metadata.uid - Pod的UID
 metadata.labels[&#39;&lt;KEY&gt;&#39;] - 指定&lt;KEY&gt;的Label值
 metadata.annotations[&#39;&lt;KEY&gt;&#39;] - 指定&lt;KEY&gt;的Annotation值
 metadata.labels - Pod的所有Label
-metadata.annotations - Pod的所有Annotation</pre></td></tr></table>
+metadata.annotations - Pod的所有Annotation
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>使用resourceFieldRef可以获取:</p>
+</div><p>使用resourceFieldRef可以获取:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></pre></td>
+</span></code></pre></td>
 <td class="lntd">
-<pre class="chroma">CPU limit
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">CPU limit
 CPU request
 memory limit
-memory request</pre></td></tr></table>
+memory request
+</code></pre></td></tr></table>
 </div>
-</div>
-<blockquote>
+</div><blockquote>
 <p>注意：Downward API只能够获取到Pod容器进程启动之前就能够确定下来的信息。</p>
 </blockquote>
-
 <h2 id="rbd">rbd</h2>
-
 <h2 id="cephfs">cephfs</h2>
-
 <p><code>cephfs</code> 允许您将现存的 CephFS 卷挂载到 Pod 中。不像 <code>emptyDir</code> 那样会在删除 Pod 的同时也会被删除，<code>cephfs</code> 卷的内容在删除 Pod 时会被保留，卷只是被卸载掉了。 这意味着 CephFS 卷可以被预先填充数据，并且这些数据可以在 Pod 之间”传递”。CephFS 卷可同时被多个写者挂载。</p>
-
-<h1 id="使用-subpath">使用 subPath</h1>
-
+<h1 id="-subpath">使用 subPath</h1>
 <p>Pod 的多个容器使用同一个 Volume 时，volumeMounts 下的 subPath 非常有用。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -946,17 +876,15 @@ memory request</pre></td></tr></table>
 </span><span class="w">    </span>volumes<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>site-data<span class="w">
 </span><span class="w">      </span>hostPath<span class="p">:</span><span class="w">
-</span><span class="w">        </span>path<span class="p">:</span><span class="w"> </span>/data</code></pre></td></tr></table>
+</span><span class="w">        </span>path<span class="p">:</span><span class="w"> </span>/data<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="使用-subpathexpr">使用 <code>subPathExpr</code></h1>
-
+</div><h1 id="-subpathexpr">使用 <code>subPathExpr</code></h1>
 <p>Kubernetes v1.15使用 <code>subPathExpr</code> 字段从 Downward API 环境变量构造 <code>subPath</code> 目录名。 在使用此特性之前，必须启用 <code>VolumeSubpathEnvExpansion</code> 功能开关。 <code>subPath</code> 和 <code>subPathExpr</code> 属性是互斥的。</p>
-
 <p>在这个示例中，Pod 基于 Downward API 中的 Pod 名称，使用 <code>subPathExpr</code> 在 hostPath 卷 <code>/var/log/pods</code> 中创建目录 <code>pod1</code>。 主机目录 <code>/var/log/pods/pod1</code> 挂载到了容器的 <code>/logs</code> 中。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1005,13 +933,11 @@ memory request</pre></td></tr></table>
 </span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>workdir1<span class="w">
 </span><span class="w">    </span>hostPath<span class="p">:</span><span class="w">
-</span><span class="w">      </span>path<span class="p">:</span><span class="w"> </span>/var/log/pods</code></pre></td></tr></table>
+</span><span class="w">      </span>path<span class="p">:</span><span class="w"> </span>/var/log/pods<span class="w">
+</span></code></pre></td></tr></table>
 </div>
-</div>
-<h1 id="资源">资源</h1>
-
+</div><h1 id="heading">资源</h1>
 <p><code>emptyDir</code> 卷的存储介质（磁盘、SSD 等）是由保存 kubelet 根目录（通常是 <code>/var/lib/kubelet</code>）的文件系统的介质确定。 <code>emptyDir</code> 卷或者 <code>hostPath</code> 卷可以消耗的空间没有限制，容器之间或 Pod 之间也没有隔离。</p>
-
 <p>将来，我们希望 <code>emptyDir</code> 卷和 <code>hostPath</code> 卷能够使用 <a href="https://kubernetes.io/docs/user-guide/computeresources">resource</a> 规范来请求一定量的空间，并且能够为具有多种介质类型的集群选择要使用的介质类型。</p>
 
     </div>
@@ -1129,7 +1055,7 @@ memory request</pre></td></tr></table>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];

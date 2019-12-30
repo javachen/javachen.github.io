@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.58.3 with theme even" />
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/07/25/collect-log-to-hive/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.5d87ca31.min.css" rel="stylesheet">
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -47,16 +47,13 @@
 <meta property="article:modified_time" content="2014-07-25T08:00:00+08:00" />
 <meta itemprop="name" content="采集日志到Hive">
 <meta itemprop="description" content="我们现在的需求是需要将线上的日志以小时为单位采集并存储到 hive 数据库中，方便以后使用  mapreduce 或者 impala 做数据分析。为了实现这个目标调研了 flume 如何采集数据到 hive，其他的日志采集框架尚未做调研。">
-
-
 <meta itemprop="datePublished" content="2014-07-25T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-07-25T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1657">
 
 
 
-<meta itemprop="keywords" content="hive,flume," />
-<meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hive,flume," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="采集日志到Hive"/>
 <meta name="twitter:description" content="我们现在的需求是需要将线上的日志以小时为单位采集并存储到 hive 数据库中，方便以后使用  mapreduce 或者 impala 做数据分析。为了实现这个目标调研了 flume 如何采集数据到 hive，其他的日志采集框架尚未做调研。"/>
 
@@ -142,28 +139,19 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-<ul>
-<li><a href="#日志压缩">日志压缩</a></li>
-<li><a href="#自定义分隔符">自定义分隔符</a>
-<ul>
-<li><a href="#update">Update</a></li>
-</ul></li>
-<li><a href="#日志采集">日志采集</a></li>
-</ul>
+  <ul>
+    <li><a href="#update">Update</a></li>
+  </ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      
-
-<p>我们现在的需求是需要将线上的日志以小时为单位采集并存储到 hive 数据库中，方便以后使用  mapreduce 或者 impala 做数据分析。为了实现这个目标调研了 flume 如何采集数据到 hive，其他的日志采集框架尚未做调研。</p>
-
-<h1 id="日志压缩">日志压缩</h1>
-
+      <p>我们现在的需求是需要将线上的日志以小时为单位采集并存储到 hive 数据库中，方便以后使用  mapreduce 或者 impala 做数据分析。为了实现这个目标调研了 flume 如何采集数据到 hive，其他的日志采集框架尚未做调研。</p>
+<h1 id="heading">日志压缩</h1>
 <p>flume中有个 HdfsSink 组件，其可以压缩日志进行保存，故首先想到我们的日志应该以压缩的方式进行保存，遂选择了 lzo 的压缩格式，HdfsSink 的配置如下:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -176,7 +164,7 @@
 </span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-properties" data-lang="properties">agent-1.sinks.sink_hdfs.channel = ch-1
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">agent-1.sinks.sink_hdfs.channel = ch-1
 agent-1.sinks.sink_hdfs.type = hdfs
 agent-1.sinks.sink_hdfs.hdfs.path = hdfs://cdh1:8020/user/root/events/%Y-%m-%d
 agent-1.sinks.sink_hdfs.hdfs.filePrefix = logs
@@ -186,33 +174,30 @@ agent-1.sinks.sink_hdfs.hdfs.rollSize = 0
 agent-1.sinks.sink_hdfs.hdfs.rollCount = 0
 agent-1.sinks.sink_hdfs.hdfs.batchSize = 1000
 agent-1.sinks.sink_hdfs.hdfs.fileType = CompressedStream
-agent-1.sinks.sink_hdfs.hdfs.codeC = lzop</code></pre></td></tr></table>
+agent-1.sinks.sink_hdfs.hdfs.codeC = lzop
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>hive 目前是支持 lzo 压缩的，但是要想在 mapreduce 中 lzo 文件可以拆分，需要通过 hadoop 的 api 进行手动创建索引：</p>
+</div><p>hive 目前是支持 lzo 压缩的，但是要想在 mapreduce 中 lzo 文件可以拆分，需要通过 hadoop 的 api 进行手动创建索引：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ lzop a.txt
 $ hadoop fs -put a.txt.lzo /log/dw_srclog/sp_visit_log/ptd_ymd<span class="o">=</span><span class="m">20140720</span>
-​$ hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer /log/sp_visit_log/ptd_ymd<span class="o">=</span><span class="m">20140720</span>/a.txt.lzo</code></pre></td></tr></table>
+​$ hadoop jar /usr/lib/hadoop/lib/hadoop-lzo.jar com.hadoop.compression.lzo.LzoIndexer /log/sp_visit_log/ptd_ymd<span class="o">=</span>20140720/a.txt.lzo
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>impala 目前也是在支持 lzo 压缩格式的文件的，故采用 lzo 压缩方式存储日志文件似乎是个可行方案。</p>
-
-<h1 id="自定义分隔符">自定义分隔符</h1>
-
+</div><p>impala 目前也是在支持 lzo 压缩格式的文件的，故采用 lzo 压缩方式存储日志文件似乎是个可行方案。</p>
+<h1 id="heading-1">自定义分隔符</h1>
 <p>Hive默认创建的表字段分隔符为：<code>\001(ctrl-A)</code>，也可以通过 <code>ROW FORMAT DELIMITED FIELDS TERMINATED BY</code> 指定其他字符，但是该语法只支持单个字符。</p>
-
 <p>目前，我们的日志中几乎任何单个字符都被使用了，故没法使用单个字符作为 hive 表字段的分隔符，只能使用多个字符，例如：“|||”。
 使用多字符来分隔字段，则需要你自定义InputFormat来实现。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -290,88 +275,88 @@ $ hadoop fs -put a.txt.lzo /log/dw_srclog/sp_visit_log/ptd_ymd<span class="o">=<
 </span><span class="lnt">76
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">;</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kn">package</span> <span class="nn">org.apache.hadoop.mapred</span><span class="o">;</span>
 
-<span class="kn">import</span> <span class="nf">java</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">IOException</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.io.IOException</span><span class="o">;</span>
 
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">LongWritable</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">io</span><span class="p">.</span><span class="na">Text</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">FileSplit</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">InputSplit</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">JobConf</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">LineRecordReader</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">RecordReader</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">Reporter</span><span class="p">;</span>
-<span class="kn">import</span> <span class="nf">org</span><span class="p">.</span><span class="na">apache</span><span class="p">.</span><span class="na">hadoop</span><span class="p">.</span><span class="na">mapred</span><span class="p">.</span><span class="na">TextInputFormat</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.io.LongWritable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.io.Text</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.FileSplit</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.InputSplit</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.JobConf</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.LineRecordReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.RecordReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.Reporter</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.hadoop.mapred.TextInputFormat</span><span class="o">;</span>
 
-<span class="kd">public</span> <span class="nf">class</span> <span class="n">MyDemoInputFormat</span> <span class="nf">extends</span> <span class="n">TextInputFormat</span> <span class="p">{</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyDemoInputFormat</span> <span class="kd">extends</span> <span class="n">TextInputFormat</span> <span class="o">{</span>
 
 	<span class="nd">@Override</span>
-	<span class="kd">public</span> <span class="nf">RecordReader</span><span class="o">&lt;</span><span class="n">LongWritable</span><span class="p">,</span> <span class="n">Text</span><span class="o">&gt;</span> <span class="nf">getRecordReader</span><span class="p">(</span>
-			<span class="n">InputSplit</span> <span class="nf">genericSplit</span><span class="p">,</span> <span class="n">JobConf</span> <span class="nf">job</span><span class="p">,</span> <span class="n">Reporter</span> <span class="nf">reporter</span><span class="p">)</span>
-			<span class="kd">throws</span> <span class="nf">IOException</span> <span class="p">{</span>
-		<span class="n">reporter</span><span class="p">.</span><span class="na">setStatus</span><span class="p">(</span><span class="n">genericSplit</span><span class="p">.</span><span class="na">toString</span><span class="p">());</span>
-		<span class="n">MyDemoRecordReader</span> <span class="nf">reader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MyDemoRecordReader</span><span class="p">(</span>
-				<span class="k">new</span> <span class="n">LineRecordReader</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="p">(</span><span class="n">FileSplit</span><span class="p">)</span> <span class="n">genericSplit</span><span class="p">));</span>
-		<span class="k">return</span> <span class="n">reader</span><span class="p">;</span>
-	<span class="p">}</span>
+	<span class="kd">public</span> <span class="n">RecordReader</span><span class="o">&lt;</span><span class="n">LongWritable</span><span class="o">,</span> <span class="n">Text</span><span class="o">&gt;</span> <span class="nf">getRecordReader</span><span class="o">(</span>
+			<span class="n">InputSplit</span> <span class="n">genericSplit</span><span class="o">,</span> <span class="n">JobConf</span> <span class="n">job</span><span class="o">,</span> <span class="n">Reporter</span> <span class="n">reporter</span><span class="o">)</span>
+			<span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+		<span class="n">reporter</span><span class="o">.</span><span class="na">setStatus</span><span class="o">(</span><span class="n">genericSplit</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+		<span class="n">MyDemoRecordReader</span> <span class="n">reader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MyDemoRecordReader</span><span class="o">(</span>
+				<span class="k">new</span> <span class="n">LineRecordReader</span><span class="o">(</span><span class="n">job</span><span class="o">,</span> <span class="o">(</span><span class="n">FileSplit</span><span class="o">)</span> <span class="n">genericSplit</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+		<span class="k">return</span> <span class="n">reader</span><span class="o">;</span>
+	<span class="o">}</span>
 
-	<span class="kd">public</span> <span class="nf">static</span> <span class="kd">class</span> <span class="nf">MyDemoRecordReader</span> <span class="kd">implements</span>
-			<span class="nf">RecordReader</span><span class="o">&lt;</span><span class="n">LongWritable</span><span class="p">,</span> <span class="n">Text</span><span class="o">&gt;</span> <span class="p">{</span>
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyDemoRecordReader</span> <span class="kd">implements</span>
+			<span class="n">RecordReader</span><span class="o">&lt;</span><span class="n">LongWritable</span><span class="o">,</span> <span class="n">Text</span><span class="o">&gt;</span> <span class="o">{</span>
 
-		<span class="n">LineRecordReader</span> <span class="nf">reader</span><span class="p">;</span>
-		<span class="n">Text</span> <span class="nf">text</span><span class="p">;</span>
+		<span class="n">LineRecordReader</span> <span class="n">reader</span><span class="o">;</span>
+		<span class="n">Text</span> <span class="n">text</span><span class="o">;</span>
 
-		<span class="kd">public</span> <span class="nf">MyDemoRecordReader</span><span class="p">(</span><span class="n">LineRecordReader</span> <span class="nf">reader</span><span class="p">)</span> <span class="p">{</span>
-			<span class="k">this</span><span class="p">.</span><span class="na">reader</span> <span class="o">=</span> <span class="n">reader</span><span class="p">;</span>
-			<span class="n">text</span> <span class="o">=</span> <span class="n">reader</span><span class="p">.</span><span class="na">createValue</span><span class="p">();</span>
-		<span class="p">}</span>
-
-		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">void</span> <span class="n">close</span><span class="p">()</span> <span class="kd">throws</span> <span class="nf">IOException</span> <span class="p">{</span>
-			<span class="n">reader</span><span class="p">.</span><span class="na">close</span><span class="p">();</span>
-		<span class="p">}</span>
+		<span class="kd">public</span> <span class="nf">MyDemoRecordReader</span><span class="o">(</span><span class="n">LineRecordReader</span> <span class="n">reader</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">this</span><span class="o">.</span><span class="na">reader</span> <span class="o">=</span> <span class="n">reader</span><span class="o">;</span>
+			<span class="n">text</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">createValue</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
 		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">LongWritable</span> <span class="n">createKey</span><span class="p">()</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="n">reader</span><span class="p">.</span><span class="na">createKey</span><span class="p">();</span>
-		<span class="p">}</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">close</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+			<span class="n">reader</span><span class="o">.</span><span class="na">close</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
 		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">Text</span> <span class="n">createValue</span><span class="p">()</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="k">new</span> <span class="n">Text</span><span class="p">();</span>
-		<span class="p">}</span>
+		<span class="kd">public</span> <span class="n">LongWritable</span> <span class="nf">createKey</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="na">createKey</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
 		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">long</span> <span class="n">getPos</span><span class="p">()</span> <span class="kd">throws</span> <span class="nf">IOException</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="n">reader</span><span class="p">.</span><span class="na">getPos</span><span class="p">();</span>
-		<span class="p">}</span>
+		<span class="kd">public</span> <span class="n">Text</span> <span class="nf">createValue</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">return</span> <span class="k">new</span> <span class="n">Text</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
 		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">float</span> <span class="n">getProgress</span><span class="p">()</span> <span class="kd">throws</span> <span class="nf">IOException</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="n">reader</span><span class="p">.</span><span class="na">getProgress</span><span class="p">();</span>
-		<span class="p">}</span>
+		<span class="kd">public</span> <span class="kt">long</span> <span class="nf">getPos</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+			<span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="na">getPos</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
 		<span class="nd">@Override</span>
-		<span class="kd">public</span> <span class="nf">boolean</span> <span class="n">next</span><span class="p">(</span><span class="n">LongWritable</span> <span class="nf">key</span><span class="p">,</span> <span class="n">Text</span> <span class="nf">value</span><span class="p">)</span> <span class="kd">throws</span> <span class="nf">IOException</span> <span class="p">{</span>
-			<span class="n">Text</span> <span class="nf">txtReplace</span><span class="p">;</span>
-			<span class="k">while</span> <span class="p">(</span><span class="n">reader</span><span class="p">.</span><span class="na">next</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span> <span class="p">{</span>
-				<span class="n">txtReplace</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Text</span><span class="p">();</span>
-				<span class="n">txtReplace</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">text</span><span class="p">.</span><span class="na">toString</span><span class="p">().</span><span class="na">toLowerCase</span><span class="p">().</span><span class="na">replaceAll</span><span class="p">(</span><span class="s">&#34;\\|\\|\\|&#34;</span><span class="p">,</span> <span class="s">&#34;\001&#34;</span><span class="p">));</span>
-				<span class="n">value</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">txtReplace</span><span class="p">.</span><span class="na">getBytes</span><span class="p">(),</span> <span class="n">0</span><span class="p">,</span> <span class="n">txtReplace</span><span class="p">.</span><span class="na">getLength</span><span class="p">());</span>
-				<span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+		<span class="kd">public</span> <span class="kt">float</span> <span class="nf">getProgress</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+			<span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="na">getProgress</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+		<span class="o">}</span>
 
-			<span class="p">}</span>
-			<span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
-		<span class="p">}</span>
-	<span class="p">}</span>
-<span class="p">}</span></code></pre></td></tr></table>
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">next</span><span class="o">(</span><span class="n">LongWritable</span> <span class="n">key</span><span class="o">,</span> <span class="n">Text</span> <span class="n">value</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+			<span class="n">Text</span> <span class="n">txtReplace</span><span class="o">;</span>
+			<span class="k">while</span> <span class="o">(</span><span class="n">reader</span><span class="o">.</span><span class="na">next</span><span class="o">(</span><span class="n">key</span><span class="o">,</span> <span class="n">text</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+				<span class="n">txtReplace</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Text</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+				<span class="n">txtReplace</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">text</span><span class="o">.</span><span class="na">toString</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">toLowerCase</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">replaceAll</span><span class="o">(</span><span class="s">&#34;\\|\\|\\|&#34;</span><span class="o">,</span> <span class="s">&#34;\001&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+				<span class="n">value</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">txtReplace</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="n">0</span><span class="o">,</span> <span class="n">txtReplace</span><span class="o">.</span><span class="na">getLength</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+				<span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+
+			<span class="o">}</span>
+			<span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>这时候的建表语句是：</p>
+</div><p>这时候的建表语句是：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -387,18 +372,17 @@ $ hadoop fs -put a.txt.lzo /log/dw_srclog/sp_visit_log/ptd_ymd<span class="o">=<
 <span class="n">name</span> <span class="n">string</span>
 <span class="p">)</span><span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="k">day</span> <span class="n">string</span><span class="p">)</span> 
 <span class="n">STORED</span> <span class="k">AS</span> <span class="n">INPUTFORMAT</span>  
-  <span class="s1">&#39;org.apache.hadoop.mapred.MyDemoInputFormat&#39;</span>  
+  <span class="s1">&#39;</span><span class="s1">org.apache.hadoop.mapred.MyDemoInputFormat</span><span class="s1">&#39;</span>  
 <span class="n">OUTPUTFORMAT</span>  
-  <span class="s1">&#39;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&#39;</span>
-<span class="k">LOCATION</span> <span class="s1">&#39;/log/dw_srclog/test&#39;</span><span class="p">;</span></code></pre></td></tr></table>
+  <span class="s1">&#39;</span><span class="s1">org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat</span><span class="s1">&#39;</span>
+<span class="k">LOCATION</span> <span class="s1">&#39;</span><span class="s1">/log/dw_srclog/test</span><span class="s1">&#39;</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>但是，这样建表的话，是不能识别 lzo 压缩文件的，需要去扩展 lzo 的 DeprecatedLzoTextInputFormat 类，但是如何扩展，没有找到合适方法。</p>
-
+</div><p>但是，这样建表的话，是不能识别 lzo 压缩文件的，需要去扩展 lzo 的 DeprecatedLzoTextInputFormat 类，但是如何扩展，没有找到合适方法。</p>
 <p>所以，在自定义分隔符的情况下，想支持 lzo 压缩文件，需要另外想办法。例如，使用 <code>SERDE</code> 的方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
+<pre class="chroma"><code><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -419,62 +403,48 @@ $ hadoop fs -put a.txt.lzo /log/dw_srclog/sp_visit_log/ptd_ymd<span class="o">=<
 <span class="n">name</span> <span class="n">string</span>
 <span class="p">)</span><span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="k">day</span> <span class="n">string</span><span class="p">)</span> 
 <span class="k">ROW</span> <span class="n">FORMAT</span>  
-<span class="n">SERDE</span> <span class="s1">&#39;org.apache.hadoop.hive.contrib.serde2.RegexSerDe&#39;</span>  
+<span class="n">SERDE</span> <span class="s1">&#39;</span><span class="s1">org.apache.hadoop.hive.contrib.serde2.RegexSerDe</span><span class="s1">&#39;</span>  
 <span class="k">WITH</span> <span class="n">SERDEPROPERTIES</span>  
-<span class="p">(</span> <span class="s1">&#39;input.regex&#39;</span> <span class="o">=</span> <span class="s1">&#39;([^ ]*)\\|\\|\\|([^ ]*)&#39;</span><span class="p">,</span>  
-<span class="s1">&#39;output.format.string&#39;</span> <span class="o">=</span> <span class="s1">&#39;%1$s %2$s&#39;</span><span class="p">)</span> 
+<span class="p">(</span> <span class="s1">&#39;</span><span class="s1">input.regex</span><span class="s1">&#39;</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="s1">([^ ]*)\\|\\|\\|([^ ]*)</span><span class="s1">&#39;</span><span class="p">,</span>  
+<span class="s1">&#39;</span><span class="s1">output.format.string</span><span class="s1">&#39;</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="s1">%1$s %2$s</span><span class="s1">&#39;</span><span class="p">)</span> 
 <span class="n">STORED</span> <span class="k">AS</span> <span class="n">INPUTFORMAT</span>  
-  <span class="s1">&#39;com.hadoop.mapred.DeprecatedLzoTextInputFormat&#39;</span>  
+  <span class="s1">&#39;</span><span class="s1">com.hadoop.mapred.DeprecatedLzoTextInputFormat</span><span class="s1">&#39;</span>  
 <span class="n">OUTPUTFORMAT</span>  
-  <span class="s1">&#39;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&#39;</span>
-<span class="k">LOCATION</span> <span class="s1">&#39;/log/dw_srclog/test&#39;</span><span class="p">;</span></code></pre></td></tr></table>
+  <span class="s1">&#39;</span><span class="s1">org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat</span><span class="s1">&#39;</span>
+<span class="k">LOCATION</span> <span class="s1">&#39;</span><span class="s1">/log/dw_srclog/test</span><span class="s1">&#39;</span><span class="p">;</span>
+</code></pre></td></tr></table>
 </div>
-</div>
-<p>要想使用SERDE，必须添加 hive-contrib-XXXX.jar 到 classpath，在 hive-env.sh 中添加下面代码;</p>
+</div><p>要想使用SERDE，必须添加 hive-contrib-XXXX.jar 到 classpath，在 hive-env.sh 中添加下面代码;</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">export</span> <span class="nv">HIVE_AUX_JARS_PATH</span><span class="o">=</span>/usr/lib/hive/lib/hive-contrib-0.10.0-cdh4.7.0.jar</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">export</span> <span class="nv">HIVE_AUX_JARS_PATH</span><span class="o">=</span>/usr/lib/hive/lib/hive-contrib-0.10.0-cdh4.7.0.jar
+</code></pre></td></tr></table>
 </div>
-</div>
-<p><strong>注意：</strong></p>
-
+</div><p><strong>注意：</strong></p>
 <ul>
 <li>使用 SERDE  时，字段类型只能为 string。</li>
 <li>这种方式建表，flume 可以将日志存储为 lzo 并且 hive 能够识别出数据，但是 impala 中却不支持 <code>SERDE</code> 的语法，故只能放弃该方法。</li>
 </ul>
-
 <p>最后，只能放弃 lzo 压缩文件的想法，改为不做压缩。flume 中 HdfsSink 配置参数 hdfs.fileType 目前只有三种可选值：CompressedStream
 、DataStream、SequenceFile，为了保持向后兼容便于扩展，这里使用了 DataStream 的方式，不做数据压缩。</p>
-
 <h2 id="update">Update</h2>
-
 <p><strong>注意：</strong></p>
-
 <p>最后又经过测试，发现 impala 不支持 hive 的自定义文件格式，详细说明请参考：<a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/Impala/latest/Installing-and-Using-Impala/ciiu_langref_unsupported.html?scroll=langref_unsupported">SQL Differences Between Impala and Hive</a></p>
-
-<h1 id="日志采集">日志采集</h1>
-
+<h1 id="heading-2">日志采集</h1>
 <p>使用 flume 来采集日志，只需要在应用程序服务器上安装一个 agent 就可以监听文件或者目录的改变来搜集日志，但是实际情况你不一定有权限访问应用服务器，更多的方式是应用服务器将日志推送到一个中央的日志集中存储服务器。你只有权限去从该服务器收集数据，并且该服务器对外提供 ftp 的接口供你访问。</p>
-
 <p>日志采集有 pull 和 push 的两种方式，关于两种方式的一些说明，可以参考这篇文章：<a href="http://sdjcw.iteye.com/blog/1814703">大规模日志收集处理项目的技术总结</a>。</p>
-
 <p>对于当前情况而言，只能从 ftp 服务器轮询文件然后下载文件到本地，最后再将其导入到 hive 中去。以前，使用 kettle 做过这种事情，现在为了简单只是写了个 python 脚本来做这件事情，一个示例代码，请参考 <a href="https://gist.github.com/javachen/6f7d14aae138c7a284e6#file-fetch-py">https://gist.github.com/javachen/6f7d14aae138c7a284e6#file-fetch-py</a>。</p>
-
 <p>该脚本会再 crontab 中每隔5分钟执行一次。</p>
-
 <p>执行该脚本会往 mongodb 中记录一些状态信息，并往 logs 目录以天为单位记录日志。</p>
-
 <p><strong>暂时没有使用 flume 的原因：</strong></p>
-
 <ol>
 <li>对 flume 的测试于调研程度还不够</li>
 <li>flume 中无法对数据去重</li>
 <li>只能停止 flume 进程，才可以升级 flume，这样会丢失数据</li>
 </ol>
-
 <p>等日志采集实时性要求变高，以及对 flume 的熟悉程度变深之后，会考虑使用 flume。</p>
 
     </div>
@@ -593,7 +563,7 @@ $ hadoop fs -put a.txt.lzo /log/dw_srclog/sp_visit_log/ptd_ymd<span class="o">=<
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.20b54c22.min.js"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
