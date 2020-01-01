@@ -49,7 +49,7 @@
 <meta itemprop="description" content="安装Prometheus 1、下载最新版本：https://prometheus.io/download/ 1 2 3 4 5 6 7 wget https://github.com/prometheus/prometheus/releases/download/v2.14.0/prometheus-2.14.0.linux-amd64.tar.gz tar zxvf prometheus-2.14.0.linux-amd64.tar.gz mv prometheus-2.14.0.linux-amd64 /usr/local/prometheus cd /usr/local/prometheus/ &amp;&amp;">
 <meta itemprop="datePublished" content="2019-12-18T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-12-18T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4801">
+<meta itemprop="wordCount" content="5034">
 
 
 
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 4801 字 </span>
-          <span class="more-meta"> 预计阅读 10 分钟 </span>
+          <span class="more-meta"> 约 5034 字 </span>
+          <span class="more-meta"> 预计阅读 11 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -164,10 +164,6 @@
     <li><a href="#docker">监控Docker</a></li>
     <li><a href="#mongodb">监控MongoDB</a></li>
     <li><a href="#redis">监控Redis</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#dashboard">导入Dashboard模板</a></li>
   </ul>
 
   <ul>
@@ -687,16 +683,22 @@ sum<span class="o">(</span>process_cpu_seconds_total<span class="o">{</span><spa
 <p><img src="https://tva1.sinaimg.cn/large/006tNbRwly1ga0yorizu2j31ie0ocjv9.jpg" alt="image-20191218163605773"></p>
 <h1 id="prometheus-2">Prometheus监控例子</h1>
 <h2 id="heading-4">监控服务器</h2>
-<p>在被监控的服务器上安装 node_exporter</p>
+<p>在被监控的服务器上安装 node_exporter ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#linux</span>
+wget https://github.com/prometheus/node_exporter/releases/download/v0.18.1/node_exporter-0.18.1.linux-amd64.tar.gz
+
+<span class="c1">#ubuntu</span>
 tar zxf node_exporter-0.18.1.linux-amd64.tar.gz 
 sudo mv node_exporter-0.18.1.linux-amd64 /usr/local/node_exporter
 <span class="nb">cd</span> /usr/local/node_exporter
@@ -739,9 +741,13 @@ sudo mv node_exporter.service /usr/lib/systemd/system/
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl daemon-reload <span class="o">&amp;&amp;</span> sudo systemctl start node_exporter.service
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl daemon-reload 
+sudo systemctl start node_exporter.service
+sudo systemctl <span class="nb">enable</span> node_exporter.service
 </code></pre></td></tr></table>
 </div>
 </div><p>查看服务状态：</p>
@@ -1048,8 +1054,7 @@ mysql_global_variables_innodb_buffer_pool_size
 </div>
 </div><p>更多指标可以查看 http://192.168.1.75:9104/metrics</p>
 <h2 id="docker">监控Docker</h2>
-<p>想要监控 <code>docker</code> 需要用到名为 <code>cadvisor</code> 的工具</p>
-<p>直接用 <code>docker</code> 去启动就完了，命令如下</p>
+<p>想要监控 <code>docker</code> 需要用到名为 <code>cadvisor</code> 的工具。直接用 <code>docker</code> 去启动就完了，命令如下</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt"> 1
@@ -1099,58 +1104,73 @@ mysql_global_variables_innodb_buffer_pool_size
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo systemctl restart prometheus.service
 </code></pre></td></tr></table>
 </div>
-</div><p>可以监控的指标：</p>
-<h2 id="mongodb">监控MongoDB</h2>
+</div><h2 id="mongodb">监控MongoDB</h2>
 <p>参考 <a href="https://github.com/percona/mongodb_exporter">https://github.com/percona/mongodb_exporter</a></p>
 <h2 id="redis">监控Redis</h2>
 <p>参考 <a href="https://github.com/oliver006/redis_exporter">https://github.com/oliver006/redis_exporter</a></p>
 <h1 id="grafana">安装Grafana</h1>
-<p>docker安装：</p>
+<p>docker-compose安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">version: <span class="s1">&#39;3&#39;</span>
+services:
+  grafana: 
+    image: grafana/grafana:6.5.2
+    container_name: grafana
+    restart: unless-stopped
+    links:
+      - prometheus
+    environment:
+      - <span class="nv">GF_SERVER_ROOT_URL</span><span class="o">=</span>http://grafana.javachen.space
+      - <span class="nv">GF_SECURITY_ADMIN_PASSWORD</span><span class="o">=</span><span class="m">123456</span>
+      - <span class="nv">GF_USERS_ALLOW_SIGN_UP</span><span class="o">=</span><span class="nb">false</span>
+    depends_on:
+      - prometheus
+    ports: 
+      - <span class="s2">&#34;3000:3000&#34;</span>
+    volumes:
+      - ./grafana_db:/var/lib/grafana
+</code></pre></td></tr></table>
+</div>
+</div><p>用户名密码默认 <code>admin/admin</code>，初次登陆会让你修改密码，这里将秘密修改为了123456。</p>
+<p>创建grafana_db目录并设置权限：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code><span class="lnt">1
 </span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">docker run <span class="se">\
-</span><span class="se"></span> -u <span class="m">0</span> <span class="se">\
-</span><span class="se"></span> -d <span class="se">\
-</span><span class="se"></span> -p 3100:3000  <span class="se">\
-</span><span class="se"></span> --name<span class="o">=</span>grafana   <span class="se">\
-</span><span class="se"></span> -v /var/lib/grafana:/var/lib/grafana <span class="se">\
-</span><span class="se"></span> -v /etc/grafana/grafana.ini:/etc/grafana/grafana.ini <span class="se">\
-</span><span class="se"></span> grafana/grafana
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkdir grafana_db
+sudo chmod <span class="m">777</span> grafana_db
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="dashboard">导入Dashboard模板</h2>
-<p>导入MySQL模板：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"> git clone https://github.com/percona/grafana-dashboards.git
- cp -r grafana-dashboards/dashboards /var/lib/grafana/
- 
- vim /etc/grafana/grafana.ini
- <span class="o">[</span>dashboards.json<span class="o">]</span>
- <span class="nv">enabled</span> <span class="o">=</span> <span class="nb">true</span>
- <span class="nv">path</span> <span class="o">=</span> /var/lib/grafana/dashboards
-</code></pre></td></tr></table>
-</div>
-</div><h1 id="alertmanager">安装Alertmanager</h1>
+</div><p>浏览器登陆，并输入用户名和秘密，添加Prometheus数据源，设置 HTTP URL：http://192.168.1.75:9090 ，点击 Save &amp; Test 进行测试，然后导入Dashboard。</p>
+<p>​	![image-20191231143401758](/Users/chenzj/Library/Application Support/typora-user-images/image-20191231143401758.png)</p>
+<p>dashboard大概样子就是这样：</p>
+<p>![image-20191231144020180](/Users/chenzj/Library/Application Support/typora-user-images/image-20191231144020180.png)</p>
+<p>然后网络带宽那里没数据，我看了一下他的 <code>sql</code>，只需要将 <code>$nic</code> 改为你的网卡名就有数据了。</p>
+<p>也可以导入8919的dashboard。</p>
+<h1 id="alertmanager">安装Alertmanager</h1>
 <h2 id="heading-8">安装并配置</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -1486,7 +1506,7 @@ sudo mv alertmanager.service /usr/lib/systemd/system/
   <span class="copyright-year">
     &copy; 
     2009 - 
-    2019
+    2020
     <span class="heart">
       <i class="iconfont icon-heart"></i>
     </span>

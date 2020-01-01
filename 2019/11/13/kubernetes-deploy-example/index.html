@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Kubernetes容器编排示例 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="部署 nginx 服务 nginx配置文件 hello.conf 1 2 3 4 5 6 7 8 server { listen 80; server_name nginx.example.com; location / { include uwsgi_params; uwsgi_pass unix:///tmp/uwsgi.sock; } } 创建： 1 kubectl create configmap nginx-conf --from-file=hello.conf 在部署我们的 Flask 应用之前，我先部署一个 Nginx 服务。因" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2019/11/13/kubernetes-deploy-example/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.c2a46f00.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Kubernetes容器编排示例" />
+<meta property="og:description" content="部署 nginx 服务 nginx配置文件 hello.conf 1 2 3 4 5 6 7 8 server { listen 80; server_name nginx.example.com; location / { include uwsgi_params; uwsgi_pass unix:///tmp/uwsgi.sock; } } 创建： 1 kubectl create configmap nginx-conf --from-file=hello.conf 在部署我们的 Flask 应用之前，我先部署一个 Nginx 服务。因" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2019/11/13/kubernetes-deploy-example/" />
+<meta property="article:published_time" content="2019-11-13T08:00:00+08:00" />
+<meta property="article:modified_time" content="2019-11-13T08:00:00+08:00" />
+<meta itemprop="name" content="Kubernetes容器编排示例">
+<meta itemprop="description" content="部署 nginx 服务 nginx配置文件 hello.conf 1 2 3 4 5 6 7 8 server { listen 80; server_name nginx.example.com; location / { include uwsgi_params; uwsgi_pass unix:///tmp/uwsgi.sock; } } 创建： 1 kubectl create configmap nginx-conf --from-file=hello.conf 在部署我们的 Flask 应用之前，我先部署一个 Nginx 服务。因">
+<meta itemprop="datePublished" content="2019-11-13T08:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2019-11-13T08:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="6888">
+
+
+
+<meta itemprop="keywords" content="kubernetes," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes容器编排示例"/>
+<meta name="twitter:description" content="部署 nginx 服务 nginx配置文件 hello.conf 1 2 3 4 5 6 7 8 server { listen 80; server_name nginx.example.com; location / { include uwsgi_params; uwsgi_pass unix:///tmp/uwsgi.sock; } } 创建： 1 kubectl create configmap nginx-conf --from-file=hello.conf 在部署我们的 Flask 应用之前，我先部署一个 Nginx 服务。因"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Kubernetes容器编排示例</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2019-11-13 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 6888 字 </span>
+          <span class="more-meta"> 预计阅读 14 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#heading">访问测试</a></li>
+    <li><a href="#heading-1">查看容器日志</a></li>
+    <li><a href="#heading-2">登录容器</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#heading-3">修改副本</a></li>
+    <li><a href="#heading-4">删除一个容器</a></li>
+    <li><a href="#scale-">scale 伸缩</a></li>
+    <li><a href="#heading-5">滚动升级</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#deployment-1">创建deployment</a></li>
+    <li><a href="#deployment-2">查看deployment信息</a></li>
+    <li><a href="#scale--1">scale 伸缩</a></li>
+    <li><a href="#failover">Failover</a></li>
+    <li><a href="#heading-6">滚动升级</a></li>
+    <li><a href="#labelpod">用label控制pod的位置</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#-service">为什么需要 Service</a></li>
+    <li><a href="#-service-1">如何暴露 Service</a>
+      <ul>
+        <li><a href="#heading-7">内部访问方式</a></li>
+        <li><a href="#heading-8">外部访问方式</a></li>
+      </ul>
+    </li>
+    <li><a href="#heading-9">服务发现</a></li>
+    <li><a href="#-service-2">如何配置 Service</a>
+      <ul>
+        <li><a href="#deployment-">deployment 端口暴露</a></li>
+        <li><a href="#-service-3">部署 Service</a></li>
+        <li><a href="#-service--endpoint">获取 Service 的 Endpoint</a></li>
+        <li><a href="#-service-4">获取 Service</a></li>
+        <li><a href="#-service-5">访问 Service</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#-nginx-ingress-controller">安装 Nginx Ingress Controller</a></li>
+    <li><a href="#-ingress">部署 Ingress</a></li>
+    <li><a href="#-ingress-1">查看 Ingress</a></li>
+    <li><a href="#-nginx-ingress-controller-1">查看 Nginx Ingress Controller</a></li>
+    <li><a href="#heading-10">测试访问</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <h1 id="-nginx-">部署 nginx 服务</h1>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8wh52tgv3j31fq0ca0uv.jpg" alt="ConfigMap"></p>
+<p>nginx配置文件 hello.conf</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">server {
+    listen 80;
+    server_name nginx.example.com;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:///tmp/uwsgi.sock;
+    }
+}
+</code></pre></td></tr></table>
+</div>
+</div><p>创建：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create configmap nginx-conf --from-file<span class="o">=</span>hello.conf
+</code></pre></td></tr></table>
+</div>
+</div><p>在部署我们的 Flask 应用之前，我先部署一个 Nginx 服务。因为这个 Flask 应用是用 uwsgi 启动的，为了应对大流量访问，通常需要在前面部署一个 Nginx 代理服务。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Pod
+</span><span class="s">metadata:
+</span><span class="s">  name: nginx
+</span><span class="s">  labels:
+</span><span class="s">    app: nginx
+</span><span class="s">spec:
+</span><span class="s">  containers:
+</span><span class="s">    - name: nginx
+</span><span class="s">      image: nginx:1.12
+</span><span class="s">      ports:
+</span><span class="s">        - name: http
+</span><span class="s">          containerPort: 80
+</span><span class="s">EOF</span>
+
+kubectl get pods
+</code></pre></td></tr></table>
+</div>
+</div><p>可以看到我们的 nginx pod 已经启动了，但是如果 Nginx 占用大量的内存或CPU，会影响到这台物理机上启动的其他容器，所有我们要对这个 Nginx 容器做资源限制。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl replace --force -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Pod
+</span><span class="s">metadata:
+</span><span class="s">  name: nginx
+</span><span class="s">  labels:
+</span><span class="s">    app: nginx
+</span><span class="s">spec:
+</span><span class="s">  containers:
+</span><span class="s">    - name: nginx
+</span><span class="s">      image: nginx:1.12
+</span><span class="s">      ports:
+</span><span class="s">        - name: http
+</span><span class="s">          containerPort: 80
+</span><span class="s">      resources:
+</span><span class="s">        limits:
+</span><span class="s">          cpu: 1
+</span><span class="s">          memory: 2Gi
+</span><span class="s">        requests:
+</span><span class="s">          cpu: 0
+</span><span class="s">          memory: 2Gi
+</span><span class="s">EOF</span>
+
+
+kubectl edit pods
+</code></pre></td></tr></table>
+</div>
+</div><p>我们给 Nginx 服务加了资源限制，但是当这个服务出现问题时，我们怎么检测到这个故障，并给他自动恢复呢？这时候就需要对这个服务进行监控了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl replace --force -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Pod
+</span><span class="s">metadata:
+</span><span class="s">  name: nginx
+</span><span class="s">  labels:
+</span><span class="s">    app: nginx
+</span><span class="s">spec:
+</span><span class="s">  containers:
+</span><span class="s">    - name: nginx
+</span><span class="s">      image: nginx:1.12
+</span><span class="s">      ports:
+</span><span class="s">        - name: http
+</span><span class="s">          containerPort: 80
+</span><span class="s">      resources:
+</span><span class="s">        limits:
+</span><span class="s">          cpu: 1
+</span><span class="s">          memory: 2Gi
+</span><span class="s">        requests:
+</span><span class="s">          cpu: 0
+</span><span class="s">          memory: 2Gi
+</span><span class="s">      livenessProbe:
+</span><span class="s">        tcpSocket:
+</span><span class="s">          port: 80
+</span><span class="s">        initialDelaySeconds: 5
+</span><span class="s">        periodSeconds: 15
+</span><span class="s">        timeoutSeconds: 5
+</span><span class="s">      readinessProbe:
+</span><span class="s">        httpGet:
+</span><span class="s">          path: /
+</span><span class="s">          port: 80
+</span><span class="s">          scheme: HTTP
+</span><span class="s">        initialDelaySeconds: 5
+</span><span class="s">        periodSeconds: 15
+</span><span class="s">        timeoutSeconds: 1
+</span><span class="s">EOF</span>
+
+kubectl edit pods
+</code></pre></td></tr></table>
+</div>
+</div><p>我们可以通过 kubectl describe 看到 pod 的具体状态。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl describe pod nginx
+</code></pre></td></tr></table>
+</div>
+</div><p>Pod的状态Status：</p>
+<ul>
+<li>Pending：Pod 的配置已经被 API Server 存储到 etcd 中，但是此Pod因为某种原因不能被创建</li>
+<li>Running：Pod 已经被调度成功并且绑定到了某个节点上，容器创建成功并开始运行</li>
+<li>Succeeded：Pod 都正常运行完毕并已退出，这种状态一般在一次性任务中比较常见</li>
+<li>Faild：Pod 里至少有一个容器运行不正常（非0状态退出），需要查找Pod失败原因</li>
+<li>Unknown：Pod 的状态不能持续的被 kubelet 汇报给 API Server，可能是主节点也 kubelet通信问题</li>
+</ul>
+<p>细分状态 Conditions：</p>
+<ul>
+<li>PodScheduled Pod 是否已经被调度，即给他分配了物理节点</li>
+<li>ContainersReady 容器是否已经处于 Ready 状态</li>
+<li>Ready Pod 是否应 Running 并且能够对外提供服务</li>
+<li>Initialized 是否完成了容器初始化操作</li>
+<li>Unschedulable 可能资源不足导致调度失败</li>
+</ul>
+<p>我们对 Nginx 容器做资源限制，并且进行了监控检查，我们的 Nginx 服务就配置完成了，那我们改如何让他代理我们的 Flask 应用容器呢？答案就是讲 Nginx 容器和 Flask 应用容器运行在同一个Pod 中，两个容器通过 socket 文件进行交互。</p>
+<h1 id="-flask-">部署 Flask 应用</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>replace<span class="w"> </span>--force<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Pod<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.12</span><span class="w">
+</span><span class="w">      </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">          </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">      </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">        </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">          </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">          </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">        </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">          </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">          </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">      </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">        </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">          </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">          </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">        </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">        </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">        </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">      </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">        </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">          </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">          </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">        </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">        </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">        </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">          </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/nginx/conf.d&#34;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">          </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>flask<span class="w">
+</span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>findsec/hello<span class="p">:</span>v1<span class="w">
+</span><span class="w">      </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http-stats<span class="w">
+</span><span class="w">          </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">9191</span><span class="w">
+</span><span class="w">      </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">        </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">          </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">          </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">        </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">          </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">          </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">      </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">          </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">  </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">      </span>emptyDir<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">      </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">        </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">        </span>items<span class="p">:</span><span class="w">
+</span><span class="w">          </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w">            </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>nginx<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="heading">访问测试</h2>
+<p>将端口进行转发：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl port-forward nginx 10080:80
+curl http://127.0.0.1:10080
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-1">查看容器日志</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl logs -c nginx nginx
+kubectl logs -c flask nginx
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-2">登录容器</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl exec -ti flask -c nginx bash
+</code></pre></td></tr></table>
+</div>
+</div><p>至此，我们运行了一个 Flask 应用，并在前面给他加个一个 Nginx 代理。但你有没有想过，当我们部署的这个 pod 挂了或者突然访问量加大了，会出现什么问题？如果 pod 挂了，那么服务就不能正常访问了，那怎么解决这个问题？多起几个pod，某一个挂了，其他仍有可以提供访问；如果访问量加大，同样也可以启动多个 pod 进行分流。</p>
+<p>那我们应该如何启动多个 pod 呢? 答案就是 ReplicationController 和 ReplicaSet。</p>
+<h1 id="replicationcontroller">ReplicationController</h1>
+<p>Replication Controller 保证了在所有时间内，都有特定数量的Pod副本正在运行，如果太多了，Replication Controller就杀死几个，如果太少了，Replication Controller会新建几个，和直接创建的pod不同的是，Replication Controller会替换掉那些删除的或者被终止的pod，不管删除的原因是什么。基于这个理由，我们建议即使是只创建一个pod，我们也要使用Replication Controller。Replication Controller 就像一个进程管理器，监管着不同node上的多个pod，而不是单单监控一个node上的pod，Replication Controller 会委派本地容器来启动一些节点上服务。</p>
+<p>Replication Controller只会对那些RestartPolicy = Always的Pod的生效，（RestartPolicy的默认值就是Always），Replication Controller 不会去管理那些有不同启动策略pod。</p>
+<p>在部署前，我们可以先把原先部署的 Pod 清理掉。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl delete pod nginx
+</code></pre></td></tr></table>
+</div>
+</div><p>然后通过 ReplicationController 重新部署这个 Flask 应用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ReplicationController<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>replicas<span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>template<span class="p">:</span><span class="w">
+</span><span class="w">    </span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">      </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">        </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>spec<span class="p">:</span><span class="w">
+</span><span class="w">      </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.12</span><span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">          </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">          </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/nginx/conf.d&#34;</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>flask<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>findsec/hello<span class="p">:</span>v1<span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http-stats<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">9191</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">      </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">          </span>emptyDir<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">          </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">            </span>items<span class="p">:</span><span class="w">
+</span><span class="w">              </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w">                </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>get<span class="w"> </span>rc<span class="w">
+</span><span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>describe<span class="w"> </span>rc<span class="w"> </span>nginx<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-3">修改副本</h2>
+<p>然后我们通过<code>RC</code>来修改下<code>Pod</code>的副本数量为2：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl edit rc nginx
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-4">删除一个容器</h2>
+<p>通过delete pods 的方式删除一个容器，立刻就有一个新的容器起来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get  rc
+kubectl get pod
+kubectl delete pods nginx-h2qbt
+kubectl get pods
+kubectl get  rc
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="scale-">scale 伸缩</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl scale rc nginx --replicas<span class="o">=</span><span class="m">2</span>
+kubectl get  rc
+kubectl scale rc nginx --replicas<span class="o">=</span><span class="m">5</span>
+kubectl get pods -o wide
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-5">滚动升级</h2>
+<p>而且我们还可以用<code>RC</code>来进行滚动升级，比如我们将镜像地址更改为<code>nginx:1.15</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-hello.yaml" data-lang="hello.yaml">kubectl<span class="w"> </span>rolling-update<span class="w"> </span>nginx<span class="w"> </span>--image=nginx<span class="p">:</span><span class="m">1.15</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>但是如果我们的<code>Pod</code>中多个容器的话，就需要通过修改<code>YAML</code>文件来进行修改了:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl rolling-update nginx -f hello.yaml
+</code></pre></td></tr></table>
+</div>
+</div><p>如果升级完成后出现了新的问题，想要一键回滚到上一个版本的话，使用<code>RC</code>只能用同样的方法把镜像地址替换成之前的，然后重新滚动升级。</p>
+<h1 id="replicaset">ReplicaSet</h1>
+<p>随着<code>Kubernetes</code>的高速发展，官方已经推荐我们使用<code>RS</code>和<code>Deployment</code>来代替<code>RC</code>了，实际上<code>RS</code>和<code>RC</code>的功能基本一致，目前唯一的一个区别就是<code>RC</code>只支持基于等式的<code>selector</code>（env=dev或environment!=qa），但<code>RS</code>还支持基于集合的<code>selector</code>（version in (v1.0, v2.0)），这对复杂的运维管理就非常方便了。</p>
+<p>我们通过 ReplicaSet 重新部署这个应用。</p>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/replicaset.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/replicaset.jpg" alt="ReplicaSet"></a></p>
+<p>在部署前，我们可以先把原先部署的 Pod 清理掉。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl delete pod nginx
+</code></pre></td></tr></table>
+</div>
+</div><p>然后通过 ReplicaSet 重新部署这个 Flask 应用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>ReplicaSet<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>replicas<span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>template<span class="p">:</span><span class="w">
+</span><span class="w">    </span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">      </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">        </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>spec<span class="p">:</span><span class="w">
+</span><span class="w">      </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.12</span><span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">          </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">          </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/nginx/conf.d&#34;</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>flask<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>findsec/hello<span class="p">:</span>v1<span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http-stats<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">9191</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">      </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">          </span>emptyDir<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">          </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">            </span>items<span class="p">:</span><span class="w">
+</span><span class="w">              </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w">                </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>get<span class="w"> </span>rs<span class="w">
+</span><span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>describe<span class="w"> </span>rs<span class="w"> </span>nginx<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>通过 ReplicaSet 我们实现了启动多个 Pod 副本的目的。现在我们的 Flask 应用有了新版本，我想升级它，但又不能影响用户的访问，我该怎么做？滚动升级这个特性我们改如何实现？答案就是 Deployment。</p>
+<p>我们可以先删除rs资源，然后用 Deployment 重新部署这个应用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl delete ReplicaSet nginx
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="deployment">Deployment</h1>
+<p>一个 ReplicaSet 对象，其实就是由副本数目的定义和一个 Pod 模板组成的。不难发现，它的定义其实是 Deployment 的一个子集。Deployment 控制器实际操纵的正是这样的 ReplicaSet 对象，而不是 Pod 对象。</p>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/deployment.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/deployment.jpg" alt="Deployment"></a></p>
+<p>Deployment 与 ReplicaSet 以及 Pod 的关系是怎样的呢？ Deployment 与它的 ReplicaSet 以及 Pod 的关系，实际上是一种“层层控制”的关系。ReplicaSet 负责通过“控制器模式”，保证系统中 Pod 的个数永远等于指定的个数（比如，3 个）。这也正是 Deployment 只允许容器的 restartPolicy=Always 的主要原因：只有在容器能保证自己始终是 Running 状态的前提下，ReplicaSet 调整 Pod 的个数才有意义。而在此基础上，Deployment 同样通过“控制器模式”，来操作 ReplicaSet 的个数和属性，进而实现“水平扩展 / 收缩”和“滚动更新”这两个编排动作。</p>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/rollout.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/rollout.jpg" alt="Rollout"></a></p>
+<h2 id="deployment-1">创建deployment</h2>
+<p>Kubernetes支持两张方式创建资源：</p>
+<ul>
+<li>通过kubect命令直接创建</li>
+<li>通过配置文件和kubect 创建</li>
+</ul>
+<p>通过 Deployment 重新部署 Flask 应用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Deployment<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>replicas<span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>template<span class="p">:</span><span class="w">
+</span><span class="w">    </span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">      </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">        </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>spec<span class="p">:</span><span class="w">
+</span><span class="w">      </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.12</span><span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">          </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">          </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/nginx/conf.d&#34;</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>flask<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>findsec/hello<span class="p">:</span>v1<span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http-stats<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">9191</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/tmp&#34;</span><span class="w">
+</span><span class="w">      </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;uwsgi-sock&#34;</span><span class="w">
+</span><span class="w">          </span>emptyDir<span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">          </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">            </span>items<span class="p">:</span><span class="w">
+</span><span class="w">              </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w">                </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="deployment-2">查看deployment信息</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get deployment
+kubectl describe deployment/nginx
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="scale--1">scale 伸缩</h2>
+<p>修改副本数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl scale deploy nginx --replicas=2
+kubectl get deploy
+kubectl scale deploy nginx --replicas=5
+kubectl get pods -o wide
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="failover">Failover</h2>
+<h2 id="heading-6">滚动升级</h2>
+<p>升级Flask 应用，查看滚动升级的过程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Deployment<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>replicas<span class="p">:</span><span class="w"> </span><span class="m">2</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>template<span class="p">:</span><span class="w">
+</span><span class="w">    </span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">      </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">        </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">    </span>spec<span class="p">:</span><span class="w">
+</span><span class="w">      </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>nginx<span class="p">:</span><span class="m">1.12</span><span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span><span class="m">0.</span>5Gi<span class="w">
+</span><span class="w">          </span>livenessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">          </span>readinessProbe<span class="p">:</span><span class="w">
+</span><span class="w">            </span>httpGet<span class="p">:</span><span class="w">
+</span><span class="w">              </span>path<span class="p">:</span><span class="w"> </span>/<span class="w">
+</span><span class="w">              </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">              </span>scheme<span class="p">:</span><span class="w"> </span>HTTP<span class="w">
+</span><span class="w">            </span>initialDelaySeconds<span class="p">:</span><span class="w"> </span><span class="m">5</span><span class="w">
+</span><span class="w">            </span>periodSeconds<span class="p">:</span><span class="w"> </span><span class="m">15</span><span class="w">
+</span><span class="w">            </span>timeoutSeconds<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">          </span>volumeMounts<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">              </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/nginx/conf.d&#34;</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>flask<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>findsec/hello<span class="p">:</span>v2<span class="w">
+</span><span class="w">          </span>env<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>UWSGI_CHEAPER<span class="w">
+</span><span class="w">              </span>value<span class="p">:</span><span class="w"> </span><span class="s2">&#34;5&#34;</span><span class="w">
+</span><span class="w">          </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>tcp<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">8000</span><span class="w">
+</span><span class="w">              </span>protocol<span class="p">:</span><span class="w"> </span>TCP<span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http-stats<span class="w">
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">9191</span><span class="w">
+</span><span class="w">          </span>resources<span class="p">:</span><span class="w">
+</span><span class="w">            </span>limits<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span>500m<span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">            </span>requests<span class="p">:</span><span class="w">
+</span><span class="w">              </span>cpu<span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span><span class="w">              </span>memory<span class="p">:</span><span class="w"> </span>100Mi<span class="w">
+</span><span class="w">      </span>volumes<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf&#34;</span><span class="w">
+</span><span class="w">          </span>configMap<span class="p">:</span><span class="w">
+</span><span class="w">            </span>name<span class="p">:</span><span class="w"> </span><span class="s2">&#34;nginx-conf-v2&#34;</span><span class="w">
+</span><span class="w">            </span>items<span class="p">:</span><span class="w">
+</span><span class="w">              </span>-<span class="w"> </span>key<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello-v2.conf&#34;</span><span class="w">
+</span><span class="w">                </span>path<span class="p">:</span><span class="w"> </span><span class="s2">&#34;hello.conf&#34;</span><span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span><span class="w">
+</span><span class="w"></span>kubectl<span class="w"> </span>get<span class="w"> </span>deployment<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>hello-v2.conf</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">server {
+    listen 80;
+    server_name nginx.example.com;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass 127.0.0.1:8000;
+    }
+}
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>针对目前的nginx1.12升级成1.15的命令，老的下面自动移除了，全部都在新的下面。</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl set image deploy nginx nginx=nginx:1.15
+kubectl get deploy
+kubectl get deploy -o wide
+kubectl get pods
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>deployment查看历史版本</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl rollout history deploy nginx
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>deployment 回滚到之前的版本
+&gt;又变成了nginx 1.12</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl rollout undo deploy nginx
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="labelpod">用label控制pod的位置</h2>
+<p>默认情况下，调度 pod 时会用到所有可用的 node，但有些情况我们希望将 pod 部署到指定的 node，例如部署到 SSD 磁盘的 node，可以通过 label 实现这个功能。</p>
+<p>任何资源都可以设置 label，我们可以给 node 设置 label，在部署 pod 时指定 label，就实现了在特定 node 上的部署。</p>
+<p>给 node 添加 label：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl label node n1 disktype=ssd
+</code></pre></td></tr></table>
+</div>
+</div><p>查看 node 的 label 信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-csharp" data-lang="csharp"><span class="n">kubectl</span> <span class="k">get</span> <span class="n">node</span> <span class="p">-</span><span class="p">-</span><span class="n">show</span><span class="p">-</span><span class="n">labels</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>配置文件中指定 label 选择器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-cpp" data-lang="cpp"><span class="nl">apiVersion</span><span class="p">:</span> <span class="n">apps</span><span class="o">/</span><span class="n">v1</span>
+<span class="nl">kind</span><span class="p">:</span> <span class="n">Deployment</span>
+<span class="nl">metadata</span><span class="p">:</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="n">nginx</span>
+<span class="nl">spec</span><span class="p">:</span>
+  <span class="nl">replicas</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="k">template</span><span class="o">:</span>
+    <span class="nl">metadata</span><span class="p">:</span>
+      <span class="nl">labels</span><span class="p">:</span>
+        <span class="nl">app</span><span class="p">:</span> <span class="n">web_server</span>
+    <span class="nl">spec</span><span class="p">:</span>
+      <span class="nl">containers</span><span class="p">:</span>
+        <span class="o">-</span> <span class="nl">name</span><span class="p">:</span> <span class="n">nginx</span>
+          <span class="nl">image</span><span class="p">:</span> <span class="nl">nginx</span><span class="p">:</span><span class="mf">1.15</span>
+      <span class="nl">nodeSelector</span><span class="p">:</span>
+        <span class="nl">disktype</span><span class="p">:</span> <span class="n">ssd</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>删除 label disktype：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl label node n1 disktype-
+</code></pre></td></tr></table>
+</div>
+</div><p><code>-</code> 即删除。</p>
+<p>不过Pod此时并不会重新部署，除非删掉nodeSelector，然后通过kubectl apply重新部署。</p>
+<h1 id="daemonset">DaemonSet</h1>
+<p>Deployment部署的副本Pod会分布在各个Node节点上，每个Node都可能会运行好几个副本。DaemonSet的不同之处在于：每个Node上最多只能运行一个副本。</p>
+<p>Deployment的典型应用场景：</p>
+<ul>
+<li>在集群每个节点上运行存储 Daemon，比如：ceph</li>
+<li>每个节点上运行日志收集 Daemon，比如：flunentd或者 logstash</li>
+<li>每个节点上运行监控  Daemon，比如 clllectd</li>
+</ul>
+<p>其实，Kubernetes自己就在用 DaemonSet运行系统组件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl get daemonset -n kube-system
+
+kubectl get daemonset calico-node -o yaml -n kube-system
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="statefulset">StatefulSet</h1>
+<p>StatefulSet能够保证Pod的每个副本在整个生命周期中名称是不变的。</p>
+<h1 id="service">Service</h1>
+<h2 id="-service">为什么需要 Service</h2>
+<p>集群中的每一个 Pod 都可以通过 Pod IP 直接访问，但是正如我们所看到的，Kubernetes 中的 Pod 是有生命周期的，尤其是被 ReplicaSet、Deployment 等对象管理的 Pod，随时都有可能被销毁和重建。这就会出现一个问题，当 Kuberentes 集群中的一些 Pod 需要为另外的一些 Pod 提供服务时，我们如何为这组 Pod 建立一个抽象让另一组 Pod 找到它。这个抽象在 Kubernetes 中其实就是 Service，每一个 Service 都是一组 Pod 的逻辑集合和访问方式的抽象。即 Service 至少帮我们解决了如下问题：</p>
+<ul>
+<li>对外暴露部署的应用</li>
+<li>为一组 Pod 提供负载均衡功能</li>
+<li>监控 Pod 中启动容器的健康状况，不健康则踢除</li>
+<li>将服务名注册到 DNS 中去</li>
+</ul>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/pods-to-pods.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/pods-to-pods.jpg" alt="Pods to Pods"></a></p>
+<h2 id="-service-1">如何暴露 Service</h2>
+<h3 id="heading-7">内部访问方式</h3>
+<p>Kubernetes 中的 Service 对象将一组 Pod 以统一的形式对外暴露成一个服务，它利用运行在内核空间的 iptables 或 ipvs 高效地转发来自节点内部和外部的流量。</p>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/pods-to-service.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/pods-to-service.jpg" alt="Pods to Service"></a></p>
+<p>对于每一个 Service，会在节点上添加 iptables 规则，通过 iptables 或 ipvs 将流量转发到后端的 Pod 进行处理。</p>
+<p><a href="https://github.com/findsec-cn/k101/raw/master/docs/service.jpg"><img src="https://github.com/findsec-cn/k101/raw/master/docs/service.jpg" alt="Service"></a></p>
+<p>在集群的内部我们可以通过这个 ClusterIP 访问这组 Pod 提供的服务，集群外部无法访问它。在某些场景下我们可以使用 Kubernetes 的 Proxy 模式来访问服务，比如调试服务时。</p>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8u3jd815ij30ec0fc3ym.jpg" alt="img"></p>
+<p>那如何在集群外部访问这个服务呢？</p>
+<h3 id="heading-8">外部访问方式</h3>
+<p>kubectl expoese命令，会给我们的pod创建一个Service，供外部访问。Service 主要有三种类型：</p>
+<ol>
+<li>NodePort</li>
+<li>LoadBalancer</li>
+<li>Ingress</li>
+</ol>
+<h4 id="nodeport">NodePort</h4>
+<p>这里最常用的一种方式就是：NodePort。在这个 Service 的定义里，通过声明它的类型为 type=NodePort。当我们配置了 NodePort 这种服务类型后，Kubernetes 会在每个物理节点上生成 iptables 规则，将相应端口的流量导入到集群内部，这样我们就可以在集群外部访问到这个服务了。</p>
+<p>另外一种类型叫 LoadBalancer，这个适用于公有云上的 Kubernetes 对外暴露服务。</p>
+<p><img src="https://github.com/findsec-cn/k101/raw/master/docs/service-nodeport.jpg" alt="NodePort"></p>
+<p>NodePort 服务特征如下：</p>
+<ul>
+<li>每个端口只能是一种服务</li>
+<li>端口范围只能是 30000-32767（可调）</li>
+<li>不在 YAML 配置文件中指定则会分配一个默认端口</li>
+</ul>
+<blockquote>
+<p><strong>建议：</strong> 不要在生产环境中使用这种方式暴露服务，大多数时候我们应该让 Kubernetes 来选择端口</p>
+</blockquote>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8u3ly6s2zj30ec0hbwer.jpg" alt="img"></p>
+<h4 id="loadbalancer">LoadBalancer</h4>
+<p>LoadBalancer 服务是暴露服务到 Internet 的标准方式。所有通往你指定的端口的流量都会被转发到对应的服务。它没有过滤条件，没有路由等。这意味着你几乎可以发送任何种类的流量到该服务，像 HTTP，TCP，UDP，WebSocket，gRPC 或其它任意种类。</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1568266637350-1969467a-7f35-4fb5-baac-4c9b0a3c2e3d.png" alt="img"></p>
+<h4 id="ingress">Ingress</h4>
+<p>Ingress 事实上不是一种服务类型。相反，它处于多个服务的前端，扮演着 “智能路由” 或者集群入口的角色。你可以用 Ingress 来做许多不同的事情，各种不同类型的 Ingress 控制器也有不同的能力。它允许你基于路径或者子域名来路由流量到后端服务。</p>
+<p>Ingress 可能是暴露服务的最强大方式，但同时也是最复杂的。Ingress 控制器有各种类型，包括 Google Cloud Load Balancer， Nginx，Contour，Istio，等等。它还有各种插件，比如 cert-manager (它可以为你的服务自动提供 SSL 证书)/</p>
+<p>如果你想要使用同一个 IP 暴露多个服务，这些服务都是使用相同的七层协议（典型如 HTTP），你还可以获取各种开箱即用的特性（比如 SSL、认证、路由等等）</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2019/png/462325/1568266637023-d81c0741-7469-47fa-9a74-71f0d5061c05.png" alt="img"></p>
+<p>通常情况下，Service 和 Pod 的 IP 仅可在集群内部访问。集群外部的请求需要通过负载均衡转发到 Service 在 Node 上暴露的 NodePort 上，然后再由 kube-proxy 通过边缘路由器 (edge router) 将其转发给相关的 Pod 或者丢弃。而 Ingress 就是为进入集群的请求提供路由规则的集合</p>
+<p>Ingress 可以给 Service 提供集群外部访问的 URL、负载均衡、SSL 终止、HTTP 路由等。为了配置这些 Ingress 规则，集群管理员需要部署一个 Ingress Controller，它监听 Ingress 和 Service 的变化，并根据规则配置负载均衡并提供访问入口。</p>
+<h2 id="heading-9">服务发现</h2>
+<p>我们通过 Service 这个抽象对外暴露服务，但还有一个问题，在 Kubernetes 集群中，A 服务访问 B 服务，如果 B 服务是一个还未部署的服务，这时，我们是不知道 B 服务的 ClusterIP 是什么的？那我在编写 A 服务的代码时，如何描述 B 服务呢？其实，我们可以给这个服务定义一个名字，当 B 服务部署时自动解析这个名字就可以了。这就是 Kubernetes 内部的服务发现机制。Service 被分配了 ClusterIP 后，还会将自己的服务名注册到 DNS 中，这样其他服务就可以通过这个服务名访问到这个服务了。如果 A、B 两个服务在相同的命名空间，那么他们通过 svc_name 就可以相互访问了（如上例：hello），如果是在不同的命名空间还需要加上命名空间的名字，如 svc_name.namespace（如上例：hello.default），或者使用完整域名去访问，一般是 svc_name.namespace.svc.cluster.local（如上例：hello.default.svc.cluster.local）。</p>
+<h2 id="-service-2">如何配置 Service</h2>
+<h3 id="deployment-">deployment 端口暴露</h3>
+<p>可以使用端口暴露的方式，部署service</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get node
+kubectl get node -o wide
+kubectl expose deploy nginx --type<span class="o">=</span>NodePort
+<span class="c1">#查看node节点暴露的端口30960</span>
+kubectl get svc
+
+
+kubectl expose deploy nginx --port<span class="o">=</span><span class="m">80</span> --type<span class="o">=</span>LoadBalancer
+
+kubectl port-forward nginx 8080:80
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="-service-3">部署 Service</h3>
+<p>也可以直接创建：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">cat<span class="w"> </span>&lt;&lt;<span class="w"> </span>EOF<span class="w"> </span>|<span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>-<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Service<span class="w">
+</span><span class="w"></span>apiVersion<span class="p">:</span><span class="w"> </span>v1<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app<span class="p">:</span><span class="w"> </span>nginx<span class="w">
+</span><span class="w">  </span>ports<span class="p">:</span><span class="w">
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
+</span><span class="w">      </span>protocol<span class="p">:</span><span class="w"> </span>TCP<span class="w">
+</span><span class="w">      </span>port<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">      </span>targetPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
+</span><span class="w">      </span>nodePort<span class="p">:</span><span class="w"> </span><span class="m">30080</span><span class="w">
+</span><span class="w">  </span>type<span class="p">:</span><span class="w"> </span>NodePort<span class="w">
+</span><span class="w"></span>EOF<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="-service--endpoint">获取 Service 的 Endpoint</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl get endpoints nginx
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="-service-4">获取 Service</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl get svc nginx
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="-service-5">访问 Service</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">minikube ssh
+curl https://127.0.0.1:30080
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="ingress-1">Ingress</h1>
+<h2 id="-nginx-ingress-controller">安装 Nginx Ingress Controller</h2>
+<p>Ingress Controller 有许多种，我们选择最熟悉的 Nginx 来处理请求，其它可以参考 <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/">官方文档</a></p>
+<ul>
+<li>下载 Nginx Ingress Controller 配置文件</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-fallback" data-lang="fallback">wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>修改配置文件，找到配置如下位置 (搜索 <code>serviceAccountName</code>) 在下面增加一句 <code>hostNetwork: true</code></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-yaml" data-lang="yaml">apiVersion<span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
+</span><span class="w"></span>kind<span class="p">:</span><span class="w"> </span>Deployment<span class="w">
+</span><span class="w"></span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>nginx-ingress-controller<span class="w">
+</span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">  </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">    </span>app.kubernetes.io/name<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">    </span>app.kubernetes.io/part-of<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w"></span>spec<span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="c"># 可以部署多个实例</span><span class="w">
+</span><span class="w">  </span>replicas<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span>selector<span class="p">:</span><span class="w">
+</span><span class="w">    </span>matchLabels<span class="p">:</span><span class="w">
+</span><span class="w">      </span>app.kubernetes.io/name<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">      </span>app.kubernetes.io/part-of<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">  </span>template<span class="p">:</span><span class="w">
+</span><span class="w">    </span>metadata<span class="p">:</span><span class="w">
+</span><span class="w">      </span>labels<span class="p">:</span><span class="w">
+</span><span class="w">        </span>app.kubernetes.io/name<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">        </span>app.kubernetes.io/part-of<span class="p">:</span><span class="w"> </span>ingress-nginx<span class="w">
+</span><span class="w">      </span>annotations<span class="p">:</span><span class="w">
+</span><span class="w">        </span>prometheus.io/port<span class="p">:</span><span class="w"> </span><span class="s2">&#34;10254&#34;</span><span class="w">
+</span><span class="w">        </span>prometheus.io/scrape<span class="p">:</span><span class="w"> </span><span class="s2">&#34;true&#34;</span><span class="w">
+</span><span class="w">    </span>spec<span class="p">:</span><span class="w">
+</span><span class="w">      </span>serviceAccountName<span class="p">:</span><span class="w"> </span>nginx-ingress-serviceaccount<span class="w">
+</span><span class="w">      </span><span class="c"># 增加 hostNetwork: true，意思是开启主机网络模式，暴露 Nginx 服务端口 80</span><span class="w">
+</span><span class="w">      </span>hostNetwork<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">      </span>containers<span class="p">:</span><span class="w">
+</span><span class="w">        </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>nginx-ingress-controller<span class="w">
+</span><span class="w">          </span>image<span class="p">:</span><span class="w"> </span>quay.io/kubernetes-ingress-controller/nginx-ingress-controller<span class="p">:</span><span class="m">0.24</span><span class="m">.1</span><span class="w">
+</span><span class="w">          </span>args<span class="p">:</span><span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>/nginx-ingress-controller<span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>--configmap=$(POD_NAMESPACE)/nginx-configuration<span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>--tcp-services-configmap=$(POD_NAMESPACE)/tcp-services<span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>--udp-services-configmap=$(POD_NAMESPACE)/udp-services<span class="w">
+</span><span class="w">            </span>-<span class="w"> </span>--publish-service=$(POD_NAMESPACE)/ingress-nginx<span class="w">
+</span><span class="w"></span>//<span class="w"> </span>以下代码省略...<span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>部署：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create -f mandatory.yaml
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-ingress">部署 Ingress</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-web
+  annotations:
+    <span class="c1"># 指定 Ingress Controller 的类型</span>
+    kubernetes.io/ingress.class: <span class="s2">&#34;nginx&#34;</span>
+    <span class="c1"># 指定我们的 rules 的 path 可以使用正则表达式</span>
+    nginx.ingress.kubernetes.io/use-regex: <span class="s2">&#34;true&#34;</span>
+    <span class="c1"># 连接超时时间，默认为 5s</span>
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="s2">&#34;600&#34;</span>
+    <span class="c1"># 后端服务器回转数据超时时间，默认为 60s</span>
+    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="s2">&#34;600&#34;</span>
+    <span class="c1"># 后端服务器响应超时时间，默认为 60s</span>
+    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="s2">&#34;600&#34;</span>
+    <span class="c1"># 客户端上传文件，最大大小，默认为 20m</span>
+    nginx.ingress.kubernetes.io/proxy-body-size: <span class="s2">&#34;10m&#34;</span>
+    <span class="c1"># URL 重写</span>
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  <span class="c1"># 路由规则</span>
+  rules:
+  <span class="c1"># 主机名，只能是域名，修改为你自己的</span>
+  - host: k8s.example.com
+    http:
+      paths:
+      - path:
+        backend:
+          <span class="c1"># 后台部署的 Service Name，与上面部署的 Tomcat 对应</span>
+          serviceName: tomcat-http
+          <span class="c1"># 后台部署的 Service Port，与上面部署的 Tomcat 对应</span>
+          servicePort: <span class="m">8080</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-ingress-1">查看 Ingress</h2>
+<h2 id="-nginx-ingress-controller-1">查看 Nginx Ingress Controller</h2>
+<h2 id="heading-10">测试访问</h2>
+<p>成功代理到 Tomcat 即表示成功</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 不设置 Hosts 的方式请求地址，下面的 IP 和 Host 均在上面有配置</span>
+curl -v http://192.168.56.111 -H <span class="s1">&#39;host: k8s.example.com&#39;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-11">总结</h1>
+<p>Controller一个有以下几种：</p>
+<ul>
+<li>ReplicationController</li>
+<li>ReplicaSet</li>
+<li>DaemonSet</li>
+<li>Deployment</li>
+<li>StatefulSet</li>
+<li>Job</li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2019-11-13
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetes/">kubernetes</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2019/11/20/install-greenplum-cluster/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">安装Greenplum数据库集群</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/11/12/kubernetes-storage-volumes/">
+            <span class="next-text nav-default">Kubernetes存储之Volume</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.26188efa.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
