@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Git提交文件工作流程 - JavaChen Blog - Ramblings of a coder</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="Git配置 全局配置： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 $ git config --global -l user.email=junecloud@163.com user.name=chenzj alias.st=status alias.throw=reset --hard HEAD alias.throwj=reset ==jard HEAD^ alias.co=checkout alias.ls=ls-files alias.ci=commit -a -v alias.br=branch alias.unstage=reset HEAD alias.uncommit=reset --soft HEAD^ alias.amend=commit --amend alias.who=shortlog -n -s --no-merges alias.g=grep -n --color -E alias.cp=cherry-pick -x alias.cb=checkout" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/01/01/git-commit-files-flow/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Git提交文件工作流程" />
+<meta property="og:description" content="Git配置 全局配置： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 $ git config --global -l user.email=junecloud@163.com user.name=chenzj alias.st=status alias.throw=reset --hard HEAD alias.throwj=reset ==jard HEAD^ alias.co=checkout alias.ls=ls-files alias.ci=commit -a -v alias.br=branch alias.unstage=reset HEAD alias.uncommit=reset --soft HEAD^ alias.amend=commit --amend alias.who=shortlog -n -s --no-merges alias.g=grep -n --color -E alias.cp=cherry-pick -x alias.cb=checkout" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/01/01/git-commit-files-flow/" />
+<meta property="article:published_time" content="2020-01-01T00:00:00+08:00" />
+<meta property="article:modified_time" content="2020-01-01T00:00:00+08:00" />
+<meta itemprop="name" content="Git提交文件工作流程">
+<meta itemprop="description" content="Git配置 全局配置： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 $ git config --global -l user.email=junecloud@163.com user.name=chenzj alias.st=status alias.throw=reset --hard HEAD alias.throwj=reset ==jard HEAD^ alias.co=checkout alias.ls=ls-files alias.ci=commit -a -v alias.br=branch alias.unstage=reset HEAD alias.uncommit=reset --soft HEAD^ alias.amend=commit --amend alias.who=shortlog -n -s --no-merges alias.g=grep -n --color -E alias.cp=cherry-pick -x alias.cb=checkout">
+<meta itemprop="datePublished" content="2020-01-01T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-01-01T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2180">
+
+
+
+<meta itemprop="keywords" content="git," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Git提交文件工作流程"/>
+<meta name="twitter:description" content="Git配置 全局配置： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 $ git config --global -l user.email=junecloud@163.com user.name=chenzj alias.st=status alias.throw=reset --hard HEAD alias.throwj=reset ==jard HEAD^ alias.co=checkout alias.ls=ls-files alias.ci=commit -a -v alias.br=branch alias.unstage=reset HEAD alias.uncommit=reset --soft HEAD^ alias.amend=commit --amend alias.who=shortlog -n -s --no-merges alias.g=grep -n --color -E alias.cp=cherry-pick -x alias.cb=checkout"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Git提交文件工作流程</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-01-01 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 2180 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#git-">Git 全局设置：</a></li>
+    <li><a href="#heading-1">创建一个仓库</a></li>
+    <li><a href="#heading-2">推送现有文件夹</a></li>
+    <li><a href="#-git-">推送现有的 Git 存储库</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#-git-add">关于 git add</a></li>
+    <li><a href="#-git-commit">关于 git commit</a></li>
+    <li><a href="#-git-diff">关于 git diff</a></li>
+    <li><a href="#-git-log">关于 git log</a></li>
+    <li><a href="#-git-reset">关于 git reset</a></li>
+    <li><a href="#-git-co">关于 git co</a></li>
+    <li><a href="#-git-stash">关于 git stash</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <h1 id="git">Git配置</h1>
+<p>全局配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git config --global -l
+user.email<span class="o">=</span>junecloud@163.com
+user.name<span class="o">=</span>chenzj
+alias.st<span class="o">=</span>status
+alias.throw<span class="o">=</span>reset --hard HEAD
+alias.throwj<span class="o">=</span><span class="nv">reset</span> <span class="o">=</span><span class="o">=</span>jard HEAD^
+alias.co<span class="o">=</span>checkout
+alias.ls<span class="o">=</span>ls-files
+alias.ci<span class="o">=</span>commit -a -v
+alias.br<span class="o">=</span>branch
+alias.unstage<span class="o">=</span>reset HEAD
+alias.uncommit<span class="o">=</span>reset --soft HEAD^
+alias.amend<span class="o">=</span>commit --amend
+alias.who<span class="o">=</span>shortlog -n -s --no-merges
+alias.g<span class="o">=</span>grep -n --color -E
+alias.cp<span class="o">=</span>cherry-pick -x
+alias.cb<span class="o">=</span>checkout -b
+alias.lg<span class="o">=</span>log --graph --pretty<span class="o">=</span>format:<span class="s1">&#39;%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)%Creset&#39;</span>
+core.editor<span class="o">=</span>vim
+core.filemode<span class="o">=</span><span class="nb">false</span>
+core.autocrlf<span class="o">=</span>input
+core.safecrlf<span class="o">=</span><span class="nb">true</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>或者:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ cat ~/.gitconfig
+<span class="o">[</span>user<span class="o">]</span>
+	<span class="nv">name</span> <span class="o">=</span> chenzj
+	<span class="nv">email</span> <span class="o">=</span> junecloud@163.com
+<span class="o">[</span>alias<span class="o">]</span>
+	<span class="nv">st</span> <span class="o">=</span> <span class="s2">&#34;status&#34;</span>
+	<span class="nv">co</span> <span class="o">=</span> checkout
+	<span class="nv">cm</span> <span class="o">=</span> commit 
+	<span class="nv">br</span> <span class="o">=</span> branch
+	<span class="nv">ci</span> <span class="o">=</span> commit -a -v
+	<span class="nv">cp</span> <span class="o">=</span> cherry-pick -x
+	<span class="nv">throw</span> <span class="o">=</span> reset --hard HEAD
+	<span class="nv">throwh</span> <span class="o">=</span> reset --hard HEAD^
+	<span class="nv">ls</span> <span class="o">=</span> <span class="s2">&#34;ls-files&#34;</span>
+	<span class="nv">amend</span> <span class="o">=</span> commit --amend
+	<span class="nv">who</span> <span class="o">=</span> shortlog -n -s --no-merges
+	<span class="nv">g</span> <span class="o">=</span> grep -n --color -E
+	<span class="nv">lg</span> <span class="o">=</span> log --graph --pretty<span class="o">=</span>format:<span class="s1">&#39;%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)%Creset&#39;</span>
+<span class="o">[</span>core<span class="o">]</span>
+	<span class="nv">editor</span> <span class="o">=</span> vim
+	<span class="nv">filemode</span> <span class="o">=</span> <span class="nb">false</span>
+	<span class="nv">autocrlf</span> <span class="o">=</span> input
+	<span class="nv">safecrlf</span> <span class="o">=</span> <span class="nb">true</span>
+<span class="o">[</span>color<span class="o">]</span>
+	<span class="nv">ui</span> <span class="o">=</span> <span class="nb">true</span>
+<span class="o">[</span>push<span class="o">]</span>
+	<span class="nv">default</span> <span class="o">=</span> current
+<span class="o">[</span>merge<span class="o">]</span>
+	<span class="nv">tool</span> <span class="o">=</span> meld
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading">创建一个新项目</h1>
+<h2 id="git-">Git 全局设置：</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git config --global user.name <span class="s2">&#34;chenzj&#34;</span>
+git config --global user.email <span class="s2">&#34;junecloud@163.com&#34;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-1">创建一个仓库</h2>
+<p>下载Github上创建好的空项目，添加README.md：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone git@github.com:javachen/test_git.git
+<span class="nb">cd</span> test_git
+touch README.md
+git add README.md
+git commit -m <span class="s2">&#34;add README&#34;</span>
+git push -u origin master
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="heading-2">推送现有文件夹</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> existing_folder
+<span class="nb">echo</span> <span class="s2">&#34;# test_git&#34;</span> &gt;&gt; README.md
+git init
+git add README.md
+git commit -m <span class="s2">&#34;first commit&#34;</span>
+git remote add origin git@github.com:javachen/test_git.git
+git push -u origin master
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-">推送现有的 Git 存储库</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> existing_repo
+git remote rename origin old-origin
+git remote add origin git@github.com/javachen/test_git.git
+git push -u origin --all
+git push -u origin --tags
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-3">提交文件</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> <span class="s2">&#34;# test_git&#34;</span> &gt;&gt; README.md
+
+$ git add .
+
+$ git ci
+<span class="o">[</span>master 077a102<span class="o">]</span> add test_git
+ <span class="m">1</span> file changed, <span class="m">1</span> insertion<span class="o">(</span>+<span class="o">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-add">关于 git add</h2>
+<p><a href="https://haoduoshipin.com/videos/33">https://haoduoshipin.com/videos/33</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git add &lt;file&gt;      <span class="c1"># 将工作文件修改提交到本地暂存区</span>
+git add .           <span class="c1"># 将所有修改过的工作文件提交暂存区</span>
+git add -p 					<span class="c1"># 交互式选择部分修改</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>再次修改README.md，分别修改三次提交三次：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#第一次修改</span>
+$ vim README.md
+<span class="c1"># test_git</span>
+
+<span class="m">1</span>
+
+$ git add .
+$ git ci
+<span class="o">[</span>master b11f0af<span class="o">]</span> add <span class="m">1</span>
+ <span class="m">1</span> file changed, <span class="m">2</span> insertions<span class="o">(</span>+<span class="o">)</span>
+
+<span class="c1">#第二次修改</span>
+$ vim README.md
+<span class="c1"># test_git</span>
+
+<span class="m">1</span>
+<span class="m">2</span>
+
+$ git add .
+$ git ci
+<span class="o">[</span>master bbb83f6<span class="o">]</span> add <span class="m">2</span>
+ <span class="m">1</span> file changed, <span class="m">1</span> insertion<span class="o">(</span>+<span class="o">)</span>
+ 
+ 
+<span class="c1">#第三次修改</span>
+$ vim README.md
+<span class="c1"># test_git</span>
+
+<span class="m">1</span>
+<span class="m">2</span>
+<span class="m">3</span>
+
+$ git add .
+$ git ci
+<span class="o">[</span>master 624e006<span class="o">]</span> add <span class="m">3</span>
+ <span class="m">1</span> file changed, <span class="m">1</span> insertion<span class="o">(</span>+<span class="o">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-commit">关于 git commit</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git commit &lt;file&gt;					<span class="c1"># 提交某一个文件</span>
+git commit .							<span class="c1"># 提交当前工作区</span>
+git commit -a           	<span class="c1"># 将git add, git rm和git ci等操作都合并在一起做</span>
+git commit -a -v					<span class="c1"># 提交并显示改动</span>
+git commit -am <span class="s2">&#34;comments&#34;</span> <span class="c1"># 提交并添加注释</span>
+git commit --amend      	<span class="c1"># 修改最后一次提交记录</span>
+git commit --amend --author<span class="o">=</span><span class="s1">&#39;Author Name &lt;email@address.com&gt;&#39;</span> <span class="c1">#修改作者名</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>再次修改，添加一行内容为4，然后查看修改变动的地方：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git diff
+diff --git a/README.md b/README.md
+index c488e15..3e9d840 <span class="m">100644</span>
+--- a/README.md
++++ b/README.md
+@@ -3,3 +3,4 @@
+ <span class="m">1</span>
+ <span class="m">2</span>
+ <span class="m">3</span>
++4
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-diff">关于 git diff</h2>
+<p><a href="https://haoduoshipin.com/videos/32">https://haoduoshipin.com/videos/32</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git diff
+git diff &lt;file&gt;     			<span class="c1"># 比较当前文件和暂存区文件差异</span>
+git diff &lt;<span class="nv">$id1</span>&gt; &lt;<span class="nv">$id2</span>&gt;   	<span class="c1"># 比较两次提交之间的差异</span> 
+git diff &lt;branch1&gt; &lt;branch2&gt;   <span class="c1"># 在两个分支之间比较</span>  
+git diff --staged   			<span class="c1"># 比较暂存区和版本库差异</span> 
+git diff --cached   			<span class="c1"># 比较暂存区和版本库差异</span> 
+git diff --stat     			<span class="c1"># 仅仅比较统计信息</span> 
+git diff HEAD 						<span class="c1"># 输出工作区、暂存区和本地最近的版本的不同</span> 
+git diff <span class="s2">&#34;@{yesterday}&#34;</span>   <span class="c1"># 查看昨天的改变</span> 
+git diff 1b6d <span class="s2">&#34;master~2&#34;</span>  <span class="c1"># 查看一个特定版本与倒数第二个变更之间的改变</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果不想提交已经修改的内容，可以丢弃修改：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git throw  <span class="c1">#git reset --hard HEAD</span>
+HEAD 现在位于 624e006 add <span class="m">3</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>查看提交历史：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git log
+commit 624e006fecb7110ff291724e9fcb77c5915e4fe0 <span class="o">(</span>HEAD -&gt; master<span class="o">)</span>
+Author: chenzj &lt;junecloud@163.com&gt;
+Date:   Wed Jan <span class="m">1</span> 20:30:34 <span class="m">2020</span> +0800
+
+    add <span class="m">3</span>
+
+commit bbb83f6692dbed0bb973e568d9522c6ba3ef22a8
+Author: chenzj &lt;junecloud@163.com&gt;
+Date:   Wed Jan <span class="m">1</span> 20:29:57 <span class="m">2020</span> +0800
+
+    add <span class="m">2</span>
+
+commit b11f0afe2d400c55dcf4481da803879df192aea9
+Author: chenzj &lt;junecloud@163.com&gt;
+Date:   Wed Jan <span class="m">1</span> 20:28:58 <span class="m">2020</span> +0800
+
+    add <span class="m">1</span>
+
+commit 077a1021e6d729d1e65805de38b7ea8dfa8340bf
+Author: chenzj &lt;junecloud@163.com&gt;
+Date:   Wed Jan <span class="m">1</span> 20:27:17 <span class="m">2020</span> +0800
+
+    add test_git
+
+commit 0f0a3d444c1fe41d8de33fbd411941298281df0d <span class="o">(</span>origin/master<span class="o">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-log">关于 git log</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git log							<span class="c1"># 查看所有提交日志</span>
+git log &lt;file&gt;      <span class="c1"># 查看该文件每次提交记录</span>
+git log -p &lt;file&gt;   <span class="c1"># 显示版本历史，以及版本间的内容差异</span>
+git log -p -2       <span class="c1"># 查看最近两次详细修改内容的diff</span>
+git log --stat      <span class="c1"># 查看提交统计信息</span>
+git log --since<span class="o">=</span><span class="s2">&#34;6 hours&#34;</span>  <span class="c1"># 显示最近6小时提交</span>
+git log --before<span class="o">=</span><span class="s2">&#34;2 days&#34;</span>  <span class="c1"># 显示2天前提交</span>
+git log -1 HEAD~3          <span class="c1"># 显示比HEAD早3个提交的那个提交</span>
+git log -1 HEAD^^^				 <span class="c1"># 显示比HEAD早3个提交的那个提交</span>
+
+git log Branch1 ^Branch2 	 <span class="c1"># commit历史中显示Branch1有的，但是Branch2没有commit</span>
+git log --pretty<span class="o">=</span>oneline --graph --decorate --all	<span class="c1"># 展示简化的 commit 历史</span>
+git log --all --grep<span class="o">=</span><span class="s1">&#39;add&#39;</span>	<span class="c1"># 通过 grep 查找</span>
+
+git grep <span class="s1">&#39;admin&#39;</span>	 					<span class="c1"># 查询字符串</span>
+git reflog				          <span class="c1"># 查看操作记录</span>
+git blame &lt;file-name&gt; 			<span class="c1"># 查看某段代码是谁写的</span>
+git status --ignored 			  <span class="c1"># 展示忽略的文件#</span>
+git shortlog -sn 					  <span class="c1"># 统计每个人提交的次数</span>
+
+git whatchanged --since<span class="o">=</span><span class="s2">&#34;2 weeks ago&#34;</span>  <span class="c1"># 查看两周内修改的文件</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果想放弃上次的提交，则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git reset --hard  HEAD^
+HEAD 现在位于 bbb83f6 add <span class="m">2</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果想回退到某一次提交，如 b11f0afe2d400c55dcf4481da803879df192aea9 这个commit，则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git reset --hard b11f0afe2d
+</code></pre></td></tr></table>
+</div>
+</div><p>如果想回退远程仓库的状态，则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git reset --hard origin/master
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-reset">关于 git reset</h2>
+<p><a href="https://haoduoshipin.com/videos/34">https://haoduoshipin.com/videos/34</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git reset --hard origin/master 		<span class="c1"># 回到远程仓库的状态</span>
+git reset --hard  HEAD^ 					<span class="c1"># 恢复最近一次提交过的状态，即放弃上次提交后的所有本次修改</span>
+git reset --hard &lt;commit id&gt;  		<span class="c1"># 恢复到某一次提交的状态</span>
+git reset HEAD &lt;file&gt; 						<span class="c1"># 抛弃暂存区中文件的修改</span>
+git reset &lt;file&gt;    							<span class="c1"># 从暂存区恢复到工作文件</span>
+git reset -- .      							<span class="c1"># 从暂存区恢复到工作文件</span>
+
+<span class="c1"># 把所有的改动都重新放回工作区，并清空所有的 commit，这样就可以重新提交第一个 commit 了</span>
+git update-ref -d HEAD
+</code></pre></td></tr></table>
+</div>
+</div><p>再次修改文件，这一次修改多个文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ vim README.md
+<span class="c1"># test_git</span>
+
+<span class="m">1</span>
+<span class="m">2</span>
+<span class="m">3</span>
+
+$ <span class="nb">echo</span> a &gt; hello.md
+
+$ git add .
+
+$ git ci
+终止提交因为提交说明为空。
+</code></pre></td></tr></table>
+</div>
+</div><p>然后提交的时候，发现不想修改 README.md ，所以终止了提交。这个时候想撤销对README.md的修改，如果使用 <code>git throw</code>，则会撤销对两个文件的修改。这时候可以使用<code>git checkout</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git checkout README.md
+从索引区更新了 <span class="m">1</span> 个路径
+
+$ cat README.md
+<span class="c1"># test_git</span>
+
+<span class="m">1</span>
+<span class="m">2</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-co">关于 git co</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git checkout  .           <span class="c1"># 抛弃工作区所有修改</span>
+git checkout &lt;file&gt;				<span class="c1"># 抛弃工作区某个文件的修改</span>
+git checkout HEAD &lt;file&gt;  <span class="c1"># 抛弃工作目录区中某个文件的修改</span>
+git checkout HEAD~3       <span class="c1"># 回退三个版本</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>然后，再做提交：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git add .
+
+$ git ci
+<span class="o">[</span>master 6ebcc8e<span class="o">]</span> add hello.md
+ <span class="m">1</span> file changed, <span class="m">1</span> insertion<span class="o">(</span>+<span class="o">)</span>
+ create mode <span class="m">100644</span> hello.md
+</code></pre></td></tr></table>
+</div>
+</div><p>再次来修改README.md，当对README.md的修改还没有完成的时候，发现 hello.md 中有一个bug需要修复，这时候可以将当前所有的修改暂存起来，然后去修改 hello.md 并提交。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git stash
+保存工作目录和索引状态 WIP on master: 6ebcc8e add hello.md
+
+<span class="c1"># 修复bug</span>
+$ <span class="nb">echo</span> <span class="m">2</span> &gt; hello.md
+
+$ git add .
+
+$ git ci
+<span class="o">[</span>master eeb2375<span class="o">]</span> fix hello.md
+ <span class="m">1</span> file changed, <span class="m">1</span> insertion<span class="o">(</span>+<span class="o">)</span>, <span class="m">1</span> deletion<span class="o">(</span>-<span class="o">)</span>
+ 
+<span class="c1"># 恢复暂存的内容</span> 
+$ git stash apply 
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="-git-stash">关于 git stash</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git stash                        <span class="c1"># 暂存</span>
+git stash list                   <span class="c1"># 列所有stash</span>
+git stash apply                  <span class="c1"># 恢复最近一个暂存的内容</span>
+git stash drop                   <span class="c1"># 删除最近一个暂存区</span>
+
+git stash -u										 <span class="c1"># 储藏未跟踪的文件</span>
+git stash -p 										 <span class="c1"># 交互式的处理储藏中文件的每个部分</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-4">参考文章</h1>
+<ul>
+<li><a href="http://www.worldhello.net/gotgithub/index.html">http://www.worldhello.net/gotgithub/index.html</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-01-01
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/git/">git</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2020/01/04/tig/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Tig</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2019/12/26/some-usedfull-docker-images/">
+            <span class="next-text nav-default">一些有用的Docker镜像</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
