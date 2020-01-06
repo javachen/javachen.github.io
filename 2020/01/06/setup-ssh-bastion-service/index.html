@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>搭建SSH堡垒机服务器 - JavaChen Blog - Ramblings of a coder</title>
+  <title>搭建SSH堡垒机服务器 - 关注Java、Hadoop、Kubernetes和BI</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
@@ -49,7 +49,7 @@
 <meta itemprop="description" content="机器规划 准备两台服务器： 名称 IP 操作系统 说明 登录方式 test001 192.168.56.21 CentOS 7.7 堡垒机 SSH Kkey test002 192.168.56.22 CentOS 7.7 应用服务器 密码 配置堡垒机 配置SSHD 通过修改配置文件，显示SSH">
 <meta itemprop="datePublished" content="2020-01-03T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-01-03T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3594">
+<meta itemprop="wordCount" content="3647">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 3594 字 </span>
+          <span class="more-meta"> 约 3647 字 </span>
           <span class="more-meta"> 预计阅读 8 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -432,6 +432,8 @@ CentOS Linux release 7.7.1908 <span class="o">(</span>Core<span class="o">)</spa
 </span><span class="lnt">237
 </span><span class="lnt">238
 </span><span class="lnt">239
+</span><span class="lnt">240
+</span><span class="lnt">241
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash -e
@@ -625,7 +627,7 @@ cat <span class="s">&lt;&lt;EOF &gt;&gt; &#34;${bash_file}&#34;
 <span class="k">function</span> setup_ssh_banner<span class="o">(</span><span class="o">)</span> <span class="o">{</span>
     <span class="c1"># BANNER CONFIGURATION</span>
     <span class="nv">ENABLE</span><span class="o">=</span><span class="s2">&#34;true&#34;</span>
-    <span class="nv">BANNER_FILE</span><span class="o">=</span><span class="s2">&#34;/etc/ssh_banner&#34;</span>
+    <span class="nv">BANNER_FILE</span><span class="o">=</span><span class="s2">&#34;/etc/ssh/ssh_banner&#34;</span>
     <span class="nv">BANNER_PATH</span><span class="o">=</span><span class="s2">&#34;ssh-banner.txt&#34;</span>
 
     <span class="k">if</span> <span class="o">[</span><span class="o">[</span> <span class="si">${</span><span class="nv">ENABLE</span><span class="si">}</span> <span class="o">=</span><span class="o">=</span> <span class="s2">&#34;true&#34;</span> <span class="o">]</span><span class="o">]</span><span class="p">;</span><span class="k">then</span>
@@ -642,7 +644,7 @@ cat <span class="s">&lt;&lt;EOF &gt;&gt; &#34;${bash_file}&#34;
                 sed -i <span class="s1">&#39;/Banner/d&#39;</span> /etc/ssh/sshd_config
                 <span class="nb">echo</span> -e <span class="s2">&#34;</span><span class="s2">\n Banner </span><span class="si">${</span><span class="nv">BANNER_FILE</span><span class="si">}</span><span class="s2">&#34;</span> &gt;&gt;/etc/ssh/sshd_config
             <span class="k">else</span>
-                <span class="nb">echo</span> <span class="s2">&#34;[INFO] banner file is not accessible skipping ...&#34;</span>
+                <span class="nb">echo</span> <span class="s2">&#34;banner file is not accessible skipping ...&#34;</span>
                 <span class="nb">exit</span> 1<span class="p">;</span>
             <span class="k">fi</span>
         <span class="k">fi</span>
@@ -657,6 +659,8 @@ cat <span class="s">&lt;&lt;EOF &gt;&gt; &#34;${bash_file}&#34;
 <span class="c1"># Read the options from cli input</span>
 <span class="nv">TEMP</span><span class="o">=</span><span class="sb">`</span>getopt -o h --longoptions help,banner:,enable:,tcp-forwarding:,x11-forwarding: -n <span class="nv">$0</span> -- <span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="sb">`</span>
 <span class="nb">eval</span> <span class="nb">set</span> -- <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TEMP</span><span class="si">}</span><span class="s2">&#34;</span>
+
+<span class="nv">release</span><span class="o">=</span><span class="k">$(</span>osrelease<span class="k">)</span>
 
 <span class="c1"># Call checkos to ensure platform is Linux</span>
 checkos
@@ -1112,7 +1116,7 @@ Last login: Fri Jan  <span class="m">3</span> 06:22:06 <span class="m">2020</spa
 <pre class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">Port <span class="m">22</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash">Port <span class="m">22222</span>
 </code></pre></td></tr></table>
 </div>
 </div><p><strong>2、不让root用户远程登录</strong></p>
@@ -1199,27 +1203,40 @@ Last login: Fri Jan  <span class="m">3</span> 06:22:06 <span class="m">2020</spa
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 禁止密码登陆</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i -e <span class="s1">&#39;s/^#Port.*$/Port 22222/&#39;</span> /etc/ssh/sshd_config
+
+<span class="c1"># 禁止密码登陆</span>
 sed -i -e <span class="s1">&#39;s/^#PasswordAuthentication.*$/PasswordAuthentication no/&#39;</span> /etc/ssh/sshd_config
-<span class="c1">#禁用SSH 允许空密码</span>
+<span class="c1"># 禁用SSH 允许空密码</span>
 sed -i -e <span class="s1">&#39;s/^#PermitEmptyPasswords.*$/PermitEmptyPasswords no/&#39;</span> /etc/ssh/sshd_config
 
-<span class="c1">#GSSAPI验证改为no，加快连接速度**</span>
+<span class="c1"># GSSAPI验证改为no，加快连接速度**</span>
 sed -i -e <span class="s1">&#39;s/^GSSAPIAuthentication.*$/GSSAPIAuthentication no/&#39;</span> /etc/ssh/sshd_config
-<span class="c1">#禁用dns解析</span>
+<span class="c1"># 禁用dns解析</span>
 sed -i -e <span class="s1">&#39;s/^#UseDNS.*$/UseDNS no/&#39;</span> /etc/ssh/sshd_config
 <span class="c1"># 配置SSH 最大认证尝试次数为4或更低</span>
 sed -i -e <span class="s1">&#39;s/^#MaxAuthTries.*$/MaxAuthTries 4/&#39;</span> /etc/ssh/sshd_config
 sed -i <span class="s1">&#39;s/#MaxStartups 10:30:100/MaxStartups 10:30:200/g&#39;</span> /etc/ssh/sshd_config
 
-<span class="c1">#修改协议版本</span>
-sed -i -e <span class="s1">&#39;s/^#Protocol.*$/Protocol 2/&#39;</span> /etc/ssh/ssh_config
+<span class="c1"># 修改协议版本</span>
+sed -i -e <span class="s1">&#39;s/^#Protocol.*$/Protocol 2/&#39;</span> /etc/ssh/sshd_config
 sed -i <span class="s1">&#39;s/^[ ]*StrictHostKeyChecking.*/StrictHostKeyChecking no/g&#39;</span> /etc/ssh/ssh_config
 </code></pre></td></tr></table>
 </div>
-</div>
+</div><h1 id="heading-5">其他方案</h1>
+<ul>
+<li><a href="http://www.jumpserver.org/">http://www.jumpserver.org/</a> 开源堡垒机方案，Python实现</li>
+<li><a href="https://github.com/bastillion-io/Bastillion">https://github.com/bastillion-io/Bastillion</a> Web terminal，Java实现</li>
+</ul>
+<h1 id="heading-6">参考文章</h1>
+<ul>
+<li><a href="https://github.com/ksc-sbt/bastion">https://github.com/ksc-sbt/bastion</a></li>
+</ul>
+
     </div>
 
     <div class="post-copyright">
