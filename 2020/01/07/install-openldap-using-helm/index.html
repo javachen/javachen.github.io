@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用Helm部署OpenLdap - 关注Java、Hadoop、Kubernetes和BI</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="轻型目录访问协议（英文：Lightweight Directory Access Protocol 缩写: LDAP）是一个开放的，中立的，工业标准的应用协议，通过IP协议提供访问控制和维护" /><meta name="keywords" content="Java, Hadoop, Docker" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.62.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/01/07/install-openldap-using-helm/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用Helm部署OpenLdap" />
+<meta property="og:description" content="轻型目录访问协议（英文：Lightweight Directory Access Protocol 缩写: LDAP）是一个开放的，中立的，工业标准的应用协议，通过IP协议提供访问控制和维护" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/01/07/install-openldap-using-helm/" />
+<meta property="article:published_time" content="2020-01-07T00:00:00+08:00" />
+<meta property="article:modified_time" content="2020-01-07T00:00:00+08:00" />
+<meta itemprop="name" content="使用Helm部署OpenLdap">
+<meta itemprop="description" content="轻型目录访问协议（英文：Lightweight Directory Access Protocol 缩写: LDAP）是一个开放的，中立的，工业标准的应用协议，通过IP协议提供访问控制和维护">
+<meta itemprop="datePublished" content="2020-01-07T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-01-07T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="2579">
+
+
+
+<meta itemprop="keywords" content="helm,openldap," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用Helm部署OpenLdap"/>
+<meta name="twitter:description" content="轻型目录访问协议（英文：Lightweight Directory Access Protocol 缩写: LDAP）是一个开放的，中立的，工业标准的应用协议，通过IP协议提供访问控制和维护"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用Helm部署OpenLdap</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-01-07 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 2579 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#ldapadmin">ldapadmin</a></li>
+    <li><a href="#web2ldap">web2ldap</a></li>
+    <li><a href="#ltb">LTB</a></li>
+    <li><a href="#ldap-account-manager">LDAP Account Manager</a></li>
+    <li><a href="#heading-4">自定义脚本</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>轻型目录访问协议（英文：Lightweight Directory Access Protocol 缩写: LDAP）是一个开放的，中立的，工业标准的应用协议，通过IP协议提供访问控制和维护分布式信息的目录信息。 可以这样讲：市面上只要你能够想像得到的所有工具软件，全部都支持LDAP协议。比如说你公司要安装一个项目管理工具，那么这个工具几乎必然支持LDAP协议，你公司要安装一个bug管理工具，这工具必然也支持LDAP协议，你公司要安装一套软件版本管理工具，这工具也必然支持LDAP协议。LDAP协议的好处就是你公司的所有员工在所有这些工具里共享同一套用户名和密码，来人的时候新增一个用户就能自动访问所有系统，走人的时候一键删除就取消了他对所有系统的访问权限，这就是LDAP。</p>
+<h1 id="-chart-">添加 Chart 仓库</h1>
+<p>添加仓库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+</code></pre></td></tr></table>
+</div>
+</div><p>搜索chart：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ helm search repo openldap
+NAME           	CHART VERSION	APP VERSION	DESCRIPTION
+stable/openldap	1.2.3        	2.4.48     	Community developed LDAP software
+</code></pre></td></tr></table>
+</div>
+</div><p><a href="https://kubernetes-charts.storage.googleapis.com/">https://kubernetes-charts.storage.googleapis.com/</a> 仓库对应的源码在 <a href="https://github.com/helm/charts">https://github.com/helm/charts</a> ，查看 <a href="https://github.com/helm/charts/blob/master/stable/openldap/values.yaml">https://github.com/helm/charts/blob/master/stable/openldap/values.yaml</a> ，可以看到其使用的是 osixia/openldap 镜像，版本为1.2.4，目前osixia/openldap最新版本为 1.3.0 。</p>
+<h1 id="-helm-">添加 helm 配置</h1>
+<p>参考 <a href="https://github.com/helm/charts/blob/master/stable/openldap/values.yaml">https://github.com/helm/charts/blob/master/stable/openldap/values.yaml</a>  ，创建 openldap.yaml 配置，将我们需要修改的字段信息增加到文件中，用来替换默认的字段</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">image:
+  tag: 1.3.0
+
+tls:
+  enabled: <span class="nb">false</span>
+  secret: <span class="s2">&#34;&#34;</span> 
+  
+env:
+  LDAP_ORGANISATION: <span class="s2">&#34;JavaChen Inc.&#34;</span>
+  LDAP_DOMAIN: <span class="s2">&#34;javachen.com&#34;</span>
+  LDAP_BACKEND: <span class="s2">&#34;hdb&#34;</span>
+  LDAP_TLS: <span class="s2">&#34;true&#34;</span>
+  LDAP_TLS_ENFORCE: <span class="s2">&#34;false&#34;</span>
+  LDAP_REMOVE_CONFIG_AFTER_SETUP: <span class="s2">&#34;true&#34;</span>  
+ 
+adminPassword: admin123
+configPassword: admin123
+
+persistence:
+  enabled: <span class="nb">true</span>
+  storageClass: <span class="s2">&#34;ceph-rbd&#34;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这里主要是修改了LDAP_DOMAIN(域名)、LDAP_ORGANISATION（公司名称）、配置持久化存储类（这里使用的是ceph、设置密码为admin123，并且需要提前创建ceph-rbd这个storageClass），可以根据自己的需求进行修改。</p>
+<h1 id="heading">部署</h1>
+<p>使用Helm3部署，先创建命名空间，然后部署：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace openldap
+helm install openldap -n openldap -f openldap.yaml stable/openldap
+</code></pre></td></tr></table>
+</div>
+</div><p>查看服务状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get all -n openldap
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/openldap-5f446db59-r4n5x   0/1     Running   <span class="m">0</span>          43s
+
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>           AGE
+service/openldap   ClusterIP   10.43.211.152   &lt;none&gt;        389/TCP,636/TCP   44s
+
+NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/openldap   0/1     <span class="m">1</span>            <span class="m">0</span>           44s
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/openldap-5f446db59   <span class="m">1</span>         <span class="m">1</span>         <span class="m">0</span>       43s
+</code></pre></td></tr></table>
+</div>
+</div><p>因admin密码是随机生成并使用base64进行了加密，所以我们可以根据helm安装提示获取openldap的admin密码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># get generated passwords</span>
+$ kubectl get secret -n openldap openldap -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.LDAP_ADMIN_PASSWORD}&#34;</span> <span class="p">|</span> base64 --decode<span class="p">;</span> <span class="nb">echo</span>
+admin123
+
+$ kubectl get secret -n openldap openldap -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.LDAP_CONFIG_PASSWORD}&#34;</span> <span class="p">|</span> base64 --decode<span class="p">;</span> <span class="nb">echo</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-1">验证</h1>
+<p>输入一下命令查看openldap是否安装成功：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm list -n openldap
+NAME    	NAMESPACE	REVISION	UPDATED                              	STATUS  	CHART         	APP VERSION
+openldap	openldap 	<span class="m">1</span>       	2020-01-07 16:43:30.1484503 +0800 CST	deployed	openldap-1.2.3	2.4.48
+</code></pre></td></tr></table>
+</div>
+</div><p>默认情况下openladp只能在kubernetes集群上通信，这里将服务转发端口：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl port-forward svc/openldap -n openldap 8389:389
+</code></pre></td></tr></table>
+</div>
+</div><p>测试本地端口，验证下，端口已经成功暴露给了集群外：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">telnet localhost <span class="m">8389</span>
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+</code></pre></td></tr></table>
+</div>
+</div><p>操作ldap集群，需要安装一些工具，以Centos为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">sudo yum install openldap-clients
+</code></pre></td></tr></table>
+</div>
+</div><p>访问ldap服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapsearch -x -H ldap://localhost:8389 -b <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
+
+<span class="c1"># extended LDIF</span>
+#
+<span class="c1"># LDAPv3</span>
+<span class="c1"># base &lt;dc=javachen,dc=com&gt; with scope subtree</span>
+<span class="c1"># filter: (objectclass=*)</span>
+<span class="c1"># requesting: ALL</span>
+#
+
+<span class="c1"># javachen.com</span>
+dn: <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: javachen Inc.
+dc: javachen
+
+<span class="c1"># admin, javachen.com</span>
+dn: <span class="nv">cn</span><span class="o">=</span>admin,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
+userPassword:: <span class="nv">e1NTSEF9WDBJY3BVaEJ3U3RpYWlNYXBqZVUyRHJCODFscFMyTHI</span><span class="o">=</span>
+
+<span class="c1"># search result</span>
+search: <span class="m">2</span>
+result: <span class="m">0</span> Success
+
+<span class="c1"># numResponses: 3</span>
+<span class="c1"># numEntries: 2</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>查看创建的admin用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">$ ldapwhoami -h 127.0.0.1 -p <span class="m">8389</span> -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
+dn:cn<span class="o">=</span>admin,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-2">创建内部用户</h1>
+<p>在刚才的配置中，我们创建了一个系统帐号，但在实际工作中，团队成员一般不会使用系统帐号。</p>
+<p>对于一个团队成员，它的帐号至少需要有如下属性：</p>
+<ul>
+<li>用户名, 一般是纯英文、拼音缩写</li>
+<li>中文姓名，这个不解释了</li>
+<li>密码，最好不是明文，而是加密存储</li>
+<li>邮箱，公司内部的电子邮箱地址</li>
+</ul>
+<p>大公司的内部，会细分为多个团队，此时还应当将用户划分到相应的属组。</p>
+<p>在密码加密方面，我们采用ssha，它需要命令slappasswd，它需要安装openldap-servers：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo yum install openldap-servers
+</code></pre></td></tr></table>
+</div>
+</div><p>生成密码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">slappasswd -h <span class="o">{</span>ssha<span class="o">}</span> -s pass123
+
+<span class="o">{</span>SSHA<span class="o">}</span>HF8Hm6sWCfJTTlqV0/eCNsCHb25i8Kdd
+</code></pre></td></tr></table>
+</div>
+</div><p>上述即生成了一个ssha加密过的密码pass123。</p>
+<p>创建一个模板users.ldif：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">version: <span class="m">1</span>
+
+<span class="c1"># users org</span>
+dn: <span class="nv">ou</span><span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+
+<span class="c1"># group org</span>
+dn: <span class="nv">ou</span><span class="o">=</span>Group,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: organizationalUnit
+ou: Group
+
+<span class="c1"># define users here</span>
+dn: <span class="nv">cn</span><span class="o">=</span>zhangsan,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: zhangsan
+sn: zhangsan
+mail: zhangsan@javachen.com
+userPassword: <span class="o">{</span>SSHA<span class="o">}</span>HF8Hm6sWCfJTTlqV0/eCNsCHb25i8Kdd
+
+dn: <span class="nv">cn</span><span class="o">=</span>lihy,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: lihy
+sn: lihy
+mail: lihy@javachen.com
+userPassword: <span class="o">{</span>SSHA<span class="o">}</span>HF8Hm6sWCfJTTlqV0/eCNsCHb25i8Kdd
+
+<span class="c1"># should also modify here if insert new user</span>
+dn: <span class="nv">cn</span><span class="o">=</span>People,ou<span class="o">=</span>Group,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: groupOfUniqueNames
+cn: users
+uniqueMember: <span class="nv">cn</span><span class="o">=</span>lihy,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+uniqueMember: <span class="nv">cn</span><span class="o">=</span>zhangsan,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+
+<span class="c1"># define admin here</span>
+dn: <span class="nv">cn</span><span class="o">=</span>admin,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+objectClass: top
+objectClass: groupOfUniqueNames
+cn: admin
+uniqueMember: <span class="nv">cn</span><span class="o">=</span>lihy,ou<span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+</code></pre></td></tr></table>
+</div>
+</div><p>简单解释下：</p>
+<ul>
+<li>我们创建了2个组People和Group，前者存放用户，后者表示用户的属组。</li>
+<li>定义两个用户 lihy 和 zhangsan，他们的密码用前面提到的SSLA加密</li>
+<li>将两个用户加入People组内</li>
+<li>将lihy用户加入管理员组内</li>
+</ul>
+<p>我们来应用这个模板：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapadd -c -h localhost -p <span class="m">8389</span> -w admin123 -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -f ./users.ldif
+</code></pre></td></tr></table>
+</div>
+</div><p>使用密码pass123验证一下新增的内部用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">8389</span> -D <span class="s2">&#34;cn=lihy,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
+
+dn:cn<span class="o">=</span>lihy,ou<span class="o">=</span>users,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-3">管理工具</h1>
+<h2 id="ldapadmin">ldapadmin</h2>
+<p>windows用户可以下载客户端：<a href="https://gitee.com/k8sz/zb/raw/master/LdapAdmin.exe">LdapAdmin</a> 打开客户端进行连接</p>
+<h2 id="web2ldap">web2ldap</h2>
+<p><a href="https://web2ldap.de/">https://web2ldap.de/</a></p>
+<h2 id="ltb">LTB</h2>
+<p><a href="http://ltb-project.org/">LTB</a>：支持用户的自助修改、重置密码，定期修改用户密码。</p>
+<p>除了自助机服务，LTB 还支持 LDAP 性能、用户使用数据的监控等若干非常实用的脚本。
+这么重要的基础服务稳定性肯定是需要保障的，通过 syncprov 模块实现双 master 的写的高可用，通过多个 slave 同步 master，前端挂 Haproxy 实现读的高可用:</p>
+<h2 id="ldap-account-manager">LDAP Account Manager</h2>
+<p>LDAP Account Manager(LAM)是一个基于PHP Web应用的 LADP管理工具。 具体的安装过程可以参考<a href="https://www.ldap-account-manager.org/static/doc/manual/index.html">LDAP Account Manager - Manual</a>。 这里使用<a href="https://hub.docker.com/r/aexoti/lam/">aexoti/lam</a>这个Docker镜像快速体验一下。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker pull aexoti/lam docker run  -v /var/lib/ldap/lam:/var/lib/ldap-account-manager/config  -p 8011:80 -d --name ldap-lam aexoti/lam 
+</code></pre></td></tr></table>
+</div>
+</div><p>修改/var/lib/ldap/lam/lam.conf：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">serverURL: ldap://192.168.56.100:389
+admins: <span class="nv">cn</span><span class="o">=</span>Manager,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+treesuffix: <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com
+activeTypes: user,group
+types: suffix_user: <span class="nv">ou</span><span class="o">=</span>People,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+types: suffix_group: <span class="nv">ou</span><span class="o">=</span>Group,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com
+</code></pre></td></tr></table>
+</div>
+</div><p>重启docker容器使配置生效：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker restart ldap-lam 
+</code></pre></td></tr></table>
+</div>
+</div><p>在浏览器中打开http://192.168.56.100:8011/lam/。</p>
+<h2 id="heading-4">自定义脚本</h2>
+<p>创建用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="c1"># const</span>
+<span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
+<span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
+
+<span class="k">if</span> <span class="o">[</span> x<span class="s2">&#34;</span><span class="nv">$#</span><span class="s2">&#34;</span> !<span class="o">=</span> x<span class="s2">&#34;3&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">Usage: </span><span class="nv">$0</span><span class="s2"> &lt;username&gt; &lt;password&gt; &lt;realname&gt;</span><span class="s2">&#34;</span>
+    <span class="nb">exit</span> -1
+<span class="k">fi</span>
+
+<span class="c1"># param</span>
+<span class="nv">USERNAME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span>
+<span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$2</span><span class="s2">&#34;</span>
+<span class="nv">ENCRYPT_PASSWORD</span><span class="o">=</span><span class="k">$(</span>slappasswd -h <span class="o">{</span>ssha<span class="o">}</span> -s <span class="s2">&#34;</span><span class="nv">$PASSWORD</span><span class="s2">&#34;</span><span class="k">)</span>
+<span class="nv">REALNAME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$3</span><span class="s2">&#34;</span>
+<span class="nv">REALNAME_BASE64</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> -n <span class="nv">$REALNAME</span> <span class="p">|</span> base64<span class="k">)</span>
+
+<span class="c1"># add count &amp; group</span> 
+cat <span class="s">&lt;&lt;EOF | ldapmodify -c -h $LDAP_SERVER_IP -p $LDAP_SERVER_PORT -w $LDAP_ADMIN_PASS -D $LDAP_ADMIN_USER 
+</span><span class="s">dn: cn=$USERNAME,ou=People,dc=javachen,dc=com
+</span><span class="s">changetype: add
+</span><span class="s">objectClass: top
+</span><span class="s">objectClass: person
+</span><span class="s">objectClass: organizationalPerson
+</span><span class="s">objectClass: inetOrgPerson
+</span><span class="s">cn: $USERNAME
+</span><span class="s">sn:: $REALNAME_BASE64
+</span><span class="s">mail: $USERNAME@javachen.com
+</span><span class="s">userPassword: $ENCRYPT_PASSWORD
+</span><span class="s">
+</span><span class="s">dn: cn=People,ou=Group,dc=javachen,dc=com
+</span><span class="s">changetype: modify
+</span><span class="s">add: uniqueMember
+</span><span class="s">uniqueMember: cn=$USERNAME,ou=Group,dc=javachen,dc=com
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>我们试着添加新用户lisi</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">./ldap_add.sh lisi pass123 李四
+</code></pre></td></tr></table>
+</div>
+</div><p>修改密码, ./ldap_modify_password.sh：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="c1"># const</span>
+<span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
+<span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
+
+<span class="k">if</span> <span class="o">[</span> x<span class="s2">&#34;</span><span class="nv">$#</span><span class="s2">&#34;</span> !<span class="o">=</span> x<span class="s2">&#34;2&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">Usage: </span><span class="nv">$0</span><span class="s2"> &lt;username&gt; &lt;newPassword&gt;</span><span class="s2">&#34;</span>
+    <span class="nb">exit</span> -1
+<span class="k">fi</span>
+
+<span class="c1"># param</span>
+<span class="nv">USERNAME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span>
+<span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$2</span><span class="s2">&#34;</span>
+<span class="nv">ENCRYPT_PASSWORD</span><span class="o">=</span><span class="k">$(</span>slappasswd -h <span class="o">{</span>ssha<span class="o">}</span> -s <span class="s2">&#34;</span><span class="nv">$PASSWORD</span><span class="s2">&#34;</span><span class="k">)</span>
+
+<span class="c1"># modify</span>
+cat <span class="s">&lt;&lt;EOF | ldapmodify -c -h $LDAP_SERVER_IP -p $LDAP_SERVER_PORT -w $LDAP_ADMIN_PASS -D $LDAP_ADMIN_USER 
+</span><span class="s">dn: cn=$USERNAME,ou=People,dc=javachen,dc=com
+</span><span class="s">changetype: modify
+</span><span class="s">replace: userPassword
+</span><span class="s">userPassword: $ENCRYPT_PASSWORD
+</span><span class="s">EOF</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>我们尝试修改lisi的密码:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">./ldap_modify_password.sh lisi hahaha
+modifying entry <span class="s2">&#34;cn=lisi,ou=People,dc=javachen,dc=com&#34;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>只删除用户，不删除其加入的属组</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell"><span class="cp">#!/bin/bash
+</span><span class="cp"></span>
+<span class="c1"># const</span>
+<span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
+<span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
+
+<span class="k">if</span> <span class="o">[</span> x<span class="s2">&#34;</span><span class="nv">$#</span><span class="s2">&#34;</span> !<span class="o">=</span> x<span class="s2">&#34;1&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">Usage: </span><span class="nv">$0</span><span class="s2"> &lt;username&gt;</span><span class="s2">&#34;</span>
+    <span class="nb">exit</span> -1
+<span class="k">fi</span>
+
+<span class="c1"># param</span>
+<span class="nv">USERNAME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span>
+
+<span class="c1"># delete user</span> 
+ldapdelete -c -h <span class="nv">$LDAP_SERVER_IP</span> -p <span class="nv">$LDAP_SERVER_PORT</span> -w <span class="nv">$LDAP_ADMIN_PASS</span> -D <span class="nv">$LDAP_ADMIN_USER</span> <span class="s2">&#34;</span><span class="s2">cn=</span><span class="nv">$USERNAME</span><span class="s2">,ou=People,dc=javachen,dc=com</span><span class="s2">&#34;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>尝试删除一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">./ldap_delete.sh zhangsan
+</code></pre></td></tr></table>
+</div>
+</div><p>然后验证下，确实无法登录了</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">8389</span> -D <span class="s2">&#34;cn=zhangsan,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
+ldap_bind: Invalid credentials <span class="o">(</span>49<span class="o">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-5">卸载</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm del openldap -n openldap
+</code></pre></td></tr></table>
+</div>
+</div><h1 id="heading-6">参考文章</h1>
+<ul>
+<li><a href="https://jaseywang.me/2017/03/04/%E5%85%A8%E7%BD%91%E7%BB%9F%E4%B8%80%E8%B4%A6%E6%88%B7%E5%AE%9E%E8%B7%B5/">全网统一账户实践</a></li>
+<li><a href="https://www.luochunhui.com/blog/openldap/">OpenLdap管理</a></li>
+<li><a href="https://linuxtechlab.com/openldap-complete-guide-install-configure-ldap-centos-rhel/">OpenLDAP: Complete guide to install &amp; configure LDAP on CentOS/RHEL</a></li>
+<li><a href="https://www.openldap.org/">OpenLDAP</a></li>
+<li><a href="https://www.openldap.org/doc/admin24/quickstart.html">A Quick-Start Guide</a></li>
+<li><a href="https://www.ldap-account-manager.org/">LDAP Account Manager</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-01-07
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/helm/">helm</a>
+          <a href="/tags/openldap/">openldap</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/01/06/setup-ssh-bastion-service/">
+            <span class="next-text nav-default">搭建SSH堡垒机服务器</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
