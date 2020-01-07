@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，这里使用的是 QJM 的 HA 方案。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，这里使用的是 QJM 的 HA 方案。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/07/18/install-hdfs-ha-in-cdh/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，这里使用的是 QJM 的 HA 方案。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/07/18/install-hdfs-ha-in-cdh/" />
-<meta property="article:published_time" content="2014-07-18T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-07-18T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-07-18T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-07-18T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="CDH中配置HDFS HA">
 <meta itemprop="description" content="最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，这里使用的是 QJM 的 HA 方案。">
+
+
 <meta itemprop="datePublished" content="2014-07-18T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-07-18T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2108">
+<meta itemprop="wordCount" content="2110">
 
 
 
-<meta itemprop="keywords" content="hadoop," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hadoop," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="CDH中配置HDFS HA"/>
 <meta name="twitter:description" content="最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，这里使用的是 QJM 的 HA 方案。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hadoop/"> hadoop </a>
             </div>
-          <span class="more-meta"> 约 2108 字 </span>
+          <span class="more-meta"> 约 2110 字 </span>
           <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -139,51 +139,63 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#heading">集群规划</a></li>
-    <li><a href="#heading-1">安装步骤</a>
-      <ul>
-        <li><a href="#heading-2">停掉集群</a></li>
-        <li><a href="#heading-3">停止客户端程序</a></li>
-        <li><a href="#-hdfs-">备份 hdfs 元数据</a></li>
-        <li><a href="#heading-4">安装服务</a></li>
-        <li><a href="#heading-5">修改配置文件</a></li>
-        <li><a href="#heading-6">同步配置文件</a></li>
-        <li><a href="#heading-7">配置无密码登陆</a></li>
-        <li><a href="#journalnode">启动journalnode</a></li>
-        <li><a href="#heading-8">初始化共享存储</a></li>
-        <li><a href="#-standby-namenode">同步 Standby NameNode</a></li>
-        <li><a href="#heading-9">配置自动切换</a></li>
-        <li><a href="#heading-10">测试</a></li>
-      </ul>
-    </li>
-    <li><a href="#hbase-ha">配置HBase HA</a></li>
-    <li><a href="#-hive-ha">配置 Hive HA</a></li>
-    <li><a href="#-impala">配置 Impala</a></li>
-    <li><a href="#-yarn">配置 YARN</a></li>
-    <li><a href="#-hue">配置 Hue</a></li>
-    <li><a href="#--llama">配置  Llama</a></li>
-  </ul>
+<ul>
+<li>
+<ul>
+<li><a href="#集群规划">集群规划</a></li>
+<li><a href="#安装步骤">安装步骤</a>
+<ul>
+<li><a href="#停掉集群">停掉集群</a></li>
+<li><a href="#停止客户端程序">停止客户端程序</a></li>
+<li><a href="#备份-hdfs-元数据">备份 hdfs 元数据</a></li>
+<li><a href="#安装服务">安装服务</a></li>
+<li><a href="#修改配置文件">修改配置文件</a></li>
+<li><a href="#同步配置文件">同步配置文件</a></li>
+<li><a href="#配置无密码登陆">配置无密码登陆</a></li>
+<li><a href="#启动journalnode">启动journalnode</a></li>
+<li><a href="#初始化共享存储">初始化共享存储</a></li>
+<li><a href="#同步-standby-namenode">同步 Standby NameNode</a></li>
+<li><a href="#配置自动切换">配置自动切换</a></li>
+<li><a href="#测试">测试</a></li>
+</ul></li>
+<li><a href="#配置hbase-ha">配置HBase HA</a></li>
+<li><a href="#配置-hive-ha">配置 Hive HA</a></li>
+<li><a href="#配置-impala">配置 Impala</a></li>
+<li><a href="#配置-yarn">配置 YARN</a></li>
+<li><a href="#配置-hue">配置 Hue</a></li>
+<li><a href="#配置-llama">配置  Llama</a></li>
+</ul></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，CDH4支持<a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_intro.html#topic_2_1_3_unique_1__section_ptk_fh5_mj_unique_1">Quorum-based Storage</a>和<a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_intro.html#topic_2_1_3_unique_1__section_czt_fh5_mj_unique_1">shared storage using NFS</a>两种HA方案，而CDH5只支持第一种方案，即 QJM 的 HA 方案。</p>
+      
+
+<p>最近又安装 hadoop 集群， 故尝试了一下配置 HDFS 的 HA，CDH4支持<a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_intro.html#topic_2_1_3_unique_1__section_ptk_fh5_mj_unique_1">Quorum-based Storage</a>和<a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_intro.html#topic_2_1_3_unique_1__section_czt_fh5_mj_unique_1">shared storage using NFS</a>两种HA方案，而CDH5只支持第一种方案，即 QJM 的 HA 方案。</p>
+
 <p>关于 hadoop 集群的安装部署过程你可以参考 <a href="/2019/04/06/install-cloudera-cdh-by-yum">使用yum安装CDH Hadoop集群</a> 或者 <a href="/2014/07/17/manual-install-cdh-hadoop">手动安装 hadoop 集群的过程</a>。</p>
-<h2 id="heading">集群规划</h2>
+
+<h2 id="集群规划">集群规划</h2>
+
 <p>我一共安装了三个节点的集群，对于 HA 方案来说，三个节点准备安装如下服务：</p>
+
 <ul>
 <li>cdh1：hadoop-hdfs-namenode(primary) 、hadoop-hdfs-journalnode、hadoop-hdfs-zkfc</li>
 <li>cdh2：hadoop-hdfs-namenode(standby)、hadoop-hdfs-journalnode、hadoop-hdfs-zkfc</li>
 <li>cdh3: hadoop-hdfs-journalnode</li>
 </ul>
+
 <p>根据上面规划，在对应节点上安装相应的服务。</p>
-<h2 id="heading-1">安装步骤</h2>
-<h3 id="heading-2">停掉集群</h3>
+
+<h2 id="安装步骤">安装步骤</h2>
+
+<h3 id="停掉集群">停掉集群</h3>
+
 <p>停掉集群上所有服务。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -194,17 +206,21 @@
 ​$ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep impala` ; do service $x stop ; done&#39;</span>
 $ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep hive` ; do service $x stop ; done&#39;</span>
 $ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep hbase` ; do service $x stop ; done&#39;</span>
-$ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep hadoop` ; do service $x stop ; done&#39;</span>
-</code></pre></td></tr></table>
+$ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep hadoop` ; do service $x stop ; done&#39;</span></code></pre></td></tr></table>
 </div>
-</div><p>cmd.sh代码内容见<a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop.html">Hadoop集群部署权限总结</a>一文中的<code>/opt/shell/cmd.sh</code>。</p>
-<h3 id="heading-3">停止客户端程序</h3>
+</div>
+<p>cmd.sh代码内容见<a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop.html">Hadoop集群部署权限总结</a>一文中的<code>/opt/shell/cmd.sh</code>。</p>
+
+<h3 id="停止客户端程序">停止客户端程序</h3>
+
 <p>停止服务集群的所有客户端程序，包括定时任务。</p>
-<h3 id="-hdfs-">备份 hdfs 元数据</h3>
+
+<h3 id="备份-hdfs-元数据">备份 hdfs 元数据</h3>
+
 <p>a，查找本地配置的文件目录（属性名为 dfs.name.dir 或者 dfs.namenode.name.dir或者hadoop.tmp.dir ）</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -215,65 +231,67 @@ $ sh /opt/cmd.sh <span class="s1">&#39; for x in `ls /etc/init.d/|grep hadoop` ;
 grep -C1 hadoop.tmp.dir /etc/hadoop/conf/core-site.xml
 
 <span class="c1">#或者</span>
-grep -C1 dfs.namenode.name.dir /etc/hadoop/conf/hdfs-site.xml
-</code></pre></td></tr></table>
+grep -C1 dfs.namenode.name.dir /etc/hadoop/conf/hdfs-site.xml</code></pre></td></tr></table>
 </div>
-</div><p>通过上面的命令，可以看到类似以下信息：</p>
+</div>
+<p>通过上面的命令，可以看到类似以下信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-<span class="nt">&lt;name</span><span class="nt">&gt;</span>hadoop.tmp.dir<span class="nt">&lt;/name&gt;</span>
-<span class="nt">&lt;value</span><span class="nt">&gt;</span>/var/hadoop<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+<span class="nt">&lt;name&gt;</span>hadoop.tmp.dir<span class="nt">&lt;/name&gt;</span>
+<span class="nt">&lt;value&gt;</span>/var/hadoop<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>b，对hdfs数据进行备份</p>
+</div>
+<p>b，对hdfs数据进行备份</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /var/hadoop/dfs/name
-tar -cvf /root/name_backup_data.tar .
-</code></pre></td></tr></table>
+tar -cvf /root/name_backup_data.tar .</code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-4">安装服务</h3>
+</div>
+<h3 id="安装服务">安装服务</h3>
+
 <p>在 cdh1、cdh2、cdh3 上安装 hadoop-hdfs-journalnode</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s1">&#39;yum install hadoop-hdfs-journalnode -y &#39;</span>
 $ ssh cdh2 <span class="s1">&#39;yum install hadoop-hdfs-journalnode -y &#39;</span>
-$ ssh cdh3 <span class="s1">&#39;yum install hadoop-hdfs-journalnode -y &#39;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s1">&#39;yum install hadoop-hdfs-journalnode -y &#39;</span></code></pre></td></tr></table>
 </div>
-</div><p>在 cdh1、cdh2 上安装 hadoop-hdfs-zkfc：</p>
+</div>
+<p>在 cdh1、cdh2 上安装 hadoop-hdfs-zkfc：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">ssh cdh1 <span class="s2">&#34;yum install hadoop-hdfs-zkfc -y &#34;</span>
-ssh cdh2 <span class="s2">&#34;yum install hadoop-hdfs-zkfc -y &#34;</span>
-</code></pre></td></tr></table>
+ssh cdh2 <span class="s2">&#34;yum install hadoop-hdfs-zkfc -y &#34;</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-5">修改配置文件</h3>
+</div>
+<h3 id="修改配置文件">修改配置文件</h3>
+
 <p>修改<code>/etc/hadoop/conf/core-site.xml</code>，做如下修改：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -283,20 +301,20 @@ ssh cdh2 <span class="s2">&#34;yum install hadoop-hdfs-zkfc -y &#34;</span>
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>hdfs://mycluster:8020<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>fs.defaultFS<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>hdfs://mycluster:8020<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>ha.zookeeper.quorum<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1:21088,cdh2:21088,cdh3:21088<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>ha.zookeeper.quorum<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>cdh1:21088,cdh2:21088,cdh3:21088<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>修改<code>/etc/hadoop/conf/hdfs-site.xml</code>，删掉一些原来的 namenode 配置，增加如下：</p>
+</div>
+<p>修改<code>/etc/hadoop/conf/hdfs-site.xml</code>，删掉一些原来的 namenode 配置，增加如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -347,86 +365,89 @@ ssh cdh2 <span class="s2">&#34;yum install hadoop-hdfs-zkfc -y &#34;</span>
 </span><span class="lnt">49
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!--</span><span class="c">  hadoop  HA </span><span class="c">--&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.nameservices<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>mycluster<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!--  hadoop  HA --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.nameservices<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>mycluster<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.ha.namenodes.mycluster<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>nn1,nn2<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.ha.namenodes.mycluster<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>nn1,nn2<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.rpc-address.mycluster.nn1<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1:8020<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.namenode.rpc-address.mycluster.nn1<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>cdh1:8020<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.rpc-address.mycluster.nn2<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh2:8020<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.namenode.rpc-address.mycluster.nn2<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>cdh2:8020<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.http-address.mycluster.nn1<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1:50070<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.namenode.http-address.mycluster.nn1<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>cdh1:50070<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.http-address.mycluster.nn2<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh2:50070<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.namenode.http-address.mycluster.nn2<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>cdh2:50070<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.shared.edits.dir<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>qjournal://cdh1:8485,cdh2:8485,cdh3:8485/mycluster<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.namenode.shared.edits.dir<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>qjournal://cdh1:8485,cdh2:8485,cdh3:8485/mycluster<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.journalnode.edits.dir<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>/var/hadoop/dfs/jn<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.journalnode.edits.dir<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>/var/hadoop/dfs/jn<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.client.failover.proxy.provider.mycluster<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.client.failover.proxy.provider.mycluster<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.ha.fencing.methods<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>sshfence(hdfs)<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.ha.fencing.methods<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>sshfence(hdfs)<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.ha.fencing.ssh.private-key-files<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>/var/lib/hadoop-hdfs/.ssh/id_rsa<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.ha.fencing.ssh.private-key-files<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>/var/lib/hadoop-hdfs/.ssh/id_rsa<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-	<span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.ha.automatic-failover.enabled<span class="nt">&lt;/name&gt;</span>
-	<span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+	<span class="nt">&lt;name&gt;</span>dfs.ha.automatic-failover.enabled<span class="nt">&lt;/name&gt;</span>
+	<span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-6">同步配置文件</h3>
+</div>
+<h3 id="同步配置文件">同步配置文件</h3>
+
 <p>将配置文件同步到集群其他节点：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ sh /opt/syn.sh /etc/hadoop/conf /etc/hadoop/
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ sh /opt/syn.sh /etc/hadoop/conf /etc/hadoop/</code></pre></td></tr></table>
 </div>
-</div><p>在journalnode的三个节点上创建目录：</p>
+</div>
+<p>在journalnode的三个节点上创建目录：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s1">&#39;mkdir -p /var/hadoop/dfs/jn ; chown -R hdfs:hdfs /var/hadoop/dfs/jn&#39;</span>
 $ ssh cdh2 <span class="s1">&#39;mkdir -p /var/hadoop/dfs/jn ; chown -R hdfs:hdfs /var/hadoop/dfs/jn&#39;</span>
-$ ssh cdh3 <span class="s1">&#39;mkdir -p /var/hadoop/dfs/jn ; chown -R hdfs:hdfs /var/hadoop/dfs/jn&#39;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s1">&#39;mkdir -p /var/hadoop/dfs/jn ; chown -R hdfs:hdfs /var/hadoop/dfs/jn&#39;</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-7">配置无密码登陆</h3>
+</div>
+<h3 id="配置无密码登陆">配置无密码登陆</h3>
+
 <p>在两个NN上配置hdfs用户间无密码登陆：</p>
+
 <p>对于 cdh1：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -435,13 +456,13 @@ $ ssh cdh3 <span class="s1">&#39;mkdir -p /var/hadoop/dfs/jn ; chown -R hdfs:hdf
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ passwd hdfs
 $ su - hdfs
 $ ssh-keygen
-$ ssh-copy-id  cdh2
-</code></pre></td></tr></table>
+$ ssh-copy-id  cdh2</code></pre></td></tr></table>
 </div>
-</div><p>对于 cdh2：</p>
+</div>
+<p>对于 cdh2：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -450,120 +471,127 @@ $ ssh-copy-id  cdh2
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ passwd hdfs
 $ su - hdfs
 $ ssh-keygen
-$ ssh-copy-id   cdh1
-</code></pre></td></tr></table>
+$ ssh-copy-id   cdh1</code></pre></td></tr></table>
 </div>
-</div><h3 id="journalnode">启动journalnode</h3>
+</div>
+<h3 id="启动journalnode">启动journalnode</h3>
+
 <p>启动cdh1、cdh2、cdh3上的 hadoop-hdfs-journalnode 服务</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s1">&#39;service hadoop-hdfs-journalnode start&#39;</span>
 $ ssh cdh2 <span class="s1">&#39;service hadoop-hdfs-journalnode start&#39;</span>
-$ ssh cdh3 <span class="s1">&#39;service hadoop-hdfs-journalnode start&#39;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s1">&#39;service hadoop-hdfs-journalnode start&#39;</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-8">初始化共享存储</h3>
+</div>
+<h3 id="初始化共享存储">初始化共享存储</h3>
+
 <p>在namenode上初始化共享存储，如果没有格式化，则先格式化：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">hdfs namenode -initializeSharedEdits
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">hdfs namenode -initializeSharedEdits</code></pre></td></tr></table>
 </div>
-</div><p>启动NameNode：</p>
+</div>
+<p>启动NameNode：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hadoop-hdfs-namenode start
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hadoop-hdfs-namenode start</code></pre></td></tr></table>
 </div>
-</div><h3 id="-standby-namenode">同步 Standby NameNode</h3>
+</div>
+<h3 id="同步-standby-namenode">同步 Standby NameNode</h3>
+
 <p>cdh2作为 Standby NameNode，在该节点上先安装namenode服务</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install hadoop-hdfs-namenode -y
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install hadoop-hdfs-namenode -y</code></pre></td></tr></table>
 </div>
-</div><p>再运行：</p>
+</div>
+<p>再运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo -u hdfs hadoop namenode -bootstrapStandby
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo -u hdfs hadoop namenode -bootstrapStandby</code></pre></td></tr></table>
 </div>
-</div><p>如果是使用了kerberos，则先获取hdfs的ticket再执行：</p>
+</div>
+<p>如果是使用了kerberos，则先获取hdfs的ticket再执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh1@JAVACHEM.COM
-$ hadoop namenode -bootstrapStandby
-</code></pre></td></tr></table>
+$ hadoop namenode -bootstrapStandby</code></pre></td></tr></table>
 </div>
-</div><p>然后，启动 Standby NameNode：</p>
+</div>
+<p>然后，启动 Standby NameNode：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hadoop-hdfs-namenode start
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ service hadoop-hdfs-namenode start</code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-9">配置自动切换</h3>
+</div>
+<h3 id="配置自动切换">配置自动切换</h3>
+
 <p>在两个NameNode上，即cdh1和cdh2，安装hadoop-hdfs-zkfc</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s1">&#39;yum install hadoop-hdfs-zkfc -y&#39;</span>
-$ ssh cdh2 <span class="s1">&#39;yum install hadoop-hdfs-zkfc -y&#39;</span>
-</code></pre></td></tr></table>
+$ ssh cdh2 <span class="s1">&#39;yum install hadoop-hdfs-zkfc -y&#39;</span></code></pre></td></tr></table>
 </div>
-</div><p>在任意一个NameNode上下面命令，其会创建一个znode用于自动故障转移。</p>
+</div>
+<p>在任意一个NameNode上下面命令，其会创建一个znode用于自动故障转移。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ hdfs zkfc -formatZK
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ hdfs zkfc -formatZK</code></pre></td></tr></table>
 </div>
-</div><p>如果你想对zookeeper的访问进行加密，则请参考 <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_enabling.html">Enabling HDFS HA</a> 中 Securing access to ZooKeeper 这一节内容。</p>
+</div>
+<p>如果你想对zookeeper的访问进行加密，则请参考 <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_hag_hdfs_ha_enabling.html">Enabling HDFS HA</a> 中 Securing access to ZooKeeper 这一节内容。</p>
+
 <p>然后再两个 NameNode 节点上启动zkfc：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s2">&#34;service hadoop-hdfs-zkfc start&#34;</span>
-$ ssh cdh2 <span class="s2">&#34;service hadoop-hdfs-zkfc start&#34;</span>
-</code></pre></td></tr></table>
+$ ssh cdh2 <span class="s2">&#34;service hadoop-hdfs-zkfc start&#34;</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-10">测试</h3>
-<p>分别访问 http://cdh1:50070/ 和 http://cdh2:50070/ 查看谁是 active namenode，谁是 standyby namenode。</p>
+</div>
+<h3 id="测试">测试</h3>
+
+<p>分别访问 <a href="http://cdh1:50070/">http://cdh1:50070/</a> 和 <a href="http://cdh2:50070/">http://cdh2:50070/</a> 查看谁是 active namenode，谁是 standyby namenode。</p>
+
 <p>查看某Namenode的状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -578,56 +606,60 @@ active
 
 <span class="c1">#查看cdh2状态</span>
 $ sudo -u hdfs hdfs haadmin -getServiceState nn2
-standby
-</code></pre></td></tr></table>
+standby</code></pre></td></tr></table>
 </div>
-</div><p>执行手动切换：</p>
+</div>
+<p>执行手动切换：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo -u hdfs hdfs haadmin -failover nn1 nn2
-Failover to NameNode at cdh2/192.168.56.122:8020 successful
-</code></pre></td></tr></table>
+Failover to NameNode at cdh2/192.168.56.122:8020 successful</code></pre></td></tr></table>
 </div>
-</div><p>再次访问 http://cdh1:50070/ 和 http://cdh2:50070/ 查看谁是 active namenode，谁是 standyby namenode。</p>
-<h2 id="hbase-ha">配置HBase HA</h2>
+</div>
+<p>再次访问 <a href="http://cdh1:50070/">http://cdh1:50070/</a> 和 <a href="http://cdh2:50070/">http://cdh2:50070/</a> 查看谁是 active namenode，谁是 standyby namenode。</p>
+
+<h2 id="配置hbase-ha">配置HBase HA</h2>
+
 <p>先停掉 hbase，然后修改/etc/hbase/conf/hbase-site.xml，做如下修改：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!--</span><span class="c"> Configure HBase to use the HA NameNode nameservice </span><span class="c">--&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;name</span><span class="nt">&gt;</span>hbase.rootdir<span class="nt">&lt;/name&gt;</span>
-    <span class="nt">&lt;value</span><span class="nt">&gt;</span>hdfs://mycluster:8020/hbase<span class="nt">&lt;/value&gt;</span>       
-  <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="c">&lt;!-- Configure HBase to use the HA NameNode nameservice --&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hbase.rootdir<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>hdfs://mycluster:8020/hbase<span class="nt">&lt;/value&gt;</span>       
+  <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>在 zookeeper 节点上运行/usr/lib/zookeeper/bin/zkCli.sh</p>
+</div>
+<p>在 zookeeper 节点上运行/usr/lib/zookeeper/bin/zkCli.sh</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ls /hbase/splitlogs
-$ rmr /hbase/splitlogs
-</code></pre></td></tr></table>
+$ rmr /hbase/splitlogs</code></pre></td></tr></table>
 </div>
-</div><p>最后启动 hbase 服务。</p>
-<h2 id="-hive-ha">配置 Hive HA</h2>
+</div>
+<p>最后启动 hbase 服务。</p>
+
+<h2 id="配置-hive-ha">配置 Hive HA</h2>
+
 <p>运行下面命令将hive的metastore的root地址的HDFS nameservice。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -652,16 +684,19 @@ $ /usr/lib/hive/bin/metatool -updateLocation hdfs://mycluster hdfs://cdh1 -table
 $ metatool -listFSRoot 
 Listing FS Roots..
 Initializing HiveMetaTool..
-hdfs://mycluster:8020/user/hive/warehouse
-</code></pre></td></tr></table>
+hdfs://mycluster:8020/user/hive/warehouse</code></pre></td></tr></table>
 </div>
-</div><h2 id="-impala">配置 Impala</h2>
+</div>
+<h2 id="配置-impala">配置 Impala</h2>
+
 <p>不需要做什么修改，但是一定要记住 core-site.xml 中 <code>fs.defaultFS</code> 参数值要带上端口号，在CDH中为 8020。</p>
-<h2 id="-yarn">配置 YARN</h2>
+
+<h2 id="配置-yarn">配置 YARN</h2>
+
 <p>修改yarn-site.xml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -695,61 +730,65 @@ hdfs://mycluster:8020/user/hive/warehouse
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.ha.enabled<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.ha.enabled<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.cluster-id<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cluster1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.cluster-id<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cluster1<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.ha.rm-ids<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>rm1,rm2<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.ha.rm-ids<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>rm1,rm2<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.hostname.rm1<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.hostname.rm1<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.hostname.rm2<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh2<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.hostname.rm2<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh2<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.webapp.address.rm1<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1:8088<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.webapp.address.rm1<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh1:8088<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.webapp.address.rm2<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh2:8088<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.webapp.address.rm2<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh2:8088<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.resourcemanager.zk-address<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1:2181,cdh2:2181,cdh3:2181<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>yarn.resourcemanager.zk-address<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>cdh1:2181,cdh2:2181,cdh3:2181<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>详细说明请参考 <a href="http://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/ResourceManagerHA.html">ResourceManager High Availability</a>。</p>
+</div>
+<p>详细说明请参考 <a href="http://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/ResourceManagerHA.html">ResourceManager High Availability</a>。</p>
+
 <p>重启yarn，然后查看状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ yarn rmadmin -getServiceState cdh1
+<pre class="chroma">$ yarn rmadmin -getServiceState cdh1
 active
 
 $ yarn rmadmin -getServiceState cdh2
-standby
-</code></pre></td></tr></table>
+standby</pre></td></tr></table>
 </div>
-</div><h2 id="-hue">配置 Hue</h2>
+</div>
+<h2 id="配置-hue">配置 Hue</h2>
+
 <p>暂时未使用</p>
-<h2 id="--llama">配置  Llama</h2>
+
+<h2 id="配置-llama">配置  Llama</h2>
+
 <p>暂时未使用</p>
 
     </div>
@@ -867,7 +906,7 @@ standby
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -880,7 +919,21 @@ standby
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

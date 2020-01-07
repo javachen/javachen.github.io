@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="写了一篇博客记录编译hbase源代码并打补丁的过程，如有不正确的，欢迎指出！" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="写了一篇博客记录编译hbase源代码并打补丁的过程，如有不正确的，欢迎指出！" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2013/10/28/compile-hbase-source-code-and-apply-patches/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="写了一篇博客记录编译hbase源代码并打补丁的过程，如有不正确的，欢迎指出！" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2013/10/28/compile-hbase-source-code-and-apply-patches/" />
-<meta property="article:published_time" content="2013-10-28T00:00:00+08:00" />
-<meta property="article:modified_time" content="2013-10-28T00:00:00+08:00" />
+<meta property="article:published_time" content="2013-10-28T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2013-10-28T00:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="编译CDH HBase源代码并打补丁">
 <meta itemprop="description" content="写了一篇博客记录编译hbase源代码并打补丁的过程，如有不正确的，欢迎指出！">
+
+
 <meta itemprop="datePublished" content="2013-10-28T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2013-10-28T00:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1733">
 
 
 
-<meta itemprop="keywords" content="hbase," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hbase," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="编译CDH HBase源代码并打补丁"/>
 <meta name="twitter:description" content="写了一篇博客记录编译hbase源代码并打补丁的过程，如有不正确的，欢迎指出！"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,35 +139,54 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#snappy-1">编译snappy</a></li>
-    <li><a href="#hadoop-snappy">编译hadoop-snappy</a></li>
-  </ul>
+<ul>
+<li><a href="#下载源代码">下载源代码</a></li>
+<li><a href="#添加snappy压缩支持">添加snappy压缩支持</a>
+<ul>
+<li><a href="#编译snappy">编译snappy</a></li>
+<li><a href="#编译hadoop-snappy">编译hadoop-snappy</a></li>
+</ul></li>
+<li><a href="#添加lzo压缩支持">添加lzo压缩支持</a></li>
+<li><a href="#编译protobuf">编译Protobuf</a></li>
+<li><a href="#编译hbase">编译hbase</a></li>
+<li><a href="#生成patch">生成patch</a></li>
+<li><a href="#打patch">打patch</a></li>
+<li><a href="#升级版本">升级版本</a></li>
+<li><a href="#排错">排错</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>写了一篇博客记录编译CDH HBase源代码并打补丁的过程，如有不正确的，欢迎指出！</p>
-<h1 id="heading">下载源代码</h1>
+      
+
+<p>写了一篇博客记录编译CDH HBase源代码并打补丁的过程，如有不正确的，欢迎指出！</p>
+
+<h1 id="下载源代码">下载源代码</h1>
+
 <p>从<a href="https://github.com/cloudera/hbase">Cloudera github</a>上下载最新分支源代码，例如：当前最新分支为cdh4-0.94.6_4.4.0</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git clone git@github.com:cloudera/hbase.git -b cdh4-0.94.6_4.4.0 cdh4-0.94.6_4.4.0
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git clone git@github.com:cloudera/hbase.git -b cdh4-0.94.6_4.4.0 cdh4-0.94.6_4.4.0</code></pre></td></tr></table>
 </div>
-</div><p>说明：</p>
+</div>
+<p>说明：</p>
+
 <ol>
 <li>-b 指定下载哪个分支</li>
 <li>最后一个参数指定下载下来的文件名称</li>
 </ol>
-<h1 id="snappy">添加snappy压缩支持</h1>
-<h2 id="snappy-1">编译snappy</h2>
+
+<h1 id="添加snappy压缩支持">添加snappy压缩支持</h1>
+
+<h2 id="编译snappy">编译snappy</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -178,64 +197,69 @@
 $ <span class="nb">cd</span> snappy
 $ sh autogen.sh
 $ ./configure
-$ sudo make install
-</code></pre></td></tr></table>
+$ sudo make install</code></pre></td></tr></table>
 </div>
-</div><h2 id="hadoop-snappy">编译hadoop-snappy</h2>
+</div>
+<h2 id="编译hadoop-snappy">编译hadoop-snappy</h2>
+
 <p>降低gcc版本到4.4:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ sudo yum install gcc-4.4
 $ rm /usr/bin/gcc
-$ ln -s /usr/bin/gcc-4.4 /usr/bin/gcc
-</code></pre></td></tr></table>
+$ ln -s /usr/bin/gcc-4.4 /usr/bin/gcc</code></pre></td></tr></table>
 </div>
-</div><p>建立libjvm软连接</p>
+</div>
+<p>建立libjvm软连接</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ sudo ln -s /usr/java/latest/jre/lib/amd64/server/libjvm.so  /usr/local/lib/
-</code></pre></td></tr></table>
+<pre class="chroma">$ sudo ln -s /usr/java/latest/jre/lib/amd64/server/libjvm.so  /usr/local/lib/</pre></td></tr></table>
 </div>
-</div><!-- raw HTML omitted -->
+</div>
+<!-- more -->
+
 <p>下载并编译hadoop-snappy</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ svn checkout http://hadoop-snappy.googlecode.com/svn/trunk/ hadoop-snappy
 $ <span class="nb">cd</span> hadoop-snappy
-$ make package -Dsnappy.prefix<span class="o">=</span>/usr/local/
-</code></pre></td></tr></table>
+$ make package -Dsnappy.prefix<span class="o">=</span>/usr/local/</code></pre></td></tr></table>
 </div>
-</div><p>安装jar包到本地仓库</p>
+</div>
+<p>安装jar包到本地仓库</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ mvn install:install-file -DgroupId<span class="o">=</span>org.apache.hadoop -DartifactId<span class="o">=</span>hadoop-snappy -Dversion<span class="o">=</span>0.0.1-SNAPSHOT -Dpackaging<span class="o">=</span>jar -Dfile<span class="o">=</span>./target/hadoop-snappy-0.0.1-SNAPSHOT.jar
-$ mvn install:install-file -DgroupId<span class="o">=</span>org.apache.hadoop -DartifactId<span class="o">=</span>hadoop-snappy -Dversion<span class="o">=</span>0.0.1-SNAPSHOT -Dclassifier<span class="o">=</span>Linux-amd64-64 -Dpackaging<span class="o">=</span>tar -Dfile<span class="o">=</span>./target/hadoop-snappy-0.0.1-SNAPSHOT-Linux-amd64-64.tar
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ mvn install:install-file -DgroupId<span class="o">=</span>org.apache.hadoop -DartifactId<span class="o">=</span>hadoop-snappy -Dversion<span class="o">=</span><span class="m">0</span>.0.1-SNAPSHOT -Dpackaging<span class="o">=</span>jar -Dfile<span class="o">=</span>./target/hadoop-snappy-0.0.1-SNAPSHOT.jar
+$ mvn install:install-file -DgroupId<span class="o">=</span>org.apache.hadoop -DartifactId<span class="o">=</span>hadoop-snappy -Dversion<span class="o">=</span><span class="m">0</span>.0.1-SNAPSHOT -Dclassifier<span class="o">=</span>Linux-amd64-64 -Dpackaging<span class="o">=</span>tar -Dfile<span class="o">=</span>./target/hadoop-snappy-0.0.1-SNAPSHOT-Linux-amd64-64.tar</code></pre></td></tr></table>
 </div>
-</div><h1 id="lzo">添加lzo压缩支持</h1>
+</div>
+<h1 id="添加lzo压缩支持">添加lzo压缩支持</h1>
+
 <p>暂不在此列出，请参考网上文章。</p>
-<h1 id="protobuf">编译Protobuf</h1>
+
+<h1 id="编译protobuf">编译Protobuf</h1>
+
 <p>注意：目前只能装2.4.1版本的，装最新版本的可能会缺少文件。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -248,256 +272,265 @@ $ unzip protobuf-2.4.1.zip
 $ <span class="nb">cd</span> protobuf-2.4.1
 $ ./configure
 $ make
-$ sudo make install
-</code></pre></td></tr></table>
+$ sudo make install</code></pre></td></tr></table>
 </div>
-</div><p>测试是否安装成功，如果成功你会看到：</p>
+</div>
+<p>测试是否安装成功，如果成功你会看到：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ protoc
-Missing input file.
-</code></pre></td></tr></table>
+Missing input file.</code></pre></td></tr></table>
 </div>
-</div><p>如果安装失败，你可能会看到：</p>
+</div>
+<p>如果安装失败，你可能会看到：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ protoc
-protoc: error while loading shared libraries: libprotobuf.so.7: cannot open shared object file: No such file or directory
-</code></pre></td></tr></table>
+<pre class="chroma">$ protoc
+protoc: error while loading shared libraries: libprotobuf.so.7: cannot open shared object file: No such file or directory</pre></td></tr></table>
 </div>
-</div><h1 id="hbase">编译hbase</h1>
+</div>
+<h1 id="编译hbase">编译hbase</h1>
+
 <p>进入到cdh4-0.94.6_4.4.0 目录，然后运行mvn基本命令。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> cdh4-0.94.6_4.4.0
-$ mvn clean install
-</code></pre></td></tr></table>
+$ mvn clean install</code></pre></td></tr></table>
 </div>
-</div><p>忽略测试，请添加如下参数：</p>
+</div>
+<p>忽略测试，请添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">-DskipTests
-</code></pre></td></tr></table>
+<pre class="chroma">-DskipTests</pre></td></tr></table>
 </div>
-</div><p>添加MAVEN运行时jvm大小，请在mvn前面添加如下参数：</p>
+</div>
+<p>添加MAVEN运行时jvm大小，请在mvn前面添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">MAVEN_OPTS=&#34;-Xmx2g&#34;
-</code></pre></td></tr></table>
+<pre class="chroma">MAVEN_OPTS=&#34;-Xmx2g&#34;</pre></td></tr></table>
 </div>
-</div><p>生成javadoc和文档，请添加如下参数：</p>
+</div>
+<p>生成javadoc和文档，请添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">javadoc:aggregate site assembly:single
-</code></pre></td></tr></table>
+<pre class="chroma">javadoc:aggregate site assembly:single</pre></td></tr></table>
 </div>
-</div><p>生成release加入security和native包，请添加如下参数：</p>
+</div>
+<p>生成release加入security和native包，请添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">-Prelease,security,native
-</code></pre></td></tr></table>
+<pre class="chroma">-Prelease,security,native</pre></td></tr></table>
 </div>
-</div><p>基于hadoop2.0进行编译，请添加如下参数：</p>
+</div>
+<p>基于hadoop2.0进行编译，请添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">-Dhadoop.profile=2.0
-</code></pre></td></tr></table>
+<pre class="chroma">-Dhadoop.profile=2.0</pre></td></tr></table>
 </div>
-</div><p>添加hadoop-snappy支持，请添加如下参数：</p>
+</div>
+<p>添加hadoop-snappy支持，请添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">-Prelease,hadoop-snappy -Dhadoop-snappy.version=0.0.1-SNAPSHOT
-</code></pre></td></tr></table>
+<pre class="chroma">-Prelease,hadoop-snappy -Dhadoop-snappy.version=0.0.1-SNAPSHOT</pre></td></tr></table>
 </div>
-</div><p>如果你添加了一些java代码，在每个文件头没有添加license，则需要添加如下参数：</p>
+</div>
+<p>如果你添加了一些java代码，在每个文件头没有添加license，则需要添加如下参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">-Drat.numUnapprovedLicenses=200
-</code></pre></td></tr></table>
+<pre class="chroma">-Drat.numUnapprovedLicenses=200</pre></td></tr></table>
 </div>
-</div><p>综上，完整命令如下：</p>
+</div>
+<p>综上，完整命令如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nv">MAVEN_OPTS</span><span class="o">=</span><span class="s2">&#34;-Xmx2g&#34;</span> mvn clean install javadoc:aggregate site assembly:single -DskipTests -Prelease,security,native,hadoop-snappy -Drat.numUnapprovedLicenses<span class="o">=</span><span class="m">200</span> -Dhadoop.profile<span class="o">=</span>2.0 -Dhadoop-snappy.version<span class="o">=</span>0.0.1-SNAPSHOT
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nv">MAVEN_OPTS</span><span class="o">=</span><span class="s2">&#34;-Xmx2g&#34;</span> mvn clean install javadoc:aggregate site assembly:single -DskipTests -Prelease,security,native,hadoop-snappy -Drat.numUnapprovedLicenses<span class="o">=</span><span class="m">200</span> -Dhadoop.profile<span class="o">=</span><span class="m">2</span>.0 -Dhadoop-snappy.version<span class="o">=</span><span class="m">0</span>.0.1-SNAPSHOT</code></pre></td></tr></table>
 </div>
-</div><h1 id="patch">生成patch</h1>
+</div>
+<h1 id="生成patch">生成patch</h1>
+
 <p>修改代码之后，在提交代码之前，运行如下命令生成patch：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git diff &gt;../XXXXX.patch
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git diff &gt;../XXXXX.patch</code></pre></td></tr></table>
 </div>
-</div><p>如果你已经将该动文件加入到提交缓存区，即执行了如下代码：</p>
+</div>
+<p>如果你已经将该动文件加入到提交缓存区，即执行了如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git add .
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git add .</code></pre></td></tr></table>
 </div>
-</div><p>你可以使用如下代码打补丁：</p>
+</div>
+<p>你可以使用如下代码打补丁：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git diff --staged &gt;../XXXXX.patch
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git diff --staged &gt;../XXXXX.patch</code></pre></td></tr></table>
 </div>
-</div><p>如果在提交之后，想生成patch，执行如下命令：</p>
+</div>
+<p>如果在提交之后，想生成patch，执行如下命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git format-patch -1
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git format-patch -1</code></pre></td></tr></table>
 </div>
-</div><p><code>git format-patch</code> 的详细说明请参考：<a href="http://devillived.net/forum/home.php?mod=space&amp;uid=2&amp;do=blog&amp;id=211">git patch操作</a></p>
+</div>
+<p><code>git format-patch</code> 的详细说明请参考：<a href="http://devillived.net/forum/home.php?mod=space&amp;uid=2&amp;do=blog&amp;id=211">git patch操作</a></p>
+
 <p>更多diff的命令如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">git diff &lt;file&gt;   # 比较当前文件和暂存区文件差异
+<pre class="chroma">git diff &lt;file&gt;   # 比较当前文件和暂存区文件差异
 git diff
 git diff &lt;$id1&gt; &lt;$id2&gt;    # 比较两次提交之间的差异
 git diff &lt;branch1&gt;..&lt;branch2&gt;    # 在两个分支之间比较
 git diff --staged   # 比较暂存区和版本库差异
 git diff --cached   # 比较暂存区和版本库差异
-git diff --stat     # 仅仅比较统计信息
-</code></pre></td></tr></table>
+git diff --stat     # 仅仅比较统计信息</pre></td></tr></table>
 </div>
-</div><h1 id="patch-1">打patch</h1>
+</div>
+<h1 id="打patch">打patch</h1>
+
 <p>打patch：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git apply ../XXXXX.patch
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git apply ../XXXXX.patch</code></pre></td></tr></table>
 </div>
-</div><p>测试patch是否打成功：</p>
+</div>
+<p>测试patch是否打成功：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git apply --check  ../add-aggregate-in-hbase-shell.patch
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git apply --check  ../add-aggregate-in-hbase-shell.patch</code></pre></td></tr></table>
 </div>
-</div><p>如果出现以下错误：</p>
+</div>
+<p>如果出现以下错误：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ git apply ../XXXXX.patch
-fatal: git apply: bad git-diff - expected /dev/null on line <span class="m">4</span>
-</code></pre></td></tr></table>
+fatal: git apply: bad git-diff - expected /dev/null on line <span class="m">4</span></code></pre></td></tr></table>
 </div>
-</div><p>请安装dos2unix：</p>
+</div>
+<p>请安装dos2unix：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install dos2unix -y
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install dos2unix -y</code></pre></td></tr></table>
 </div>
-</div><p>然后，执行如下代码：</p>
+</div>
+<p>然后，执行如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ dos2unix ../add-aggregate-in-hbase-shell.patch
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ dos2unix ../add-aggregate-in-hbase-shell.patch</code></pre></td></tr></table>
 </div>
-</div><p>最后再尝试打补丁。</p>
+</div>
+<p>最后再尝试打补丁。</p>
+
 <p>注意：</p>
+
 <ul>
 <li>请注意，git apply 是一个事务性操作的命令，也就是说，要么所有补丁都打上去，要么全部放弃。</li>
 <li>对于传统的 diff 命令生成的补丁，则只能用 git apply 处理。对于 format-patch 制作的新式补丁，应当使用 git am 命令。</li>
 </ul>
-<h1 id="heading-1">升级版本</h1>
+
+<h1 id="升级版本">升级版本</h1>
+
 <p>当你fork了<a href="https://github.com/cloudera/hbase">Cloudera github</a>代码之后，cloudera会继续更新代码、发布新的分支，如何将其最新的分支下载到自己的hbase仓库呢？例如，你的仓库中hbase最新分支为<code>cdh4-0.94.6_4.3.0</code>，而cdh最新分支为<code>cdh4-0.94.6_4.4.0</code>，现在如何将cdh上的分支下载到自己的参考呢？</p>
+
 <p>查看远程服务器地址和仓库名称：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ git remote -v
 origin	git@github.com:javachen/hbase.git <span class="o">(</span>fetch<span class="o">)</span>
-origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class="o">)</span>
-</code></pre></td></tr></table>
+origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>添加远程仓库地址：</p>
+</div>
+<p>添加远程仓库地址：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">$ git remote add cdh git@github.com:cloudera/hbase.git
-</code></pre></td></tr></table>
+<pre class="chroma">$ git remote add cdh git@github.com:cloudera/hbase.git</pre></td></tr></table>
 </div>
-</div><p>再一次查看远程服务器地址和仓库名称：</p>
+</div>
+<p>再一次查看远程服务器地址和仓库名称：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -508,61 +541,64 @@ origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class
 cdh	https://github.com/cloudera/hbase <span class="o">(</span>fetch<span class="o">)</span>
 cdh	https://github.com/cloudera/hbase <span class="o">(</span>push<span class="o">)</span>
 origin	git@github.com:javachen/hbase.git <span class="o">(</span>fetch<span class="o">)</span>
-origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class="o">)</span>
-</code></pre></td></tr></table>
+origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>抓取远程仓库更新：</p>
+</div>
+<p>抓取远程仓库更新：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git fetch cdh
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git fetch cdh</code></pre></td></tr></table>
 </div>
-</div><p>然后，再执行下面命令查看远程分支：</p>
+</div>
+<p>然后，再执行下面命令查看远程分支：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git branch -r
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git branch -r</code></pre></td></tr></table>
 </div>
-</div><p>下载cdh上的cdh4-0.94.6_4.4.0分支，在本地命名为cdh4-0.94.6_4.4.0：</p>
+</div>
+<p>下载cdh上的cdh4-0.94.6_4.4.0分支，在本地命名为cdh4-0.94.6_4.4.0：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git checkout -b cdh4-0.94.6_4.4.0 cdh/cdh4-0.94.6_4.4.0
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git checkout -b cdh4-0.94.6_4.4.0 cdh/cdh4-0.94.6_4.4.0</code></pre></td></tr></table>
 </div>
-</div><p>将本地的cdh4-0.94.6_4.4.0分支其提交到自己的远程仓库：</p>
+</div>
+<p>将本地的cdh4-0.94.6_4.4.0分支其提交到自己的远程仓库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ git push origin cdh4-0.94.6_4.4.0:cdh4-0.94.6_4.4.0
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ git push origin cdh4-0.94.6_4.4.0:cdh4-0.94.6_4.4.0</code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-2">排错</h1>
+</div>
+<h1 id="排错">排错</h1>
+
 <p>如果在启动 hbase 的服务过程中出现如下日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">2013-10-24 22:44:59,921 INFO org.apache.hadoop.hbase.util.VersionInfo: HBase Unknown
+<pre class="chroma">2013-10-24 22:44:59,921 INFO org.apache.hadoop.hbase.util.VersionInfo: HBase Unknown
 2013-10-24 22:44:59,921 INFO org.apache.hadoop.hbase.util.VersionInfo: Subversion Unknown -r Unknown
-2013-10-24 22:44:59,921 INFO org.apache.hadoop.hbase.util.VersionInfo: Compiled by Unknown on Unknown
-</code></pre></td></tr></table>
+2013-10-24 22:44:59,921 INFO org.apache.hadoop.hbase.util.VersionInfo: Compiled by Unknown on Unknown</pre></td></tr></table>
 </div>
-</div><p>请查看 src/saveVersion.sh 文件的编码及换行符是否和你的操作系统一致。编码应该设置为 UTF-8，如果你使用的是 linux 系统，则换行符应该为 unix/linux 换行符，不应该为 window 换行符。</p>
-<h1 id="heading-3">参考文章</h1>
+</div>
+<p>请查看 src/saveVersion.sh 文件的编码及换行符是否和你的操作系统一致。编码应该设置为 UTF-8，如果你使用的是 linux 系统，则换行符应该为 unix/linux 换行符，不应该为 window 换行符。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li>[1] <a href="http://robbinfan.com/blog/34/git-common-command">Git常用命令备忘</a></li>
 <li>[2] <a href="http://devillived.net/forum/home.php?mod=space&amp;uid=2&amp;do=blog&amp;id=211">git patch操作</a></li>
@@ -685,7 +721,7 @@ origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -698,7 +734,21 @@ origin	git@github.com:javachen/hbase.git <span class="o">(</span>push<span class
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

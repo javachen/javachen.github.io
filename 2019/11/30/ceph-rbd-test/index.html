@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。 配置客户端 1、在管理节点上，通过 ceph-deploy 把 Ceph 安" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。 配置客户端 1、在管理节点上，通过 ceph-deploy 把 Ceph 安" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/11/30/ceph-rbd-test/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。 配置客户端 1、在管理节点上，通过 ceph-deploy 把 Ceph 安" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/30/ceph-rbd-test/" />
-<meta property="article:published_time" content="2019-11-30T08:00:00+08:00" />
-<meta property="article:modified_time" content="2019-11-30T08:00:00+08:00" />
+<meta property="article:published_time" content="2019-11-30T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2019-11-30T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="Ceph块设备测试">
 <meta itemprop="description" content="在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。 配置客户端 1、在管理节点上，通过 ceph-deploy 把 Ceph 安">
+
+
 <meta itemprop="datePublished" content="2019-11-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-30T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2244">
 
 
 
-<meta itemprop="keywords" content="ceph," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="ceph," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Ceph块设备测试"/>
 <meta name="twitter:description" content="在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。 配置客户端 1、在管理节点上，通过 ceph-deploy 把 Ceph 安"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -138,101 +138,120 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#配置客户端">配置客户端</a></li>
+<li><a href="#创建块设备">创建块设备</a></li>
+<li><a href="#查看块设备">查看块设备</a></li>
+<li><a href="#检索镜像信息">检索镜像信息</a></li>
+<li><a href="#调整块设备映像大小">调整块设备映像大小</a></li>
+<li><a href="#使用块设备">使用块设备</a></li>
+<li><a href="#取消掉块设备的映射">取消掉块设备的映射</a></li>
+<li><a href="#删除块设备镜像">删除块设备镜像</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <p>在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。</p>
-<h1 id="heading">配置客户端</h1>
+      
+
+<p>在搭建了一个Ceph多节点的集群之后，你可以在客户端上连接集群使用Ceph存储上的设备，比如块设备。</p>
+
+<h1 id="配置客户端">配置客户端</h1>
+
 <p>1、在管理节点上，通过 <code>ceph-deploy</code> 把 Ceph 安装到客户端节点。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">ssh-copy-id k8s-rke-node005
 
-ceph-deploy install k8s-rke-node005
-</code></pre></td></tr></table>
+ceph-deploy install k8s-rke-node005</code></pre></td></tr></table>
 </div>
-</div><p>2、在管理节点上，用 <code>ceph-deploy</code> 把 Ceph 配置文件和 <code>ceph.client.admin.keyring</code> 拷贝到客户端：</p>
+</div>
+<p>2、在管理节点上，用 <code>ceph-deploy</code> 把 Ceph 配置文件和 <code>ceph.client.admin.keyring</code> 拷贝到客户端：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy admin k8s-rke-node005
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph-deploy admin k8s-rke-node005</code></pre></td></tr></table>
 </div>
-</div><p><code>ceph-deploy</code> 工具会把密钥环复制到 <code>/etc/ceph</code> 目录，要确保此密钥环文件有读权限（如 <code>sudo chmod +r /etc/ceph/ceph.client.admin.keyring</code> ）。</p>
+</div>
+<p><code>ceph-deploy</code> 工具会把密钥环复制到 <code>/etc/ceph</code> 目录，要确保此密钥环文件有读权限（如 <code>sudo chmod +r /etc/ceph/ceph.client.admin.keyring</code> ）。</p>
+
 <p>3、客户机需要 ceph 秘钥去访问 ceph 集群。ceph创建了一个默认的用户client.admin，它有足够的权限去访问ceph集群。但是不建议把 client.admin 共享到所有其他的客户端节点。这里我用分开的秘钥新建一个用户k8s去访问特定的存储池。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s mon <span class="s1">&#39;allow r&#39;</span> osd <span class="s1">&#39;allow class-read object_prefix rbd_children, allow rwx pool=rbd&#39;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s mon <span class="s1">&#39;allow r&#39;</span> osd <span class="s1">&#39;allow class-read object_prefix rbd_children, allow rwx pool=rbd&#39;</span></code></pre></td></tr></table>
 </div>
-</div><p>为 k8s-rke-node005 上的 client.rbd 用户添加秘钥：</p>
+</div>
+<p>为 k8s-rke-node005 上的 client.rbd 用户添加秘钥：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s <span class="p">|</span> k8s-rke-node005 tee /etc/ceph/ceph.client.k8s.keyring
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph auth get-or-create client.k8s <span class="p">|</span> k8s-rke-node005 tee /etc/ceph/ceph.client.k8s.keyring</code></pre></td></tr></table>
 </div>
-</div><p>到客户端 k8s-rke-node005  检查集群健康状态：</p>
+</div>
+<p>到客户端 k8s-rke-node005  检查集群健康状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat /etc/ceph/ceph.client.k8s.keyring &gt;&gt; /etc/ceph/keyring
-ceph -s --name client.k8s
-</code></pre></td></tr></table>
+ceph -s --name client.k8s</code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-1">创建块设备</h1>
+</div>
+<h1 id="创建块设备">创建块设备</h1>
+
 <p>1、要想把块设备加入某节点，你得先在Ceph 存储集群中创建一个映像，使用下列命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">rbd create --size <span class="o">{</span>megabytes<span class="o">}</span> <span class="o">{</span>pool-name<span class="o">}</span>/<span class="o">{</span>image-name<span class="o">}</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">rbd create --size <span class="o">{</span>megabytes<span class="o">}</span> <span class="o">{</span>pool-name<span class="o">}</span>/<span class="o">{</span>image-name<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>例如，要在 <code>swimmingpool</code> 这个存储池中创建一个名为 <code>foo</code> 、大小为 1GB 的映像，执行：</p>
+</div>
+<p>例如，要在 <code>swimmingpool</code> 这个存储池中创建一个名为 <code>foo</code> 、大小为 1GB 的映像，执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd create --size 1024 swimmingpool/foo
-</code></pre></td></tr></table>
+<pre class="chroma">rbd create --size 1024 swimmingpool/foo</pre></td></tr></table>
 </div>
-</div><p>如果创建映像时不指定存储池，它将使用默认的 <code>rbd</code> 存储池。例如，下面的命令将默认在 <code>rbd</code> 存储池中创建一个大小为 1GB 、名为 <code>foo</code> 的映像：</p>
+</div>
+<p>如果创建映像时不指定存储池，它将使用默认的 <code>rbd</code> 存储池。例如，下面的命令将默认在 <code>rbd</code> 存储池中创建一个大小为 1GB 、名为 <code>foo</code> 的映像：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ rbd create --size <span class="m">1024</span> foo
 rbd: error opening default pool <span class="s1">&#39;rbd&#39;</span>
-Ensure that the default pool has been created or specify an alternate pool name.
-</code></pre></td></tr></table>
+Ensure that the default pool has been created or specify an alternate pool name.</code></pre></td></tr></table>
 </div>
-</div><p>提示默认存储池rbd不存在。</p>
+</div>
+<p>提示默认存储池rbd不存在。</p>
+
 <p>2、查看存储池</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -243,106 +262,108 @@ Ensure that the default pool has been created or specify an alternate pool name.
 <span class="m">1</span> .rgw.root
 <span class="m">2</span> default.rgw.control
 <span class="m">3</span> default.rgw.meta
-<span class="m">4</span> default.rgw.log
-</code></pre></td></tr></table>
+<span class="m">4</span> default.rgw.log</code></pre></td></tr></table>
 </div>
-</div><p>3、创建一个rbd存储池</p>
+</div>
+<p>3、创建一个rbd存储池</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd pool create rbd <span class="m">96</span> <span class="m">32</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd pool create rbd <span class="m">96</span> <span class="m">32</span></code></pre></td></tr></table>
 </div>
-</div><p>再次创建块设备：</p>
+</div>
+<p>再次创建块设备：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">rbd create --size <span class="m">1024</span> rbd/foo
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">rbd create --size <span class="m">1024</span> rbd/foo</code></pre></td></tr></table>
 </div>
-</div><p>4、在客户端节点上，把 image 映射为块设备。</p>
+</div>
+<p>4、在客户端节点上，把 image 映射为块设备。</p>
+
 <p>用 <code>rbd</code> 把映像名映射为内核模块。必须指定映像名、存储池名、和用户名。若 RBD 内核模块尚未加载， <code>rbd</code> 命令会自动加载。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rbd map <span class="o">{</span>pool-name<span class="o">}</span>/<span class="o">{</span>image-name<span class="o">}</span> --id <span class="o">{</span>user-name<span class="o">}</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo rbd map <span class="o">{</span>pool-name<span class="o">}</span>/<span class="o">{</span>image-name<span class="o">}</span> --id <span class="o">{</span>user-name<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>如果你启用了 <a href="http://docs.ceph.org.cn/rados/configuration/auth-config-ref/">cephx</a> 认证，还必须提供密钥，可以用密钥环或密钥文件指定密钥。</p>
+</div>
+<p>如果你启用了 <a href="http://docs.ceph.org.cn/rados/configuration/auth-config-ref/">cephx</a> 认证，还必须提供密钥，可以用密钥环或密钥文件指定密钥。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo rbd map rbd/myimage --id admin --keyring /path/to/keyring
-sudo rbd map rbd/myimage --id admin --keyfile /path/to/file
-</code></pre></td></tr></table>
+sudo rbd map rbd/myimage --id admin --keyfile /path/to/file</code></pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">sudo rbd map rbd/foo 
-</code></pre></td></tr></table>
+<pre class="chroma">sudo rbd map rbd/foo </pre></td></tr></table>
 </div>
-</div><p>出现异常：</p>
+</div>
+<p>出现异常：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">feature <span class="nb">set</span> mismatch, my 106b84a842a42 &lt; server<span class="err">&#39;</span>s 40106b84a842a42, missing <span class="m">400000000000000</span>
-missing required protocol features
-</code></pre></td></tr></table>
+missing required protocol features</code></pre></td></tr></table>
 </div>
-</div><p>解决办法参考：http://cephnotes.ksperis.com/blog/2014/01/21/feature-set-mismatch-error-on-ceph-kernel-client</p>
+</div>
+<p>解决办法参考：<a href="http://cephnotes.ksperis.com/blog/2014/01/21/feature-set-mismatch-error-on-ceph-kernel-client">http://cephnotes.ksperis.com/blog/2014/01/21/feature-set-mismatch-error-on-ceph-kernel-client</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd crush tunables legacy
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ceph osd crush tunables legacy</code></pre></td></tr></table>
 </div>
-</div><p>如果出现异常：</p>
+</div>
+<p>如果出现异常：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">RBD image feature set mismatch. You can disable features unsupported by the kernel with &#34;rbd feature disable rbd/foo object-map fast-diff deep-flatten&#34;.
-</code></pre></td></tr></table>
+<pre class="chroma">RBD image feature set mismatch. You can disable features unsupported by the kernel with &#34;rbd feature disable rbd/foo object-map fast-diff deep-flatten&#34;.</pre></td></tr></table>
 </div>
-</div><p>查看系统日志可以看到如下输出：</p>
+</div>
+<p>查看系统日志可以看到如下输出：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ dmesg <span class="p">|</span> tail
-<span class="o">[</span> 3871.736182<span class="o">]</span> libceph: client34162 fsid cee3f3a5-9e7b-428b-84f0-bac001ba2f84
-<span class="o">[</span> 3871.755745<span class="o">]</span> rbd: image foo: image uses unsupported features: 0x38
-</code></pre></td></tr></table>
+<span class="o">[</span> <span class="m">3871</span>.736182<span class="o">]</span> libceph: client34162 fsid cee3f3a5-9e7b-428b-84f0-bac001ba2f84
+<span class="o">[</span> <span class="m">3871</span>.755745<span class="o">]</span> rbd: image foo: image uses unsupported features: 0x38</code></pre></td></tr></table>
 </div>
-</div><blockquote>
+</div>
+<blockquote>
 <p>问题原因: 在 Ceph 高版本进行 map image 时，默认 Ceph 在创建 image(上文 data)时会增加许多 features，这些 features 需要内核支持，在 Centos7 的内核上支持有限，所以需要手动关掉一些 features</p>
 </blockquote>
+
 <p>首先使用 <code>rbd info data</code> 命令列出创建的 image 的 features：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -369,13 +390,15 @@ rbd image <span class="s1">&#39;foo&#39;</span>:
     features: layering, exclusive-lock, object-map, fast-diff, deep-flatten
     op_features:
     flags:
-    create_timestamp: Fri Sep <span class="m">27</span> 09:45:58 <span class="m">2019</span>
-    access_timestamp: Fri Sep <span class="m">27</span> 09:45:58 <span class="m">2019</span>
-    modify_timestamp: Fri Sep <span class="m">27</span> 09:45:58 <span class="m">2019</span>
-</code></pre></td></tr></table>
+    create_timestamp: Fri Sep <span class="m">27</span> <span class="m">09</span>:45:58 <span class="m">2019</span>
+    access_timestamp: Fri Sep <span class="m">27</span> <span class="m">09</span>:45:58 <span class="m">2019</span>
+    modify_timestamp: Fri Sep <span class="m">27</span> <span class="m">09</span>:45:58 <span class="m">2019</span></code></pre></td></tr></table>
 </div>
-</div><p>在 features 中我们可以看到默认开启了很多：layering, exclusive-lock, object-map, fast-diff, deep-flatten</p>
+</div>
+<p>在 features 中我们可以看到默认开启了很多：layering, exclusive-lock, object-map, fast-diff, deep-flatten</p>
+
 <p>RBD支持的特性，及具体BIT值的计算如下：</p>
+
 <table>
 <thead>
 <tr>
@@ -384,37 +407,44 @@ rbd image <span class="s1">&#39;foo&#39;</span>:
 <th>BIT码</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td>layering</td>
 <td>支持分层</td>
 <td>1</td>
 </tr>
+
 <tr>
 <td>striping</td>
 <td>支持条带化v2</td>
 <td>2</td>
 </tr>
+
 <tr>
 <td>exclusive-lock</td>
 <td>支持独占锁</td>
 <td>4</td>
 </tr>
+
 <tr>
 <td>object-map</td>
 <td>支持对象映射（依赖 exclusive-lock ）</td>
 <td>8</td>
 </tr>
+
 <tr>
 <td>fast-diff</td>
 <td>快速计算差异（依赖 object-map ）</td>
 <td>16</td>
 </tr>
+
 <tr>
 <td>deep-flatten</td>
 <td>支持快照扁平化操作</td>
 <td>32</td>
 </tr>
+
 <tr>
 <td>journaling</td>
 <td>支持记录 IO 操作（依赖独占锁）</td>
@@ -422,203 +452,215 @@ rbd image <span class="s1">&#39;foo&#39;</span>:
 </tr>
 </tbody>
 </table>
+
 <p>而实际上 Centos 7 的 3.10 内核只支持 layering… 所以我们要手动关闭一些 features，然后重新 map；如果想要一劳永逸，可以在 ceph.conf 中加入 rbd_default_features = 1 来设置默认 features(数值仅是 layering 对应的 bit 码所对应的整数值)。</p>
+
 <p>方法一：</p>
+
 <p>直接diable这个rbd镜像的不支持的特性：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd feature disable rbd/foo exclusive-lock object-map fast-diff deep-flatten
-</code></pre></td></tr></table>
+<pre class="chroma">rbd feature disable rbd/foo exclusive-lock object-map fast-diff deep-flatten</pre></td></tr></table>
 </div>
-</div><p>方法二：</p>
+</div>
+<p>方法二：</p>
+
 <p>创建rbd镜像时就指明需要的特性，如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd create rbd/foo --size 1024 --image-feature layering
-</code></pre></td></tr></table>
+<pre class="chroma">rbd create rbd/foo --size 1024 --image-feature layering</pre></td></tr></table>
 </div>
-</div><p>方法三：</p>
+</div>
+<p>方法三：</p>
+
 <p>如果还想一劳永逸，那么就在执行创建rbd镜像命令的服务器中，修改Ceph配置文件/etc/ceph/ceph.conf，在global section下，增加</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd_default_features = 1
-</code></pre></td></tr></table>
+<pre class="chroma">rbd_default_features = 1</pre></td></tr></table>
 </div>
-</div><h1 id="heading-2">查看块设备</h1>
+</div>
+<h1 id="查看块设备">查看块设备</h1>
+
 <p>要列出 <code>rbd</code> 存储池中的块设备，可以用下列命令（即 <code>rbd</code> 是默认存储池名字）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd ls
-</code></pre></td></tr></table>
+<pre class="chroma">rbd ls</pre></td></tr></table>
 </div>
-</div><p>用下列命令罗列某个特定存储池中的块设备，用存储池的名字替换 <code>{poolname}</code> ：</p>
+</div>
+<p>用下列命令罗列某个特定存储池中的块设备，用存储池的名字替换 <code>{poolname}</code> ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd ls {poolname}
-</code></pre></td></tr></table>
+<pre class="chroma">rbd ls {poolname}</pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd ls swimmingpool
-</code></pre></td></tr></table>
+<pre class="chroma">rbd ls swimmingpool</pre></td></tr></table>
 </div>
-</div><p>查看系统中已经映射的块设备</p>
+</div>
+<p>查看系统中已经映射的块设备</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ rbd showmapped
 id pool namespace image snap device
-<span class="m">0</span>  rbd            foo   -    /dev/rbd0
-</code></pre></td></tr></table>
+<span class="m">0</span>  rbd            foo   -    /dev/rbd0</code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-3">检索镜像信息</h1>
+</div>
+<h1 id="检索镜像信息">检索镜像信息</h1>
+
 <p>用下列命令检索某个特定映像的信息，用映像名字替换 <code>{image-name}</code> ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd info {image-name}
-</code></pre></td></tr></table>
+<pre class="chroma">rbd info {image-name}</pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd info foo
-</code></pre></td></tr></table>
+<pre class="chroma">rbd info foo</pre></td></tr></table>
 </div>
-</div><p>用下列命令检索某存储池内的映像的信息，用映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
+</div>
+<p>用下列命令检索某存储池内的映像的信息，用映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd info {pool-name}/{image-name}
-</code></pre></td></tr></table>
+<pre class="chroma">rbd info {pool-name}/{image-name}</pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd info rbd/foo
-</code></pre></td></tr></table>
+<pre class="chroma">rbd info rbd/foo</pre></td></tr></table>
 </div>
-</div><h1 id="heading-4">调整块设备映像大小</h1>
+</div>
+<h1 id="调整块设备映像大小">调整块设备映像大小</h1>
+
 <p>Ceph 块设备镜像是精简配置，只有在你开始写入数据时它们才会占用物理空间。然而，它们都有最大容量，就是你设置的 <code>--size</code> 选项。如果你想增加（或减小） Ceph 块设备映像的最大尺寸，执行下列命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd resize --size 2048 foo 
-rbd resize --size 512 foo --allow-shrink
-</code></pre></td></tr></table>
+<pre class="chroma">rbd resize --size 2048 foo 
+rbd resize --size 512 foo --allow-shrink</pre></td></tr></table>
 </div>
-</div><h1 id="heading-5">使用块设备</h1>
+</div>
+<h1 id="使用块设备">使用块设备</h1>
+
 <p>1、在客户端节点上，创建文件系统后就可以使用块设备了。格式化块设备：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkfs.xfs /dev/rbd0
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkfs.xfs /dev/rbd0</code></pre></td></tr></table>
 </div>
-</div><p>此命令可能耗时较长。</p>
+</div>
+<p>此命令可能耗时较长。</p>
+
 <p>2、在客户端节点上挂载此文件系统。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo mkdir /mnt/ceph-block-device
-sudo mount /dev/rbd0 /mnt/ceph-block-device
-</code></pre></td></tr></table>
+sudo mount /dev/rbd0 /mnt/ceph-block-device</code></pre></td></tr></table>
 </div>
-</div><p>3、查看挂载情况</p>
+</div>
+<p>3、查看挂载情况</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ df -h /mnt/ceph-block-device
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/rbd0      1014M   33M  982M   4% /mnt/ceph-block-device
-</code></pre></td></tr></table>
+/dev/rbd0      1014M   33M  982M   <span class="m">4</span>% /mnt/ceph-block-device</code></pre></td></tr></table>
 </div>
-</div><p>4、我们测试一下生成一个 500M 大文件，看是否自动同步到各个节点：</p>
+</div>
+<p>4、我们测试一下生成一个 500M 大文件，看是否自动同步到各个节点：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /mnt/ceph-block-device
-sudo dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span>/mnt/ceph-block-device/test-file <span class="nv">bs</span><span class="o">=</span>500M <span class="nv">count</span><span class="o">=</span><span class="m">1</span>
-</code></pre></td></tr></table>
+sudo dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span>/mnt/ceph-block-device/test-file <span class="nv">bs</span><span class="o">=</span>500M <span class="nv">count</span><span class="o">=</span><span class="m">1</span></code></pre></td></tr></table>
 </div>
-</div><p>查看文件有没有生成：</p>
+</div>
+<p>查看文件有没有生成：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ls /mnt/ceph-block-device
-test-file
-</code></pre></td></tr></table>
+test-file</code></pre></td></tr></table>
 </div>
-</div><p>查看目录大小：</p>
+</div>
+<p>查看目录大小：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ df -h /mnt/ceph-block-device
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/rbd0      1014M  533M  482M  53% /mnt/ceph-block-device
-</code></pre></td></tr></table>
+/dev/rbd0      1014M  533M  482M  <span class="m">53</span>% /mnt/ceph-block-device</code></pre></td></tr></table>
 </div>
-</div><p>说明文件写入成功。</p>
+</div>
+<p>说明文件写入成功。</p>
+
 <p>5、查看ceph集群中存储使用情况</p>
+
 <p>在ceph集群某一个节点上执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -651,61 +693,64 @@ Filesystem      Size  Used Avail Use% Mounted on
 
   data:
     pools:   <span class="m">4</span> pools, <span class="m">32</span> pgs
-    objects: <span class="m">219</span> objects, 1.2 KiB
-    usage:   1.0 GiB used, 6.0 GiB / <span class="m">7</span> GiB avail
-    pgs:     <span class="m">32</span> active+clean
-</code></pre></td></tr></table>
+    objects: <span class="m">219</span> objects, <span class="m">1</span>.2 KiB
+    usage:   <span class="m">1</span>.0 GiB used, <span class="m">6</span>.0 GiB / <span class="m">7</span> GiB avail
+    pgs:     <span class="m">32</span> active+clean</code></pre></td></tr></table>
 </div>
-</div><p>可以看到有1.0 GB被使用了。</p>
-<h1 id="heading-6">取消掉块设备的映射</h1>
+</div>
+<p>可以看到有1.0 GB被使用了。</p>
+
+<h1 id="取消掉块设备的映射">取消掉块设备的映射</h1>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">sudo umount /mnt/ceph-block-device
-sudo rbd unmap /dev/rbd0 
-</code></pre></td></tr></table>
+sudo rbd unmap /dev/rbd0 </code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-7">删除块设备镜像</h1>
+</div>
+<h1 id="删除块设备镜像">删除块设备镜像</h1>
+
 <p>可用下列命令删除块设备，用映像名字替换 <code>{image-name}</code> ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd rm {image-name}
-</code></pre></td></tr></table>
+<pre class="chroma">rbd rm {image-name}</pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd rm foo
-</code></pre></td></tr></table>
+<pre class="chroma">rbd rm foo</pre></td></tr></table>
 </div>
-</div><p>用下列命令从某存储池中删除一个块设备，用要删除的映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
+</div>
+<p>用下列命令从某存储池中删除一个块设备，用要删除的映像名字替换 <code>{image-name}</code> 、用存储池名字替换 <code>{pool-name}</code> ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd rm {pool-name}/{image-name}
-</code></pre></td></tr></table>
+<pre class="chroma">rbd rm {pool-name}/{image-name}</pre></td></tr></table>
 </div>
-</div><p>例如：</p>
+</div>
+<p>例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">rbd rm rbd/foo
-</code></pre></td></tr></table>
+<pre class="chroma">rbd rm rbd/foo</pre></td></tr></table>
 </div>
-</div><h1 id="heading-8">参考文章</h1>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="https://blog.csdn.net/ygtlovezf/article/details/79107755">使用内核态的RBD</a></li>
 <li><a href="http://cephnotes.ksperis.com/blog/2014/01/21/feature-set-mismatch-error-on-ceph-kernel-client">Feature Set Mismatch Error on Ceph Kernel Client</a></li>
@@ -827,7 +872,7 @@ sudo rbd unmap /dev/rbd0
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -840,7 +885,21 @@ sudo rbd unmap /dev/rbd0
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

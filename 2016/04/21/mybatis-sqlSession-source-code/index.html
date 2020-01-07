@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2016/04/21/mybatis-sqlSession-source-code/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="了解MyBatis中SqlSession类的实现过程。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2016/04/21/mybatis-sqlSession-source-code/" />
-<meta property="article:published_time" content="2016-04-21T08:00:00+08:00" />
-<meta property="article:modified_time" content="2016-04-21T08:00:00+08:00" />
+<meta property="article:published_time" content="2016-04-21T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2016-04-21T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="MyBatis源码分析：SqlSession">
 <meta itemprop="description" content="了解MyBatis中SqlSession类的实现过程。">
+
+
 <meta itemprop="datePublished" content="2016-04-21T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2016-04-21T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="3500">
 
 
 
-<meta itemprop="keywords" content="mybatis," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="mybatis," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="MyBatis源码分析：SqlSession"/>
 <meta name="twitter:description" content="了解MyBatis中SqlSession类的实现过程。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -138,14 +138,14 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    
   </div>
 </div>
     <div class="post-content">
       <p>从这段代码中可以看到MyBatis的初始化过程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -155,21 +155,22 @@
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">DataSource</span> <span class="n">dataSource</span> <span class="o">=</span> <span class="o">.</span><span class="o">.</span><span class="o">.</span><span class="o">;</span>
-<span class="n">TransactionFactory</span> <span class="n">transactionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcTransactionFactory</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="n">Environment</span> <span class="n">environment</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Environment</span><span class="o">(</span><span class="s">&#34;Production&#34;</span><span class="o">,</span> <span class="n">transactionFactory</span><span class="o">,</span> <span class="n">dataSource</span><span class="o">)</span><span class="o">;</span>
-<span class="n">Configuration</span> <span class="n">configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Configuration</span><span class="o">(</span><span class="n">environment</span><span class="o">)</span><span class="o">;</span>
-<span class="n">configuration</span><span class="o">.</span><span class="na">setLazyLoadingEnabled</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span><span class="o">;</span>
-<span class="n">configuration</span><span class="o">.</span><span class="na">getTypeAliasRegistry</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">registerAlias</span><span class="o">(</span><span class="n">Blog</span><span class="o">.</span><span class="na">class</span><span class="o">)</span><span class="o">;</span>
-<span class="n">configuration</span><span class="o">.</span><span class="na">addMapper</span><span class="o">(</span><span class="n">BlogMapper</span><span class="o">.</span><span class="na">class</span><span class="o">)</span><span class="o">;</span>
-<span class="n">SqlSessionFactory</span> <span class="n">sqlSessionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">configuration</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">DataSource</span> <span class="n">dataSource</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="n">TransactionFactory</span> <span class="n">transactionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcTransactionFactory</span><span class="o">();</span>
+<span class="n">Environment</span> <span class="n">environment</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Environment</span><span class="o">(</span><span class="s">&#34;Production&#34;</span><span class="o">,</span> <span class="n">transactionFactory</span><span class="o">,</span> <span class="n">dataSource</span><span class="o">);</span>
+<span class="n">Configuration</span> <span class="n">configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Configuration</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+<span class="n">configuration</span><span class="o">.</span><span class="na">setLazyLoadingEnabled</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="n">configuration</span><span class="o">.</span><span class="na">getTypeAliasRegistry</span><span class="o">().</span><span class="na">registerAlias</span><span class="o">(</span><span class="n">Blog</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">configuration</span><span class="o">.</span><span class="na">addMapper</span><span class="o">(</span><span class="n">BlogMapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">SqlSessionFactory</span> <span class="n">sqlSessionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">configuration</span><span class="o">);</span></code></pre></td></tr></table>
 </div>
-</div><p>在创建了Configuration之后，通过<code>SqlSessionFactoryBuilder</code>来构建一个SqlSessionFactory。SqlSessionFactoryBuilder是构建SqlSessionFactory的一个工具类，但其不是被声明为静态或者单例的，而是需要通过new实例化。</p>
+</div>
+<p>在创建了Configuration之后，通过<code>SqlSessionFactoryBuilder</code>来构建一个SqlSessionFactory。SqlSessionFactoryBuilder是构建SqlSessionFactory的一个工具类，但其不是被声明为静态或者单例的，而是需要通过new实例化。</p>
+
 <p>SqlSessionFactoryBuilder类重载了以下几个<code>build</code>方法，每个build方法其实最终会调用<code>build(Configuration config)</code>方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -188,27 +189,28 @@
 <span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">)</span>
 <span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span>
 <span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span>
-<span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">config</span><span class="o">)</span>
-</code></pre></td></tr></table>
+<span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">config</span><span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>MyBatis通过SqlSessionFactoryBuilder作为入口，通过传入配置文件，使用了BaseBuilder实现类进行配置文件解析，具体实现类是XMLConfigBuilder，在这里mybatis对配置的项进行了全面解析，只不过不是所有的解析都放在了XMLConfigBuilder，XMLConfigBuilder解析了二级节点，并作为一个总入口，还有另外几个类继承了BaseBuilder，用于解析不同的配置。而解析到的配置项信息，基本都保存在了Configuration这个类，可以看到多处地方依赖到它。</p>
+</div>
+<p>MyBatis通过SqlSessionFactoryBuilder作为入口，通过传入配置文件，使用了BaseBuilder实现类进行配置文件解析，具体实现类是XMLConfigBuilder，在这里mybatis对配置的项进行了全面解析，只不过不是所有的解析都放在了XMLConfigBuilder，XMLConfigBuilder解析了二级节点，并作为一个总入口，还有另外几个类继承了BaseBuilder，用于解析不同的配置。而解析到的配置项信息，基本都保存在了Configuration这个类，可以看到多处地方依赖到它。</p>
+
 <p>从源码可以看出，<code>SqlSessionFactoryBuilder</code>的作用是完成从<code>输入流</code>、<code>environment</code>、<code>Properties</code>实例化一个<code>Configuration</code>，最终调用<code>new DefaultSqlSessionFactory(config)</code>来构建一个SqlSessionFactory的实例。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">build</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">config</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">config</span><span class="o">)</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p><code>DefaultSqlSessionFactory</code>只有一个构造方法：</p>
+</div>
+<p><code>DefaultSqlSessionFactory</code>只有一个构造方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -225,13 +227,13 @@
   <span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">configuration</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">this</span><span class="o">.</span><span class="na">configuration</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">;</span>
   <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>如果是我实现DefaultSqlSessionFactory该类的逻辑，可能就会重载多个构造方法，事实上以前也是这样想的，例如：</p>
+</div>
+<p>如果是我实现DefaultSqlSessionFactory该类的逻辑，可能就会重载多个构造方法，事实上以前也是这样想的，例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -250,14 +252,15 @@
 <span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">)</span>
 <span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span>
 <span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span>
-<span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">config</span><span class="o">)</span>
-</code></pre></td></tr></table>
+<span class="kd">public</span> <span class="nf">DefaultSqlSessionFactory</span><span class="o">(</span><span class="n">Configuration</span> <span class="n">config</span><span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>这样的话，DefaultSqlSessionFactory的构造方法就会比较臃肿，DefaultSqlSessionFactory实际上只需要和Configuration打交道即可，故可以将从<code>Reader</code>、<code>InputStream</code>、<code>environment</code>、<code>Properties</code>生成Configuration的逻辑移到另外一个类中，从而减少DefaultSqlSessionFactory类干的事情，让其只和Configuration产生依赖。这样每个类的职责更加分明，SqlSessionFactoryBuilder负责构建SqlSessionFactory，DefaultSqlSessionFactory只负责生产SqlSession。</p>
+</div>
+<p>这样的话，DefaultSqlSessionFactory的构造方法就会比较臃肿，DefaultSqlSessionFactory实际上只需要和Configuration打交道即可，故可以将从<code>Reader</code>、<code>InputStream</code>、<code>environment</code>、<code>Properties</code>生成Configuration的逻辑移到另外一个类中，从而减少DefaultSqlSessionFactory类干的事情，让其只和Configuration产生依赖。这样每个类的职责更加分明，SqlSessionFactoryBuilder负责构建SqlSessionFactory，DefaultSqlSessionFactory只负责生产SqlSession。</p>
+
 <p>SqlSessionFactory是从一个连接或者数据源创建一个SqlSession，一个SqlSession代表一次会话，会话结束之后，连接和数据源并不会关闭。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -277,26 +280,26 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">SqlSessionFactory</span> <span class="o">{</span>
 
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">();</span>
 
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">Connection</span> <span class="n">connection</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">);</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">Connection</span> <span class="n">connection</span><span class="o">);</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">);</span>
 
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">Connection</span> <span class="n">connection</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">);</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">);</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">);</span>
+  <span class="n">SqlSession</span> <span class="nf">openSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">Connection</span> <span class="n">connection</span><span class="o">);</span>
 
-  <span class="n">Configuration</span> <span class="nf">getConfiguration</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="n">Configuration</span> <span class="nf">getConfiguration</span><span class="o">();</span>
 
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>DefaultSqlSessionFactory是MyBatis提供的SqlSessionFactory接口的默认实现类，其主要逻辑如下：</p>
+</div>
+<p>DefaultSqlSessionFactory是MyBatis提供的SqlSessionFactory接口的默认实现类，其主要逻辑如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -316,31 +319,33 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="n">SqlSession</span> <span class="nf">openSessionFromDataSource</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">)</span> <span class="o">{</span>
   <span class="n">Transaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
   <span class="k">try</span> <span class="o">{</span>
-    <span class="kd">final</span> <span class="n">Environment</span> <span class="n">environment</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getEnvironment</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-    <span class="kd">final</span> <span class="n">TransactionFactory</span> <span class="n">transactionFactory</span> <span class="o">=</span> <span class="n">getTransactionFactoryFromEnvironment</span><span class="o">(</span><span class="n">environment</span><span class="o">)</span><span class="o">;</span>
-    <span class="n">tx</span> <span class="o">=</span> <span class="n">transactionFactory</span><span class="o">.</span><span class="na">newTransaction</span><span class="o">(</span><span class="n">environment</span><span class="o">.</span><span class="na">getDataSource</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="n">level</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">)</span><span class="o">;</span>
-    <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">newExecutor</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">execType</span><span class="o">)</span><span class="o">;</span>
-    <span class="k">return</span> <span class="k">new</span> <span class="n">DefaultSqlSession</span><span class="o">(</span><span class="n">configuration</span><span class="o">,</span> <span class="n">executor</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="n">Environment</span> <span class="n">environment</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getEnvironment</span><span class="o">();</span>
+    <span class="kd">final</span> <span class="n">TransactionFactory</span> <span class="n">transactionFactory</span> <span class="o">=</span> <span class="n">getTransactionFactoryFromEnvironment</span><span class="o">(</span><span class="n">environment</span><span class="o">);</span>
+    <span class="n">tx</span> <span class="o">=</span> <span class="n">transactionFactory</span><span class="o">.</span><span class="na">newTransaction</span><span class="o">(</span><span class="n">environment</span><span class="o">.</span><span class="na">getDataSource</span><span class="o">(),</span> <span class="n">level</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">);</span>
+    <span class="kd">final</span> <span class="n">Executor</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">newExecutor</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">execType</span><span class="o">);</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">DefaultSqlSession</span><span class="o">(</span><span class="n">configuration</span><span class="o">,</span> <span class="n">executor</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">);</span>
   <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">closeTransaction</span><span class="o">(</span><span class="n">tx</span><span class="o">)</span><span class="o">;</span> <span class="c1">// may have fetched a connection so lets call close()
-</span><span class="c1"></span>    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="o">.</span><span class="na">wrapException</span><span class="o">(</span><span class="s">&#34;Error opening session.  Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">closeTransaction</span><span class="o">(</span><span class="n">tx</span><span class="o">);</span> <span class="c1">// may have fetched a connection so lets call close()
+</span><span class="c1"></span>    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="o">.</span><span class="na">wrapException</span><span class="o">(</span><span class="s">&#34;Error opening session.  Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
   <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
-    <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">reset</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">().</span><span class="na">reset</span><span class="o">();</span>
   <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>其主要逻辑如下：</p>
+</div>
+<p>其主要逻辑如下：</p>
+
 <ul>
 <li>从configuration获取environment</li>
 <li>从environment获取事务工厂类<code>TransactionFactory</code>，并由工厂类创建事务。</li>
 <li>通过事务和执行类型来创建执行类<code>Executor</code></li>
 <li>通过执行类Executor来创建默认的<code>DefaultSqlSession</code>，可以想象的到DefaultSqlSession的主要逻辑都是委托给执行类<code>Executor</code>来执行。</li>
 </ul>
+
 <p>DefaultSqlSession主要实现了SqlSession接口定义的方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -372,42 +377,42 @@
 </span><span class="lnt">30
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">selectOne</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">selectOne</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">insert</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">insert</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">update</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">update</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">delete</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">int</span> <span class="nf">delete</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">commit</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">commit</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">force</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">rollback</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">rollback</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">force</span><span class="o">)</span><span class="o">;</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">BatchResult</span><span class="o">&gt;</span> <span class="nf">flushStatements</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">close</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="kt">void</span> <span class="nf">clearCache</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="n">Configuration</span> <span class="nf">getConfiguration</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">getMapper</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">)</span><span class="o">;</span>
-<span class="n">Connection</span> <span class="nf">getConnection</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">selectOne</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">selectOne</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="nf">selectMap</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">String</span> <span class="n">mapKey</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Cursor</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectCursor</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">);</span>
+<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">);</span>
+<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">);</span>
+<span class="kt">void</span> <span class="nf">select</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">,</span> <span class="n">ResultHandler</span> <span class="n">handler</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">insert</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">insert</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">update</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">update</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">delete</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">);</span>
+<span class="kt">int</span> <span class="nf">delete</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">);</span>
+<span class="kt">void</span> <span class="nf">commit</span><span class="o">();</span>
+<span class="kt">void</span> <span class="nf">commit</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">force</span><span class="o">);</span>
+<span class="kt">void</span> <span class="nf">rollback</span><span class="o">();</span>
+<span class="kt">void</span> <span class="nf">rollback</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">force</span><span class="o">);</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">BatchResult</span><span class="o">&gt;</span> <span class="nf">flushStatements</span><span class="o">();</span>
+<span class="kt">void</span> <span class="nf">close</span><span class="o">();</span>
+<span class="kt">void</span> <span class="nf">clearCache</span><span class="o">();</span>
+<span class="n">Configuration</span> <span class="nf">getConfiguration</span><span class="o">();</span>
+<span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">T</span> <span class="nf">getMapper</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">);</span>
+<span class="n">Connection</span> <span class="nf">getConnection</span><span class="o">();</span></code></pre></td></tr></table>
 </div>
-</div><p><code>SqlSession提供了对数据库连接、事务、缓存以及对数据的增删改查的操作</code>。默认的实现类DefaultSqlSession，其实是将这些操作委托给了Executor来执行。例如，<code>selectList</code>方法：</p>
+</div>
+<p><code>SqlSession提供了对数据库连接、事务、缓存以及对数据的增删改查的操作</code>。默认的实现类DefaultSqlSession，其实是将这些操作委托给了Executor来执行。例如，<code>selectList</code>方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -423,17 +428,18 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Override</span>
 <span class="kd">public</span> <span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span> <span class="nf">selectList</span><span class="o">(</span><span class="n">String</span> <span class="n">statement</span><span class="o">,</span> <span class="n">Object</span> <span class="n">parameter</span><span class="o">,</span> <span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">)</span> <span class="o">{</span>
   <span class="k">try</span> <span class="o">{</span>
-    <span class="n">MappedStatement</span> <span class="n">ms</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getMappedStatement</span><span class="o">(</span><span class="n">statement</span><span class="o">)</span><span class="o">;</span>
-    <span class="k">return</span> <span class="n">executor</span><span class="o">.</span><span class="na">query</span><span class="o">(</span><span class="n">ms</span><span class="o">,</span> <span class="n">wrapCollection</span><span class="o">(</span><span class="n">parameter</span><span class="o">)</span><span class="o">,</span> <span class="n">rowBounds</span><span class="o">,</span> <span class="n">Executor</span><span class="o">.</span><span class="na">NO_RESULT_HANDLER</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">MappedStatement</span> <span class="n">ms</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="na">getMappedStatement</span><span class="o">(</span><span class="n">statement</span><span class="o">);</span>
+    <span class="k">return</span> <span class="n">executor</span><span class="o">.</span><span class="na">query</span><span class="o">(</span><span class="n">ms</span><span class="o">,</span> <span class="n">wrapCollection</span><span class="o">(</span><span class="n">parameter</span><span class="o">),</span> <span class="n">rowBounds</span><span class="o">,</span> <span class="n">Executor</span><span class="o">.</span><span class="na">NO_RESULT_HANDLER</span><span class="o">);</span>
   <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="o">.</span><span class="na">wrapException</span><span class="o">(</span><span class="s">&#34;Error querying database.  Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">throw</span> <span class="n">ExceptionFactory</span><span class="o">.</span><span class="na">wrapException</span><span class="o">(</span><span class="s">&#34;Error querying database.  Cause: &#34;</span> <span class="o">+</span> <span class="n">e</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
   <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
-    <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">reset</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">ErrorContext</span><span class="o">.</span><span class="na">instance</span><span class="o">().</span><span class="na">reset</span><span class="o">();</span>
   <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>主要逻辑是：</p>
+</div>
+<p>主要逻辑是：</p>
+
 <ul>
 <li>在configuration类中获取sql语句对应的<code>MappedStatement</code></li>
 <li><code>executor.query</code>需要四个参数：<code>mappedStatement</code>、<code>parameter</code>、<code>rowBounds</code>、<code>resultHandler</code>。</li>
@@ -441,7 +447,7 @@
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -460,28 +466,29 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="n">Object</span> <span class="nf">wrapCollection</span><span class="o">(</span><span class="kd">final</span> <span class="n">Object</span> <span class="n">object</span><span class="o">)</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">(</span><span class="n">object</span> <span class="k">instanceof</span> <span class="n">Collection</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-    <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;collection&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">)</span><span class="o">;</span>
+    <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;();</span>
+    <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;collection&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">);</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">object</span> <span class="k">instanceof</span> <span class="n">List</span><span class="o">)</span> <span class="o">{</span>
-      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;list&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">)</span><span class="o">;</span>
+      <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;list&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">);</span>
     <span class="o">}</span>
     <span class="k">return</span> <span class="n">map</span><span class="o">;</span>
-  <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">object</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span> <span class="o">&amp;</span><span class="o">&amp;</span> <span class="n">object</span><span class="o">.</span><span class="na">getClass</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">isArray</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-    <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;array&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">)</span><span class="o">;</span>
+  <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">object</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">object</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">isArray</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StrictMap</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;();</span>
+    <span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;array&#34;</span><span class="o">,</span> <span class="n">object</span><span class="o">);</span>
     <span class="k">return</span> <span class="n">map</span><span class="o">;</span>
   <span class="o">}</span>
   <span class="k">return</span> <span class="n">object</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>最后清除<code>ErrorContext</code></li>
 </ul>
+
 <p>SqlSessionManager用于管理SqlSession，其实现了SqlSessionFactory, SqlSession接口，内部分别维护了SqlSessionFactory, SqlSession实例。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -503,26 +510,27 @@
   <span class="kd">private</span> <span class="kd">final</span> <span class="n">SqlSessionFactory</span> <span class="n">sqlSessionFactory</span><span class="o">;</span>
   <span class="kd">private</span> <span class="kd">final</span> <span class="n">SqlSession</span> <span class="n">sqlSessionProxy</span><span class="o">;</span>
 
-  <span class="kd">private</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">SqlSession</span><span class="o">&gt;</span> <span class="n">localSqlSession</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">SqlSession</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">SqlSession</span><span class="o">&gt;</span> <span class="n">localSqlSession</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocal</span><span class="o">&lt;</span><span class="n">SqlSession</span><span class="o">&gt;();</span>
 
   <span class="kd">private</span> <span class="nf">SqlSessionManager</span><span class="o">(</span><span class="n">SqlSessionFactory</span> <span class="n">sqlSessionFactory</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">this</span><span class="o">.</span><span class="na">sqlSessionFactory</span> <span class="o">=</span> <span class="n">sqlSessionFactory</span><span class="o">;</span>
     <span class="k">this</span><span class="o">.</span><span class="na">sqlSessionProxy</span> <span class="o">=</span> <span class="o">(</span><span class="n">SqlSession</span><span class="o">)</span> <span class="n">Proxy</span><span class="o">.</span><span class="na">newProxyInstance</span><span class="o">(</span>
-        <span class="n">SqlSessionFactory</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getClassLoader</span><span class="o">(</span><span class="o">)</span><span class="o">,</span>
-        <span class="k">new</span> <span class="n">Class</span><span class="o">[</span><span class="o">]</span><span class="o">{</span><span class="n">SqlSession</span><span class="o">.</span><span class="na">class</span><span class="o">}</span><span class="o">,</span>
-        <span class="k">new</span> <span class="n">SqlSessionInterceptor</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">SqlSessionFactory</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getClassLoader</span><span class="o">(),</span>
+        <span class="k">new</span> <span class="n">Class</span><span class="o">[]{</span><span class="n">SqlSession</span><span class="o">.</span><span class="na">class</span><span class="o">},</span>
+        <span class="k">new</span> <span class="n">SqlSessionInterceptor</span><span class="o">());</span>
   <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>说明：</p>
+</div>
+<p>说明：</p>
+
 <ul>
 <li>sqlSessionFactory主要是用于创建SqlSession</li>
 <li><code>localSqlSession</code>保存的是受管理的SqlSession，可以通过<code>startManagedSession()</code>方法创建受管理的SqlSession并将其放置到<code>ThreadLocal</code>里面；</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -559,48 +567,49 @@
 </span><span class="lnt">35
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">()</span> <span class="o">{</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">());</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">autoCommit</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">autoCommit</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">Connection</span> <span class="n">connection</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">connection</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">connection</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">level</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">level</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">autoCommit</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">autoCommit</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">TransactionIsolationLevel</span> <span class="n">level</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">level</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">level</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">startManagedSession</span><span class="o">(</span><span class="n">ExecutorType</span> <span class="n">execType</span><span class="o">,</span> <span class="n">Connection</span> <span class="n">connection</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">connection</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">openSession</span><span class="o">(</span><span class="n">execType</span><span class="o">,</span> <span class="n">connection</span><span class="o">));</span>
 <span class="o">}</span>
 
-<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isManagedSessionStarted</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="o">)</span> <span class="o">!</span><span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isManagedSessionStarted</span><span class="o">()</span> <span class="o">{</span>
+  <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">localSqlSession</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>创建SqlSession使用了动态代理，调用增删改查接口时，实际上调用的<code>sqlSessionProxy</code>类，代理逻辑是：先判断是否存在受管理的SqlSession，如果有，则从ThreadLocal取出SqlSession并调用被代理的方法，返回结果；否则，使用sqlSessionFactory创建一个默认的SqlSession，调用被代理的方法，并提交事务，返回结果。</p>
+</div>
+<p>创建SqlSession使用了动态代理，调用增删改查接口时，实际上调用的<code>sqlSessionProxy</code>类，代理逻辑是：先判断是否存在受管理的SqlSession，如果有，则从ThreadLocal取出SqlSession并调用被代理的方法，返回结果；否则，使用sqlSessionFactory创建一个默认的SqlSession，调用被代理的方法，并提交事务，返回结果。</p>
+
 <p><code>SqlSessionManager</code>提供了静态方法<code>newInstance</code>来实例化一个SqlSessionManager，但SqlSessionManager类并不是单例的。既然不是单例的，其和直接使用构造方法进行重载应该没什么区别吧？</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -630,39 +639,40 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">Reader</span> <span class="n">reader</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">Reader</span> <span class="n">reader</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">Reader</span> <span class="n">reader</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">properties</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">reader</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">properties</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">String</span> <span class="n">environment</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="n">environment</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">InputStream</span> <span class="n">inputStream</span><span class="o">,</span> <span class="n">Properties</span> <span class="n">properties</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">properties</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">inputStream</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">properties</span><span class="o">));</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kd">static</span> <span class="n">SqlSessionManager</span> <span class="nf">newInstance</span><span class="o">(</span><span class="n">SqlSessionFactory</span> <span class="n">sqlSessionFactory</span><span class="o">)</span> <span class="o">{</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="n">sqlSessionFactory</span><span class="o">)</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">SqlSessionManager</span><span class="o">(</span><span class="n">sqlSessionFactory</span><span class="o">);</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>总结起来就是，SqlSessionManager提供了两种方式管理SqlSession，你可以启动一个你自己创建的SqlSession或者使用动态代理创建一个SqlSession，相应的方法并提交事务。这里使用代理的原因是，在执行完方法之后，需要提交事务，如果执行失败，还需要回滚事务，最后还需要关闭会话。</p>
+</div>
+<p>总结起来就是，SqlSessionManager提供了两种方式管理SqlSession，你可以启动一个你自己创建的SqlSession或者使用动态代理创建一个SqlSession，相应的方法并提交事务。这里使用代理的原因是，在执行完方法之后，需要提交事务，如果执行失败，还需要回滚事务，最后还需要关闭会话。</p>
+
 <p>如果你直接调用<code>SqlSessionManager</code>的<code>getConnection</code>、<code>clearCache</code>、<code>commit</code>、<code>rollback</code>、<code>flushStatements</code>、<code>close</code>，最终会调用<code>ThreadLocal</code>里的，即受管理的<code>SqlSession</code>，如果其为空，则会抛出异常，例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -674,13 +684,12 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Override</span>
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">force</span><span class="o">)</span> <span class="o">{</span>
-  <span class="kd">final</span> <span class="n">SqlSession</span> <span class="n">sqlSession</span> <span class="o">=</span> <span class="n">localSqlSession</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-  <span class="k">if</span> <span class="o">(</span><span class="n">sqlSession</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="n">SqlSessionException</span><span class="o">(</span><span class="s">&#34;Error:  Cannot commit.  No managed session is started.&#34;</span><span class="o">)</span><span class="o">;</span>
+  <span class="kd">final</span> <span class="n">SqlSession</span> <span class="n">sqlSession</span> <span class="o">=</span> <span class="n">localSqlSession</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">sqlSession</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="n">SqlSessionException</span><span class="o">(</span><span class="s">&#34;Error:  Cannot commit.  No managed session is started.&#34;</span><span class="o">);</span>
   <span class="o">}</span>
-  <span class="n">sqlSession</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">force</span><span class="o">)</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="n">sqlSession</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">force</span><span class="o">);</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
 </div>
     </div>
@@ -798,7 +807,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -811,7 +820,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/11/04/config-kerberos-in-cdh-hdfs/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/11/04/config-kerberos-in-cdh-hdfs/" />
-<meta property="article:published_time" content="2014-11-04T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-11-04T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-11-04T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-11-04T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="HDFS配置Kerberos认证">
 <meta itemprop="description" content="记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。">
+
+
 <meta itemprop="datePublished" content="2014-11-04T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-11-04T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="6103">
+<meta itemprop="wordCount" content="6111">
 
 
 
-<meta itemprop="keywords" content="hadoop,kerberos,cdh," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hadoop,kerberos,cdh," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="HDFS配置Kerberos认证"/>
 <meta name="twitter:description" content="记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hadoop/"> hadoop </a>
             </div>
-          <span class="more-meta"> 约 6103 字 </span>
+          <span class="more-meta"> 约 6111 字 </span>
           <span class="more-meta"> 预计阅读 13 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -139,47 +139,70 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#101-">10.1 创建认证规则</a></li>
-    <li><a href="#102-keytab">10.2 创建keytab文件</a></li>
-    <li><a href="#103-kerberos-keytab">10.3 部署kerberos keytab文件</a></li>
-    <li><a href="#104--hdfs-">10.4 修改 hdfs 配置文件</a></li>
-    <li><a href="#105--hdfs-">10.5 检查集群上的 HDFS 和本地文件的权限</a></li>
-    <li><a href="#106--namenode">10.6 启动 NameNode</a></li>
-    <li><a href="#107-datanode">10.7 启动DataNode</a></li>
-  </ul>
+<ul>
+<li><a href="#1-环境说明">1. 环境说明</a></li>
+<li><a href="#2-准备工作">2. 准备工作</a></li>
+<li><a href="#3-安装-kerberos">3. 安装 Kerberos</a></li>
+<li><a href="#4-修改配置文件">4. 修改配置文件</a></li>
+<li><a href="#5-同步配置文件">5. 同步配置文件</a></li>
+<li><a href="#6-创建数据库">6. 创建数据库</a></li>
+<li><a href="#7-启动服务">7. 启动服务</a></li>
+<li><a href="#8-创建-kerberos-管理员">8. 创建 kerberos 管理员</a></li>
+<li><a href="#9-测试-kerberos">9. 测试 kerberos</a></li>
+<li><a href="#10-hdfs-上配置-kerberos">10. HDFS 上配置 kerberos</a>
+<ul>
+<li><a href="#10-1-创建认证规则">10.1 创建认证规则</a></li>
+<li><a href="#10-2-创建keytab文件">10.2 创建keytab文件</a></li>
+<li><a href="#10-3-部署kerberos-keytab文件">10.3 部署kerberos keytab文件</a></li>
+<li><a href="#10-4-修改-hdfs-配置文件">10.4 修改 hdfs 配置文件</a></li>
+<li><a href="#10-5-检查集群上的-hdfs-和本地文件的权限">10.5 检查集群上的 HDFS 和本地文件的权限</a></li>
+<li><a href="#10-6-启动-namenode">10.6 启动 NameNode</a></li>
+<li><a href="#10-7-启动datanode">10.7 启动DataNode</a></li>
+</ul></li>
+<li><a href="#11-总结">11. 总结</a></li>
+<li><a href="#12-参考文章">12. 参考文章</a></li>
+<li><a href="#13-相关文章">13. 相关文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>本文主要记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。</p>
-<h1 id="1-">1. 环境说明</h1>
+      
+
+<p>本文主要记录 CDH Hadoop 集群上配置 HDFS 集成 Kerberos 的过程，包括 Kerberos 的安装和 Hadoop 相关配置修改说明。</p>
+
+<h1 id="1-环境说明">1. 环境说明</h1>
+
 <p>系统环境：</p>
+
 <ul>
 <li>操作系统：CentOs 6.6</li>
 <li>Hadoop版本：<code>CDH5.4</code></li>
 <li>JDK版本：<code>1.7.0_71</code></li>
 <li>运行用户：root</li>
 </ul>
+
 <p>集群各节点角色规划为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
 192.168.56.122        cdh2     DataNode、SecondaryNameNode、NodeManager、HBase、Hive Server2、Impala Server
-192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hive Server2、Impala Server
-</code></pre></td></tr></table>
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hive Server2、Impala Server</pre></td></tr></table>
 </div>
-</div><p>cdh1作为master节点，其他节点作为slave节点，我们在cdh1节点安装kerberos Server，在其他节点安装kerberos client。</p>
-<h1 id="2-">2. 准备工作</h1>
+</div>
+<p>cdh1作为master节点，其他节点作为slave节点，我们在cdh1节点安装kerberos Server，在其他节点安装kerberos client。</p>
+
+<h1 id="2-准备工作">2. 准备工作</h1>
+
 <p>确认添加主机名解析到 <code>/etc/hosts</code> 文件中。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -188,28 +211,30 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /etc/hosts
-127.0.0.1       localhost
+<span class="m">127</span>.0.0.1       localhost
 
-192.168.56.121 cdh1
-192.168.56.122 cdh2
-192.168.56.123 cdh3
-</code></pre></td></tr></table>
+<span class="m">192</span>.168.56.121 cdh1
+<span class="m">192</span>.168.56.122 cdh2
+<span class="m">192</span>.168.56.123 cdh3</code></pre></td></tr></table>
 </div>
-</div><p>注意：hostname 请使用小写，要不然在集成 kerberos 时会出现一些错误。</p>
-<h1 id="3--kerberos">3. 安装 Kerberos</h1>
+</div>
+<p>注意：hostname 请使用小写，要不然在集成 kerberos 时会出现一些错误。</p>
+
+<h1 id="3-安装-kerberos">3. 安装 Kerberos</h1>
+
 <p>在 cdh1 上安装包 krb5、krb5-server 和 krb5-client。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install krb5-server -y
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ yum install krb5-server -y</code></pre></td></tr></table>
 </div>
-</div><p>在其他节点（cdh1、cdh2、cdh3）安装 krb5-devel、krb5-workstation ：</p>
+</div>
+<p>在其他节点（cdh1、cdh2、cdh3）安装 krb5-devel、krb5-workstation ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -218,27 +243,28 @@
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#使用无密码登陆</span>
 $ ssh cdh1 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;</span>
 $ ssh cdh2 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;</span>
-$ ssh cdh3 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="4-">4. 修改配置文件</h1>
+</div>
+<h1 id="4-修改配置文件">4. 修改配置文件</h1>
+
 <p>kdc 服务器涉及到三个配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">/etc/krb5.conf
+<pre class="chroma">/etc/krb5.conf
 /var/kerberos/krb5kdc/kdc.conf
-/var/kerberos/krb5kdc/kadm5.acl
-</code></pre></td></tr></table>
+/var/kerberos/krb5kdc/kadm5.acl</pre></td></tr></table>
 </div>
-</div><p>配置 Kerberos 的一种方法是编辑配置文件 /etc/krb5.conf。默认安装的文件中包含多个示例项。</p>
+</div>
+<p>配置 Kerberos 的一种方法是编辑配置文件 /etc/krb5.conf。默认安装的文件中包含多个示例项。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -293,40 +319,39 @@ $ ssh cdh3 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;
 
 <span class="k">[domain_realm]</span>
  <span class="na">.javachen.space</span> <span class="o">=</span> <span class="s">JAVACHEN.COM
-</span><span class="s"> javachen.space = JAVACHEN.COM</span>
-</code></pre></td></tr></table>
+</span><span class="s"> javachen.space = JAVACHEN.COM</span></code></pre></td></tr></table>
 </div>
-</div><p>说明：</p>
+</div>
+<p>说明：</p>
+
 <ul>
-<li>
-<p><code>[logging]</code>：表示 server 端的日志的打印位置</p>
-</li>
-<li>
-<p><code>[libdefaults]</code>：每种连接的默认配置，需要注意以下几个关键的小配置</p>
+<li><code>[logging]</code>：表示 server 端的日志的打印位置</li>
+
+<li><p><code>[libdefaults]</code>：每种连接的默认配置，需要注意以下几个关键的小配置</p>
+
 <ul>
 <li><code>default_realm = JAVACHEN.COM</code>：设置 Kerberos 应用程序的默认领域。如果您有多个领域，只需向 [realms] 节添加其他的语句。</li>
 <li><code>ticket_lifetime</code>： 表明凭证生效的时限，一般为24小时。</li>
 <li><code>renew_lifetime</code>： 表明凭证最长可以被延期的时限，一般为一个礼拜。当凭证过期之后，对安全认证的服务的后续访问则会失败。</li>
 <li><code>clockskew</code>：时钟偏差是不完全符合主机系统时钟的票据时戳的容差，超过此容差将不接受此票据。通常，将时钟扭斜设置为 300 秒（5 分钟）。这意味着从服务器的角度看，票证的时间戳与它的偏差可以是在前后 5 分钟内。</li>
 <li><code>udp_preference_limit= 1</code>：禁止使用 udp 可以防止一个 Hadoop 中的错误</li>
-</ul>
-</li>
-<li>
-<p><code>[realms]</code>：列举使用的 realm。</p>
+</ul></li>
+
+<li><p><code>[realms]</code>：列举使用的 realm。</p>
+
 <ul>
 <li><code>kdc</code>：代表要 kdc 的位置。格式是 <code>机器:端口</code></li>
 <li><code>admin_server</code>：代表 admin 的位置。格式是 <code>机器:端口</code></li>
 <li><code>default_domain</code>：代表默认的域名</li>
+</ul></li>
+
+<li><p><code>[appdefaults]</code>：可以设定一些针对特定应用的配置，覆盖默认配置。</p></li>
 </ul>
-</li>
-<li>
-<p><code>[appdefaults]</code>：可以设定一些针对特定应用的配置，覆盖默认配置。</p>
-</li>
-</ul>
+
 <p>修改 <code>/var/kerberos/krb5kdc/kdc.conf</code> ，该文件包含 Kerberos 的配置信息。例如，KDC 的位置，Kerbero 的 admin 的realms 等。需要所有使用的 Kerberos 的机器上的配置文件都同步。这里仅列举需要的基本配置。详细介绍参考：<a href="http://web.mit.edu/~kerberos/krb5-devel/doc/admin/conf_files/krb5_conf.html">krb5conf</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-ini" data-lang="ini"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -357,10 +382,11 @@ $ ssh cdh3 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;
 </span><span class="s">  admin_keytab = /var/kerberos/krb5kdc/kadm5.keytab
 </span><span class="s">  supported_enctypes = aes256-cts:normal aes128-cts:normal des3-hmac-sha1:normal arcfour-hmac:normal des-hmac-sha1:normal des-cbc-md5:normal des-cbc-crc:normal
 </span><span class="s">  default_principal_flags = +renewable, +forwardable
-</span><span class="s"> }</span>
-</code></pre></td></tr></table>
+</span><span class="s"> }</span></code></pre></td></tr></table>
 </div>
-</div><p>说明：</p>
+</div>
+<p>说明：</p>
+
 <ul>
 <li><code>JAVACHEN.COM</code>： 是设定的 realms。名字随意。Kerberos 可以支持多个 realms，会增加复杂度。大小写敏感，一般为了识别使用全部大写。这个 realms 跟机器的 host 没有大关系。</li>
 <li><code>master_key_type</code>：和 <code>supported_enctypes</code> 默认使用 <code>aes256-cts</code>。JAVA 使用 <code>aes256-cts</code> 验证方式需要安装 JCE 包，见下面的说明。为了简便，你可以不使用 <code>aes256-cts</code> 算法，这样就不需要安装 JCE 。</li>
@@ -368,53 +394,63 @@ $ ssh cdh3 <span class="s2">&#34;yum install krb5-devel krb5-workstation -y&#34;
 <li><code>supported_enctypes</code>：支持的校验方式。</li>
 <li><code>admin_keytab</code>：KDC 进行校验的 keytab。</li>
 </ul>
+
 <blockquote>
 <p><strong>关于AES-256加密</strong>：</p>
+
 <p>对于使用 centos5. 6 及以上的系统，默认使用 <code>AES-256</code> 来加密的。这就需要集群中的所有节点上安装 JCE，如果你使用的是 JDK1.6 ，则到
-<a href="http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html">Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for JDK/JRE 6</a> 页面下载，如果是 JDK1.7，则到 <a href="http://www.oracle.com/technetwork/java/embedded/embedded-se/downloads/jce-7-download-432124.html">Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for JDK/JRE 7</a> 下载。</p>
+ <a href="http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html">Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for JDK/JRE 6</a> 页面下载，如果是 JDK1.7，则到 <a href="http://www.oracle.com/technetwork/java/embedded/embedded-se/downloads/jce-7-download-432124.html">Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for JDK/JRE 7</a> 下载。</p>
+
 <p>下载的文件是一个 zip 包，解开后，将里面的两个文件放到下面的目录中：<code>$JAVA_HOME/jre/lib/security</code></p>
 </blockquote>
+
 <p>为了能够不直接访问 KDC 控制台而从 Kerberos 数据库添加和删除主体，请对 Kerberos 管理服务器指示允许哪些主体执行哪些操作。通过编辑文件 /var/lib/kerberos/krb5kdc/kadm5.acl 完成此操作。ACL（访问控制列表）允许您精确指定特权。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /var/kerberos/krb5kdc/kadm5.acl
-  */admin@JAVACHEN.COM *
-</code></pre></td></tr></table>
+  */admin@JAVACHEN.COM *</code></pre></td></tr></table>
 </div>
-</div><h1 id="5-">5. 同步配置文件</h1>
+</div>
+<h1 id="5-同步配置文件">5. 同步配置文件</h1>
+
 <p>将 kdc 中的 <code>/etc/krb5.conf</code> 拷贝到集群中其他服务器即可。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ scp /etc/krb5.conf cdh2:/etc/krb5.conf
-$ scp /etc/krb5.conf cdh3:/etc/krb5.conf
-</code></pre></td></tr></table>
+$ scp /etc/krb5.conf cdh3:/etc/krb5.conf</code></pre></td></tr></table>
 </div>
-</div><p>请确认集群如果关闭了 selinux。</p>
-<h1 id="6-">6. 创建数据库</h1>
+</div>
+<p>请确认集群如果关闭了 selinux。</p>
+
+<h1 id="6-创建数据库">6. 创建数据库</h1>
+
 <p>在 cdh1 上运行初始化数据库命令。其中 <code>-r</code> 指定对应 realm。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ kdb5_util create -r JAVACHEN.COM -s
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kdb5_util create -r JAVACHEN.COM -s</code></pre></td></tr></table>
 </div>
-</div><p>出现 <code>Loading random data</code> 的时候另开个终端执行点消耗CPU的命令如 <code>cat /dev/sda &gt; /dev/urandom</code> 可以加快随机数采集。该命令会在 <code>/var/kerberos/krb5kdc/</code> 目录下创建 principal 数据库。</p>
+</div>
+<p>出现 <code>Loading random data</code> 的时候另开个终端执行点消耗CPU的命令如 <code>cat /dev/sda &gt; /dev/urandom</code> 可以加快随机数采集。该命令会在 <code>/var/kerberos/krb5kdc/</code> 目录下创建 principal 数据库。</p>
+
 <p>如果遇到数据库已经存在的提示，可以把 <code>/var/kerberos/krb5kdc/</code> 目录下的 principal 的相关文件都删除掉。默认的数据库名字都是 principal。可以使用 <code>-d</code> 指定数据库名字。</p>
-<h1 id="7-">7. 启动服务</h1>
+
+<h1 id="7-启动服务">7. 启动服务</h1>
+
 <p>在 cdh1 节点上运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -423,19 +459,22 @@ $ scp /etc/krb5.conf cdh3:/etc/krb5.conf
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ chkconfig --level <span class="m">35</span> krb5kdc on
 $ chkconfig --level <span class="m">35</span> kadmin on
 $ service krb5kdc start
-$ service kadmin start
-</code></pre></td></tr></table>
+$ service kadmin start</code></pre></td></tr></table>
 </div>
-</div><h1 id="8--kerberos-">8. 创建 kerberos 管理员</h1>
+</div>
+<h1 id="8-创建-kerberos-管理员">8. 创建 kerberos 管理员</h1>
+
 <p>关于 kerberos 的管理，可以使用 <code>kadmin.local</code> 或 <code>kadmin</code>，至于使用哪个，取决于账户和访问权限：</p>
+
 <ul>
 <li>如果有访问 kdc 服务器的 root 权限，但是没有 kerberos admin 账户，使用 <code>kadmin.local</code></li>
 <li>如果没有访问 kdc 服务器的 root 权限，但是用 kerberos admin 账户，使用 <code>kadmin</code></li>
 </ul>
+
 <p>在 cdh1 上创建远程管理的管理员：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -456,15 +495,17 @@ $ <span class="nb">echo</span> -e <span class="s2">&#34;root\nroot&#34;</span> <
 <span class="c1"># 或者运行下面命令</span>
 $ kadmin.local <span class="s">&lt;&lt;eoj
 </span><span class="s">addprinc -pw root root/admin
-</span><span class="s">eoj</span>
-</code></pre></td></tr></table>
+</span><span class="s">eoj</span></code></pre></td></tr></table>
 </div>
-</div><p>系统会提示输入密码，密码不能为空，且需妥善保存。</p>
-<h1 id="9--kerberos">9. 测试 kerberos</h1>
+</div>
+<p>系统会提示输入密码，密码不能为空，且需妥善保存。</p>
+
+<h1 id="9-测试-kerberos">9. 测试 kerberos</h1>
+
 <p>查看当前的认证用户：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -499,13 +540,13 @@ $ kadmin: list_principals
     Principal <span class="s2">&#34;user1@JAVACHEN.COM&#34;</span> deleted.
     Make sure that you have removed this principal from all ACLs before reusing.
 
-  kadmin: <span class="nb">exit</span>
-</code></pre></td></tr></table>
+  kadmin: exit</code></pre></td></tr></table>
 </div>
-</div><p>也可以直接通过下面的命令来执行：</p>
+</div>
+<p>也可以直接通过下面的命令来执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -524,22 +565,22 @@ $ kadmin -p root/admin -q <span class="s2">&#34;delprinc user2&#34;</span>
 <span class="c1"># 不用输入密码</span>
 $ kadmin.local -q <span class="s2">&#34;list_principals&#34;</span>
 $ kadmin.local -q <span class="s2">&#34;addprinc user2&#34;</span>
-$ kadmin.local -q <span class="s2">&#34;delprinc user2&#34;</span>
-</code></pre></td></tr></table>
+$ kadmin.local -q <span class="s2">&#34;delprinc user2&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>创建一个测试用户 test，密码设置为 test：</p>
+</div>
+<p>创建一个测试用户 test，密码设置为 test：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> -e <span class="s2">&#34;test\ntest&#34;</span> <span class="p">|</span> kadmin.local -q <span class="s2">&#34;addprinc test&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> -e <span class="s2">&#34;test\ntest&#34;</span> <span class="p">|</span> kadmin.local -q <span class="s2">&#34;addprinc test&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>获取 test 用户的 ticket：</p>
+</div>
+<p>获取 test 用户的 ticket：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -564,17 +605,17 @@ Ticket cache: FILE:/tmp/krb5cc_0
 Default principal: test@JAVACHEN.COM
 
 Valid starting     Expires            Service principal
-11/07/14 15:29:02  11/08/14 15:29:02  krbtgt/JAVACHEN.COM@JAVACHEN.COM
-  renew <span class="k">until</span> 11/17/14 15:29:02, Etype <span class="o">(</span>skey, tkt<span class="o">)</span>: aes256-cts-hmac-sha1-96, aes256-cts-hmac-sha1-96
+<span class="m">11</span>/07/14 <span class="m">15</span>:29:02  <span class="m">11</span>/08/14 <span class="m">15</span>:29:02  krbtgt/JAVACHEN.COM@JAVACHEN.COM
+  renew <span class="k">until</span> <span class="m">11</span>/17/14 <span class="m">15</span>:29:02, Etype <span class="o">(</span>skey, tkt<span class="o">)</span>: aes256-cts-hmac-sha1-96, aes256-cts-hmac-sha1-96
 
 Kerberos <span class="m">4</span> ticket cache: /tmp/tkt0
-klist: You have no tickets cached
-</code></pre></td></tr></table>
+klist: You have no tickets cached</code></pre></td></tr></table>
 </div>
-</div><p>销毁该 test 用户的 ticket：</p>
+</div>
+<p>销毁该 test 用户的 ticket：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -589,13 +630,13 @@ $ klist
 klist: No credentials cache found <span class="o">(</span>ticket cache FILE:/tmp/krb5cc_0<span class="o">)</span>
 
 Kerberos <span class="m">4</span> ticket cache: /tmp/tkt0
-klist: You have no tickets cached
-</code></pre></td></tr></table>
+klist: You have no tickets cached</code></pre></td></tr></table>
 </div>
-</div><p>更新 ticket：</p>
+</div>
+<p>更新 ticket：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -631,8 +672,8 @@ $  klist
   Default principal: root/admin@JAVACHEN.COM
 
   Valid starting     Expires            Service principal
-  11/07/14 15:33:57  11/08/14 15:33:57  krbtgt/JAVACHEN.COM@JAVACHEN.COM
-    renew <span class="k">until</span> 11/17/14 15:33:57
+  <span class="m">11</span>/07/14 <span class="m">15</span>:33:57  <span class="m">11</span>/08/14 <span class="m">15</span>:33:57  krbtgt/JAVACHEN.COM@JAVACHEN.COM
+    renew <span class="k">until</span> <span class="m">11</span>/17/14 <span class="m">15</span>:33:57
 
   Kerberos <span class="m">4</span> ticket cache: /tmp/tkt0
   klist: You have no tickets cached
@@ -644,17 +685,17 @@ $ klist
   Default principal: root/admin@JAVACHEN.COM
 
   Valid starting     Expires            Service principal
-  11/07/14 15:34:05  11/08/14 15:34:05  krbtgt/JAVACHEN.COM@JAVACHEN.COM
-    renew <span class="k">until</span> 11/17/14 15:33:57
+  <span class="m">11</span>/07/14 <span class="m">15</span>:34:05  <span class="m">11</span>/08/14 <span class="m">15</span>:34:05  krbtgt/JAVACHEN.COM@JAVACHEN.COM
+    renew <span class="k">until</span> <span class="m">11</span>/17/14 <span class="m">15</span>:33:57
 
   Kerberos <span class="m">4</span> ticket cache: /tmp/tkt0
-  klist: You have no tickets cached
-</code></pre></td></tr></table>
+  klist: You have no tickets cached</code></pre></td></tr></table>
 </div>
-</div><p>抽取密钥并将其储存在本地 keytab 文件 /etc/krb5.keytab 中。这个文件由超级用户拥有，所以您必须是 root 用户才能在 kadmin shell 中执行以下命令：</p>
+</div>
+<p>抽取密钥并将其储存在本地 keytab 文件 /etc/krb5.keytab 中。这个文件由超级用户拥有，所以您必须是 root 用户才能在 kadmin shell 中执行以下命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -677,81 +718,92 @@ $ klist -k /etc/krb5.keytab
      <span class="m">3</span> kadmin/admin@LASHOU-INC.COM
      <span class="m">3</span> kadmin/admin@LASHOU-INC.COM
      <span class="m">3</span> kadmin/admin@LASHOU-INC.COM
-     <span class="m">3</span> kadmin/admin@LASHOU-INC.COM
-</code></pre></td></tr></table>
+     <span class="m">3</span> kadmin/admin@LASHOU-INC.COM</code></pre></td></tr></table>
 </div>
-</div><h1 id="10-hdfs--kerberos">10. HDFS 上配置 kerberos</h1>
-<h2 id="101-">10.1 创建认证规则</h2>
+</div>
+<h1 id="10-hdfs-上配置-kerberos">10. HDFS 上配置 kerberos</h1>
+
+<h2 id="10-1-创建认证规则">10.1 创建认证规则</h2>
+
 <p>在 Kerberos 安全机制里，一个 principal 就是 realm 里的一个对象，一个 principal 总是和一个密钥（secret key）成对出现的。</p>
+
 <p>这个 principal 的对应物可以是 service，可以是 host，也可以是 user，对于 Kerberos 来说，都没有区别。</p>
+
 <p>Kdc(Key distribute center) 知道所有 principal 的 secret key，但每个 principal 对应的对象只知道自己的那个 secret key 。这也是“共享密钥“的由来。</p>
+
 <p>对于 hadoop，principals 的格式为 <code>username/fully.qualified.domain.name@YOUR-REALM.COM</code>。</p>
+
 <p>通过 yum 源安装的 cdh 集群中，NameNode 和 DataNode 是通过 hdfs 启动的，故为集群中每个服务器节点添加两个principals：hdfs、HTTP。</p>
+
 <p>在 KCD server 上（这里是 cdh1）创建 hdfs principal：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kadmin.local -q <span class="s2">&#34;addprinc -randkey hdfs/cdh1@JAVACHEN.COM&#34;</span>
 kadmin.local -q <span class="s2">&#34;addprinc -randkey hdfs/cdh2@JAVACHEN.COM&#34;</span>
-kadmin.local -q <span class="s2">&#34;addprinc -randkey hdfs/cdh3@JAVACHEN.COM&#34;</span>
-</code></pre></td></tr></table>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey hdfs/cdh3@JAVACHEN.COM&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p><code>-randkey</code> 标志没有为新 principal 设置密码，而是指示 kadmin 生成一个随机密钥。之所以在这里使用这个标志，是因为此 principal 不需要用户交互。它是计算机的一个服务器帐户。</p>
+</div>
+<p><code>-randkey</code> 标志没有为新 principal 设置密码，而是指示 kadmin 生成一个随机密钥。之所以在这里使用这个标志，是因为此 principal 不需要用户交互。它是计算机的一个服务器帐户。</p>
+
 <p>创建 HTTP principal：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kadmin.local -q <span class="s2">&#34;addprinc -randkey HTTP/cdh1@JAVACHEN.COM&#34;</span>
 kadmin.local -q <span class="s2">&#34;addprinc -randkey HTTP/cdh2@JAVACHEN.COM&#34;</span>
-kadmin.local -q <span class="s2">&#34;addprinc -randkey HTTP/cdh3@JAVACHEN.COM&#34;</span>
-</code></pre></td></tr></table>
+kadmin.local -q <span class="s2">&#34;addprinc -randkey HTTP/cdh3@JAVACHEN.COM&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>创建完成后，查看：</p>
+</div>
+<p>创建完成后，查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ kadmin.local -q <span class="s2">&#34;listprincs&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kadmin.local -q <span class="s2">&#34;listprincs&#34;</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="102-keytab">10.2 创建keytab文件</h2>
+</div>
+<h2 id="10-2-创建keytab文件">10.2 创建keytab文件</h2>
+
 <p>keytab 是包含 principals 和加密 principal key 的文件。keytab 文件对于每个 host 是唯一的，因为 key 中包含 hostname。keytab 文件用于不需要人工交互和保存纯文本密码，实现到 kerberos 上验证一个主机上的 principal。因为服务器上可以访问 keytab 文件即可以以 principal 的身份通过 kerberos 的认证，所以，keytab 文件应该被妥善保存，应该只有少数的用户可以访问。</p>
+
 <p>创建包含 hdfs principal 和 host principal 的 hdfs keytab：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">xst -norandkey -k hdfs.keytab hdfs/fully.qualified.domain.name host/fully.qualified.domain.name
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">xst -norandkey -k hdfs.keytab hdfs/fully.qualified.domain.name host/fully.qualified.domain.name</code></pre></td></tr></table>
 </div>
-</div><p>创建包含 mapred principal 和 host principal 的 mapred keytab：</p>
+</div>
+<p>创建包含 mapred principal 和 host principal 的 mapred keytab：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">xst -norandkey -k mapred.keytab mapred/fully.qualified.domain.name host/fully.qualified.domain.name
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">xst -norandkey -k mapred.keytab mapred/fully.qualified.domain.name host/fully.qualified.domain.name</code></pre></td></tr></table>
 </div>
-</div><blockquote>
+</div>
+<blockquote>
 <p><strong>注意</strong>：
 上面的方法使用了xst的norandkey参数，有些kerberos不支持该参数。
 当不支持该参数时有这样的提示：<code>Principal -norandkey does not exist.</code>，需要使用下面的方法来生成keytab文件。</p>
 </blockquote>
+
 <p>在 cdh1 节点，即 KDC server 节点上执行下面命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -770,13 +822,13 @@ kadmin.local -q <span class="s2">&#34;xst  -k hdfs-unmerged.keytab  hdfs/cdh3@JA
 
 kadmin.local -q <span class="s2">&#34;xst  -k HTTP.keytab  HTTP/cdh1@JAVACHEN.COM&#34;</span>
 kadmin.local -q <span class="s2">&#34;xst  -k HTTP.keytab  HTTP/cdh2@JAVACHEN.COM&#34;</span>
-kadmin.local -q <span class="s2">&#34;xst  -k HTTP.keytab  HTTP/cdh3@JAVACHEN.COM&#34;</span>
-</code></pre></td></tr></table>
+kadmin.local -q <span class="s2">&#34;xst  -k HTTP.keytab  HTTP/cdh3@JAVACHEN.COM&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>这样，就会在 <code>/var/kerberos/krb5kdc/</code> 目录下生成 <code>hdfs-unmerged.keytab</code> 和 <code>HTTP.keytab</code> 两个文件，接下来使用 <code>ktutil</code> 合并者两个文件为 <code>hdfs.keytab</code>。</p>
+</div>
+<p>这样，就会在 <code>/var/kerberos/krb5kdc/</code> 目录下生成 <code>hdfs-unmerged.keytab</code> 和 <code>HTTP.keytab</code> 两个文件，接下来使用 <code>ktutil</code> 合并者两个文件为 <code>hdfs.keytab</code>。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -791,13 +843,13 @@ $ ktutil
 ktutil: rkt hdfs-unmerged.keytab
 ktutil: rkt HTTP.keytab
 ktutil: wkt hdfs.keytab
-ktutil: <span class="nb">exit</span>
-</code></pre></td></tr></table>
+ktutil: exit</code></pre></td></tr></table>
 </div>
-</div><p>使用 klist 显示 hdfs.keytab 文件列表：</p>
+</div>
+<p>使用 klist 显示 hdfs.keytab 文件列表：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -843,62 +895,64 @@ ktutil: <span class="nb">exit</span>
 Keytab name: FILE:hdfs.keytab
 KVNO Timestamp         Principal
 ---- ----------------- --------------------------------------------------------
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
-   <span class="m">2</span> 11/13/14 10:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
-</code></pre></td></tr></table>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh1@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh2@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 hdfs/cdh3@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh1@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh2@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>aes256-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>aes128-cts-hmac-sha1-96<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des3-cbc-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>arcfour-hmac<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des-hmac-sha1<span class="o">)</span>
+   <span class="m">2</span> <span class="m">11</span>/13/14 <span class="m">10</span>:40:18 HTTP/cdh3@JAVACHEN.COM <span class="o">(</span>des-cbc-md5<span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>验证是否正确合并了key，使用合并后的keytab，分别使用hdfs和host principals来获取证书。</p>
+</div>
+<p>验证是否正确合并了key，使用合并后的keytab，分别使用hdfs和host principals来获取证书。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t hdfs.keytab hdfs/cdh1@JAVACHEN.COM
-$ kinit -k -t hdfs.keytab HTTP/cdh1@JAVACHEN.COM
-</code></pre></td></tr></table>
+$ kinit -k -t hdfs.keytab HTTP/cdh1@JAVACHEN.COM</code></pre></td></tr></table>
 </div>
-</div><p>如果出现错误：<code>kinit: Key table entry not found while getting initial credentials</code>，
+</div>
+<p>如果出现错误：<code>kinit: Key table entry not found while getting initial credentials</code>，
 则上面的合并有问题，重新执行前面的操作。</p>
-<h2 id="103-kerberos-keytab">10.3 部署kerberos keytab文件</h2>
+
+<h2 id="10-3-部署kerberos-keytab文件">10.3 部署kerberos keytab文件</h2>
+
 <p>拷贝 hdfs.keytab 文件到其他节点的 /etc/hadoop/conf 目录</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -909,28 +963,30 @@ $ kinit -k -t hdfs.keytab HTTP/cdh1@JAVACHEN.COM
 
 $ scp hdfs.keytab cdh1:/etc/hadoop/conf
 $ scp hdfs.keytab cdh2:/etc/hadoop/conf
-$ scp hdfs.keytab cdh3:/etc/hadoop/conf
-</code></pre></td></tr></table>
+$ scp hdfs.keytab cdh3:/etc/hadoop/conf</code></pre></td></tr></table>
 </div>
-</div><p>并设置权限，分别在 cdh1、cdh2、cdh3 上执行：</p>
+</div>
+<p>并设置权限，分别在 cdh1、cdh2、cdh3 上执行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s2">&#34;chown hdfs:hadoop /etc/hadoop/conf/hdfs.keytab ;chmod 400 /etc/hadoop/conf/hdfs.keytab&#34;</span>
 $ ssh cdh2 <span class="s2">&#34;chown hdfs:hadoop /etc/hadoop/conf/hdfs.keytab ;chmod 400 /etc/hadoop/conf/hdfs.keytab&#34;</span>
-$ ssh cdh3 <span class="s2">&#34;chown hdfs:hadoop /etc/hadoop/conf/hdfs.keytab ;chmod 400 /etc/hadoop/conf/hdfs.keytab&#34;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s2">&#34;chown hdfs:hadoop /etc/hadoop/conf/hdfs.keytab ;chmod 400 /etc/hadoop/conf/hdfs.keytab&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>由于 keytab 相当于有了永久凭证，不需要提供密码(如果修改kdc中的principal的密码，则该keytab就会失效)，所以其他用户如果对该文件有读权限，就可以冒充 keytab 中指定的用户身份访问 hadoop，所以 keytab 文件需要确保只对 owner 有读权限(0400)</p>
-<h2 id="104--hdfs-">10.4 修改 hdfs 配置文件</h2>
+</div>
+<p>由于 keytab 相当于有了永久凭证，不需要提供密码(如果修改kdc中的principal的密码，则该keytab就会失效)，所以其他用户如果对该文件有读权限，就可以冒充 keytab 中指定的用户身份访问 hadoop，所以 keytab 文件需要确保只对 owner 有读权限(0400)</p>
+
+<h2 id="10-4-修改-hdfs-配置文件">10.4 修改 hdfs 配置文件</h2>
+
 <p>先停止集群：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -939,13 +995,13 @@ $ ssh cdh3 <span class="s2">&#34;chown hdfs:hadoop /etc/hadoop/conf/hdfs.keytab 
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</span> /etc/init.d <span class="p">;</span> ls hive-*<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> sudo service <span class="nv">$x</span> stop <span class="p">;</span> <span class="k">done</span>
 $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</span> /etc/init.d <span class="p">;</span> ls impala-*<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> sudo service <span class="nv">$x</span> stop <span class="p">;</span> <span class="k">done</span>
 $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</span> /etc/init.d <span class="p">;</span> ls hadoop-*<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> sudo service <span class="nv">$x</span> stop <span class="p">;</span> <span class="k">done</span>
-$ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</span> /etc/init.d <span class="p">;</span> ls zookeeper-*<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> sudo service <span class="nv">$x</span> stop <span class="p">;</span> <span class="k">done</span>
-</code></pre></td></tr></table>
+$ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</span> /etc/init.d <span class="p">;</span> ls zookeeper-*<span class="sb">`</span> <span class="p">;</span> <span class="k">do</span> sudo service <span class="nv">$x</span> stop <span class="p">;</span> <span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><p>在集群中所有节点的 core-site.xml 文件中添加下面的配置:</p>
+</div>
+<p>在集群中所有节点的 core-site.xml 文件中添加下面的配置:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -956,21 +1012,21 @@ $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>hadoop.security.authentication<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.security.authentication<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
 
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>hadoop.security.authorization<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>hadoop.security.authorization<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>在集群中所有节点的 hdfs-site.xml 文件中添加下面的配置：</p>
+</div>
+<p>在集群中所有节点的 hdfs-site.xml 文件中添加下面的配置：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1012,67 +1068,67 @@ $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</
 </span><span class="lnt">40
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.block.access.token.enable<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.block.access.token.enable<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>  
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.data.dir.perm<span class="nt">&lt;/name&gt;</span>  
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>700<span class="nt">&lt;/value&gt;</span>  
+<span class="nt">&lt;property&gt;</span>  
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.data.dir.perm<span class="nt">&lt;/name&gt;</span>  
+  <span class="nt">&lt;value&gt;</span>700<span class="nt">&lt;/value&gt;</span>  
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.keytab.file<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.namenode.keytab.file<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.namenode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.namenode.kerberos.https.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.namenode.kerberos.https.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.address<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>0.0.0.0:1004<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.address<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>0.0.0.0:1004<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.http.address<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>0.0.0.0:1006<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.http.address<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>0.0.0.0:1006<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.keytab.file<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.keytab.file<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.datanode.kerberos.https.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.datanode.kerberos.https.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>如果想开启 SSL，请添加（本文不对这部分做说明）：</p>
+</div>
+<p>如果想开启 SSL，请添加（本文不对这部分做说明）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.http.policy<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>HTTPS_ONLY<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.http.policy<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTPS_ONLY<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>如果 HDFS 配置了 QJM HA，则需要添加（另外，你还要在 zookeeper 上配置 kerberos）：</p>
+</div>
+<p>如果 HDFS 配置了 QJM HA，则需要添加（另外，你还要在 zookeeper 上配置 kerberos）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1086,24 +1142,24 @@ $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.journalnode.keytab.file<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.journalnode.keytab.file<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.journalnode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.journalnode.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>hdfs/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.journalnode.kerberos.internal.spnego.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.journalnode.kerberos.internal.spnego.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>如果配置了 WebHDFS，则添加：</p>
+</div>
+<p>如果配置了 WebHDFS，则添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1119,80 +1175,75 @@ $ <span class="k">for</span> x in <span class="sb">`</span><span class="nb">cd</
 </span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.webhdfs.enabled<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.webhdfs.enabled<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
 
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.web.authentication.kerberos.principal<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.web.authentication.kerberos.principal<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>HTTP/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
 <span class="nt">&lt;/property&gt;</span>
 
-<span class="nt">&lt;property</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;name</span><span class="nt">&gt;</span>dfs.web.authentication.kerberos.keytab<span class="nt">&lt;/name&gt;</span>
-  <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
-<span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;property&gt;</span>
+  <span class="nt">&lt;name&gt;</span>dfs.web.authentication.kerberos.keytab<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;value&gt;</span>/etc/hadoop/conf/hdfs.keytab<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>配置中有几点要注意的：</p>
+</div>
+<p>配置中有几点要注意的：</p>
+
 <ul>
-<li>
-<ol>
-<li><code>dfs.datanode.address</code>表示 data transceiver RPC server 所绑定的 hostname 或 IP 地址，如果开启 security，端口号必须小于 <code>1024</code>(privileged port)，否则的话启动 datanode 时候会报 <code>Cannot start secure cluster without privileged resources</code> 错误</li>
-</ol>
-</li>
-<li>
-<ol start="2">
-<li>principal 中的 instance 部分可以使用 <code>_HOST</code> 标记，系统会自动替换它为全称域名</li>
-</ol>
-</li>
-<li>
-<ol start="3">
-<li>如果开启了 security, hadoop 会对 hdfs block data(由 <code>dfs.data.dir</code> 指定)做 permission check，方式用户的代码不是调用hdfs api而是直接本地读block data，这样就绕过了kerberos和文件权限验证，管理员可以通过设置 <code>dfs.datanode.data.dir.perm</code> 来修改 datanode 文件权限，这里我们设置为700</li>
-</ol>
-</li>
+<li>1. <code>dfs.datanode.address</code>表示 data transceiver RPC server 所绑定的 hostname 或 IP 地址，如果开启 security，端口号必须小于 <code>1024</code>(privileged port)，否则的话启动 datanode 时候会报 <code>Cannot start secure cluster without privileged resources</code> 错误</li>
+<li>2. principal 中的 instance 部分可以使用 <code>_HOST</code> 标记，系统会自动替换它为全称域名</li>
+<li>3. 如果开启了 security, hadoop 会对 hdfs block data(由 <code>dfs.data.dir</code> 指定)做 permission check，方式用户的代码不是调用hdfs api而是直接本地读block data，这样就绕过了kerberos和文件权限验证，管理员可以通过设置 <code>dfs.datanode.data.dir.perm</code> 来修改 datanode 文件权限，这里我们设置为700</li>
 </ul>
-<h2 id="105--hdfs-">10.5 检查集群上的 HDFS 和本地文件的权限</h2>
+
+<h2 id="10-5-检查集群上的-hdfs-和本地文件的权限">10.5 检查集群上的 HDFS 和本地文件的权限</h2>
+
 <p>请参考 <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cdh_sg_users_groups_verify.html">Verify User Accounts and Groups in CDH 5 Due to Security</a> 或者 <a href="http://hadoop.apache.org/docs/r2.5.0/hadoop-project-dist/hadoop-common/SecureMode.html">Hadoop in Secure Mode</a>。</p>
-<h2 id="106--namenode">10.6 启动 NameNode</h2>
+
+<h2 id="10-6-启动-namenode">10.6 启动 NameNode</h2>
+
 <p>启动之前，请确认 JCE jar 已经替换，请参考前面的说明。</p>
+
 <p>在每个节点上获取 root 用户的 ticket，这里 root 为之前创建的 root/admin 的密码。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh cdh1 <span class="s2">&#34;echo root|kinit root/admin&#34;</span>
 $ ssh cdh1 <span class="s2">&#34;echo root|kinit root/admin&#34;</span>
-$ ssh cdh1 <span class="s2">&#34;echo root|kinit root/admin&#34;</span>
-</code></pre></td></tr></table>
+$ ssh cdh1 <span class="s2">&#34;echo root|kinit root/admin&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>获取 cdh1的 ticket：</p>
+</div>
+<p>获取 cdh1的 ticket：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh1@JAVACHEN.COM
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh1@JAVACHEN.COM</code></pre></td></tr></table>
 </div>
-</div><p>如果出现下面异常 <code>kinit: Password incorrect while getting initial credentials</code>，则重新导出 keytab 再试试。</p>
+</div>
+<p>如果出现下面异常 <code>kinit: Password incorrect while getting initial credentials</code>，则重新导出 keytab 再试试。</p>
+
 <p>然后启动服务，观察日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ /etc/init.d/hadoop-hdfs-namenode start
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ /etc/init.d/hadoop-hdfs-namenode start</code></pre></td></tr></table>
 </div>
-</div><p>验证 NameNode 是否启动，一是打开 web 界面查看启动状态，一是运行下面命令查看 hdfs：</p>
+</div>
+<p>验证 NameNode 是否启动，一是打开 web 界面查看启动状态，一是运行下面命令查看 hdfs：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1202,44 +1253,46 @@ $ ssh cdh1 <span class="s2">&#34;echo root|kinit root/admin&#34;</span>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ hadoop fs -ls /
 Found <span class="m">4</span> items
-drwxrwxrwx   - yarn hadoop          <span class="m">0</span> 2014-06-26 15:24 /logroot
-drwxrwxrwt   - hdfs hadoop          <span class="m">0</span> 2014-11-04 10:44 /tmp
-drwxr-xr-x   - hdfs hadoop          <span class="m">0</span> 2014-08-10 10:53 /user
-drwxr-xr-x   - hdfs hadoop          <span class="m">0</span> 2013-05-20 22:52 /var
-</code></pre></td></tr></table>
+drwxrwxrwx   - yarn hadoop          <span class="m">0</span> <span class="m">2014</span>-06-26 <span class="m">15</span>:24 /logroot
+drwxrwxrwt   - hdfs hadoop          <span class="m">0</span> <span class="m">2014</span>-11-04 <span class="m">10</span>:44 /tmp
+drwxr-xr-x   - hdfs hadoop          <span class="m">0</span> <span class="m">2014</span>-08-10 <span class="m">10</span>:53 /user
+drwxr-xr-x   - hdfs hadoop          <span class="m">0</span> <span class="m">2013</span>-05-20 <span class="m">22</span>:52 /var</code></pre></td></tr></table>
 </div>
-</div><p>如果在你的凭据缓存中没有有效的 kerberos ticket，执行上面命令将会失败，将会出现下面的错误：</p>
+</div>
+<p>如果在你的凭据缓存中没有有效的 kerberos ticket，执行上面命令将会失败，将会出现下面的错误：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">14/11/04 12:08:12 WARN ipc.Client: Exception encountered while connecting to the server : javax.security.sasl.SaslException:
+<pre class="chroma">14/11/04 12:08:12 WARN ipc.Client: Exception encountered while connecting to the server : javax.security.sasl.SaslException:
 GSS initiate failed [Caused by GS***ception: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
 Bad connection to FS. command aborted. exception: Call to cdh1/192.168.56.121:8020 failed on local exception: java.io.IOException:
-javax.security.sasl.SaslException: GSS initiate failed [Caused by GS***ception: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
-</code></pre></td></tr></table>
+javax.security.sasl.SaslException: GSS initiate failed [Caused by GS***ception: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]</pre></td></tr></table>
 </div>
-</div><h2 id="107-datanode">10.7 启动DataNode</h2>
+</div>
+<h2 id="10-7-启动datanode">10.7 启动DataNode</h2>
+
 <p>DataNode 需要通过 JSVC 启动。首先检查是否安装了 JSVC 命令，然后配置环境变量。</p>
+
 <p>在 cdh1 节点查看是否安装了 JSVC：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ ls /usr/lib/bigtop-utils/
-bigtop-detect-classpath  bigtop-detect-javahome  bigtop-detect-javalibs  jsvc
-</code></pre></td></tr></table>
+bigtop-detect-classpath  bigtop-detect-javahome  bigtop-detect-javalibs  jsvc</code></pre></td></tr></table>
 </div>
-</div><p>然后编辑 <code>/etc/default/hadoop-hdfs-datanode</code>，取消对下面的注释并添加一行设置 <code>JSVC_HOME</code>，修改如下：</p>
+</div>
+<p>然后编辑 <code>/etc/default/hadoop-hdfs-datanode</code>，取消对下面的注释并添加一行设置 <code>JSVC_HOME</code>，修改如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1250,24 +1303,24 @@ bigtop-detect-classpath  bigtop-detect-javahome  bigtop-detect-javalibs  jsvc
 <span class="nb">export</span> <span class="nv">HADOOP_SECURE_DN_PID_DIR</span><span class="o">=</span>/var/run/hadoop-hdfs
 <span class="nb">export</span> <span class="nv">HADOOP_SECURE_DN_LOG_DIR</span><span class="o">=</span>/var/log/hadoop-hdfs
 
-<span class="nb">export</span> <span class="nv">JSVC_HOME</span><span class="o">=</span>/usr/lib/bigtop-utils
-</code></pre></td></tr></table>
+<span class="nb">export</span> <span class="nv">JSVC_HOME</span><span class="o">=</span>/usr/lib/bigtop-utils</code></pre></td></tr></table>
 </div>
-</div><p>将该文件同步到其他节点：</p>
+</div>
+<p>将该文件同步到其他节点：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ scp /etc/default/hadoop-hdfs-datanode cdh2:/etc/default/hadoop-hdfs-datanode
-$ scp /etc/default/hadoop-hdfs-datanode cdh3:/etc/default/hadoop-hdfs-datanode
-</code></pre></td></tr></table>
+$ scp /etc/default/hadoop-hdfs-datanode cdh3:/etc/default/hadoop-hdfs-datanode</code></pre></td></tr></table>
 </div>
-</div><p>分别在 cdh2、cdh3 获取 ticket 然后启动服务：</p>
+</div>
+<p>分别在 cdh2、cdh3 获取 ticket 然后启动服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1276,51 +1329,36 @@ $ scp /etc/default/hadoop-hdfs-datanode cdh3:/etc/default/hadoop-hdfs-datanode
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#root 为 root/admin 的密码</span>
 $ ssh cdh1 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh1@JAVACHEN.COM; service hadoop-hdfs-datanode start&#34;</span>
 $ ssh cdh2 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh2@JAVACHEN.COM; service hadoop-hdfs-datanode start&#34;</span>
-$ ssh cdh3 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh3@JAVACHEN.COM; service hadoop-hdfs-datanode start&#34;</span>
-</code></pre></td></tr></table>
+$ ssh cdh3 <span class="s2">&#34;kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh3@JAVACHEN.COM; service hadoop-hdfs-datanode start&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>观看 cdh1 上 NameNode 日志，出现下面日志表示 DataNode 启动成功：</p>
+</div>
+<p>观看 cdh1 上 NameNode 日志，出现下面日志表示 DataNode 启动成功：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">14/11/04 17:21:41 INFO security.UserGroupInformation:
-Login successful for user hdfs/cdh2@JAVACHEN.COM using keytab file /etc/hadoop/conf/hdfs.keytab
-</code></pre></td></tr></table>
+<pre class="chroma">14/11/04 17:21:41 INFO security.UserGroupInformation:
+Login successful for user hdfs/cdh2@JAVACHEN.COM using keytab file /etc/hadoop/conf/hdfs.keytab</pre></td></tr></table>
 </div>
-</div><h1 id="11-">11. 总结</h1>
+</div>
+<h1 id="11-总结">11. 总结</h1>
+
 <p>本文介绍了 CDH Hadoop 集成 kerberos 认证的过程，其中主要需要注意以下几点：</p>
+
 <ul>
-<li>
-<ol>
-<li>配置 hosts，<code>hostname</code> 请使用小写</li>
-</ol>
-</li>
-<li>
-<ol start="2">
-<li>确保 kerberos 客户端和服务端连通</li>
-</ol>
-</li>
-<li>
-<ol start="3">
-<li>替换 JRE 自带的 JCE jar 包</li>
-</ol>
-</li>
-<li>
-<ol start="4">
-<li>为 DataNode 设置运行用户并配置 <code>JSVC_HOME</code></li>
-</ol>
-</li>
-<li>
-<ol start="5">
-<li>启动服务前，先获取 ticket 再运行相关命令</li>
-</ol>
-</li>
+<li>1. 配置 hosts，<code>hostname</code> 请使用小写</li>
+<li>2. 确保 kerberos 客户端和服务端连通</li>
+<li>3. 替换 JRE 自带的 JCE jar 包</li>
+<li>4. 为 DataNode 设置运行用户并配置 <code>JSVC_HOME</code></li>
+<li>5. 启动服务前，先获取 ticket 再运行相关命令</li>
 </ul>
+
 <p>上面的过程比较繁琐，我总结了上面的过程并写了一些自动化的脚本方便快速安装、配置以及管理 kerberos，请参考<a href="/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop">Hadoop集群部署权限总结</a>。</p>
-<h1 id="12-">12. 参考文章</h1>
+
+<h1 id="12-参考文章">12. 参考文章</h1>
+
 <ul>
 <li><a href="http://blog.cloudera.com/blog/2015/03/how-to-quickly-configure-kerberos-for-your-apache-hadoop-cluster/">How-to: Quickly Configure Kerberos for Your Apache Hadoop Cluster</a></li>
 <li><a href="https://github.com/zouhc/MyHadoop/blob/master/doc/Hadoop%E7%9A%84kerberos%E7%9A%84%E5%AE%9E%E8%B7%B5%E9%83%A8%E7%BD%B2.md">Hadoop的kerberos的实践部署</a></li>
@@ -1329,7 +1367,9 @@ Login successful for user hdfs/cdh2@JAVACHEN.COM using keytab file /etc/hadoop/c
 <li><a href="http://blog.godatadriven.com/kerberos_kdc_install.html">Kerberos basics and installing a KDC</a></li>
 <li><a href="http://www.wuzesheng.com/?p=2345">Hadoop, Hbase, Zookeeper安全实践</a></li>
 </ul>
-<h1 id="13-">13. 相关文章</h1>
+
+<h1 id="13-相关文章">13. 相关文章</h1>
+
 <ul>
 <li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
 <li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
@@ -1459,7 +1499,7 @@ Login successful for user hdfs/cdh2@JAVACHEN.COM using keytab file /etc/hadoop/c
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -1472,7 +1512,21 @@ Login successful for user hdfs/cdh2@JAVACHEN.COM using keytab file /etc/hadoop/c
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

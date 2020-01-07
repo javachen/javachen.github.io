@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2015/02/12/hadoop-streaming/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2015/02/12/hadoop-streaming/" />
-<meta property="article:published_time" content="2015-02-12T08:00:00+08:00" />
-<meta property="article:modified_time" content="2015-02-12T08:00:00+08:00" />
+<meta property="article:published_time" content="2015-02-12T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2015-02-12T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="Hadoop Streaming 原理">
 <meta itemprop="description" content="Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。">
+
+
 <meta itemprop="datePublished" content="2015-02-12T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2015-02-12T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="4299">
 
 
 
-<meta itemprop="keywords" content="hadoop,mapreduce,streaming," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hadoop,mapreduce,streaming," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Hadoop Streaming 原理"/>
 <meta name="twitter:description" content="Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,82 +139,104 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#streaming-">streaming 参数</a></li>
-    <li><a href="#heading-3">通用参数</a></li>
-    <li><a href="#heading-4">复杂的例子</a>
-      <ul>
-        <li><a href="#hadoop-partitioner-class">Hadoop Partitioner Class</a></li>
-        <li><a href="#hadoop-comparator-class">Hadoop Comparator Class</a></li>
-        <li><a href="#hadoop-aggregate-package">Hadoop Aggregate Package</a></li>
-        <li><a href="#hadoop-field-selection-class">Hadoop Field Selection Class</a></li>
-      </ul>
-    </li>
-  </ul>
-
-  <ul>
-    <li><a href="#heading-6">准备测试数据</a></li>
-    <li><a href="#-shell-">编写 Shell 版程序</a></li>
-    <li><a href="#-python-">编写 Python 版程序</a></li>
-  </ul>
-
-  <ul>
-    <li>
-      <ul>
-        <li><a href="#mapper--shell-">mapper 中不能使用 shell 的别名，但可以使用变量</a></li>
-        <li><a href="#mapper--unix-">mapper 中不能使用 unix 的管道</a></li>
-        <li><a href="#-streaming-">指定 streaming 临时空间</a></li>
-        <li><a href="#heading-8">指定多个输入文件</a></li>
-        <li><a href="#-xml">处理 XML</a></li>
-      </ul>
-    </li>
-  </ul>
+<ul>
+<li><a href="#简介">简介</a></li>
+<li><a href="#原理">原理</a></li>
+<li><a href="#用法">用法</a>
+<ul>
+<li><a href="#streaming-参数">streaming 参数</a></li>
+<li><a href="#通用参数">通用参数</a></li>
+<li><a href="#复杂的例子">复杂的例子</a>
+<ul>
+<li><a href="#hadoop-partitioner-class">Hadoop Partitioner Class</a></li>
+<li><a href="#hadoop-comparator-class">Hadoop Comparator Class</a></li>
+<li><a href="#hadoop-aggregate-package">Hadoop Aggregate Package</a></li>
+<li><a href="#hadoop-field-selection-class">Hadoop Field Selection Class</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#测试">测试</a>
+<ul>
+<li><a href="#准备测试数据">准备测试数据</a></li>
+<li><a href="#编写-shell-版程序">编写 Shell 版程序</a></li>
+<li><a href="#编写-python-版程序">编写 Python 版程序</a></li>
+</ul></li>
+<li><a href="#注意事项">注意事项</a>
+<ul>
+<li>
+<ul>
+<li><a href="#mapper-中不能使用-shell-的别名-但可以使用变量">mapper 中不能使用 shell 的别名，但可以使用变量</a></li>
+<li><a href="#mapper-中不能使用-unix-的管道">mapper 中不能使用 unix 的管道</a></li>
+<li><a href="#指定-streaming-临时空间">指定 streaming 临时空间</a></li>
+<li><a href="#指定多个输入文件">指定多个输入文件</a></li>
+<li><a href="#处理-xml">处理 XML</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <h1 id="heading">简介</h1>
+      
+
+<h1 id="简介">简介</h1>
+
 <p>Hadoop Streaming 是 Hadoop 提供的一个 MapReduce 编程工具，它允许用户使用任何可执行文件、脚本语言或其他编程语言来实现 Mapper 和 Reducer，从而充分利用 Hadoop 并行计算框架的优势和能力，来处理大数据。</p>
+
 <p>一个简单的示例，以 shell 脚本为例：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">hadoop jar hadoop-streaming.jar \
+<pre class="chroma">hadoop jar hadoop-streaming.jar \
     -input myInputDirs \
     -output myOutputDir \
     -mapper /bin/cat \
-    -reducer /usr/bin/wc
-</code></pre></td></tr></table>
+    -reducer /usr/bin/wc</pre></td></tr></table>
 </div>
-</div><p>Streaming 方式是 <code>基于 Unix 系统的标准输入输出</code> 来进行 MapReduce Job 的运行，它区别与 Pipes 的地方主要是通信协议，Pipes 使用的是 Socket 通信，是对使用 C++ 语言来实现 MapReduce Job 并通过 Socket 通信来与 Hadopp 平台通信，完成 Job 的执行。</p>
+</div>
+<p>Streaming 方式是 <code>基于 Unix 系统的标准输入输出</code> 来进行 MapReduce Job 的运行，它区别与 Pipes 的地方主要是通信协议，Pipes 使用的是 Socket 通信，是对使用 C++ 语言来实现 MapReduce Job 并通过 Socket 通信来与 Hadopp 平台通信，完成 Job 的执行。</p>
+
 <p>任何支持标准输入输出特性的编程语言都可以使用 Streaming 方式来实现 MapReduce Job，基本原理就是输入从 Unix 系统标准输入，输出使用 Unix 系统的标准输出。</p>
+
 <p>Hadoop 是使用 Java 语言编写的，所以最直接的方式的就是使用 Java 语言来实现 Mapper 和 Reducer，然后配置 MapReduce Job，提交到集群计算环境来完成计算。但是很多开发者可能对 Java 并不熟悉，而是对一些具有脚本特性的语言，如 C++、Shell、Python、 Ruby、PHP、Perl 有实际开发经验，Hadoop Streaming 为这一类开发者提供了使用 Hadoop 集群来进行处理数据的工具，即工具包 hadoop-streaming.jar。</p>
+
 <p>在标准的输入输出中，Key 和 Value 是以 Tab 作为分隔符，并且在 Reducer 的标准输入中，Hadoop 框架保证了输入的数据是经过了按 Key 排序的。</p>
-<h1 id="heading-1">原理</h1>
+
+<h1 id="原理">原理</h1>
+
 <p>Hadoop Streaming 使用了 Unix 的标准输入输出作为 Hadoop 和其他编程语言的开发接口，因此在其他的编程语言所写的程序中，只需要将标准输入作为程序的输入，将标准输出作为程序的输出就可以了。</p>
+
 <p>mapper 和 reducer 会从标准输入中读取用户数据，一行一行处理后发送给标准输出。Streaming 工具会创建 MapReduce 作业，发送给各个 tasktracker，同时监控整个作业的执行过程。</p>
+
 <p>如果一个文件（可执行或者脚本）作为 mapper，mapper 初始化时，每一个 mapper 任务会把该文件作为一个单独进程启动，mapper 任务运行时，它把输入切分成行并把每一行提供给可执行文件进程的标准输入。 同时，mapper 收集可执行文件进程标准输出的内容，并把收到的每一行内容转化成 key/value 对，作为 mapper 的输出。 默认情况下，一行中第一个 tab 之前的部分作为 key，之后的（不包括tab）作为 value。如果没有 tab，整行作为 key 值，value 值为 null。</p>
+
 <p>对于 reducer，类似。</p>
+
 <p>以上是 Map/Reduce 框架和 streaming mapper/reducer 之间的基本通信协议。</p>
+
 <p>用户可以定义 <code>stream.non.zero.exit.is.failure</code> 参数为 true 或者 false 以定义一个以非0状态退出的 streaming 的任务是失败还是成功。默认情况下，以非0状态退出的任务都任务是失败的。</p>
-<h1 id="heading-2">用法</h1>
+
+<h1 id="用法">用法</h1>
+
 <p>命令如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">hadoop jar hadoop-streaming.jar <span class="o">[</span>genericOptions<span class="o">]</span> <span class="o">[</span>streamingOptions<span class="o">]</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">hadoop jar hadoop-streaming.jar <span class="o">[</span>genericOptions<span class="o">]</span> <span class="o">[</span>streamingOptions<span class="o">]</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="streaming-">streaming 参数</h2>
+</div>
+<h2 id="streaming-参数">streaming 参数</h2>
+
 <p>以 Hadoop 2.6.0 为例，可选的 streaming 参数如下：</p>
+
 <table>
 <thead>
 <tr>
@@ -223,82 +245,98 @@
 <th align="left">描述</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left"><code>-input directoryname or filename</code></td>
 <td align="left">Required</td>
 <td align="left">mapper的输入路径</td>
 </tr>
+
 <tr>
 <td align="left"><code>-output directoryname</code></td>
 <td align="left">Required</td>
 <td align="left">reducer输出路径</td>
 </tr>
+
 <tr>
 <td align="left"><code>-mapper executable or JavaClassName</code></td>
 <td align="left">Required</td>
 <td align="left">Mapper可执行程序或 Java 类名</td>
 </tr>
+
 <tr>
 <td align="left"><code>-reducer executable or JavaClassName</code></td>
 <td align="left">Required</td>
 <td align="left">Reducer 可执行程序或 Java 类名</td>
 </tr>
+
 <tr>
 <td align="left"><code>-file filename</code></td>
 <td align="left">Optional</td>
 <td align="left">mapper, reducer 或 combiner 依赖的文件</td>
 </tr>
+
 <tr>
 <td align="left"><code>-inputformat JavaClassName</code></td>
 <td align="left">Optional</td>
 <td align="left">key/value 输入格式，默认为 TextInputFormat</td>
 </tr>
+
 <tr>
 <td align="left"><code>-outputformat JavaClassName</code></td>
 <td align="left">Optional</td>
 <td align="left">key/value 输出格式，默认为  TextOutputformat</td>
 </tr>
+
 <tr>
 <td align="left"><code>-partitioner JavaClassName</code></td>
 <td align="left">Optional</td>
 <td align="left">Class that determines which reduce a key is sent to</td>
 </tr>
+
 <tr>
 <td align="left"><code>-combiner streamingCommand or JavaClassName</code></td>
 <td align="left">Optional</td>
 <td align="left">map 输出结果执行 Combiner 的命令或者类名</td>
 </tr>
+
 <tr>
 <td align="left"><code>-cmdenv name=value</code></td>
 <td align="left">Optional</td>
 <td align="left">环境变量</td>
 </tr>
+
 <tr>
 <td align="left"><code>-inputreader</code></td>
 <td align="left">Optional</td>
 <td align="left">向后兼容，定义输入的 Reader 类，用于取代输出格式</td>
 </tr>
+
 <tr>
 <td align="left"><code>-verbose</code></td>
 <td align="left">Optional</td>
 <td align="left">输出日志</td>
 </tr>
+
 <tr>
 <td align="left"><code>-lazyOutput</code></td>
 <td align="left">Optional</td>
 <td align="left">延时输出</td>
 </tr>
+
 <tr>
 <td align="left"><code>-numReduceTasks</code></td>
 <td align="left">Optional</td>
 <td align="left">定义 reduce 数量</td>
 </tr>
+
 <tr>
 <td align="left"><code>-mapdebug</code></td>
 <td align="left">Optional</td>
 <td align="left">map 任务运行失败时候，执行的脚本</td>
 </tr>
+
 <tr>
 <td align="left"><code>-reducedebug</code></td>
 <td align="left">Optional</td>
@@ -306,10 +344,11 @@
 </tr>
 </tbody>
 </table>
+
 <p>定义 Java 类作为 mapper 和 reducer：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -322,13 +361,13 @@
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -inputformat org.apache.hadoop.mapred.KeyValueTextInputFormat <span class="se">\
 </span><span class="se"></span>    -mapper org.apache.hadoop.mapred.lib.IdentityMapper <span class="se">\
-</span><span class="se"></span>    -reducer /usr/bin/wc
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -reducer /usr/bin/wc</code></pre></td></tr></table>
 </div>
-</div><p>如果 mapper 和 reducer 的可执行文件在集群上不存在，则可以通过  <code>-file</code> 参数将其提交到集群上去：</p>
+</div>
+<p>如果 mapper 和 reducer 的可执行文件在集群上不存在，则可以通过  <code>-file</code> 参数将其提交到集群上去：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -341,13 +380,13 @@
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper myPythonScript.py <span class="se">\
 </span><span class="se"></span>    -reducer /usr/bin/wc <span class="se">\
-</span><span class="se"></span>    -file myPythonScript.py
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -file myPythonScript.py</code></pre></td></tr></table>
 </div>
-</div><p>你也可以将 mapper 和 reducer 的可执行文件用到的文件和配置上传到集群上：</p>
+</div>
+<p>你也可以将 mapper 和 reducer 的可执行文件用到的文件和配置上传到集群上：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -362,13 +401,13 @@
 </span><span class="se"></span>    -mapper myPythonScript.py <span class="se">\
 </span><span class="se"></span>    -reducer /usr/bin/wc <span class="se">\
 </span><span class="se"></span>    -file myPythonScript.py <span class="se">\
-</span><span class="se"></span>    -file myDictionary.txt
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -file myDictionary.txt</code></pre></td></tr></table>
 </div>
-</div><p>你也可以定义其他参数：</p>
+</div>
+<p>你也可以定义其他参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -377,19 +416,20 @@
 <pre class="chroma"><code class="language-bash" data-lang="bash">-inputformat JavaClassName
 -outputformat JavaClassName
 -partitioner JavaClassName
--combiner streamingCommand or JavaClassName
-</code></pre></td></tr></table>
+-combiner streamingCommand or JavaClassName</code></pre></td></tr></table>
 </div>
-</div><p>定义一个环境变量：</p>
+</div>
+<p>定义一个环境变量：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">-cmdenv <span class="nv">EXAMPLE_DIR</span><span class="o">=</span>/home/example/dictionaries/   
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">-cmdenv <span class="nv">EXAMPLE_DIR</span><span class="o">=</span>/home/example/dictionaries/   </code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-3">通用参数</h2>
+</div>
+<h2 id="通用参数">通用参数</h2>
+
 <table>
 <thead>
 <tr>
@@ -398,32 +438,38 @@
 <th align="left">描述</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left"><code>-conf configuration_file</code></td>
 <td align="left">Optional</td>
 <td align="left">定义应用的配置文件</td>
 </tr>
+
 <tr>
 <td align="left"><code>-D property=value</code></td>
 <td align="left">Optional</td>
 <td align="left">定义参数</td>
 </tr>
+
 <tr>
 <td align="left"><code>-fs host:port or local</code></td>
 <td align="left">Optional</td>
 <td align="left">定义 namenode 地址</td>
 </tr>
+
 <tr>
 <td align="left"><code>-files</code></td>
 <td align="left">Optional</td>
 <td align="left">定义需要拷贝到 Map/Reduce 集群的文件，多个文件以逗号分隔</td>
 </tr>
+
 <tr>
 <td align="left"><code>-libjars</code></td>
 <td align="left">Optional</td>
 <td align="left">定义需要引入到 classpath 的 jar 文件，多个文件以逗号分隔</td>
 </tr>
+
 <tr>
 <td align="left"><code>-archives</code></td>
 <td align="left">Optional</td>
@@ -431,32 +477,33 @@
 </tr>
 </tbody>
 </table>
+
 <p>定义参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">-D mapred.local.dir<span class="o">=</span>/tmp/local
 -D mapred.system.dir<span class="o">=</span>/tmp/system
--D mapred.temp.dir<span class="o">=</span>/tmp/temp
-</code></pre></td></tr></table>
+-D mapred.temp.dir<span class="o">=</span>/tmp/temp</code></pre></td></tr></table>
 </div>
-</div><p>定义 reduce 个数：</p>
+</div>
+<p>定义 reduce 个数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">-D mapreduce.job.reduces<span class="o">=</span><span class="m">0</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">-D mapreduce.job.reduces<span class="o">=</span><span class="m">0</span></code></pre></td></tr></table>
 </div>
-</div><p>你也可以使用 <code>-D stream.reduce.output.field.separator=SEP</code> 和 <code>-D stream.num.reduce.output.fields=NUM</code> 自定义 mapper 输出的分隔符为SEP，并且按 SEP 分隔之后的前 NUM 部分内容作为 key，如果分隔符少于 NUM，则整行作为 key。例如，下面的例子指定分隔符为 <code>....</code>：</p>
+</div>
+<p>你也可以使用 <code>-D stream.reduce.output.field.separator=SEP</code> 和 <code>-D stream.num.reduce.output.fields=NUM</code> 自定义 mapper 输出的分隔符为SEP，并且按 SEP 分隔之后的前 NUM 部分内容作为 key，如果分隔符少于 NUM，则整行作为 key。例如，下面的例子指定分隔符为 <code>....</code>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -471,20 +518,22 @@
 </span><span class="se"></span>    -input myInputDirs <span class="se">\
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper /bin/cat <span class="se">\
-</span><span class="se"></span>    -reducer /bin/cat
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -reducer /bin/cat</code></pre></td></tr></table>
 </div>
-</div><p>hadoop 提供配置供用户自主设置分隔符：</p>
+</div>
+<p>hadoop 提供配置供用户自主设置分隔符：</p>
+
 <p><code>-D stream.map.output.field.separator</code> ：设置 map 输出中 key 和 value 的分隔符
 <code>-D stream.num.map.output.key.fields</code> ：设置 map 程序分隔符的位置，该位置之前的部分作为 key，之后的部分作为 value
 <code>-D map.output.key.field.separator</code> : 设置 map 输出分区时 key 内部的分割符
 <code>-D mapreduce.partition.keypartitioner.options</code> : 指定分桶时，key 按照分隔符切割后，其中用于分桶 key 所占的列数（配合 <code>-partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner</code> 使用）
 <code>-D stream.reduce.output.field.separator</code>：设置 reduce 输出中 key 和 value 的分隔符
 <code>-D stream.num.reduce.output.key.fields</code>：设置 reduce 程序分隔符的位置</p>
+
 <p>定义解压文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -529,8 +578,8 @@ cache.txt  cache2.txt
 
 $ jar cvf cachedir.jar -C test_jar/ .
 added manifest
-adding: cache.txt<span class="o">(</span><span class="nv">in</span> <span class="o">=</span> 30<span class="o">)</span> <span class="o">(</span><span class="nv">out</span><span class="o">=</span> 29<span class="o">)</span><span class="o">(</span>deflated 3%<span class="o">)</span>
-adding: cache2.txt<span class="o">(</span><span class="nv">in</span> <span class="o">=</span> 37<span class="o">)</span> <span class="o">(</span><span class="nv">out</span><span class="o">=</span> 35<span class="o">)</span><span class="o">(</span>deflated 5%<span class="o">)</span>
+adding: cache.txt<span class="o">(</span><span class="nv">in</span> <span class="o">=</span> <span class="m">30</span><span class="o">)</span> <span class="o">(</span><span class="nv">out</span><span class="o">=</span> <span class="m">29</span><span class="o">)(</span>deflated <span class="m">3</span>%<span class="o">)</span>
+adding: cache2.txt<span class="o">(</span><span class="nv">in</span> <span class="o">=</span> <span class="m">37</span><span class="o">)</span> <span class="o">(</span><span class="nv">out</span><span class="o">=</span> <span class="m">35</span><span class="o">)(</span>deflated <span class="m">5</span>%<span class="o">)</span>
 
 $ hdfs dfs -put cachedir.jar samples/cachefile
 
@@ -556,20 +605,22 @@ $ hadoop jar hadoop-streaming.jar <span class="se">\
 
 $ hdfs dfs -ls /user/root/samples/cachefile/out
 Found <span class="m">2</span> items
--rw-r--r--   <span class="m">1</span> root supergroup        <span class="m">0</span> 2013-11-14 17:00 /user/root/samples/cachefile/out/_SUCCESS
--rw-r--r--   <span class="m">1</span> root supergroup       <span class="m">69</span> 2013-11-14 17:00 /user/root/samples/cachefile/out/part-00000
+-rw-r--r--   <span class="m">1</span> root supergroup        <span class="m">0</span> <span class="m">2013</span>-11-14 <span class="m">17</span>:00 /user/root/samples/cachefile/out/_SUCCESS
+-rw-r--r--   <span class="m">1</span> root supergroup       <span class="m">69</span> <span class="m">2013</span>-11-14 <span class="m">17</span>:00 /user/root/samples/cachefile/out/part-00000
 
 $ hdfs dfs -cat /user/root/samples/cachefile/out/part-00000
 This is just the cache string
-This is just the second cache string
-</code></pre></td></tr></table>
+This is just the second cache string</code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-4">复杂的例子</h2>
+</div>
+<h2 id="复杂的例子">复杂的例子</h2>
+
 <h3 id="hadoop-partitioner-class">Hadoop Partitioner Class</h3>
+
 <p>Hadoop 中有一个类 <a href="http://hadoop.apache.org/docs/r2.6.0/api/org/apache/hadoop/mapred/lib/KeyFieldBasedPartitioner.html">KeyFieldBasedPartitioner</a>，可以将 map 输出的内容按照分隔后的一定列，而不是整个 key 内容进行分区，例如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -592,79 +643,82 @@ This is just the second cache string
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper /bin/cat <span class="se">\
 </span><span class="se"></span>    -reducer /bin/cat <span class="se">\
-</span><span class="se"></span>    -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner</code></pre></td></tr></table>
 </div>
-</div><p>关键参数说明：</p>
+</div>
+<p>关键参数说明：</p>
+
 <ul>
 <li><code>map.output.key.field.separator=.</code>：设置 map 输出分区时 key 内部的分割符为 <code>.</code></li>
 <li><code>mapreduce.partition.keypartitioner.options=-k1,2</code>：设置按前两个字段分区</li>
 <li><code>mapreduce.job.reduces=12</code>：reduce 数为12</li>
 </ul>
+
 <p>假设 map 的输出为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">11.12.1.2
+<pre class="chroma">11.12.1.2
 11.14.2.3
 11.11.4.1
 11.12.1.1
-11.14.2.2
-</code></pre></td></tr></table>
+11.14.2.2</pre></td></tr></table>
 </div>
-</div><p>按照前两个字段进行分区，则会分为三个分区：</p>
+</div>
+<p>按照前两个字段进行分区，则会分为三个分区：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">11.11.4.1
+<pre class="chroma">11.11.4.1
 -----------
 11.12.1.2
 11.12.1.1
 -----------
 11.14.2.3
-11.14.2.2
-</code></pre></td></tr></table>
+11.14.2.2</pre></td></tr></table>
 </div>
-</div><p>在每个分区内对整行内容排序后为：</p>
+</div>
+<p>在每个分区内对整行内容排序后为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">11.11.4.1
+<pre class="chroma">11.11.4.1
 -----------
 11.12.1.1
 11.12.1.2
 -----------
 11.14.2.2
-11.14.2.3
-</code></pre></td></tr></table>
+11.14.2.3</pre></td></tr></table>
 </div>
-</div><h3 id="hadoop-comparator-class">Hadoop Comparator Class</h3>
+</div>
+<h3 id="hadoop-comparator-class">Hadoop Comparator Class</h3>
+
 <p>Hadoop 中有一个类 <a href="http://hadoop.apache.org/docs/r2.6.0/api/org/apache/hadoop/mapreduce/lib/partition/KeyFieldBasedComparator.html">KeyFieldBasedComparator</a>，提供了 Unix/GNU 中排序的一部分特性。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -687,53 +741,57 @@ This is just the second cache string
 </span><span class="se"></span>    -input myInputDirs <span class="se">\
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper /bin/cat <span class="se">\
-</span><span class="se"></span>    -reducer /bin/cat
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -reducer /bin/cat</code></pre></td></tr></table>
 </div>
-</div><p>关键参数说明：</p>
+</div>
+<p>关键参数说明：</p>
+
 <ul>
 <li><code>mapreduce.partition.keycomparator.options=-k2,2nr</code>：指定第二个字段为排序字段，<code>-n</code> 是指按自然顺序排序，<code>-r</code> 指倒叙排序。</li>
 </ul>
+
 <p>假设 map 的输出为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">11.12.1.2
+<pre class="chroma">11.12.1.2
 11.14.2.3
 11.11.4.1
 11.12.1.1
-11.14.2.2
-</code></pre></td></tr></table>
+11.14.2.2</pre></td></tr></table>
 </div>
-</div><p>则 reduce 输出结果为：</p>
+</div>
+<p>则 reduce 输出结果为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">11.14.2.3
+<pre class="chroma">11.14.2.3
 11.14.2.2
 11.12.1.2
 11.12.1.1
-11.11.4.1
-</code></pre></td></tr></table>
+11.11.4.1</pre></td></tr></table>
 </div>
-</div><h3 id="hadoop-aggregate-package">Hadoop Aggregate Package</h3>
+</div>
+<h3 id="hadoop-aggregate-package">Hadoop Aggregate Package</h3>
+
 <p>Hadoop 中有一个类 <a href="http://hadoop.apache.org/docs/r2.6.0/org/apache/hadoop/mapred/lib/aggregate/package-summary.html">Aggregate</a>，Aggregate 提供了一个特定的 reduce 类和 combiner 类，以及一些对 reduce 输出的聚合函数，例如 sum、min、max 等等。</p>
+
 <p>为了使用 Aggregate，只需要定义 <code>-reducer aggregate</code>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -746,13 +804,13 @@ This is just the second cache string
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper myAggregatorForKeyCount.py <span class="se">\
 </span><span class="se"></span>    -reducer aggregate <span class="se">\
-</span><span class="se"></span>    -file myAggregatorForKeyCount.py <span class="se">\
-</span></code></pre></td></tr></table>
+</span><span class="se"></span>    -file myAggregatorForKeyCount.py <span class="err">\</span></code></pre></td></tr></table>
 </div>
-</div><p>myAggregatorForKeyCount.py  文件大概内容如下：</p>
+</div>
+<p>myAggregatorForKeyCount.py  文件大概内容如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -777,29 +835,31 @@ This is just the second cache string
 
 <span class="kn">import</span> <span class="nn">sys</span><span class="p">;</span>
 
-<span class="k">def</span> <span class="nf">generateLongCountToken</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">LongValueSum:</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">id</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="se">\t</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">1</span><span class="s2">&#34;</span>
+<span class="k">def</span> <span class="nf">generateLongCountToken</span><span class="p">(</span><span class="nb">id</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&#34;LongValueSum:&#34;</span> <span class="o">+</span> <span class="nb">id</span> <span class="o">+</span> <span class="s2">&#34;</span><span class="se">\t</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="s2">&#34;1&#34;</span>
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span><span class="p">:</span>
-    <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">):</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">();</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">while</span> <span class="n">line</span><span class="p">:</span>
-            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="p">;</span>
-            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="se">\t</span><span class="s2">&#34;</span><span class="p">)</span><span class="p">;</span>
-            <span class="k">print</span> <span class="n">generateLongCountToken</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="p">)</span><span class="p">;</span>
-            <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">(</span><span class="p">)</span><span class="p">;</span>
-    <span class="k">except</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">end of file</span><span class="s2">&#34;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&#34;</span><span class="se">\t</span><span class="s2">&#34;</span><span class="p">);</span>
+            <span class="k">print</span> <span class="n">generateLongCountToken</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">();</span>
+    <span class="k">except</span> <span class="s2">&#34;end of file&#34;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">None</span>
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">__main__</span><span class="s2">&#34;</span><span class="p">:</span>
-     <span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
-</code></pre></td></tr></table>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+     <span class="n">main</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="hadoop-field-selection-class">Hadoop Field Selection Class</h3>
+</div>
+<h3 id="hadoop-field-selection-class">Hadoop Field Selection Class</h3>
+
 <p>Hadoop 中有一个类 <a href="http://hadoop.apache.org/docs/r2.6.0/api/org/apache/hadoop/mapred/lib/FieldSelectionMapReduce.html">FieldSelectionMapReduce</a>，运行你像 unix 中的 cut 命令一样处理文本。</p>
+
 <p>例子：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -818,36 +878,44 @@ This is just the second cache string
 </span><span class="se"></span>    -D mapreduce.map.output.key.field.separator<span class="o">=</span>. <span class="se">\
 </span><span class="se"></span>    -D mapreduce.partition.keypartitioner.options<span class="o">=</span>-k1,2 <span class="se">\
 </span><span class="se"></span>    -D mapreduce.fieldsel.data.field.separator<span class="o">=</span>. <span class="se">\
-</span><span class="se"></span>    -D mapreduce.fieldsel.map.output.key.value.fields.spec<span class="o">=</span>6,5,1-3:0- <span class="se">\
-</span><span class="se"></span>    -D mapreduce.fieldsel.reduce.output.key.value.fields.spec<span class="o">=</span>0-2:5- <span class="se">\
+</span><span class="se"></span>    -D mapreduce.fieldsel.map.output.key.value.fields.spec<span class="o">=</span><span class="m">6</span>,5,1-3:0- <span class="se">\
+</span><span class="se"></span>    -D mapreduce.fieldsel.reduce.output.key.value.fields.spec<span class="o">=</span><span class="m">0</span>-2:5- <span class="se">\
 </span><span class="se"></span>    -D mapreduce.map.output.key.class<span class="o">=</span>org.apache.hadoop.io.Text <span class="se">\
 </span><span class="se"></span>    -D mapreduce.job.reduces<span class="o">=</span><span class="m">12</span> <span class="se">\
 </span><span class="se"></span>    -input myInputDirs <span class="se">\
 </span><span class="se"></span>    -output myOutputDir <span class="se">\
 </span><span class="se"></span>    -mapper org.apache.hadoop.mapred.lib.FieldSelectionMapReduce <span class="se">\
 </span><span class="se"></span>    -reducer org.apache.hadoop.mapred.lib.FieldSelectionMapReduce <span class="se">\
-</span><span class="se"></span>    -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner
-</code></pre></td></tr></table>
+</span><span class="se"></span>    -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner</code></pre></td></tr></table>
 </div>
-</div><p>关键参数说明：</p>
+</div>
+<p>关键参数说明：</p>
+
 <ul>
 <li><code>mapreduce.fieldsel.map.output.key.value.fields.spec=6,5,1-3:0-</code>：意思是 map 的输出中 key 部分包括分隔后的第 6、5、1、2、3列，而 value 部分包括分隔后的所有的列</li>
 <li><code>mapreduce.fieldsel.reduce.output.key.value.fields.spec=0-2:5-</code>：意思是 map 的输出中 key 部分包括分隔后的第 0、1、2列，而 value 部分包括分隔后的从第5列开始的所有列</li>
 </ul>
-<h1 id="heading-5">测试</h1>
+
+<h1 id="测试">测试</h1>
+
 <p>上面讲了 Hadoop Streaming 的原理和一些用法，现在来运行一些例子做测试。关于如何用 Python 来编写 Hadoop Streaming 程序，可以参考 <a href="http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/">Writing an Hadoop MapReduce Program in Python</a>，中文翻译在 <a href="http://www.tianjun.ml/essays/19/">这里</a>，其他非 Java 的语言，都可以参照这篇文章。</p>
+
 <p>下面以 word count 为例做测试。</p>
-<h2 id="heading-6">准备测试数据</h2>
+
+<h2 id="准备测试数据">准备测试数据</h2>
+
 <p>同 <a href="http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/">Writing an Hadoop MapReduce Program in Python</a>，我们使用古腾堡项目中的三本电子书作为测试：</p>
+
 <ul>
 <li><a href="http://www.gutenberg.org/etext/20417">The Outline of Science, Vol. 1 (of 4) by J. Arthur Thomson</a></li>
 <li><a href="http://www.gutenberg.org/etext/5000">The Notebooks of Leonardo Da Vinci</a></li>
 <li><a href="http://www.gutenberg.org/etext/4300">Ulysses by James Joyce</a></li>
 </ul>
+
 <p>下载这些电子书的 txt格式，并将其上传到 hdfs：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -872,16 +940,17 @@ $ hadoop fs -copyFromLocal /tmp/gutenberg gutenberg
 
 $ hadoop fs -ls gutenberg
 Found <span class="m">4</span> items
--rw-r--r--   <span class="m">3</span> hive hive     <span class="m">674762</span> 2015-02-11 17:34 gutenberg/20417.txt
--rw-r--r--   <span class="m">3</span> hive hive    <span class="m">1573079</span> 2015-02-11 17:34 gutenberg/4300.txt
--rw-r--r--   <span class="m">3</span> hive hive    <span class="m">1423803</span> 2015-02-11 17:34 gutenberg/pg5000.txt
-</code></pre></td></tr></table>
+-rw-r--r--   <span class="m">3</span> hive hive     <span class="m">674762</span> <span class="m">2015</span>-02-11 <span class="m">17</span>:34 gutenberg/20417.txt
+-rw-r--r--   <span class="m">3</span> hive hive    <span class="m">1573079</span> <span class="m">2015</span>-02-11 <span class="m">17</span>:34 gutenberg/4300.txt
+-rw-r--r--   <span class="m">3</span> hive hive    <span class="m">1423803</span> <span class="m">2015</span>-02-11 <span class="m">17</span>:34 gutenberg/pg5000.txt</code></pre></td></tr></table>
 </div>
-</div><h2 id="-shell-">编写 Shell 版程序</h2>
+</div>
+<h2 id="编写-shell-版程序">编写 Shell 版程序</h2>
+
 <p>mapper.sh 如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -896,15 +965,15 @@ Found <span class="m">4</span> items
 <span class="k">while</span> <span class="nb">read</span> LINE<span class="p">;</span> <span class="k">do</span>
   <span class="k">for</span> word in <span class="nv">$LINE</span>
   <span class="k">do</span>
-    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2"> 1</span><span class="s2">&#34;</span>
+    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2"> 1&#34;</span>
   <span class="k">done</span>
-<span class="k">done</span>
-</code></pre></td></tr></table>
+<span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><p>reducer.sh 程序如下：</p>
+</div>
+<p>reducer.sh 程序如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -929,7 +998,7 @@ Found <span class="m">4</span> items
 <span class="nv">started</span><span class="o">=</span><span class="m">0</span>
 <span class="nv">word</span><span class="o">=</span><span class="s2">&#34;&#34;</span>
 <span class="k">while</span> <span class="nb">read</span> LINE<span class="p">;</span><span class="k">do</span>
-  <span class="nv">newword</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$LINE</span> <span class="p">|</span> cut -d <span class="s1">&#39; &#39;</span>  -f 1<span class="sb">`</span>
+  <span class="nv">newword</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$LINE</span> <span class="p">|</span> cut -d <span class="s1">&#39; &#39;</span>  -f <span class="m">1</span><span class="sb">`</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$newword</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
     <span class="o">[</span> <span class="nv">$started</span> -ne <span class="m">0</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nb">echo</span> -e <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2">\t</span><span class="nv">$count</span><span class="s2">&#34;</span>
     <span class="nv">word</span><span class="o">=</span><span class="nv">$newword</span>
@@ -939,13 +1008,13 @@ Found <span class="m">4</span> items
     <span class="nv">count</span><span class="o">=</span><span class="k">$((</span> <span class="nv">$count</span> <span class="o">+</span> <span class="m">1</span> <span class="k">))</span>
   <span class="k">fi</span>
 <span class="k">done</span>
-<span class="nb">echo</span> -e <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2">\t</span><span class="nv">$count</span><span class="s2">&#34;</span>
-</code></pre></td></tr></table>
+<span class="nb">echo</span> -e <span class="s2">&#34;</span><span class="nv">$word</span><span class="s2">\t</span><span class="nv">$count</span><span class="s2">&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>在本机以脚本方式测试：</p>
+</div>
+<p>在本机以脚本方式测试：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -956,13 +1025,13 @@ Found <span class="m">4</span> items
 bar <span class="m">1</span>
 foo <span class="m">3</span>
 labs    <span class="m">1</span>
-quux    <span class="m">2</span>
-</code></pre></td></tr></table>
+quux    <span class="m">2</span></code></pre></td></tr></table>
 </div>
-</div><p>以 Hadoop Streaming 方式运行：</p>
+</div>
+<p>以 Hadoop Streaming 方式运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -997,28 +1066,29 @@ quux    <span class="m">2</span>
 </span><span class="se"></span>    -file mapper.sh <span class="se">\
 </span><span class="se"></span>    -file reducer.sh
 
-15/02/11 17:50:59 INFO mapreduce.Job:  map 0% reduce 0%
-15/02/11 17:51:18 INFO mapreduce.Job:  map 17% reduce 0%
-15/02/11 17:51:52 INFO mapreduce.Job:  map 17% reduce 6%
-15/02/11 17:51:53 INFO mapreduce.Job:  map 33% reduce 6%
-15/02/11 17:51:55 INFO mapreduce.Job:  map 60% reduce 17%
-15/02/11 17:51:56 INFO mapreduce.Job:  map 100% reduce 17%
-15/02/11 17:51:59 INFO mapreduce.Job:  map 100% reduce 67%
-15/02/11 17:53:11 INFO mapreduce.Job:  map 100% reduce 68%
-15/02/11 17:54:49 INFO mapreduce.Job:  map 100% reduce 69%
-15/02/11 17:57:12 INFO mapreduce.Job:  map 100% reduce 70%
-15/02/11 17:58:45 INFO mapreduce.Job:  map 100% reduce 71%
-15/02/11 17:58:55 INFO mapreduce.Job:  map 100% reduce 81%
-15/02/11 17:59:05 INFO mapreduce.Job:  map 100% reduce 100%
-15/02/11 17:59:08 INFO streaming.StreamJob: Job complete: job_1421752803837_5736
-15/02/11 17:59:09 INFO streaming.StreamJob: Output: /user/root/gutenberg-output
-</code></pre></td></tr></table>
+<span class="m">15</span>/02/11 <span class="m">17</span>:50:59 INFO mapreduce.Job:  map <span class="m">0</span>% reduce <span class="m">0</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:18 INFO mapreduce.Job:  map <span class="m">17</span>% reduce <span class="m">0</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:52 INFO mapreduce.Job:  map <span class="m">17</span>% reduce <span class="m">6</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:53 INFO mapreduce.Job:  map <span class="m">33</span>% reduce <span class="m">6</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:55 INFO mapreduce.Job:  map <span class="m">60</span>% reduce <span class="m">17</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:56 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">17</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:51:59 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">67</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:53:11 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">68</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:54:49 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">69</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:57:12 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">70</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:58:45 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">71</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:58:55 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">81</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:59:05 INFO mapreduce.Job:  map <span class="m">100</span>% reduce <span class="m">100</span>%
+<span class="m">15</span>/02/11 <span class="m">17</span>:59:08 INFO streaming.StreamJob: Job complete: job_1421752803837_5736
+<span class="m">15</span>/02/11 <span class="m">17</span>:59:09 INFO streaming.StreamJob: Output: /user/root/gutenberg-output</code></pre></td></tr></table>
 </div>
-</div><h2 id="-python-">编写 Python 版程序</h2>
+</div>
+<h2 id="编写-python-版程序">编写 Python 版程序</h2>
+
 <p>mapper.py 程序如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1045,16 +1115,16 @@ quux    <span class="m">2</span>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-python" data-lang="python"><span class="ch">#!/usr/bin/env python</span>
-<span class="sa"></span><span class="s2">&#34;&#34;&#34;</span><span class="s2">A more advanced Mapper, using Python iterators and generators.</span><span class="s2">&#34;&#34;&#34;</span>
+<span class="s2">&#34;&#34;&#34;A more advanced Mapper, using Python iterators and generators.&#34;&#34;&#34;</span>
 
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="k">def</span> <span class="nf">read_input</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">read_input</span><span class="p">(</span><span class="nb">file</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
         <span class="c1"># split the line into words</span>
-        <span class="k">yield</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="sa"></span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">):</span>
     <span class="c1"># input comes from STDIN (standard input)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">read_input</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
@@ -1064,16 +1134,16 @@ quux    <span class="m">2</span>
         <span class="c1">#</span>
         <span class="c1"># tab-delimited; the trivial word count is 1</span>
         <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
-            <span class="k">print</span> <span class="sa"></span><span class="s1">&#39;</span><span class="si">%s</span><span class="si">%s</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">separator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s%s%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">word</span><span class="p">,</span> <span class="n">separator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">__main__</span><span class="s2">&#34;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">(</span><span class="p">)</span>
-</code></pre></td></tr></table>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span></code></pre></td></tr></table>
 </div>
-</div><p>reducer.py 程序如下：</p>
+</div>
+<p>reducer.py 程序如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1104,41 +1174,43 @@ quux    <span class="m">2</span>
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-python" data-lang="python"><span class="ch">#!/usr/bin/env python</span>
-<span class="sa"></span><span class="s2">&#34;&#34;&#34;</span><span class="s2">A more advanced Reducer, using Python iterators and generators.</span><span class="s2">&#34;&#34;&#34;</span>
+<span class="s2">&#34;&#34;&#34;A more advanced Reducer, using Python iterators and generators.&#34;&#34;&#34;</span>
 
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
 <span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">itemgetter</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="k">def</span> <span class="nf">read_mapper_output</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="sa"></span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">read_mapper_output</span><span class="p">(</span><span class="nb">file</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">file</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="sa"></span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">):</span>
     <span class="c1"># input comes from STDIN (standard input)</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">read_mapper_output</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="n">separator</span><span class="p">)</span>
     <span class="c1"># groupby groups multiple word-count pairs by word,</span>
     <span class="c1"># and creates an iterator that returns consecutive keys and their group:</span>
     <span class="c1">#   current_word - string containing a word (the key)</span>
     <span class="c1">#   group - iterator yielding all [&#34;&amp;lt;current_word&amp;gt;&#34;, &#34;&amp;lt;count&amp;gt;&#34;] items</span>
-    <span class="k">for</span> <span class="n">current_word</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">current_word</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">itemgetter</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">total_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">current_word</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">group</span><span class="p">)</span>
-            <span class="k">print</span> <span class="sa"></span><span class="s2">&#34;</span><span class="si">%s</span><span class="si">%s</span><span class="si">%d</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="p">(</span><span class="n">current_word</span><span class="p">,</span> <span class="n">separator</span><span class="p">,</span> <span class="n">total_count</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&#34;</span><span class="si">%s%s%d</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="p">(</span><span class="n">current_word</span><span class="p">,</span> <span class="n">separator</span><span class="p">,</span> <span class="n">total_count</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="c1"># count was not a number, so silently discard this item</span>
             <span class="k">pass</span>
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">__main__</span><span class="s2">&#34;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">(</span><span class="p">)</span>
-</code></pre></td></tr></table>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span></code></pre></td></tr></table>
 </div>
-</div><p>关于 Java 的一些例子，这个需要单独创建一个 maven 工程，然后做一些测试。</p>
-<h1 id="heading-7">注意事项</h1>
-<h3 id="mapper--shell-">mapper 中不能使用 shell 的别名，但可以使用变量</h3>
+</div>
+<p>关于 Java 的一些例子，这个需要单独创建一个 maven 工程，然后做一些测试。</p>
+
+<h1 id="注意事项">注意事项</h1>
+
+<h3 id="mapper-中不能使用-shell-的别名-但可以使用变量">mapper 中不能使用 shell 的别名，但可以使用变量</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1173,48 +1245,52 @@ $ hdfs dfs -cat /user/me/samples/student_out/part-00000
 <span class="m">50</span>
 <span class="m">70</span>
 <span class="m">75</span>
-<span class="m">80</span>
-</code></pre></td></tr></table>
+<span class="m">80</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="mapper--unix-">mapper 中不能使用 unix 的管道</h3>
+</div>
+<h3 id="mapper-中不能使用-unix-的管道">mapper 中不能使用 unix 的管道</h3>
+
 <p><code>-mapper</code> 中使用 &ldquo;cut -f1 | sed s/foo/bar/g&rdquo;，会出现 <code>java.io.IOException: Broken pipe</code> 异常</p>
-<h3 id="-streaming-">指定 streaming 临时空间</h3>
+
+<h3 id="指定-streaming-临时空间">指定 streaming 临时空间</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">-D stream.tmpdir<span class="o">=</span>/export/bigspace/...
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">-D stream.tmpdir<span class="o">=</span>/export/bigspace/...</code></pre></td></tr></table>
 </div>
-</div><h3 id="heading-8">指定多个输入文件</h3>
+</div>
+<h3 id="指定多个输入文件">指定多个输入文件</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">hadoop jar hadoop-streaming-2.6.0.jar <span class="se">\
 </span><span class="se"></span>    -input <span class="s1">&#39;/user/foo/dir1&#39;</span> -input <span class="s1">&#39;/user/foo/dir2&#39;</span> <span class="se">\
-</span><span class="se"></span>    <span class="o">(</span>rest of the <span class="nb">command</span><span class="o">)</span>
-</code></pre></td></tr></table>
+</span><span class="se"></span>    <span class="o">(</span>rest of the <span class="nb">command</span><span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><h3 id="-xml">处理 XML</h3>
+</div>
+<h3 id="处理-xml">处理 XML</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">hadoop jar hadoop-streaming-2.6.0.jar <span class="se">\
 </span><span class="se"></span>    -inputreader <span class="s2">&#34;StreamXmlRecord,begin=BEGIN_STRING,end=END_STRING&#34;</span> <span class="se">\
-</span><span class="se"></span>    <span class="o">(</span>rest of the <span class="nb">command</span><span class="o">)</span>
-</code></pre></td></tr></table>
+</span><span class="se"></span>    <span class="o">(</span>rest of the <span class="nb">command</span><span class="o">)</span></code></pre></td></tr></table>
 </div>
-</div><p>BEGIN_STRING 和 END_STRING 之前的内容会被认为是 map 任务的一条记录。</p>
-<h1 id="heading-9">参考文章</h1>
+</div>
+<p>BEGIN_STRING 和 END_STRING 之前的内容会被认为是 map 任务的一条记录。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="http://hadoop.apache.org/docs/r2.6.0/hadoop-mapreduce-client/hadoop-mapreduce-client-core/HadoopStreaming.html#More_Usage_Examples">Hadoop Streaming</a></li>
 <li><a href="http://dongxicheng.org/mapreduce/hadoop-streaming-programming/">Hadoop Streaming 编程</a></li>
@@ -1338,7 +1414,7 @@ $ hdfs dfs -cat /user/me/samples/student_out/part-00000
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -1351,7 +1427,21 @@ $ hdfs dfs -cat /user/me/samples/student_out/part-00000
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

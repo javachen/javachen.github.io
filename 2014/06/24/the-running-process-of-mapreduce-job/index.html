@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Map-Reduce的处理过程主要涉及以下四个部分： 客户端Client：用于提交Map-reduce任务job JobTracker：协调整个" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Map-Reduce的处理过程主要涉及以下四个部分： 客户端Client：用于提交Map-reduce任务job JobTracker：协调整个" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/06/24/the-running-process-of-mapreduce-job/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Map-Reduce的处理过程主要涉及以下四个部分： 客户端Client：用于提交Map-reduce任务job JobTracker：协调整个" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/06/24/the-running-process-of-mapreduce-job/" />
-<meta property="article:published_time" content="2014-06-24T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-06-24T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-06-24T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-06-24T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="MapReduce任务运行过程">
 <meta itemprop="description" content="Map-Reduce的处理过程主要涉及以下四个部分： 客户端Client：用于提交Map-reduce任务job JobTracker：协调整个">
+
+
 <meta itemprop="datePublished" content="2014-06-24T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-06-24T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2642">
 
 
 
-<meta itemprop="keywords" content="mapreduce," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="mapreduce," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="MapReduce任务运行过程"/>
 <meta name="twitter:description" content="Map-Reduce的处理过程主要涉及以下四个部分： 客户端Client：用于提交Map-reduce任务job JobTracker：协调整个"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,24 +139,39 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#shell">运行Shell命令</a></li>
-    <li><a href="#heading">作业文件上传</a></li>
-    <li><a href="#inputsplit">产生InputSplit文件</a></li>
-    <li><a href="#jobtracker">作业提交到JobTracker</a></li>
-  </ul>
+<ul>
+<li><a href="#1-提交作业">1. 提交作业</a>
+<ul>
+<li><a href="#运行shell命令">运行Shell命令</a></li>
+<li><a href="#作业文件上传">作业文件上传</a></li>
+<li><a href="#产生inputsplit文件">产生InputSplit文件</a></li>
+<li><a href="#作业提交到jobtracker">作业提交到JobTracker</a></li>
+</ul></li>
+<li><a href="#2-作业初始化">2. 作业初始化</a></li>
+<li><a href="#3-任务分配">3. 任务分配</a></li>
+<li><a href="#4-执行任务">4. 执行任务</a></li>
+<li><a href="#5-进度和状态更新">5. 进度和状态更新</a></li>
+<li><a href="#6-完成作业">6. 完成作业</a></li>
+<li><a href="#7-总结">7. 总结</a></li>
+<li><a href="#8-参考资料">8. 参考资料</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>Map-Reduce的处理过程主要涉及以下四个部分：</p>
+      
+
+<p>Map-Reduce的处理过程主要涉及以下四个部分：</p>
+
 <ul>
 <li>客户端Client：用于提交Map-reduce任务job</li>
 <li>JobTracker：协调整个job的运行，其为一个Java进程，其main class为JobTracker</li>
 <li>TaskTracker：运行此job的task，处理input split，其为一个Java进程，其main class为TaskTracker</li>
 <li>HDFS：hadoop分布式文件系统，用于在各个进程间共享Job相关的文件</li>
 </ul>
+
 <p>上图中主要包括以下过程：</p>
+
 <ul>
 <li>提交作业</li>
 <li>作业初始化</li>
@@ -165,12 +180,15 @@
 <li>进度和状态更新</li>
 <li>完成作业</li>
 </ul>
-<h1 id="1-">1. 提交作业</h1>
-<h2 id="shell">运行Shell命令</h2>
+
+<h1 id="1-提交作业">1. 提交作业</h1>
+
+<h2 id="运行shell命令">运行Shell命令</h2>
+
 <p>使用hadoop提供的命令行或者通过编程接口提交任务，命令行方式如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -187,59 +205,91 @@
     -libjars<span class="o">=</span>aaa.jar <span class="se">\ </span> 
     -archives<span class="o">=</span>bbb.zip <span class="se">\ </span> 
     -input /test/input <span class="se">\ </span> 
-    -output /test/output 
-</code></pre></td></tr></table>
+    -output /test/output </code></pre></td></tr></table>
 </div>
-</div><p>当用户按上述命令格式提交作业后，命令行脚本会调用JobClient.runJob()方法提交作业</p>
-<h2 id="heading">作业文件上传</h2>
+</div>
+<p>当用户按上述命令格式提交作业后，命令行脚本会调用JobClient.runJob()方法提交作业</p>
+
+<h2 id="作业文件上传">作业文件上传</h2>
+
 <p>JobClient将作业提交到JobTracker节点上之前，需要作业写初始化工作。初始化工作由 <code>JobClient.submitJobInternal(job)</code> 实现，这些初始化包括获取作业的jobId、创建HDFS目录、上传作业以及生成所有的InputSplit分片的相关信息等。</p>
+
 <p>MapReduce的作业文件的上传和下载都是由DistributedCache透明完成的，它是Hadoop专门开发的数据分发工具。</p>
+
 <p>JobClient上传文件时可以修改文件副本数（通过参数 <code>mapred.submit.replication</code> 指定，默认值为10），这样的话可以分摊负载以避免产生访问热点。</p>
-<h2 id="inputsplit">产生InputSplit文件</h2>
+
+<h2 id="产生inputsplit文件">产生InputSplit文件</h2>
+
 <p>作业提交后，JobClient会调用InputFormat的getSplits()方法生成相关的split分片信息，该信息包括InputSplit元数据信息和原始的InputSplit信息，其中元数据信息被JobTracker使用，第二部分在Map Task初始化时由Mapper使用来获取自己要处理的数据，这两部分数据被保存到job.split文件和job.splitmetainfo文件中。</p>
-<h2 id="jobtracker">作业提交到JobTracker</h2>
+
+<h2 id="作业提交到jobtracker">作业提交到JobTracker</h2>
+
 <p>调用JobTracker的submitJob()方法将作业提交。在这一阶段会依次进行如下操作：</p>
+
 <ul>
 <li>1）、为作业创建JobInProgress对象。JobTracker会为用户提交的每一个作业创建一个JobInProgress对象，这个对象维护了作业的运行时信息，主要用于跟踪正在运行的作业的状态和进度；</li>
 <li>2）、检查用户是否具有指定队列的作业提交权限。Hadoop以队列为单位来管理作业和资源，每个队列分配有一定亮的资源，管理严可以为每个队列指定哪些用户有权限提交作业；</li>
 <li>3）、检查作业配置的内存使用量是否合理。用户在提交作业时，可已分别通过参数 <code>mapred.job.map.memory.mb</code> 和<code>mapred.job.reduce.memory.mb</code> 指定Map Task和Reduce Task的内存使用量，而管理员可以给集群中的Map Task和Reduce Task分别设置中的内存使用量，一旦用户配置的内存使用量超过总的内存限制，作业就会提交失败；</li>
 <li>4）、JobTracker收到提交的作业后，并不会马上对其进行初始化，而是会交给TaskScheduler调度器，由他按照一定的策略对作业做初始化操作。</li>
 </ul>
+
 <p>JobTracker采用了观察者模式将“提交新作业”这一事件告诉TaskScheduler</p>
+
 <p>提交任务后，runJob每隔一秒钟轮询一次job的进度，将进度返回到命令行，直到任务运行完毕。</p>
-<h1 id="2-">2. 作业初始化</h1>
+
+<h1 id="2-作业初始化">2. 作业初始化</h1>
+
 <p>调度器调用JobTracker.initJob()方法来对新作业做初始化的。Hadoop将每个作业分节成4中类型的任务：Setup Task，Map Task，Reduce Task和Cleanup Task，它们的运行时信息由TaskInProgress维护，因此，从某个方面将，创建这些任务就是创建TaskInProgress对象。</p>
+
 <ul>
 <li><code>Setup Task</code>。作业初始化标志性任务，它进行一些很简单的作业初始化工作。该类型任务又分为Map Setup Task和Reduce Setup Task两种，并且只能运行一次。</li>
 <li><code>Map Task</code>。Map阶段的数据处理任务。 其数目及对应的处理数据分片由应用程序中的InputFormat中间确定。</li>
 <li><code>Reduce Task</code>。Reduce阶段的处理数据的任务。其数目可以由用户通过参数 <code>mapred.reduce.tasks</code> 指定。Hadoop刚开始的时候只会调度Map Task任务，直到Map Task完成数目达到由参数 <code>mapred.reduce.slowstart.completed.maps</code>指定的百分比（默认值为0.05，即百分之5）后，才开始调度Reduce Task。</li>
 <li><code>Cleanup Task</code>。作业结束的标志性任务，主要是做一些作业清理的工作，比如删除作业在运行中产生的一些零食目录和数据等信息。</li>
 </ul>
+
 <p>说明：可以通过参数 <code>mapred.committer.job.setup.cleanup.needed</code> 配置是否为作业创建Setup/Cleanup Task，以避免他们拖慢作业执行进度且降低作业的可靠性。</p>
-<h1 id="3-">3. 任务分配</h1>
+
+<h1 id="3-任务分配">3. 任务分配</h1>
+
 <p>Tasktracker 和 JobTracker 通过心跳通信分配一个任务</p>
+
 <p>TaskTracker 定期发送心跳，告知 JobTracker, tasktracker 是否还存活，并充当两者之间的消息通道。</p>
+
 <p>TaskTracker 主动向 JobTracker 询问是否有作业。若自己有空闲的 solt,就可在心跳阶段得到 JobTracker 发送过来的 Map 任务或 Reduce 任务。对于 map 任务和 task 任务，TaskTracker 有固定数量的任务槽，准确数量由 tasktracker 核的个数核内存的大小来确定。默认调度器在处理 reduce 任务槽之前，会填充满空闲的 map 任务槽，因此，如果 tasktracker 至少有一个空闲的 map 任务槽，tasktracker 会为它选择一个 map 任务，否则选择一个 reduce 任务。选择 map 任务时，jobTracker 会考虑数据本地化（任务运行在输入分片所在的节点），而 reduce 任务不考虑数据本地化。任务还可能是机架本地化。</p>
-<h1 id="4-">4. 执行任务</h1>
+
+<h1 id="4-执行任务">4. 执行任务</h1>
+
 <p>tasktracker 执行任务大致步骤：</p>
+
 <ul>
 <li>被分配到一个任务后，从共享文件中把作业的jar复制到本地，并将程序执行需要的全部文件（配置信息、数据分片）复制到本地</li>
 <li>为任务新建一个本地工作目录</li>
 <li>内部类TaskRunner实例启动一个新的jvm运行任务</li>
 </ul>
-<h1 id="5-">5. 进度和状态更新</h1>
+
+<h1 id="5-进度和状态更新">5. 进度和状态更新</h1>
+
 <ul>
 <li>状态包括：作业或认为的状态（成功，失败，运行中）、map 和 reduce 的进度、作业计数器的值、状态消息或描述</li>
 <li>task 运行时，将自己的状态发送给 TaskTracker,由 TaskTracker 心跳机制向 JobTracker 汇报</li>
 <li>状态进度由计数器实现</li>
 </ul>
-<p><img src="http://zhaomingtai.u.qiniudn.com/updateStatusMapredurce.png" alt=""></p>
-<h1 id="6-">6. 完成作业</h1>
+
+<p><img src="http://zhaomingtai.u.qiniudn.com/updateStatusMapredurce.png" alt="" /></p>
+
+<h1 id="6-完成作业">6. 完成作业</h1>
+
 <p>当JobTracker获得最后一个task的运行成功的报告后，将job得状态改为成功。</p>
+
 <p>当JobClient从JobTracker轮询的时候，发现此job已经成功结束，则向用户打印消息，从runJob函数中返回。</p>
-<h1 id="7-">7. 总结</h1>
+
+<h1 id="7-总结">7. 总结</h1>
+
 <p>以上过程通过时序图来表达过程如下：</p>
-<h1 id="8-">8. 参考资料</h1>
+
+<h1 id="8-参考资料">8. 参考资料</h1>
+
 <ul>
 <li>[1] <a href="http://kangfoo.u.qiniudn.com/article/images/03/hadoop-mapreduce--gong-zuo-ji-zhi/">Hadoop MapReduce 工作机制</a></li>
 </ul>
@@ -359,7 +409,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -372,7 +422,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

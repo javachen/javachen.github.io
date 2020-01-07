@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录配置安全的Hive集群集成Sentry的过程。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录配置安全的Hive集群集成Sentry的过程。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/11/14/config-secured-hive-with-sentry/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="本文主要记录配置安全的Hive集群集成Sentry的过程。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/11/14/config-secured-hive-with-sentry/" />
-<meta property="article:published_time" content="2014-11-14T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-11-14T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-11-14T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-11-14T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="配置安全的Hive集群集成Sentry">
 <meta itemprop="description" content="本文主要记录配置安全的Hive集群集成Sentry的过程。">
+
+
 <meta itemprop="datePublished" content="2014-11-14T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-11-14T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="2490">
 
 
 
-<meta itemprop="keywords" content="sentry,kerberos,hive," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="sentry,kerberos,hive," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="配置安全的Hive集群集成Sentry"/>
 <meta name="twitter:description" content="本文主要记录配置安全的Hive集群集成Sentry的过程。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,52 +139,70 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#hive-metastoresentry">Hive Metastore集成Sentry</a></li>
-    <li><a href="#hive-server2sentry">Hive-server2集成Sentry</a></li>
-    <li><a href="#hiveserver2">重启HiveServer2</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#-kerberos-">使用 kerberos 测试</a></li>
-    <li><a href="#-ldap-">使用 ldap 用户测试</a></li>
-  </ul>
+<ul>
+<li><a href="#1-环境说明">1. 环境说明</a></li>
+<li><a href="#2-安装和配置sentry">2. 安装和配置Sentry</a></li>
+<li><a href="#3-配置hive">3. 配置Hive</a>
+<ul>
+<li><a href="#hive-metastore集成sentry">Hive Metastore集成Sentry</a></li>
+<li><a href="#hive-server2集成sentry">Hive-server2集成Sentry</a></li>
+<li><a href="#重启hiveserver2">重启HiveServer2</a></li>
+</ul></li>
+<li><a href="#4-准备测试数据">4. 准备测试数据</a></li>
+<li><a href="#5-测试">5. 测试</a>
+<ul>
+<li><a href="#使用-kerberos-测试">使用 kerberos 测试</a></li>
+<li><a href="#使用-ldap-用户测试">使用 ldap 用户测试</a></li>
+</ul></li>
+<li><a href="#6-其他说明">6. 其他说明</a></li>
+<li><a href="#7-参考文章">7. 参考文章</a></li>
+<li><a href="#8-相关文章">8. 相关文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>本文主要记录配置安全的Hive集群集成Sentry的过程。Hive上配置了Kerberos认证，配置的过程请参考：</p>
+      
+
+<p>本文主要记录配置安全的Hive集群集成Sentry的过程。Hive上配置了Kerberos认证，配置的过程请参考：</p>
+
 <ul>
 <li><a href="/2013/04/06/install-cloudera-cdh-by-yum">使用yum安装CDH Hadoop集群</a></li>
 <li><a href="/2014/11/06/config-kerberos-in-cdh-hive">Hive配置kerberos认证</a></li>
 </ul>
-<h1 id="1-">1. 环境说明</h1>
+
+<h1 id="1-环境说明">1. 环境说明</h1>
+
 <p>系统环境：</p>
+
 <ul>
 <li>操作系统：CentOs 6.6</li>
 <li>Hadoop版本：<code>CDH5.4</code></li>
 <li>JDK版本：<code>1.7.0_71</code></li>
 <li>运行用户：root</li>
 </ul>
+
 <p>集群各节点角色规划为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
+<pre class="chroma">192.168.56.121        cdh1     NameNode、ResourceManager、HBase、Hive metastore、Impala Catalog、Impala statestore、Sentry 
 192.168.56.122        cdh2     DataNode、NodeManager、HBase、Hiveserver2、Impala Server
-192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hiveserver2、Impala Server
-</code></pre></td></tr></table>
+192.168.56.123        cdh3     DataNode、HBase、NodeManager、Hiveserver2、Impala Server</pre></td></tr></table>
 </div>
-</div><p>cdh1作为master节点，其他节点作为slave节点，我们在cdh1节点安装kerberos Server，在其他节点安装kerberos client。</p>
-<h1 id="2-sentry">2. 安装和配置Sentry</h1>
+</div>
+<p>cdh1作为master节点，其他节点作为slave节点，我们在cdh1节点安装kerberos Server，在其他节点安装kerberos client。</p>
+
+<h1 id="2-安装和配置sentry">2. 安装和配置Sentry</h1>
+
 <p>这部分内容，请参考<a href="/2015/04/30/install-and-config-sentry.html">安装和配置Sentry</a>，因为集群中配置了kerberos，所以需要在KDC节点上（cdh1）生成 Sentry 服务的 principal 并导出为 ticket：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -201,13 +219,13 @@ $ kadmin.local -q <span class="s2">&#34;xst -k sentry.keytab sentry/cdh1@JAVACHE
 
 $ chown sentry:hadoop sentry.keytab <span class="p">;</span> chmod <span class="m">400</span> *.keytab
 
-$ cp sentry.keytab /etc/sentry/conf
-</code></pre></td></tr></table>
+$ cp sentry.keytab /etc/sentry/conf</code></pre></td></tr></table>
 </div>
-</div><p>然后，修改/etc/sentry/conf/sentry-site.xml 中下面的参数：</p>
+</div>
+<p>然后，修改/etc/sentry/conf/sentry-site.xml 中下面的参数：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -221,37 +239,39 @@ $ cp sentry.keytab /etc/sentry/conf
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.security.mode<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.service.security.mode<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-       <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.server.principal<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>sentry/cdh1@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+       <span class="nt">&lt;name&gt;</span>sentry.service.server.principal<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>sentry/cdh1@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.server.keytab<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/sentry/conf/sentry.keytab<span class="nt">&lt;/value&gt;</span>
-    <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.service.server.keytab<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>/etc/sentry/conf/sentry.keytab<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>获取Sentry的ticket再启动sentry-store服务：</p>
+</div>
+<p>获取Sentry的ticket再启动sentry-store服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/sentry/conf/sentry.keytab sentry/cdh1@JAVACHEN.COM
-$ /etc/init.d/sentry-store start
-</code></pre></td></tr></table>
+$ /etc/init.d/sentry-store start</code></pre></td></tr></table>
 </div>
-</div><h1 id="3-hive">3. 配置Hive</h1>
-<h2 id="hive-metastoresentry">Hive Metastore集成Sentry</h2>
+</div>
+<h1 id="3-配置hive">3. 配置Hive</h1>
+
+<h2 id="hive-metastore集成sentry">Hive Metastore集成Sentry</h2>
+
 <p>需要在 /etc/hive/conf/hive-site.xml中添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -261,24 +281,26 @@ $ /etc/init.d/sentry-store start
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.metastore.pre.event.listeners<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.binding.metastore.MetastoreAuthzBinding<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>hive.metastore.pre.event.listeners<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>org.apache.sentry.binding.metastore.MetastoreAuthzBinding<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.metastore.event.listeners<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.binding.metastore.SentryMetastorePostEventListener<span class="nt">&lt;/value&gt;</span>
-    <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+    <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>hive.metastore.event.listeners<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>org.apache.sentry.binding.metastore.SentryMetastorePostEventListener<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="hive-server2sentry">Hive-server2集成Sentry</h2>
+</div>
+<h2 id="hive-server2集成sentry">Hive-server2集成Sentry</h2>
+
 <p>在Hive配置了Kerberos认证之后，Hive-server2集成Sentry有以下要求：</p>
+
 <ul>
 <li>修改 <code>/user/hive/warehouse</code> 权限：</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -287,33 +309,34 @@ $ /etc/init.d/sentry-store start
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hadoop/conf/hdfs.keytab hdfs/cdh1@JAVACHEN.COM
 
 $ hdfs dfs -chmod -R <span class="m">770</span> /user/hive/warehouse
-$ hdfs dfs -chown -R hive:hive /user/hive/warehouse
-</code></pre></td></tr></table>
+$ hdfs dfs -chown -R hive:hive /user/hive/warehouse</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>禁止 HiveServer2 impersonation：</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.server2.enable.impersonation<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>false<span class="nt">&lt;/value&gt;</span>
-    <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>hive.server2.enable.impersonation<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>false<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>确认 /etc/hadoop/conf/container-executor.cfg 文件中 <code>min.user.id=0</code>。</li>
 </ul>
+
 <p>修改 /etc/hive/conf/hive-site.xml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -331,28 +354,28 @@ $ hdfs dfs -chown -R hive:hive /user/hive/warehouse
 </span><span class="lnt">16
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.server2.enable.impersonation<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>false<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml">    <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>hive.server2.enable.impersonation<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>false<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.security.authorization.task.factory<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>hive.security.authorization.task.factory<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>org.apache.sentry.binding.hive.SentryHiveAuthorizationTaskFactoryImpl<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.server2.session.hook<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>hive.server2.session.hook<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>org.apache.sentry.binding.hive.HiveAuthzBindingSessionHook<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.sentry.conf.url<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>file:///etc/hive/conf/sentry-site.xml<span class="nt">&lt;/value&gt;</span>
-    <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>hive.sentry.conf.url<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>file:///etc/hive/conf/sentry-site.xml<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>另外，因为集群配置了kerberos，故需要/etc/hive/conf/sentry-site.xml添加以下内容：</p>
+</div>
+<p>另外，因为集群配置了kerberos，故需要/etc/hive/conf/sentry-site.xml添加以下内容：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -368,24 +391,24 @@ $ hdfs dfs -chown -R hive:hive /user/hive/warehouse
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.security.mode<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.service.security.mode<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>kerberos<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-       <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.server.principal<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>sentry/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+       <span class="nt">&lt;name&gt;</span>sentry.service.server.principal<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>sentry/_HOST@JAVACHEN.COM<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.server.keytab<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>/etc/sentry/conf/sentry.keytab<span class="nt">&lt;/value&gt;</span>
-    <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.service.server.keytab<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>/etc/sentry/conf/sentry.keytab<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>参考模板<a href="https://github.com/cloudera/sentry/blob/cdh5-1.4.0_5.4.0/conf%2Fsentry-site.xml.hive-client.template">sentry-site.xml.hive-client.template</a>在 /etc/hive/conf/ 目录创建 sentry-site.xml：</p>
+</div>
+<p>参考模板<a href="https://github.com/cloudera/sentry/blob/cdh5-1.4.0_5.4.0/conf%2Fsentry-site.xml.hive-client.template">sentry-site.xml.hive-client.template</a>在 /etc/hive/conf/ 目录创建 sentry-site.xml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -425,75 +448,78 @@ $ hdfs dfs -chown -R hive:hive /user/hive/warehouse
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-<span class="nt">&lt;configuration</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-       <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-port<span class="nt">&lt;/name&gt;</span>
-       <span class="nt">&lt;value</span><span class="nt">&gt;</span>8038<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+       <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-port<span class="nt">&lt;/name&gt;</span>
+       <span class="nt">&lt;value&gt;</span>8038<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-       <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-address<span class="nt">&lt;/name&gt;</span>
-       <span class="nt">&lt;value</span><span class="nt">&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+       <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-address<span class="nt">&lt;/name&gt;</span>
+       <span class="nt">&lt;value&gt;</span>cdh1<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-       <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.service.client.server.rpc-connection-timeout<span class="nt">&lt;/name&gt;</span>
-       <span class="nt">&lt;value</span><span class="nt">&gt;</span>200000<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+       <span class="nt">&lt;name&gt;</span>sentry.service.client.server.rpc-connection-timeout<span class="nt">&lt;/name&gt;</span>
+       <span class="nt">&lt;value&gt;</span>200000<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
 
-    <span class="c">&lt;!--</span><span class="c">以下是客户端配置</span><span class="c">--&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.provider<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.file.HadoopGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
+    <span class="c">&lt;!--以下是客户端配置--&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.provider<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.file.HadoopGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.db.SimpleDBProviderBackend<span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.db.SimpleDBProviderBackend<span class="nt">&lt;/value&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-    <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.metastore.service.users<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>hive<span class="nt">&lt;/value&gt;</span><span class="c">&lt;!--</span><span class="c">queries made by hive user (beeline) skip meta store check</span><span class="c">--&gt;</span>
+    <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.metastore.service.users<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>hive<span class="nt">&lt;/value&gt;</span><span class="c">&lt;!--queries made by hive user (beeline) skip meta store check--&gt;</span>
     <span class="nt">&lt;/property&gt;</span>
-      <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.server<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
+      <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.hive.server<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
       <span class="nt">&lt;/property&gt;</span>
-     <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.testing.mode<span class="nt">&lt;/name&gt;</span>
-        <span class="nt">&lt;value</span><span class="nt">&gt;</span>true<span class="nt">&lt;/value&gt;</span>
+     <span class="nt">&lt;property&gt;</span>
+        <span class="nt">&lt;name&gt;</span>sentry.hive.testing.mode<span class="nt">&lt;/name&gt;</span>
+        <span class="nt">&lt;value&gt;</span>true<span class="nt">&lt;/value&gt;</span>
      <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;/configuration&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
 </div>
-</div><blockquote>
+</div>
+<blockquote>
 <p>注意：这里<code>sentry.hive.provider.backend</code>配置的是<code>org.apache.sentry.provider.db.SimpleDBProviderBackend</code>方式，关于<code>org.apache.sentry.provider.file.SimpleFileProviderBackend</code>的配置方法，后面再作说明。</p>
 </blockquote>
+
 <p>hive添加对sentry的依赖，创建软连接：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ln -s /usr/lib/sentry/lib/sentry-binding-hive.jar /usr/lib/hive/lib/sentry-binding-hive.jar
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ln -s /usr/lib/sentry/lib/sentry-binding-hive.jar /usr/lib/hive/lib/sentry-binding-hive.jar</code></pre></td></tr></table>
 </div>
-</div><h2 id="hiveserver2">重启HiveServer2</h2>
+</div>
+<h2 id="重启hiveserver2">重启HiveServer2</h2>
+
 <p>在cdh1上启动或重启hiveserver2：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kinit -k -t /etc/hive/conf/hive.keytab hive/cdh1@JAVACHEN.COM
 
-$ /etc/init.d/hive-server2 restart
-</code></pre></td></tr></table>
+$ /etc/init.d/hive-server2 restart</code></pre></td></tr></table>
 </div>
-</div><h1 id="4-">4. 准备测试数据</h1>
+</div>
+<h1 id="4-准备测试数据">4. 准备测试数据</h1>
+
 <p>参考 <a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a>，准备测试数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -502,17 +528,17 @@ $ /etc/init.d/hive-server2 restart
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /tmp/events.csv
-10.1.2.3,US,android,createNote
-10.200.88.99,FR,windows,updateNote
-10.1.2.3,US,android,updateNote
-10.200.88.77,FR,ios,createNote
-10.1.4.5,US,windows,updateTag
-</code></pre></td></tr></table>
+<span class="m">10</span>.1.2.3,US,android,createNote
+<span class="m">10</span>.200.88.99,FR,windows,updateNote
+<span class="m">10</span>.1.2.3,US,android,updateNote
+<span class="m">10</span>.200.88.77,FR,ios,createNote
+<span class="m">10</span>.1.4.5,US,windows,updateTag</code></pre></td></tr></table>
 </div>
-</div><p>然后，在hive中运行下面 sql 语句：</p>
+</div>
+<p>然后，在hive中运行下面 sql 语句：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -528,27 +554,27 @@ $ /etc/init.d/hive-server2 restart
 
 <span class="k">create</span> <span class="k">table</span> <span class="k">sensitive</span><span class="p">.</span><span class="n">events</span> <span class="p">(</span>
     <span class="n">ip</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">country</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">client</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">action</span> <span class="n">STRING</span>
-  <span class="p">)</span> <span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;</span><span class="s1">,</span><span class="s1">&#39;</span><span class="p">;</span>
+  <span class="p">)</span> <span class="k">ROW</span> <span class="n">FORMAT</span> <span class="n">DELIMITED</span> <span class="n">FIELDS</span> <span class="n">TERMINATED</span> <span class="k">BY</span> <span class="s1">&#39;,&#39;</span><span class="p">;</span>
 
-<span class="k">load</span> <span class="k">data</span> <span class="k">local</span> <span class="n">inpath</span> <span class="s1">&#39;</span><span class="s1">/tmp/events.csv</span><span class="s1">&#39;</span> <span class="n">overwrite</span> <span class="k">into</span> <span class="k">table</span> <span class="k">sensitive</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
+<span class="k">load</span> <span class="k">data</span> <span class="k">local</span> <span class="n">inpath</span> <span class="s1">&#39;/tmp/events.csv&#39;</span> <span class="n">overwrite</span> <span class="k">into</span> <span class="k">table</span> <span class="k">sensitive</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
 <span class="k">create</span> <span class="k">database</span> <span class="n">filtered</span><span class="p">;</span>
 <span class="k">create</span> <span class="k">view</span> <span class="n">filtered</span><span class="p">.</span><span class="n">events</span> <span class="k">as</span> <span class="k">select</span> <span class="n">country</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">action</span> <span class="k">from</span> <span class="k">sensitive</span><span class="p">.</span><span class="n">events</span><span class="p">;</span>
-<span class="k">create</span> <span class="k">view</span> <span class="n">filtered</span><span class="p">.</span><span class="n">events_usonly</span> <span class="k">as</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">filtered</span><span class="p">.</span><span class="n">events</span> <span class="k">where</span> <span class="n">country</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="s1">US</span><span class="s1">&#39;</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<span class="k">create</span> <span class="k">view</span> <span class="n">filtered</span><span class="p">.</span><span class="n">events_usonly</span> <span class="k">as</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">filtered</span><span class="p">.</span><span class="n">events</span> <span class="k">where</span> <span class="n">country</span> <span class="o">=</span> <span class="s1">&#39;US&#39;</span><span class="p">;</span></code></pre></td></tr></table>
 </div>
-</div><p>在 cdh1上通过 beeline 连接 hiveserver2，运行下面命令创建角色和组：</p>
+</div>
+<p>在 cdh1上通过 beeline 连接 hiveserver2，运行下面命令创建角色和组：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/default;principal=hive/cdh1@JAVACHEN.COM&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/default;principal=hive/cdh1@JAVACHEN.COM&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>创建 role、group 等等，执行下面的 sql 语句：</p>
+</div>
+<p>创建 role、group 等等，执行下面的 sql 语句：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -565,20 +591,24 @@ $ /etc/init.d/hive-server2 restart
 
 <span class="k">create</span> <span class="k">role</span> <span class="n">test_role</span><span class="p">;</span>
 <span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="n">filtered</span> <span class="k">TO</span> <span class="k">ROLE</span> <span class="n">test_role</span><span class="p">;</span>
-<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">test_role</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">test</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">test_role</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">test</span><span class="p">;</span></code></pre></td></tr></table>
 </div>
-</div><p>上面创建了两个角色：</p>
+</div>
+<p>上面创建了两个角色：</p>
+
 <ul>
 <li>admin_role，具有管理员权限，可以读写所有数据库，并授权给 admin 和 hive 组（对应操作系统上的组）</li>
 <li>test_role，只能读写 filtered 数据库，并授权给 test 组。</li>
 </ul>
-<h1 id="5-">5. 测试</h1>
-<h2 id="-kerberos-">使用 kerberos 测试</h2>
+
+<h1 id="5-测试">5. 测试</h1>
+
+<h2 id="使用-kerberos-测试">使用 kerberos 测试</h2>
+
 <p>以 test 用户为例，通过 beeline 连接 hive-server2：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -589,15 +619,17 @@ $ /etc/init.d/hive-server2 restart
 
 $ kinit -k -t test.keytab test/cdh1@JAVACHEN.COM
 
-$ beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/default;principal=test/cdh1@JAVACHEN.COM&#34;</span>
-</code></pre></td></tr></table>
+$ beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/default;principal=test/cdh1@JAVACHEN.COM&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>接下来运行一些sql查询，查看是否有权限。</p>
-<h2 id="-ldap-">使用 ldap 用户测试</h2>
+</div>
+<p>接下来运行一些sql查询，查看是否有权限。</p>
+
+<h2 id="使用-ldap-用户测试">使用 ldap 用户测试</h2>
+
 <p>在 ldap 服务器上创建系统用户 yy_test，并使用 migrationtools 工具将该用户导入 ldap，最后设置 ldap 中该用户密码。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -618,32 +650,33 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=lashou,dc=com&#34
 
 <span class="c1">#使用下面语句修改密码，填入上面生成的密码，输入两次：</span>
 
-ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=lashou,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=yy_test,ou=people,dc=lashou,dc=com&#34;</span> -S
-</code></pre></td></tr></table>
+ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=lashou,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=yy_test,ou=people,dc=lashou,dc=com&#34;</span> -S</code></pre></td></tr></table>
 </div>
-</div><p>在每台 datanode 机器上创建 test 分组，并将 yy_test 用户加入到 test 分组：</p>
+</div>
+<p>在每台 datanode 机器上创建 test 分组，并将 yy_test 用户加入到 test 分组：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">groupadd <span class="nb">test</span> <span class="p">;</span> useradd yy_test<span class="p">;</span> usermod -G test,yy_test yy_test
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">groupadd <span class="nb">test</span> <span class="p">;</span> useradd yy_test<span class="p">;</span> usermod -G test,yy_test yy_test</code></pre></td></tr></table>
 </div>
-</div><p>运行 beeline 查看是否能够使用 ldap 用户连接 hiveserver2：</p>
+</div>
+<p>运行 beeline 查看是否能够使用 ldap 用户连接 hiveserver2：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$  beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/&#34;</span> -n yy_test -p yy_test -d org.apache.hive.jdbc.HiveDriver
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$  beeline -u <span class="s2">&#34;jdbc:hive2://cdh1:10001/&#34;</span> -n yy_test -p yy_test -d org.apache.hive.jdbc.HiveDriver</code></pre></td></tr></table>
 </div>
-</div><h1 id="6-">6. 其他说明</h1>
+</div>
+<h1 id="6-其他说明">6. 其他说明</h1>
+
 <p>如果要使用基于文件存储的方式配置Sentry store，则需要修改/etc/hive/conf/sentry-site.xml为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -665,30 +698,30 @@ ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=lashou,dc=com&
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-<span class="nt">&lt;configuration</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.sentry.server<span class="nt">&lt;/name&gt;</span>
-    <span class="nt">&lt;value</span><span class="nt">&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.sentry.server<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>server1<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;name</span><span class="nt">&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
-    <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.file.SimpleFileProviderBackend<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>sentry.hive.provider.backend<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.file.SimpleFileProviderBackend<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.sentry.provider<span class="nt">&lt;/name&gt;</span>
-    <span class="nt">&lt;value</span><span class="nt">&gt;</span>org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.sentry.provider<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>org.apache.sentry.provider.file.LocalGroupResourceAuthorizationProvider<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;name</span><span class="nt">&gt;</span>hive.sentry.provider.resource<span class="nt">&lt;/name&gt;</span>
-    <span class="nt">&lt;value</span><span class="nt">&gt;</span>/user/hive/sentry/sentry-provider.ini<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+    <span class="nt">&lt;name&gt;</span>hive.sentry.provider.resource<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;value&gt;</span>/user/hive/sentry/sentry-provider.ini<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-<span class="nt">&lt;/configuration&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/configuration&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>创建 sentry-provider.ini 文件并将其上传到 hdfs 的 /user/hive/sentry/ 目录：</p>
+</div>
+<p>创建 sentry-provider.ini 文件并将其上传到 hdfs 的 /user/hive/sentry/ 目录：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -735,15 +768,19 @@ ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=lashou,dc=com&
 $ hdfs dfs -rm -r /user/hive/sentry/sentry-provider.ini
 $ hdfs dfs -put /tmp/sentry-provider.ini /user/hive/sentry/
 $ hdfs dfs -chown hive:hive /user/hive/sentry/sentry-provider.ini
-$ hdfs dfs -chmod <span class="m">640</span> /user/hive/sentry/sentry-provider.ini
-</code></pre></td></tr></table>
+$ hdfs dfs -chmod <span class="m">640</span> /user/hive/sentry/sentry-provider.ini</code></pre></td></tr></table>
 </div>
-</div><p>关于 sentry-provider.ini 文件的语法说明，请参考官方文档。这里我指定了 Hive 组有全部权限，并指定 Hive 用户属于 Hive 分组，而其他两个分组只有部分权限。</p>
-<h1 id="7-">7. 参考文章</h1>
+</div>
+<p>关于 sentry-provider.ini 文件的语法说明，请参考官方文档。这里我指定了 Hive 组有全部权限，并指定 Hive 用户属于 Hive 分组，而其他两个分组只有部分权限。</p>
+
+<h1 id="7-参考文章">7. 参考文章</h1>
+
 <ul>
-<li><a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a></li>
+<li><a href="http://blog.evernote.com/tech/2014/06/09/securing-impala-for-analysts/">Securing Impala for analysts</a><br /></li>
 </ul>
-<h1 id="8-">8. 相关文章</h1>
+
+<h1 id="8-相关文章">8. 相关文章</h1>
+
 <ul>
 <li><a href="/2014/11/04/config-kerberos-in-cdh-hdfs">HDFS配置Kerberos认证</a></li>
 <li><a href="/2014/11/05/config-kerberos-in-cdh-yarn">YARN配置Kerberos认证</a></li>
@@ -873,7 +910,7 @@ $ hdfs dfs -chmod <span class="m">640</span> /user/hive/sentry/sentry-provider.i
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -886,7 +923,21 @@ $ hdfs dfs -chmod <span class="m">640</span> /user/hive/sentry/sentry-provider.i
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

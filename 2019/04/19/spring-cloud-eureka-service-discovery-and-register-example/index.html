@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录在不使用Eureka注册中心的情况下，如何使用Spring Cloud相关组件创建微服务。希望通过本篇文章，熟悉Spring Cloud相关组件的用法和基本原理。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="本文主要记录在不使用Eureka注册中心的情况下，如何使用Spring Cloud相关组件创建微服务。希望通过本篇文章，熟悉Spring Cloud相关组件的用法和基本原理。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/04/19/spring-cloud-eureka-service-discovery-and-register-example/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="本文主要记录在不使用Eureka注册中心的情况下，如何使用Spring Cloud相关组件创建微服务。希望通过本篇文章，熟悉Spring Cloud相关组件的用法和基本原理。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/04/19/spring-cloud-eureka-service-discovery-and-register-example/" />
-<meta property="article:published_time" content="2019-04-19T08:00:00+08:00" />
-<meta property="article:modified_time" content="2019-04-19T08:00:00+08:00" />
+<meta property="article:published_time" content="2019-04-19T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2019-04-19T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="不使用Eureka创建Spring Cloud微服务">
 <meta itemprop="description" content="本文主要记录在不使用Eureka注册中心的情况下，如何使用Spring Cloud相关组件创建微服务。希望通过本篇文章，熟悉Spring Cloud相关组件的用法和基本原理。">
+
+
 <meta itemprop="datePublished" content="2019-04-19T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-04-19T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="12120">
+<meta itemprop="wordCount" content="12119">
 
 
 
-<meta itemprop="keywords" content="eureka," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="eureka," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="不使用Eureka创建Spring Cloud微服务"/>
 <meta name="twitter:description" content="本文主要记录在不使用Eureka注册中心的情况下，如何使用Spring Cloud相关组件创建微服务。希望通过本篇文章，熟悉Spring Cloud相关组件的用法和基本原理。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/spring/"> spring </a>
             </div>
-          <span class="more-meta"> 约 12120 字 </span>
+          <span class="more-meta"> 约 12119 字 </span>
           <span class="more-meta"> 预计阅读 25 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -139,44 +139,56 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#11">1.1、创建工程</a></li>
-    <li><a href="#12">1.2、创建生产者项目</a></li>
-    <li><a href="#13">1.3、创建消费者项目</a></li>
-    <li><a href="#14resttemplate">1.4、RestTemplate</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#21">2.1、添加依赖</a></li>
-    <li><a href="#22">2.2、修改配置文件</a></li>
-    <li><a href="#23service">2.3、修改service代码</a></li>
-    <li><a href="#24ribbon">2.4、开启Ribbon客户端</a></li>
-    <li><a href="#25">2.5、测试</a></li>
-    <li><a href="#26resttemplate">2.6、RestTemplate实现负载均衡</a></li>
-    <li><a href="#27ribbon">2.7、自定义ribbon配置</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#31consumer-hystrix">3.1、创建consumer-hystrix模块</a></li>
-    <li><a href="#32resttemplate">3.2、RestTemplate类</a></li>
-    <li><a href="#33service">3.3、Service类</a></li>
-    <li><a href="#34controller">3.4、Controller类</a></li>
-    <li><a href="#35">3.5、启动类</a></li>
-    <li><a href="#36">3.6、配置文件</a></li>
-    <li><a href="#37-">3.7、 测试</a></li>
-    <li><a href="#38hystrixcircuitbreaker">3.8、断路器HystrixCircuitBreaker</a></li>
-  </ul>
+<ul>
+<li><a href="#1-创建基本应用">1、创建基本应用</a>
+<ul>
+<li><a href="#1-1-创建工程">1.1、创建工程</a></li>
+<li><a href="#1-2-创建生产者项目">1.2、创建生产者项目</a></li>
+<li><a href="#1-3-创建消费者项目">1.3、创建消费者项目</a></li>
+<li><a href="#1-4-resttemplate">1.4、RestTemplate</a></li>
+</ul></li>
+<li><a href="#2-集成ribbon实现生产端负载均衡">2、集成Ribbon实现生产端负载均衡</a>
+<ul>
+<li><a href="#2-1-添加依赖">2.1、添加依赖</a></li>
+<li><a href="#2-2-修改配置文件">2.2、修改配置文件</a></li>
+<li><a href="#2-3-修改service代码">2.3、修改service代码</a></li>
+<li><a href="#2-4-开启ribbon客户端">2.4、开启Ribbon客户端</a></li>
+<li><a href="#2-5-测试">2.5、测试</a></li>
+<li><a href="#2-6-resttemplate实现负载均衡">2.6、RestTemplate实现负载均衡</a></li>
+<li><a href="#2-7-自定义ribbon配置">2.7、自定义ribbon配置</a></li>
+</ul></li>
+<li><a href="#3-集成hystrix实现服务熔断和降级">3、集成Hystrix实现服务熔断和降级</a>
+<ul>
+<li><a href="#3-1-创建consumer-hystrix模块">3.1、创建consumer-hystrix模块</a></li>
+<li><a href="#3-2-resttemplate类">3.2、RestTemplate类</a></li>
+<li><a href="#3-3-service类">3.3、Service类</a></li>
+<li><a href="#3-4-controller类">3.4、Controller类</a></li>
+<li><a href="#3-5-启动类">3.5、启动类</a></li>
+<li><a href="#3-6-配置文件">3.6、配置文件</a></li>
+<li><a href="#3-7-测试">3.7、 测试</a></li>
+<li><a href="#3-8-断路器hystrixcircuitbreaker">3.8、断路器HystrixCircuitBreaker</a></li>
+</ul></li>
+<li><a href="#4-集成hystrix和ribbon">4、集成Hystrix和Ribbon</a></li>
+<li><a href="#5-集成feign调用rest接口">5、集成Feign调用Rest接口</a></li>
+<li><a href="#6-源代码">6、源代码</a></li>
+<li><a href="#7-参考文章">7、参考文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>首先创建一个普通项目，分为生产者和消费者两部分，然后在逐步集成SpringCloud的相关组件。</p>
-<h1 id="1">1、创建基本应用</h1>
-<h2 id="11">1.1、创建工程</h2>
+      
+
+<p>首先创建一个普通项目，分为生产者和消费者两部分，然后在逐步集成SpringCloud的相关组件。</p>
+
+<h1 id="1-创建基本应用">1、创建基本应用</h1>
+
+<h2 id="1-1-创建工程">1.1、创建工程</h2>
+
 <p>创建spring-cloud-examples-1模块，pom文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -192,19 +204,20 @@
 <span class="nt">&lt;project</span> <span class="na">xmlns:xsi=</span><span class="s">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
   <span class="na">xmlns=</span><span class="s">&#34;http://maven.apache.org/POM/4.0.0&#34;</span>
   <span class="na">xsi:schemaLocation=</span><span class="s">&#34;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&#34;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;modelVersion</span><span class="nt">&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
-    <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
-    <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-cloud-examples-1<span class="nt">&lt;/artifactId&gt;</span>
-    <span class="nt">&lt;version</span><span class="nt">&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
-    <span class="nt">&lt;packaging</span><span class="nt">&gt;</span>pom<span class="nt">&lt;/packaging&gt;</span>
-<span class="nt">&lt;/project&gt;</span>
-</code></pre></td></tr></table>
+    <span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>spring-cloud-examples-1<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;packaging&gt;</span>pom<span class="nt">&lt;/packaging&gt;</span>
+<span class="nt">&lt;/project&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="12">1.2、创建生产者项目</h2>
+</div>
+<h2 id="1-2-创建生产者项目">1.2、创建生产者项目</h2>
+
 <p>在 spring-cloud-examples-1工程中创建 provider子模块。首先编辑pom文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -217,23 +230,23 @@
 </span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependencies</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependencies&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
 
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
-<span class="nt">&lt;/dependencies&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/dependencies&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>编写一个controller如下：</p>
+</div>
+<p>编写一个controller如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -246,15 +259,15 @@
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">GreetingController</span> <span class="o">{</span>
     <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&#34;Hello %s!\n&#34;</span><span class="o">,</span> <span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&#34;Hello %s!\n&#34;</span><span class="o">,</span> <span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>启动类：</p>
+</div>
+<p>启动类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -264,16 +277,16 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SpringBootApplication</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">AppProvider</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppProvider</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppProvider</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>修改application.yml配置文件：</p>
+</div>
+<p>修改application.yml配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -289,7 +302,6 @@
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yml" data-lang="yml">server<span class="p">:</span><span class="w">
@@ -307,24 +319,24 @@
 </span><span class="w">  </span>endpoint<span class="p">:</span><span class="w">
 </span><span class="w">    </span>health<span class="p">:</span><span class="w">
 </span><span class="w">      </span><span class="c"># 是否展示健康检查详情</span><span class="w">
-</span><span class="w">      </span>show-details<span class="p">:</span><span class="w"> </span>always<span class="w">
-</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">      </span>show-details<span class="p">:</span><span class="w"> </span>always</code></pre></td></tr></table>
 </div>
-</div><p>启动应用，然后访问 <a href="http://localhost:8000/greeting/spring">http://localhost:8000/greeting/spring</a>，可以看到返回的结果：</p>
+</div>
+<p>启动应用，然后访问 <a href="http://localhost:8000/greeting/spring">http://localhost:8000/greeting/spring</a>，可以看到返回的结果：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Hello spring!
-</code></pre></td></tr></table>
+<pre class="chroma">Hello spring!</pre></td></tr></table>
 </div>
-</div><h2 id="13">1.3、创建消费者项目</h2>
+</div>
+<h2 id="1-3-创建消费者项目">1.3、创建消费者项目</h2>
+
 <p>创建consumer子模块，编辑pom：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -332,18 +344,18 @@
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependencies</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependencies&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
-<span class="nt">&lt;/dependencies&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/dependencies&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>编写一个控制类访问生产者接口：</p>
+</div>
+<p>编写一个控制类访问生产者接口：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -362,15 +374,15 @@
 
     <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>创建Service类，这里使用了RestTemplate类对生产端接口进行调用：</p>
+</div>
+<p>创建Service类，这里使用了RestTemplate类对生产端接口进行调用：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -393,15 +405,15 @@
 
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForObject</span><span class="o">(</span><span class="s">&#34;http://&#34;</span> <span class="o">+</span> <span class="n">REST_URL_PREFIX</span> 
-        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>这里是使用RestTemplate类访问rest接口，需要注入RestTemplate的bean：</p>
+</div>
+<p>这里是使用RestTemplate类访问rest接口，需要注入RestTemplate的bean：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -413,16 +425,16 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Configuration</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RestClientConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
-    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">();</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>修改application.yml配置文件：</p>
+</div>
+<p>修改application.yml配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -435,13 +447,13 @@
 </span><span class="w">
 </span><span class="w"></span>spring<span class="p">:</span><span class="w">
 </span><span class="w">  </span>application<span class="p">:</span><span class="w">
-</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>consumer<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>consumer</code></pre></td></tr></table>
 </div>
-</div><p>最后创建启动类：</p>
+</div>
+<p>最后创建启动类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -451,49 +463,52 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SpringBootApplication</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">AppConsumer</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumer</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumer</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>启动应用，然后访问 <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a>，可以看到返回的结果：</p>
+</div>
+<p>启动应用，然后访问 <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a>，可以看到返回的结果：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Hello spring!
-</code></pre></td></tr></table>
+<pre class="chroma">Hello spring!</pre></td></tr></table>
 </div>
-</div><h2 id="14resttemplate">1.4、RestTemplate</h2>
+</div>
+<h2 id="1-4-resttemplate">1.4、RestTemplate</h2>
+
 <p>RestTemplate是Spring提供的一个访问Rest接口的模板工具类，对基于Http的客户端进行了封装，并且实现了对象与json的序列化和反序列化，非常方便。RestTemplate并没有限定Http的客户端类型，而是进行了抽象，目前常用的3种都有支持：</p>
+
 <ul>
 <li>HttpClient</li>
 <li>OkHttp</li>
 <li>JDK原生的URLConnection（默认的）</li>
 </ul>
+
 <p>如果想更换客户端类型，比如使用OkHttp，则需要先添加依赖：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
-    <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
-    <span class="nt">&lt;version</span><span class="nt">&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
-<span class="nt">&lt;/dependency&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>然后修改RestClientConfig类，改为由OkHttp3ClientHttpRequestFactory工厂创建RestTemplate：</p>
+</div>
+<p>然后修改RestClientConfig类，改为由OkHttp3ClientHttpRequestFactory工厂创建RestTemplate：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -505,16 +520,16 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Configuration</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RestClientConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
-    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="k">new</span> <span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="k">new</span> <span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">());</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>也可以使用RestTemplateBuilder类来构建，修改代码注入一个RestTemplateBuilder：</p>
+</div>
+<p>也可以使用RestTemplateBuilder类来构建，修改代码注入一个RestTemplateBuilder：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -548,36 +563,36 @@
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RestClientConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
     <span class="nd">@Qualifier</span><span class="o">(</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">)</span>
-    <span class="kd">public</span> <span class="n">CustomRestTemplateCustomizer</span> <span class="nf">customRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">CustomRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">CustomRestTemplateCustomizer</span> <span class="nf">customRestTemplateCustomizer</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">CustomRestTemplateCustomizer</span><span class="o">();</span>
     <span class="o">}</span>
 
     <span class="nd">@Bean</span>
-    <span class="nd">@DependsOn</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="o">{</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">}</span><span class="o">)</span>
-    <span class="kd">public</span> <span class="n">RestTemplateBuilder</span> <span class="nf">restTemplateBuilder</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplateBuilder</span><span class="o">(</span><span class="n">customRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="nd">@DependsOn</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="o">{</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">})</span>
+    <span class="kd">public</span> <span class="n">RestTemplateBuilder</span> <span class="nf">restTemplateBuilder</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplateBuilder</span><span class="o">(</span><span class="n">customRestTemplateCustomizer</span><span class="o">());</span>
     <span class="o">}</span>
 
 <span class="c1">//    @Bean
-</span><span class="c1"></span><span class="c1">//    public RestTemplate restTemplate() {
-</span><span class="c1"></span><span class="c1">//        return new RestTemplate(new OkHttp3ClientHttpRequestFactory());
-</span><span class="c1"></span><span class="c1">//    }
+</span><span class="c1">//    public RestTemplate restTemplate() {
+</span><span class="c1">//        return new RestTemplate(new OkHttp3ClientHttpRequestFactory());
+</span><span class="c1">//    }
 </span><span class="c1"></span>
     <span class="nd">@Bean</span>
     <span class="nd">@Autowired</span>
     <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">(</span><span class="n">RestTemplateBuilder</span> <span class="n">restTemplateBuilder</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">restTemplateBuilder</span>
                 <span class="o">.</span><span class="na">requestFactory</span><span class="o">(</span><span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">errorHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">RestTemplateResponseErrorHandler</span><span class="o">(</span><span class="o">)</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+                <span class="o">.</span><span class="na">errorHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">RestTemplateResponseErrorHandler</span><span class="o">())</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">();</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>这里自定义了一个 ResponseErrorHandler ，可以处理异常：</p>
+</div>
+<p>这里自定义了一个 ResponseErrorHandler ，可以处理异常：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -622,10 +637,10 @@
         <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
 
         <span class="k">return</span> <span class="o">(</span><span class="n">httpResponse</span>
-          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span>
-          <span class="o">.</span><span class="na">series</span><span class="o">(</span><span class="o">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">CLIENT_ERROR</span> <span class="o">|</span><span class="o">|</span> <span class="n">httpResponse</span>
-          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span>
-          <span class="o">.</span><span class="na">series</span><span class="o">(</span><span class="o">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">SERVER_ERROR</span><span class="o">)</span><span class="o">;</span>
+          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">()</span>
+          <span class="o">.</span><span class="na">series</span><span class="o">()</span> <span class="o">==</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">CLIENT_ERROR</span> <span class="o">||</span> <span class="n">httpResponse</span>
+          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">()</span>
+          <span class="o">.</span><span class="na">series</span><span class="o">()</span> <span class="o">==</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">SERVER_ERROR</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
@@ -633,26 +648,26 @@
         <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
 
         <span class="k">if</span> <span class="o">(</span><span class="n">httpResponse</span>
-          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span>
-          <span class="o">.</span><span class="na">series</span><span class="o">(</span><span class="o">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">SERVER_ERROR</span><span class="o">)</span> <span class="o">{</span>
+          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">()</span>
+          <span class="o">.</span><span class="na">series</span><span class="o">()</span> <span class="o">==</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">SERVER_ERROR</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">//Handle SERVER_ERROR
-</span><span class="c1"></span>            <span class="k">throw</span> <span class="k">new</span> <span class="n">HttpClientErrorException</span><span class="o">(</span><span class="n">httpResponse</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>            <span class="k">throw</span> <span class="k">new</span> <span class="n">HttpClientErrorException</span><span class="o">(</span><span class="n">httpResponse</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">());</span>
         <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">httpResponse</span>
-          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span>
-          <span class="o">.</span><span class="na">series</span><span class="o">(</span><span class="o">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">CLIENT_ERROR</span><span class="o">)</span> <span class="o">{</span>
+          <span class="o">.</span><span class="na">getStatusCode</span><span class="o">()</span>
+          <span class="o">.</span><span class="na">series</span><span class="o">()</span> <span class="o">==</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">Series</span><span class="o">.</span><span class="na">CLIENT_ERROR</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">//Handle CLIENT_ERROR
-</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">httpResponse</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span> <span class="o">=</span><span class="o">=</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">NOT_FOUND</span><span class="o">)</span> <span class="o">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="n">NotFoundException</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">httpResponse</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">()</span> <span class="o">==</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">NOT_FOUND</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">NotFoundException</span><span class="o">();</span>
             <span class="o">}</span>
         <span class="o">}</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>而RestTemplateBuilder注入了一个RestTemplateCustomizer的bean：</p>
+</div>
+<p>而RestTemplateBuilder注入了一个RestTemplateCustomizer的bean：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -663,15 +678,15 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CustomRestTemplateCustomizer</span> <span class="kd">implements</span> <span class="n">RestTemplateCustomizer</span> <span class="o">{</span>
     <span class="nd">@Override</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">customize</span><span class="o">(</span><span class="n">RestTemplate</span> <span class="n">restTemplate</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">restTemplate</span><span class="o">.</span><span class="na">getInterceptors</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">CustomClientHttpRequestInterceptor</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">restTemplate</span><span class="o">.</span><span class="na">getInterceptors</span><span class="o">().</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">CustomClientHttpRequestInterceptor</span><span class="o">());</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>其中，自定义了一个拦截器CustomClientHttpRequestInterceptor：</p>
+</div>
+<p>其中，自定义了一个拦截器CustomClientHttpRequestInterceptor：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -692,42 +707,46 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CustomClientHttpRequestInterceptor</span> <span class="kd">implements</span> <span class="n">ClientHttpRequestInterceptor</span> <span class="o">{</span>
     <span class="nd">@Override</span>
     <span class="kd">public</span> <span class="n">ClientHttpResponse</span> <span class="nf">intercept</span><span class="o">(</span><span class="n">HttpRequest</span> <span class="n">request</span><span class="o">,</span> 
-        <span class="kt">byte</span><span class="o">[</span><span class="o">]</span> <span class="n">body</span><span class="o">,</span> <span class="n">ClientHttpRequestExecution</span> <span class="n">execution</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+        <span class="kt">byte</span><span class="o">[]</span> <span class="n">body</span><span class="o">,</span> <span class="n">ClientHttpRequestExecution</span> <span class="n">execution</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
 
-        <span class="n">logRequestDetails</span><span class="o">(</span><span class="n">request</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">logRequestDetails</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
 
-        <span class="k">return</span> <span class="n">execution</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">request</span><span class="o">,</span> <span class="n">body</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">return</span> <span class="n">execution</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">request</span><span class="o">,</span> <span class="n">body</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">logRequestDetails</span><span class="o">(</span><span class="n">HttpRequest</span> <span class="n">request</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request Headers: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getHeaders</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request Method: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getMethod</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request URI: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getURI</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request Headers: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getHeaders</span><span class="o">());</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request Method: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;Request URI: &#34;</span><span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="na">getURI</span><span class="o">());</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>重启消费端应用，再次访问浏览器： <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a>，然后查看控制台打印的日志：</p>
+</div>
+<p>重启消费端应用，再次访问浏览器： <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a>，然后查看控制台打印的日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">Request</span> <span class="n">Headers</span><span class="o">:</span> <span class="o">[</span><span class="n">Accept</span><span class="o">:</span><span class="s">&#34;text/plain, application/json, application/*+json, */*&#34;</span><span class="o">,</span> <span class="n">Content</span><span class="o">-</span><span class="n">Length</span><span class="o">:</span><span class="s">&#34;0&#34;</span><span class="o">]</span>
-<span class="n">Request</span> <span class="n">Method</span><span class="o">:</span> <span class="n">GET</span>
-<span class="n">Request</span> <span class="n">URI</span><span class="o">:</span> <span class="n">http</span><span class="o">:</span><span class="c1">//localhost:8000/greeting/spring
-</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">Request</span> <span class="nl">Headers:</span> <span class="o">[</span><span class="nl">Accept:</span><span class="s">&#34;text/plain, application/json, application/*+json, */*&#34;</span><span class="o">,</span> <span class="n">Content</span><span class="o">-</span><span class="nl">Length:</span><span class="s">&#34;0&#34;</span><span class="o">]</span>
+<span class="n">Request</span> <span class="nl">Method:</span> <span class="n">GET</span>
+<span class="n">Request</span> <span class="nl">URI:</span> <span class="nl">http:</span><span class="o">//</span><span class="nl">localhost:</span><span class="n">8000</span><span class="o">/</span><span class="n">greeting</span><span class="o">/</span><span class="n">spring</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="2ribbon">2、集成Ribbon实现生产端负载均衡</h1>
+</div>
+<h1 id="2-集成ribbon实现生产端负载均衡">2、集成Ribbon实现生产端负载均衡</h1>
+
 <p>Ribbon是Netflix发布的负载均衡器，它可以帮我们控制HTTP和TCP客户端的行为。只需为Ribbon配置服务提供者地址列表，Ribbon就可基于负载均衡算法计算出要请求的目标服务地址。</p>
+
 <p>Ribbon默认为我们提供了很多的负载均衡算法，例如轮询、随机、响应时间加权等——当然，为Ribbon自定义负载均衡算法也非常容易，只需实现<code>IRule</code> 接口即可。</p>
-<h2 id="21">2.1、添加依赖</h2>
+
+<h2 id="2-1-添加依赖">2.1、添加依赖</h2>
+
 <p>首先，基于consumer模块再创建consumer-ribbon模块，把代码拷贝过去，然后添加ribbon客户端依赖：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -765,48 +784,48 @@
 </span><span class="lnt">36
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"> <span class="nt">&lt;parent</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-cloud-examples<span class="nt">&lt;/artifactId&gt;</span>
-    <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
-    <span class="nt">&lt;version</span><span class="nt">&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"> <span class="nt">&lt;parent&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>spring-cloud-examples<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
 <span class="nt">&lt;/parent&gt;</span>
-<span class="nt">&lt;modelVersion</span><span class="nt">&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+<span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
 
-<span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>consumer-ribbon<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;artifactId&gt;</span>consumer-ribbon<span class="nt">&lt;/artifactId&gt;</span>
 
-<span class="nt">&lt;dependencies</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;dependencies&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
 
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
-        <span class="nt">&lt;version</span><span class="nt">&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
+        <span class="nt">&lt;version&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
 
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.cloud<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-cloud-starter-netflix-ribbon<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.cloud<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-cloud-starter-netflix-ribbon<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
 
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-test<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-test<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
 
-    <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
     <span class="nt">&lt;/dependency&gt;</span>
-<span class="nt">&lt;/dependencies&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/dependencies&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="22">2.2、修改配置文件</h2>
+</div>
+<h2 id="2-2-修改配置文件">2.2、修改配置文件</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -841,18 +860,20 @@
 </span><span class="w">    </span><span class="c"># 负载均衡地址，配置多个</span><span class="w">
 </span><span class="w">    </span>listOfServers<span class="p">:</span><span class="w"> </span>localhost<span class="p">:</span><span class="m">8000</span><span class="p">,</span>localhost<span class="p">:</span><span class="m">8001</span><span class="w">
 </span><span class="w">    </span>ServerListRefreshInterval<span class="p">:</span><span class="w"> </span><span class="m">15000</span><span class="w">
-</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing</code></pre></td></tr></table>
 </div>
-</div><p>配置说明：</p>
+</div>
+<p>配置说明：</p>
+
 <ul>
 <li>因为引入的是spring-cloud-starter-netflix-ribbon，其中包含eureka，所以需要禁用eureka客户端</li>
 <li><code>&lt;client&gt;.ribbon.listOfServers</code>：可用微服务列表，注意这里没有使用 eureka。</li>
 </ul>
+
 <p>SpringBoot帮我们提供了修改负载均衡规则和Ping算法的配置入口：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -861,15 +882,17 @@
 <pre class="chroma"><code class="language-yml" data-lang="yml">user-provider<span class="p">:</span><span class="w">
 </span><span class="w">  </span>ribbon<span class="p">:</span><span class="w">
 </span><span class="w">    </span>NFLoadBalancerRuleClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyRule<span class="w">
-</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing</code></pre></td></tr></table>
 </div>
-</div><p>格式是：<code>{服务名称}.ribbon.NFLoadBalancerRuleClassName</code>，值就是IRule的实现类。</p>
-<h2 id="23service">2.3、修改service代码</h2>
+</div>
+<p>格式是：<code>{服务名称}.ribbon.NFLoadBalancerRuleClassName</code>，值就是IRule的实现类。</p>
+
+<h2 id="2-3-修改service代码">2.3、修改service代码</h2>
+
 <p>使用LoadBalancerClient来实现负载均衡功能：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -915,32 +938,34 @@
 
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
 <span class="c1">//        return restTemplate.getForObject(&#34;http://&#34; + 
-</span><span class="c1"></span><span class="c1">//REST_URL_PREFIX + &#34;/greeting/{username}&#34;, String.class, username);
+</span><span class="c1">//REST_URL_PREFIX + &#34;/greeting/{username}&#34;, String.class, username);
 </span><span class="c1"></span>
         <span class="c1">// 选择指定的 service Id
 </span><span class="c1"></span>        <span class="n">ServiceInstance</span> <span class="n">serviceInstance</span> <span class="o">=</span> 
-        <span class="n">loadBalancerClient</span><span class="o">.</span><span class="na">choose</span><span class="o">(</span><span class="n">REST_URL_PREFIX</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">loadBalancerClient</span><span class="o">.</span><span class="na">choose</span><span class="o">(</span><span class="n">REST_URL_PREFIX</span><span class="o">);</span>
 
         <span class="k">return</span> <span class="n">loadBalancerClient</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">REST_URL_PREFIX</span><span class="o">,</span> 
-            <span class="n">serviceInstance</span><span class="o">,</span> <span class="n">instance</span> <span class="o">-</span><span class="o">&gt;</span> <span class="o">{</span>
+            <span class="n">serviceInstance</span><span class="o">,</span> <span class="n">instance</span> <span class="o">-&gt;</span> <span class="o">{</span>
             <span class="c1">//服务器实例，获取 主机名（IP） 和 端口
-</span><span class="c1"></span>            <span class="n">String</span> <span class="n">host</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="na">getHost</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-            <span class="kt">int</span> <span class="n">port</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="na">getPort</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>            <span class="n">String</span> <span class="n">host</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="na">getHost</span><span class="o">();</span>
+            <span class="kt">int</span> <span class="n">port</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="na">getPort</span><span class="o">();</span>
             <span class="n">String</span> <span class="n">url</span><span class="o">=</span> <span class="n">host</span> <span class="o">+</span> <span class="s">&#34;:&#34;</span> <span class="o">+</span> <span class="n">port</span> <span class="o">;</span>
             <span class="k">return</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForObject</span><span class="o">(</span><span class="s">&#34;http://&#34;</span> <span class="o">+</span> <span class="n">url</span> 
-            <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">);</span>
 
-        <span class="o">}</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">});</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>代码中将 REST_URL_PREFIX 修改为 service-provider，对应配置文件中定义的 service-provider，其是一个负载均衡列表地址。</p>
+</div>
+<p>代码中将 REST_URL_PREFIX 修改为 service-provider，对应配置文件中定义的 service-provider，其是一个负载均衡列表地址。</p>
+
 <p>LoadBalancerClient首先通过负载均衡算法，选出一个负载均衡服务器，然后获取host和端口，在通过restTemplate进行调用。</p>
-<h2 id="24ribbon">2.4、开启Ribbon客户端</h2>
+
+<h2 id="2-4-开启ribbon客户端">2.4、开启Ribbon客户端</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -958,26 +983,27 @@
 </span><span class="c1"></span>        <span class="nd">@RibbonClient</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;service-provider&#34;</span><span class="o">)</span>
 <span class="o">)</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">AppConsumerRibbon</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerRibbon</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerRibbon</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="25">2.5、测试</h2>
-<p>启动两个provider应用，端口分别为8000和8001，然后启动consumer-ribbon应用。浏览器访问 http://localhost:9000/greeting/spring ，同样可以看到：</p>
+</div>
+<h2 id="2-5-测试">2.5、测试</h2>
+
+<p>启动两个provider应用，端口分别为8000和8001，然后启动consumer-ribbon应用。浏览器访问 <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a> ，同样可以看到：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Hello spring!
-</code></pre></td></tr></table>
+<pre class="chroma">Hello spring!</pre></td></tr></table>
 </div>
-</div><p>多访问几次，后台可以看到日志：</p>
+</div>
+<p>多访问几次，后台可以看到日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -990,36 +1016,40 @@
 </span><span class="w"></span>Request<span class="w"> </span>URI<span class="p">:</span><span class="w"> </span>http<span class="p">:</span>//localhost<span class="p">:</span><span class="m">8001</span>/greeting/spring<span class="w">
 </span><span class="w"></span>Request<span class="w"> </span>Headers<span class="p">:</span><span class="w"> </span><span class="p">[</span>Accept<span class="p">:</span><span class="s2">&#34;text/plain, application/json, application/*+json, */*&#34;</span><span class="p">,</span><span class="w"> </span>Content-Length<span class="p">:</span><span class="s2">&#34;0&#34;</span><span class="p">]</span><span class="w">
 </span><span class="w"></span>Request<span class="w"> </span>Method<span class="p">:</span><span class="w"> </span>GET<span class="w">
-</span><span class="w"></span>Request<span class="w"> </span>URI<span class="p">:</span><span class="w"> </span>http<span class="p">:</span>//localhost<span class="p">:</span><span class="m">8000</span>/greeting/spring<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>Request<span class="w"> </span>URI<span class="p">:</span><span class="w"> </span>http<span class="p">:</span>//localhost<span class="p">:</span><span class="m">8000</span>/greeting/spring</code></pre></td></tr></table>
 </div>
-</div><p>可以看到8000和8001都有访问到。</p>
+</div>
+<p>可以看到8000和8001都有访问到。</p>
+
 <p>停掉8000应用，在访问一次，可以看到浏览器显示：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Whitelabel Error Page
+<pre class="chroma">Whitelabel Error Page
 This application has no explicit mapping for /error, so you are seeing this as a fallback.
 
 Sun Jun 30 16:15:42 CST 2019
 There was an unexpected error (type=Internal Server Error, status=500).
-No instances available for service-provider
-</code></pre></td></tr></table>
+No instances available for service-provider</pre></td></tr></table>
 </div>
-</div><p>这是因为8000应用已经停掉了，所以不能服务，多刷几次，当请求负载到8001应用时，又能看到返回结果。<strong>这说明：当服务宕机之后，ribbon没有将宕机的应用从负载均衡列表中删除。</strong></p>
+</div>
+<p>这是因为8000应用已经停掉了，所以不能服务，多刷几次，当请求负载到8001应用时，又能看到返回结果。<strong>这说明：当服务宕机之后，ribbon没有将宕机的应用从负载均衡列表中删除。</strong></p>
+
 <p>但是此时，8081服务其实是正常的。</p>
+
 <p>因此Spring Cloud 整合了Spring Retry 来增强RestTemplate的重试能力，当一次服务调用失败后，不会立即抛出一次，而是再次重试另一个服务。</p>
+
 <p>只需要简单配置即可实现Ribbon的重试：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1044,31 +1074,34 @@ No instances available for service-provider
 </span><span class="w">    </span>ReadTimeout<span class="p">:</span><span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="c"># Ribbon的数据读取超时时间</span><span class="w">
 </span><span class="w">    </span>OkToRetryOnAllOperations<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 是否对所有操作都进行重试</span><span class="w">
 </span><span class="w">    </span>MaxAutoRetriesNextServer<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 切换实例的重试次数</span><span class="w">
-</span><span class="w">    </span>MaxAutoRetries<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 对当前实例的重试次数</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>MaxAutoRetries<span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="c"># 对当前实例的重试次数</span></code></pre></td></tr></table>
 </div>
-</div><p>根据如上配置，当访问到某个服务超时后，它会再次尝试访问下一个服务实例，如果不行就再换一个实例，如果不行，则返回失败。切换次数取决于<code>MaxAutoRetriesNextServer</code>参数的值</p>
+</div>
+<p>根据如上配置，当访问到某个服务超时后，它会再次尝试访问下一个服务实例，如果不行就再换一个实例，如果不行，则返回失败。切换次数取决于<code>MaxAutoRetriesNextServer</code>参数的值</p>
+
 <p>引入spring-retry依赖</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.retry<span class="nt">&lt;/groupId&gt;</span>
-    <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-retry<span class="nt">&lt;/artifactId&gt;</span>
-<span class="nt">&lt;/dependency&gt;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.springframework.retry<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>spring-retry<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>将8000应用启动起来，等几秒之后，应用又能正常访问，不再报错，这是因为ribbo检测到8000端口的应用是正常的，默认是通过 http://localhost:8000/actuator/health 来检测的。</p>
-<h2 id="26resttemplate">2.6、RestTemplate实现负载均衡</h2>
+</div>
+<p>将8000应用启动起来，等几秒之后，应用又能正常访问，不再报错，这是因为ribbo检测到8000端口的应用是正常的，默认是通过 <a href="http://localhost:8000/actuator/health">http://localhost:8000/actuator/health</a> 来检测的。</p>
+
+<h2 id="2-6-resttemplate实现负载均衡">2.6、RestTemplate实现负载均衡</h2>
+
 <p>修改RestClientConfig类，添加@LoadBalanced注解：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1103,37 +1136,37 @@ No instances available for service-provider
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RestClientConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
     <span class="nd">@Qualifier</span><span class="o">(</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">)</span>
-    <span class="kd">public</span> <span class="n">CustomRestTemplateCustomizer</span> <span class="nf">customRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">CustomRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">CustomRestTemplateCustomizer</span> <span class="nf">customRestTemplateCustomizer</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">CustomRestTemplateCustomizer</span><span class="o">();</span>
     <span class="o">}</span>
 
     <span class="nd">@Bean</span>
-    <span class="nd">@DependsOn</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="o">{</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">}</span><span class="o">)</span>
-    <span class="kd">public</span> <span class="n">RestTemplateBuilder</span> <span class="nf">restTemplateBuilder</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplateBuilder</span><span class="o">(</span><span class="n">customRestTemplateCustomizer</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+    <span class="nd">@DependsOn</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="o">{</span><span class="s">&#34;customRestTemplateCustomizer&#34;</span><span class="o">})</span>
+    <span class="kd">public</span> <span class="n">RestTemplateBuilder</span> <span class="nf">restTemplateBuilder</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplateBuilder</span><span class="o">(</span><span class="n">customRestTemplateCustomizer</span><span class="o">());</span>
     <span class="o">}</span>
 
 
 <span class="c1">//    @Bean
-</span><span class="c1"></span><span class="c1">//    public RestTemplate restTemplate() {
-</span><span class="c1"></span><span class="c1">//        return new RestTemplate(new OkHttp3ClientHttpRequestFactory());
-</span><span class="c1"></span><span class="c1">//    }
+</span><span class="c1">//    public RestTemplate restTemplate() {
+</span><span class="c1">//        return new RestTemplate(new OkHttp3ClientHttpRequestFactory());
+</span><span class="c1">//    }
 </span><span class="c1"></span>
     <span class="nd">@Bean</span>
     <span class="nd">@LoadBalanced</span>
-    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">restTemplateBuilder</span><span class="o">(</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">restTemplate</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">restTemplateBuilder</span><span class="o">()</span>
                 <span class="o">.</span><span class="na">requestFactory</span><span class="o">(</span><span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">errorHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">RestTemplateResponseErrorHandler</span><span class="o">(</span><span class="o">)</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+                <span class="o">.</span><span class="na">errorHandler</span><span class="o">(</span><span class="k">new</span> <span class="n">RestTemplateResponseErrorHandler</span><span class="o">())</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">();</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>修改service类：</p>
+</div>
+<p>修改service类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1156,29 +1189,30 @@ No instances available for service-provider
 
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForObject</span><span class="o">(</span><span class="s">&#34;http://&#34;</span> <span class="o">+</span> <span class="n">REST_URL_PREFIX</span> 
-        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>再次进行测试，可以看到日志：</p>
+</div>
+<p>再次进行测试，可以看到日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yml" data-lang="yml">Request<span class="w"> </span>Headers<span class="p">:</span><span class="w"> </span><span class="p">[</span>Accept<span class="p">:</span><span class="s2">&#34;text/plain, application/json, application/*+json, */*&#34;</span><span class="p">,</span><span class="w"> </span>Content-Length<span class="p">:</span><span class="s2">&#34;0&#34;</span><span class="p">]</span><span class="w">
 </span><span class="w"></span>Request<span class="w"> </span>Method<span class="p">:</span><span class="w"> </span>GET<span class="w">
-</span><span class="w"></span>Request<span class="w"> </span>URI<span class="p">:</span><span class="w"> </span>http<span class="p">:</span>//service-provider/greeting/spring<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>Request<span class="w"> </span>URI<span class="p">:</span><span class="w"> </span>http<span class="p">:</span>//service-provider/greeting/spring</code></pre></td></tr></table>
 </div>
-</div><h2 id="27ribbon">2.7、自定义ribbon配置</h2>
+</div>
+<h2 id="2-7-自定义ribbon配置">2.7、自定义ribbon配置</h2>
+
 <p>修改启动类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1196,16 +1230,16 @@ No instances available for service-provider
 </span><span class="c1"></span>    <span class="nd">@RibbonClient</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;provider&#34;</span><span class="o">,</span> <span class="n">configuration</span> <span class="o">=</span> <span class="n">RibbonConfig</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
 <span class="o">)</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">AppConsumerRibbon</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerRibbon</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerRibbon</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>添加RibbonConfig类：</p>
+</div>
+<p>添加RibbonConfig类：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1222,22 +1256,24 @@ No instances available for service-provider
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Configuration</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RibbonConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
-    <span class="kd">public</span> <span class="n">IPing</span> <span class="nf">ribbonPing</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">MyPing</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">IPing</span> <span class="nf">ribbonPing</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">MyPing</span><span class="o">();</span>
     <span class="o">}</span>
 
     <span class="nd">@Bean</span>
-    <span class="kd">public</span> <span class="n">IRule</span> <span class="nf">ribbonRule</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">RandomRule</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">IRule</span> <span class="nf">ribbonRule</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">RandomRule</span><span class="o">();</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>主要功能：</p>
+</div>
+<p>主要功能：</p>
+
 <ul>
 <li>实现IPing接口自定义一个ping逻辑</li>
 <li>实现IRule接口，设置负载均衡算法，这里使用的是随机算法。</li>
 <li>Ribbon支持负载规则：
+
 <ul>
 <li>AvailabilityFilteringRule</li>
 <li>BestAvailableRule</li>
@@ -1246,10 +1282,11 @@ No instances available for service-provider
 <li>RetryRule</li>
 <li>RoundRobinRule</li>
 <li>ZoneAvoidanceRule</li>
+</ul></li>
 </ul>
-</li>
-</ul>
+
 <p>负载均衡规则说明：</p>
+
 <table>
 <thead>
 <tr>
@@ -1258,37 +1295,44 @@ No instances available for service-provider
 <th>实现说明</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td>RoundRobinRule</td>
 <td>简单轮询服务列表来选择服务器。</td>
 <td>轮询index，选择index对应位置的server</td>
 </tr>
+
 <tr>
 <td>AvailabilityFilteringRule</td>
 <td></td>
 <td>使用一个AvailabilityPredicate来包含过滤server的逻辑，其实就就是检查status里记录的各个server的运行状态</td>
 </tr>
+
 <tr>
 <td>WeightedResponseTimeRule</td>
 <td>为每一个服务器赋予一个权重值。服务器响应时间越长，这个服务器的权重就越小。这个规则会随机选择服务器，这个权重值会影响服务器的选择。</td>
 <td>一个后台线程定期的从status里面读取评价响应时间，为每个server计算一个weight。Weight的计算也比较简单responsetime 减去每个server自己平均的responsetime是server的权重。当刚开始运行，没有形成status时，使用roubine策略选择server。</td>
 </tr>
+
 <tr>
 <td>ZoneAvoidanceRule</td>
 <td>以区域可用的服务器为基础进行服务器的选择。使用Zone对服务器进行分类，这个Zone可以理解为一个机房、一个机架等。</td>
 <td>使用ZoneAvoidancePredicate和AvailabilityPredicate来判断是否选择某个server，前一个判断判定一个zone的运行性能是否可用，剔除不可用的zone（的所有server），AvailabilityPredicate用于过滤掉连接数过多的Server。</td>
 </tr>
+
 <tr>
 <td>BestAvailableRule</td>
 <td>忽略哪些短路的服务器，并选择并发数较低的服务器。</td>
 <td>逐个考察Server，如果Server被tripped了，则忽略，在选择其中ActiveRequestsCount最小的server</td>
 </tr>
+
 <tr>
 <td>RandomRule</td>
 <td>随机选择一个可用的服务器。</td>
 <td>在index上随机，选择index对应位置的server</td>
 </tr>
+
 <tr>
 <td>RetryRule</td>
 <td>重试机制的选择逻辑</td>
@@ -1296,15 +1340,18 @@ No instances available for service-provider
 </tr>
 </tbody>
 </table>
+
 <p>AvailabilityFilteringRule规则说明：对以下两种服务器进行忽略：</p>
+
 <ul>
 <li>（1）在默认情况下，这台服务器如果3次连接失败，这台服务器就会被设置为“短路”状态。短路状态将持续30秒，如果再次连接失败，短路的持续时间就会几何级地增加。 注意：可以通过修改配置<code>loadbalancer.&lt;clientName&gt;.connectionFailureCountThreshold</code>来修改连接失败多少次之后被设置为短路状态。默认是3次。</li>
 <li>（2）并发数过高的服务器。如果一个服务器的并发连接数过高，配置了AvailabilityFilteringRule规则的客户端也会将其忽略。并发连接数的上线，可以由客户端的<code>&lt;clientName&gt;.&lt;clientConfigNameSpace&gt;.ActiveConnectionsLimit</code>属性进行配置。</li>
 </ul>
+
 <p>也可以自定义一个IPing：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1332,30 +1379,30 @@ No instances available for service-provider
 
     <span class="nd">@Override</span>
     <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isAlive</span><span class="o">(</span><span class="n">Server</span> <span class="n">server</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">String</span> <span class="n">host</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="na">getHost</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="kt">int</span> <span class="n">port</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="na">getPort</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">String</span> <span class="n">host</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="na">getHost</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">port</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="na">getPort</span><span class="o">();</span>
         <span class="c1">// /health endpoint
 </span><span class="c1"></span>        <span class="c1">// 通过 Spring 组件来实现URL 拼装
-</span><span class="c1"></span>        <span class="n">UriComponentsBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="n">UriComponentsBuilder</span><span class="o">.</span><span class="na">newInstance</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">builder</span><span class="o">.</span><span class="na">scheme</span><span class="o">(</span><span class="s">&#34;http&#34;</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">builder</span><span class="o">.</span><span class="na">host</span><span class="o">(</span><span class="n">host</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">builder</span><span class="o">.</span><span class="na">port</span><span class="o">(</span><span class="n">port</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">builder</span><span class="o">.</span><span class="na">path</span><span class="o">(</span><span class="s">&#34;/actuator/health&#34;</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">URI</span> <span class="n">uri</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">toUri</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>        <span class="n">UriComponentsBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="n">UriComponentsBuilder</span><span class="o">.</span><span class="na">newInstance</span><span class="o">();</span>
+        <span class="n">builder</span><span class="o">.</span><span class="na">scheme</span><span class="o">(</span><span class="s">&#34;http&#34;</span><span class="o">);</span>
+        <span class="n">builder</span><span class="o">.</span><span class="na">host</span><span class="o">(</span><span class="n">host</span><span class="o">);</span>
+        <span class="n">builder</span><span class="o">.</span><span class="na">port</span><span class="o">(</span><span class="n">port</span><span class="o">);</span>
+        <span class="n">builder</span><span class="o">.</span><span class="na">path</span><span class="o">(</span><span class="s">&#34;/actuator/health&#34;</span><span class="o">);</span>
+        <span class="n">URI</span> <span class="n">uri</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">build</span><span class="o">().</span><span class="na">toUri</span><span class="o">();</span>
 
-        <span class="n">RestTemplate</span> <span class="n">restTemplate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">RestTemplate</span> <span class="n">restTemplate</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">();</span>
 
-        <span class="n">ResponseEntity</span> <span class="n">responseEntity</span> <span class="o">=</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForEntity</span><span class="o">(</span><span class="n">uri</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">ResponseEntity</span> <span class="n">responseEntity</span> <span class="o">=</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForEntity</span><span class="o">(</span><span class="n">uri</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
         <span class="c1">// 当响应状态等于 200 时，返回 true ，否则 false
-</span><span class="c1"></span>        <span class="k">return</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">OK</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">responseEntity</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>        <span class="k">return</span> <span class="n">HttpStatus</span><span class="o">.</span><span class="na">OK</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">responseEntity</span><span class="o">.</span><span class="na">getStatusCode</span><span class="o">());</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>然后，需要修改配置文件，设置 NFLoadBalancerPingClassName ：</p>
+</div>
+<p>然后，需要修改配置文件，设置 NFLoadBalancerPingClassName ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1390,22 +1437,26 @@ No instances available for service-provider
 </span><span class="w">    </span><span class="c"># 负载均衡地址，配置多个</span><span class="w">
 </span><span class="w">    </span>listOfServers<span class="p">:</span><span class="w"> </span>localhost<span class="p">:</span><span class="m">8000</span><span class="p">,</span>localhost<span class="p">:</span><span class="m">8001</span><span class="w">
 </span><span class="w">    </span>ServerListRefreshInterval<span class="p">:</span><span class="w"> </span><span class="m">15000</span><span class="w">
-</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>NFLoadBalancerPingClassName<span class="p">:</span><span class="w"> </span>com.javachen.ping.MyPing</code></pre></td></tr></table>
 </div>
-</div><h1 id="3hystrix">3、集成Hystrix实现服务熔断和降级</h1>
+</div>
+<h1 id="3-集成hystrix实现服务熔断和降级">3、集成Hystrix实现服务熔断和降级</h1>
+
 <p>解决雪崩效应的方法：</p>
+
 <ol>
 <li>超时机制</li>
 <li>服务限流</li>
 <li>服务熔断</li>
 <li>服务降级</li>
 </ol>
-<h2 id="31consumer-hystrix">3.1、创建consumer-hystrix模块</h2>
+
+<h2 id="3-1-创建consumer-hystrix模块">3.1、创建consumer-hystrix模块</h2>
+
 <p>pom.xml添加spring-cloud-starter-netflix-hystrix依赖：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1455,53 +1506,54 @@ No instances available for service-provider
 <span class="nt">&lt;project</span> <span class="na">xmlns:xsi=</span><span class="s">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
 <span class="na">xmlns=</span><span class="s">&#34;http://maven.apache.org/POM/4.0.0&#34;</span>
 <span class="na">xsi:schemaLocation=</span><span class="s">&#34;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&#34;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;parent</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-cloud-examples-1<span class="nt">&lt;/artifactId&gt;</span>
-        <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
-        <span class="nt">&lt;version</span><span class="nt">&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;parent&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>spring-cloud-examples-1<span class="nt">&lt;/artifactId&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
     <span class="nt">&lt;/parent&gt;</span>
-    <span class="nt">&lt;modelVersion</span><span class="nt">&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
-    <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
-    <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>consumer-hystrix<span class="nt">&lt;/artifactId&gt;</span>
-    <span class="nt">&lt;version</span><span class="nt">&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>com.javachen<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>consumer-hystrix<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>1.0.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
 
-    <span class="nt">&lt;dependencies</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-            <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-            <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;dependencies&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-web<span class="nt">&lt;/artifactId&gt;</span>
         <span class="nt">&lt;/dependency&gt;</span>
 
-        <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-            <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.cloud<span class="nt">&lt;/groupId&gt;</span>
-            <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-cloud-starter-netflix-hystrix<span class="nt">&lt;/artifactId&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.springframework.cloud<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spring-cloud-starter-netflix-hystrix<span class="nt">&lt;/artifactId&gt;</span>
         <span class="nt">&lt;/dependency&gt;</span>
 
-        <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-            <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
-            <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
-            <span class="nt">&lt;version</span><span class="nt">&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>com.squareup.okhttp3<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>okhttp<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;version&gt;</span>3.9.0<span class="nt">&lt;/version&gt;</span>
         <span class="nt">&lt;/dependency&gt;</span>
 
-        <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-            <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
-            <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-actuator<span class="nt">&lt;/artifactId&gt;</span>
         <span class="nt">&lt;/dependency&gt;</span>
 
-        <span class="nt">&lt;dependency</span><span class="nt">&gt;</span>
-            <span class="nt">&lt;groupId</span><span class="nt">&gt;</span>org.projectlombok<span class="nt">&lt;/groupId&gt;</span>
-            <span class="nt">&lt;artifactId</span><span class="nt">&gt;</span>lombok<span class="nt">&lt;/artifactId&gt;</span>
-            <span class="nt">&lt;optional</span><span class="nt">&gt;</span>true<span class="nt">&lt;/optional&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.projectlombok<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>lombok<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;optional&gt;</span>true<span class="nt">&lt;/optional&gt;</span>
         <span class="nt">&lt;/dependency&gt;</span>
 
     <span class="nt">&lt;/dependencies&gt;</span>
-<span class="nt">&lt;/project&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/project&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="32resttemplate">3.2、RestTemplate类</h2>
+</div>
+<h2 id="3-2-resttemplate类">3.2、RestTemplate类</h2>
+
 <p>RestClientConfig：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1514,17 +1566,17 @@ No instances available for service-provider
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Configuration</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">RestClientConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
-    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">getRestTemplate</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">RestTemplate</span> <span class="nf">getRestTemplate</span><span class="o">()</span> <span class="o">{</span>
         <span class="c1">// 这次我们使用了OkHttp客户端,只需要注入工厂即可
-</span><span class="c1"></span>        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="k">new</span> <span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>        <span class="k">return</span> <span class="k">new</span> <span class="n">RestTemplate</span><span class="o">(</span><span class="k">new</span> <span class="n">OkHttp3ClientHttpRequestFactory</span><span class="o">());</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="33service">3.3、Service类</h2>
+</div>
+<h2 id="3-3-service类">3.3、Service类</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1547,15 +1599,15 @@ No instances available for service-provider
 
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">greeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">restTemplate</span><span class="o">.</span><span class="na">getForObject</span><span class="o">(</span><span class="s">&#34;http://&#34;</span> <span class="o">+</span> <span class="n">REST_URL_PREFIX</span> 
-        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">+</span> <span class="s">&#34;/greeting/{username}&#34;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="34controller">3.4、Controller类</h2>
+</div>
+<h2 id="3-4-controller类">3.4、Controller类</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1582,28 +1634,29 @@ No instances available for service-provider
     <span class="nd">@Autowired</span>
     <span class="kd">private</span> <span class="n">GreetingService</span> <span class="n">greetingService</span><span class="o">;</span>
 
-    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">static</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">static</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
 
     <span class="nd">@HystrixCommand</span><span class="o">(</span><span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">&#34;defaultGreeting&#34;</span><span class="o">)</span>
     <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">getGreeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span> <span class="o">{</span>
-       <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">)</span><span class="o">;</span>
+       <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="kd">private</span> <span class="n">String</span> <span class="nf">defaultGreeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">throwable</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;fallback method&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;fallback method&#34;</span><span class="o">);</span>
         <span class="k">return</span> <span class="s">&#34;Hello User!&#34;</span><span class="o">;</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li><code>@HystrixCommand(fallbackMethod=&quot;defaultGreeting&quot;)</code>：声明一个失败回滚处理函数defaultGreeting，当服务不可用的时候，实现<strong>服务降级</strong>。</li>
 </ul>
+
 <p>实现超时回退：当getGreeting执行超时（默认是1000毫秒），就会执行fallback函数，返回错误提示。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1615,20 +1668,22 @@ No instances available for service-provider
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@HystrixCommand</span><span class="o">(</span><span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">&#34;defaultGreeting&#34;</span><span class="o">)</span>
     <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">getGreeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span> <span class="o">{</span>
-       <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">)</span><span class="o">;</span>
-       <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">)</span><span class="o">;</span>
+       <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">);</span>
+       <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">);</span>
        <span class="c1">//。。。。。。。
-</span><span class="c1"></span>    <span class="o">}</span>
-</code></pre></td></tr></table>
+</span><span class="c1"></span>    <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><blockquote>
+</div>
+<blockquote>
 <p>如果集成了Ribbon，RIbbon的超时时间设置的也是1000ms，而Hystix的超时时间默认也是1000ms，因此重试机制不会被触发，而是先触发了熔断。</p>
 </blockquote>
+
 <p>所以，Ribbon的超时时间一定要小于Hystix的超时时间。</p>
+
 <p>我们可以通过<code>hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds</code>来设置Hystrix超时时间。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1643,13 +1698,13 @@ No instances available for service-provider
 </span><span class="w">        </span>execution<span class="p">:</span><span class="w">
 </span><span class="w">          </span>isolation<span class="p">:</span><span class="w">
 </span><span class="w">            </span>thread<span class="p">:</span><span class="w">
-</span><span class="w">              </span>timeoutInMillisecond<span class="p">:</span><span class="w"> </span><span class="m">6000</span><span class="w"> </span><span class="c"># 设置hystrix的超时时间为6000ms</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">              </span>timeoutInMillisecond<span class="p">:</span><span class="w"> </span><span class="m">6000</span><span class="w"> </span><span class="c"># 设置hystrix的超时时间为6000ms</span></code></pre></td></tr></table>
 </div>
-</div><p>如何实现服务熔断？在代码里增加模拟报错代码：</p>
+</div>
+<p>如何实现服务熔断？在代码里增加模拟报错代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1665,44 +1720,46 @@ No instances available for service-provider
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@HystrixCommand</span><span class="o">(</span><span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">&#34;defaultGreeting&#34;</span><span class="o">)</span>
 <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
 <span class="kd">public</span> <span class="n">String</span> <span class="nf">getGreeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span> <span class="o">{</span>
-  <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">)</span><span class="o">;</span>
+  <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">);</span>
+  <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">);</span>
   <span class="k">if</span> <span class="o">(</span><span class="n">executeTime</span> <span class="o">&gt;</span> <span class="n">100</span><span class="o">)</span> <span class="o">{</span> 
     <span class="c1">//抛异常，模拟服务不可用
-</span><span class="c1"></span>    <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>    <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">);</span>
   <span class="o">}</span>
-  <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">)</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">);</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>测试报错和正常的情况，我们可以看到当报错达到一定阈值时，会自动熔断，阈值可以配置，如下:</p>
+</div>
+<p>测试报错和正常的情况，我们可以看到当报错达到一定阈值时，会自动熔断，阈值可以配置，如下:</p>
+
 <ul>
 <li>一个rolling window内最小的请求数。如果设为20，那么当一个rolling window的时间内</li>
 </ul>
+
 <p>(比如说1个rolling window是10秒)收到19个请求，即使19个请求都失败，也不会触发 circuit break。默认20</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">hystrix.command.default.circuitBreaker.requestVolumeThreshold 
-</code></pre></td></tr></table>
+<pre class="chroma">hystrix.command.default.circuitBreaker.requestVolumeThreshold </pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>触发短路的时间值，当该值设为5000时，则当触发circuit break后的5000毫秒内都会拒绝request，也就是5000毫秒后才会关闭circuit。默认5000</li>
 </ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">hystrix.command.default.circuitBreaker.sleepWindowInMilliseconds 
-</code></pre></td></tr></table>
+<pre class="chroma">hystrix.command.default.circuitBreaker.sleepWindowInMilliseconds </pre></td></tr></table>
 </div>
-</div><p>如何实现限流？</p>
+</div>
+<p>如何实现限流？</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1726,25 +1783,26 @@ No instances available for service-provider
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@HystrixCommand</span><span class="o">(</span><span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">&#34;defaultGreeting&#34;</span>
      <span class="n">groupKey</span><span class="o">=</span><span class="s">&#34;greetGroup&#34;</span><span class="o">,</span>
      <span class="n">threadPoolKey</span><span class="o">=</span><span class="s">&#34;greetThreadPool&#34;</span><span class="o">,</span>
-     <span class="n">threadPoolProperties</span><span class="o">=</span><span class="o">{</span>
-       <span class="nd">@HystrixProperties</span><span class="o">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#34;coreSize&#34;</span><span class="err">，</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;2&#34;</span><span class="o">)</span><span class="o">,</span>
-       <span class="nd">@HystrixProperty</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;maxQueueSize&#34;</span><span class="o">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s">&#34;2&#34;</span><span class="o">)</span><span class="o">,</span>
+     <span class="n">threadPoolProperties</span><span class="o">={</span>
+       <span class="nd">@HystrixProperties</span><span class="o">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#34;coreSize&#34;</span><span class="err">，</span><span class="n">value</span><span class="o">=</span><span class="s">&#34;2&#34;</span><span class="o">),</span>
+       <span class="nd">@HystrixProperty</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;maxQueueSize&#34;</span><span class="o">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s">&#34;2&#34;</span><span class="o">),</span>
 	     <span class="nd">@HystrixProperty</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;queueSizeRejectionThreshold&#34;</span><span class="o">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s">&#34;1&#34;</span><span class="o">)</span>
      <span class="o">}</span>           
 <span class="o">)</span>
 <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
 <span class="kd">public</span> <span class="n">String</span> <span class="nf">getGreeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span> <span class="o">{</span>
-  <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">)</span><span class="o">;</span>
-  <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">)</span><span class="o">;</span>
+  <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">2000</span><span class="o">);</span>
+  <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">);</span>
   <span class="k">if</span> <span class="o">(</span><span class="n">executeTime</span> <span class="o">&gt;</span> <span class="n">100</span><span class="o">)</span> <span class="o">{</span> 
     <span class="c1">//抛异常，模拟服务不可用
-</span><span class="c1"></span>    <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>    <span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">);</span>
   <span class="o">}</span>
-  <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">)</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">);</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>注解配置说明:</p>
+</div>
+<p>注解配置说明:</p>
+
 <ul>
 <li>groupKey：配置全局唯一标识服务分组的名称，比如，库存系统就是一个服务分
 组。当我们监控时，相同分组的服务会聚合在一起，必填选项。</li>
@@ -1755,40 +1813,44 @@ No instances available for service-provider
 <li>threadPoolProperties：配置线程池参数， 配置核心线程池大小和线程池最大大 小，keepAliveTimeMinutes是线程池中空闲线程生存时间(如果不进行动态配置，那么是没 有任何作用的)， 配置线程池队列最大大小， 限定当前队列大小，即实际队列大小由这个参数决定，通过 改变queueSizeRejectionThreshold可以实现动态队列大小调整。</li>
 <li>commandProperties：配置该命令的一些参数，如executionIsolationStrategy配置执行隔离策略，默认是使用线程隔离，此处我们配置为THREAD，即线程池隔离。</li>
 </ul>
+
 <p>此处可以粗粒度实现隔离，也可以细粒度实现隔离：</p>
+
 <ul>
 <li>服务分组+线程池：粗粒度实现，一个服务分组/系统配置一个隔离线程池即可，不配置线程池名称或者相同分组的线程池名称配置为一样。</li>
 <li>服务分组+服务+线程池：细粒度实现，一个服务分组中的每一个服务配置一个隔离线程池，为不同的命令实现配置不同的线程池名称即可。</li>
 <li>混合实现：一个服务分组配置一个隔离线程池，然后对重要服务单独设置隔离线程池。</li>
 </ul>
+
 <p><strong>Hystrix相关配置：</strong></p>
+
 <p>hystrix.command.default和hystrix.threadpool.default中的default为默认CommandKey
 Command Properties</p>
+
 <p>Execution相关的属性的配置:</p>
+
 <ul>
-<li>
-<p><code>hystrix.command.default.execution.isolation.strategy</code> 隔离策略，默认是Thread, 可选Thread| Semaphore</p>
-</li>
-<li>
-<p><code>hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds</code> 命令执行超时时 间，默认1000ms</p>
-</li>
-<li>
-<p><code>hystrix.command.default.execution.timeout.enabled</code> 执行是否启用超时，默认启用true</p>
-</li>
-<li>
-<p><code>hystrix.command.default.execution.isolation.thread.interruptOnTimeout</code> 发生超时是是否中断， 默认true</p>
-</li>
-<li>
-<p><code>hystrix.command.default.execution.isolation.semaphore.maxConcurrentRequests</code> 最大并发请求 数，默认10，该参数当使用ExecutionIsolationStrategy.SEMAPHORE策略时才有效。如果达到最大并发请求 数，请求会被拒绝。理论上选择semaphore size的原则和选择thread size一致，但选用semaphore时每次执行 的单元要比较小且执行速度快(ms级别)，否则的话应该用thread。 semaphore应该占整个容器(tomcat)的线程池的一小部分。</p>
-</li>
+<li><p><code>hystrix.command.default.execution.isolation.strategy</code> 隔离策略，默认是Thread, 可选Thread| Semaphore</p></li>
+
+<li><p><code>hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds</code> 命令执行超时时 间，默认1000ms</p></li>
+
+<li><p><code>hystrix.command.default.execution.timeout.enabled</code> 执行是否启用超时，默认启用true</p></li>
+
+<li><p><code>hystrix.command.default.execution.isolation.thread.interruptOnTimeout</code> 发生超时是是否中断， 默认true</p></li>
+
+<li><p><code>hystrix.command.default.execution.isolation.semaphore.maxConcurrentRequests</code> 最大并发请求 数，默认10，该参数当使用ExecutionIsolationStrategy.SEMAPHORE策略时才有效。如果达到最大并发请求 数，请求会被拒绝。理论上选择semaphore size的原则和选择thread size一致，但选用semaphore时每次执行 的单元要比较小且执行速度快(ms级别)，否则的话应该用thread。 semaphore应该占整个容器(tomcat)的线程池的一小部分。</p></li>
 </ul>
+
 <p>Fallback相关的属性
 这些参数可以应用于Hystrix的<code>THREAD</code>和<code>SEMAPHORE</code>策略</p>
+
 <ul>
 <li><code>hystrix.command.default.fallback.isolation.semaphore.maxConcurrentRequests</code> 如果并发数达到 该设置值，请求会被拒绝和抛出异常并且fallback不会被调用。默认10</li>
 <li><code>hystrix.command.default.fallback.enabled</code> 当执行失败或者请求被拒绝，是否会尝试调用 hystrixCommand.getFallback() 。默认true</li>
 </ul>
+
 <p>Circuit Breaker相关的属性</p>
+
 <ul>
 <li><code>hystrix.command.default.circuitBreaker.enabled</code> 用来跟踪circuit的健康性，如果未达标则让 request短路。默认true</li>
 <li><code>hystrix.command.default.circuitBreaker.requestVolumeThreshold</code> 一个rolling window内最小的请 求数。如果设为20，那么当一个rolling window的时间内(比如说1个rolling window是10秒)收到19个请求， 即使19个请求都失败，也不会触发circuit break。默认20</li>
@@ -1797,7 +1859,9 @@ Command Properties</p>
 <li><code>hystrix.command.default.circuitBreaker.forceOpen</code> 强制打开熔断器，如果打开这个开关，那么拒绝所 有request，默认false</li>
 <li><code>hystrix.command.default.circuitBreaker.forceClosed</code> 强制关闭熔断器 如果这个开关打开，circuit将 一直关闭且忽略circuitBreaker.errorThresholdPercentage</li>
 </ul>
+
 <p>Metrics相关参数</p>
+
 <ul>
 <li><code>hystrix.command.default.metrics.rollingStats.timeInMilliseconds</code> 设置统计的时间窗口值的，毫秒 值，circuit break 的打开会根据1个rolling window的统计来计算。若rolling window被设为10000毫秒， 则rolling window会被分成n个buckets，每个bucket包含success，failure，timeout，rejection的次数 的统计信息。默认10000</li>
 <li><code>hystrix.command.default.metrics.rollingStats.numBuckets</code> 设置一个rolling window被划分的数 量，若numBuckets=10，rolling window=10000，那么一个bucket的时间即1秒。必须符合rolling window % numberBuckets == 0。默认10</li>
@@ -1807,7 +1871,9 @@ Command Properties</p>
 <li><code>hystrix.command.default.metrics.rollingPercentile.bucketSize</code> 如果bucket size=100，window =10s，若这10s里有500次执行，只有最后100次执行会被统计到bucket里去。增加该值会增加内存开销以及排序 的开销。默认100</li>
 <li><code>hystrix.command.default.metrics.healthSnapshot.intervalInMilliseconds</code> 记录health 快照(用 来统计成功和错误绿)的间隔，默认500ms</li>
 </ul>
+
 <p>Request Context 相关参数</p>
+
 <ul>
 <li><code>hystrix.command.default.requestCache.enabled</code> 默认true，需要重载getCacheKey()，返回null时不缓存</li>
 <li><code>hystrix.command.default.requestLog.enabled</code> 记录日志到HystrixRequestLog，默认true
@@ -1816,7 +1882,9 @@ Collapser Properties 相关参数</li>
 <li><code>hystrix.collapser.default.timerDelayInMilliseconds</code> 触发批处理的延迟，也可以为创建批处理的时间 +该值，默认10</li>
 <li><code>hystrix.collapser.default.requestCache.enabled</code> 是否对HystrixCollapser.execute() and HystrixCollapser.queue()的cache，默认true</li>
 </ul>
+
 <p>ThreadPool 相关参数：</p>
+
 <ul>
 <li><code>hystrix.threadpool.default.coreSize</code> 并发执行的最大线程数，默认10</li>
 <li><code>hystrix.threadpool.default.maxQueueSize</code> BlockingQueue的最大队列数，当设为-1，会使用 SynchronousQueue，值为正时使用LinkedBlcokingQueue。该设置只会在初始化时有效，之后不能修改 threadpool的queue size，除非reinitialising thread executor。默认-1</li>
@@ -1825,11 +1893,13 @@ Collapser Properties 相关参数</li>
 <li><code>hystrix.threadpool.default.metrics.rollingStats.timeInMilliseconds</code> 线程池统计指标的时间，默 认10000</li>
 <li><code>hystrix.threadpool.default.metrics.rollingStats.numBuckets</code> 将rolling window划分为n个 buckets，默认10</li>
 </ul>
-<h2 id="35">3.5、启动类</h2>
+
+<h2 id="3-5-启动类">3.5、启动类</h2>
+
 <p>开启Hystrix：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1841,16 +1911,16 @@ Collapser Properties 相关参数</li>
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@SpringBootApplication</span>
 <span class="nd">@EnableHystrix</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">AppConsumerHystrix</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerHystrix</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">SpringApplication</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="n">AppConsumerHystrix</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="36">3.6、配置文件</h2>
+</div>
+<h2 id="3-6-配置文件">3.6、配置文件</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1863,23 +1933,24 @@ Collapser Properties 相关参数</li>
 </span><span class="w">
 </span><span class="w"></span>spring<span class="p">:</span><span class="w">
 </span><span class="w">  </span>application<span class="p">:</span><span class="w">
-</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>consumer-hystrix<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>consumer-hystrix</code></pre></td></tr></table>
 </div>
-</div><h2 id="37-">3.7、 测试</h2>
-<p>浏览器访问 http://localhost:9000/greeting/spring ，不停刷新，可以看到页面时而显示<code>Hello User!</code>，这是因为下面代码里直接抛出了异常：</p>
+</div>
+<h2 id="3-7-测试">3.7、 测试</h2>
+
+<p>浏览器访问 <a href="http://localhost:9000/greeting/spring">http://localhost:9000/greeting/spring</a> ，不停刷新，可以看到页面时而显示<code>Hello User!</code>，这是因为下面代码里直接抛出了异常：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="k">throw</span> <span class="k">new</span> <span class="n">TimeoutException</span><span class="o">(</span><span class="s">&#34;Execution is timeout!&#34;</span><span class="o">);</span></code></pre></td></tr></table>
 </div>
-</div><p>将代码修改一下，设置超时时间execution.isolation.thread.timeoutInMilliseconds=100，然后让线程休眠随机数毫秒：</p>
+</div>
+<p>将代码修改一下，设置超时时间execution.isolation.thread.timeoutInMilliseconds=100，然后让线程休眠随机数毫秒：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1916,83 +1987,94 @@ Collapser Properties 相关参数</li>
     <span class="nd">@Autowired</span>
     <span class="kd">private</span> <span class="n">GreetingService</span> <span class="n">greetingService</span><span class="o">;</span>
 
-    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">static</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="kd">static</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
 
     <span class="nd">@HystrixCommand</span><span class="o">(</span>
         <span class="n">commandProperties</span> <span class="o">=</span> <span class="o">{</span> <span class="c1">// Command 配置
 </span><span class="c1"></span>            <span class="c1">// 设置操作时间为 100 毫秒
 </span><span class="c1"></span>            <span class="nd">@HystrixProperty</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#34;execution.isolation.thread.timeoutInMilliseconds&#34;</span><span class="o">,</span> 
             <span class="n">value</span> <span class="o">=</span> <span class="s">&#34;100&#34;</span><span class="o">)</span>
-        <span class="o">}</span><span class="o">,</span>
+        <span class="o">},</span>
         <span class="n">fallbackMethod</span> <span class="o">=</span> <span class="s">&#34;defaultGreeting&#34;</span> <span class="c1">// 设置 fallback 方法
 </span><span class="c1"></span>    <span class="o">)</span>
     <span class="nd">@RequestMapping</span><span class="o">(</span><span class="s">&#34;/greeting/{username}&#34;</span><span class="o">)</span>
     <span class="kd">public</span> <span class="n">String</span> <span class="nf">getGreeting</span><span class="o">(</span><span class="nd">@PathVariable</span><span class="o">(</span><span class="s">&#34;username&#34;</span><span class="o">)</span> <span class="n">String</span> <span class="n">username</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TimeoutException</span> <span class="o">{</span>
-        <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">200</span><span class="o">)</span><span class="o">;</span>
-      	<span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;executeTime: {}&#34;</span><span class="o">,</span> <span class="n">executeTime</span><span class="o">)</span><span class="o">;</span>
-        <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">)</span><span class="o">;</span>
+        <span class="kt">long</span> <span class="n">executeTime</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">200</span><span class="o">);</span>
+      	<span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">executeTime</span><span class="o">);</span>
+        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;executeTime: {}&#34;</span><span class="o">,</span> <span class="n">executeTime</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">greetingService</span><span class="o">.</span><span class="na">greeting</span><span class="o">(</span><span class="n">username</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="kd">private</span> <span class="n">String</span> <span class="nf">defaultGreeting</span><span class="o">(</span><span class="n">String</span> <span class="n">username</span><span class="o">,</span> <span class="n">Throwable</span> <span class="n">throwable</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;fallback method&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&#34;fallback method&#34;</span><span class="o">);</span>
         <span class="k">return</span> <span class="s">&#34;Hello User!&#34;</span><span class="o">;</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>再次测试，查看效果。可以看到当随机数小于100时候，接口返回正常值，否则，调用降级方法，返回<code>Hello User!</code>。</p>
-<h2 id="38hystrixcircuitbreaker">3.8、断路器HystrixCircuitBreaker</h2>
+</div>
+<p>再次测试，查看效果。可以看到当随机数小于100时候，接口返回正常值，否则，调用降级方法，返回<code>Hello User!</code>。</p>
+
+<h2 id="3-8-断路器hystrixcircuitbreaker">3.8、断路器HystrixCircuitBreaker</h2>
+
 <p>什么是HystrixCircuitBreaker？</p>
+
 <p>HystrixCircuitBreaker可以防止应用程序重复的尝试调用容易失败的依赖服务。HystrixCircuitBreaker的目的和Retry模式的目的是不同的。Retry模式令应用程序不断的去重试调用依赖服务，直到最后成功。而HystrixCircuitBreaker是阻止应用程序继续尝试无意义的请求。</p>
+
 <p>HystrixCircuitBreaker 有三种状态 ：</p>
+
 <ul>
-<li>
-<p>关闭：应用程序的请求已经路由到了这个操作。HystrixCircuitBreaker应该维护最近一段时间的错误信息，如果调用操作失败，那么大力增加这个错误信息的数量。如果这个错误数量超过给定时间的阈值，HystrixCircuitBreaker进入到打开状态。这个时候，HystrixCircuitBreaker启动一个超时的Timer，当Timer过期了，代理则进入半开状态。超时Timer的目的是为了给依赖服务一段时间来自我修复之前碰到的问题。</p>
-</li>
-<li>
-<p>打开：令可能失败的外部调用操作立刻失败，所有的外部调用直接抛异常给应用程序。</p>
-</li>
-<li>
-<p>半开：只有一定数量的应用请求可以进行操作的调用。如果这些请求成功了，那么就假定之前发生的错误已经被依赖服务自动修复了，而HystrixCircuitBreaker转换成关闭状态，同时重置错误计数器。如果任何请求失败了，那么HystrixCircuitBreaker会假定错误仍然在存在，HystrixCircuitBreaker会重新转换成打开状态，并重启超时Timer给依赖服务更多的时间来自我修复错误。</p>
-</li>
+<li><p>关闭：应用程序的请求已经路由到了这个操作。HystrixCircuitBreaker应该维护最近一段时间的错误信息，如果调用操作失败，那么大力增加这个错误信息的数量。如果这个错误数量超过给定时间的阈值，HystrixCircuitBreaker进入到打开状态。这个时候，HystrixCircuitBreaker启动一个超时的Timer，当Timer过期了，代理则进入半开状态。超时Timer的目的是为了给依赖服务一段时间来自我修复之前碰到的问题。</p></li>
+
+<li><p>打开：令可能失败的外部调用操作立刻失败，所有的外部调用直接抛异常给应用程序。</p></li>
+
+<li><p>半开：只有一定数量的应用请求可以进行操作的调用。如果这些请求成功了，那么就假定之前发生的错误已经被依赖服务自动修复了，而HystrixCircuitBreaker转换成关闭状态，同时重置错误计数器。如果任何请求失败了，那么HystrixCircuitBreaker会假定错误仍然在存在，HystrixCircuitBreaker会重新转换成打开状态，并重启超时Timer给依赖服务更多的时间来自我修复错误。</p></li>
 </ul>
+
 <p>其中，断路器处于 <code>OPEN</code> 状态时，链路处于<strong>非健康</strong>状态，命令执行时，直接调用<strong>回退</strong>逻辑，跳过<strong>正常</strong>逻辑。</p>
+
 <p>HystrixCircuitBreaker 状态变迁如下图 ：</p>
-<p><img src="http://www.iocoder.cn/images/Hystrix/2018_11_08/01.png" alt="img"></p>
+
+<p><img src="http://www.iocoder.cn/images/Hystrix/2018_11_08/01.png" alt="img" /></p>
+
 <ul>
 <li><strong>红线</strong> ：初始时，断路器处于 <code>CLOSED</code> 状态，链路处于<strong>健康</strong>状态。当满足如下条件，断路器从 <code>CLOSED</code> 变成 <code>OPEN</code> 状态：
+
 <ul>
 <li><strong>周期</strong>( 可配，<code>HystrixCommandProperties.default_metricsRollingStatisticalWindow = 10000 ms</code> )内，总请求数超过一定<strong>量</strong>( 可配，<code>HystrixCommandProperties.circuitBreakerRequestVolumeThreshold = 20</code> ) 。</li>
 <li><strong>错误</strong>请求占总请求数超过一定<strong>比例</strong>( 可配，<code>HystrixCommandProperties.circuitBreakerErrorThresholdPercentage = 50%</code> ) 。</li>
-</ul>
-</li>
+</ul></li>
 <li><strong>绿线</strong> ：断路器处于 <code>OPEN</code> 状态，命令执行时，若当前时间超过断路器<strong>开启</strong>时间一定时间( <code>HystrixCommandProperties.circuitBreakerSleepWindowInMilliseconds = 5000 ms</code> )，断路器变成 <code>HALF_OPEN</code> 状态，<strong>尝试</strong>调用<strong>正常</strong>逻辑，根据执行是否成功，<strong>打开或关闭</strong>熔断器【<strong>蓝线</strong>】。</li>
 </ul>
-<h1 id="4hystrixribbon">4、集成Hystrix和Ribbon</h1>
+
+<h1 id="4-集成hystrix和ribbon">4、集成Hystrix和Ribbon</h1>
+
 <p>参照上面两个章节，将代码合并即可。</p>
-<h1 id="5feignrest">5、集成Feign调用Rest接口</h1>
+
+<h1 id="5-集成feign调用rest接口">5、集成Feign调用Rest接口</h1>
+
 <p>SpringCloud为Feign默认整合了Hystrix，也就是说只要Hystrix在项目的classpath中， Feign就会使用断路器包裹Feign客户端的所有方法(Dalston及以上版本默认Feign不开启 Hystrix)。这样虽然方便，但有的场景并不需要该功能，如何为Feign开启Hystrix呢? 我们需要通过下面的参数来开启：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yml" data-lang="yml">feign<span class="p">:</span><span class="w">
 </span><span class="w">  </span>hystrix<span class="p">:</span><span class="w">
-</span><span class="w">    </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启Feign的熔断功能</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启Feign的熔断功能</span></code></pre></td></tr></table>
 </div>
-</div><p>如果要禁用，只需在application.yml中配置feign.hystrix.enabled=false即可。当然，也可以编程指定客户端禁用。</p>
+</div>
+<p>如果要禁用，只需在application.yml中配置feign.hystrix.enabled=false即可。当然，也可以编程指定客户端禁用。</p>
+
 <blockquote>
 <p>请求压缩</p>
 </blockquote>
+
 <p>Spring Cloud Feign 支持对请求和响应进行GZIP压缩，以减少通信过程中的性能损耗。通过下面的参数即可开启请求与响应的压缩功能：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -2005,13 +2087,13 @@ Collapser Properties 相关参数</li>
 </span><span class="w">    </span>request<span class="p">:</span><span class="w">
 </span><span class="w">      </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启请求压缩</span><span class="w">
 </span><span class="w">    </span>response<span class="p">:</span><span class="w">
-</span><span class="w">      </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启响应压缩</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">      </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启响应压缩</span></code></pre></td></tr></table>
 </div>
-</div><p>同时，我们也可以对请求的数据类型，以及触发压缩的大小下限进行设置：</p>
+</div>
+<p>同时，我们也可以对请求的数据类型，以及触发压缩的大小下限进行设置：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yml" data-lang="yml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -2024,18 +2106,21 @@ Collapser Properties 相关参数</li>
 </span><span class="w">    </span>request<span class="p">:</span><span class="w">
 </span><span class="w">      </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="c"># 开启请求压缩</span><span class="w">
 </span><span class="w">      </span>mime-types<span class="p">:</span><span class="w"> </span>text/html<span class="p">,</span>application/xml<span class="p">,</span>application/json<span class="w"> </span><span class="c"># 设置压缩的数据类型</span><span class="w">
-</span><span class="w">      </span>min-request-size<span class="p">:</span><span class="w"> </span><span class="m">2048</span><span class="w"> </span><span class="c"># 设置触发压缩的大小下限</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">      </span>min-request-size<span class="p">:</span><span class="w"> </span><span class="m">2048</span><span class="w"> </span><span class="c"># 设置触发压缩的大小下限</span></code></pre></td></tr></table>
 </div>
-</div><p>注：上面的数据类型、压缩大小下限均为默认值。</p>
+</div>
+<p>注：上面的数据类型、压缩大小下限均为默认值。</p>
+
 <blockquote>
 <p>日志级</p>
 </blockquote>
+
 <p>可以通过<code>logging.level.xx=debug</code>设置日志级别。然而这个对Fegin客户端而言不会产生效果。因为<code>@FeignClient</code>注解修改的客户端在被代理时，都会创建一个新的Fegin.Logger实例。我们需要额外指定这个日志的级别才可以。</p>
+
 <p>编写配置类，定义日志级别</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -2047,22 +2132,27 @@ Collapser Properties 相关参数</li>
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="nd">@Configuration</span>
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">FeignConfig</span> <span class="o">{</span>
     <span class="nd">@Bean</span>
-    <span class="n">Logger</span><span class="o">.</span><span class="na">Level</span> <span class="nf">feignLoggerLevel</span><span class="o">(</span><span class="o">)</span><span class="o">{</span>
+    <span class="n">Logger</span><span class="o">.</span><span class="na">Level</span> <span class="nf">feignLoggerLevel</span><span class="o">(){</span>
         <span class="k">return</span> <span class="n">Logger</span><span class="o">.</span><span class="na">Level</span><span class="o">.</span><span class="na">FULL</span><span class="o">;</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>这里指定的Level级别是FULL，Feign支持4种级别：</p>
+</div>
+<p>这里指定的Level级别是FULL，Feign支持4种级别：</p>
+
 <ul>
 <li>NONE：不记录任何日志信息，这是默认值。</li>
 <li>BASIC：仅记录请求的方法，URL以及响应状态码和执行时间</li>
 <li>HEADERS：在BASIC的基础上，额外记录了请求和响应的头信息</li>
 <li>FULL：记录所有请求和响应的明细，包括头信息、请求体、元数据。</li>
 </ul>
-<h1 id="6">6、源代码</h1>
+
+<h1 id="6-源代码">6、源代码</h1>
+
 <p>源代码在：<a href="https://github.com/javachen/java-tutorials/tree/master/parent-boot/spring-cloud/spring-cloud-examples-1">spring-cloud-examples</a>。</p>
-<h1 id="7">7、参考文章</h1>
+
+<h1 id="7-参考文章">7、参考文章</h1>
+
 <ul>
 <li><a href="https://github.com/lyj8330328/Load-Balancing">微服务SpringCloud</a></li>
 </ul>
@@ -2182,7 +2272,7 @@ Collapser Properties 相关参数</li>
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -2195,7 +2285,21 @@ Collapser Properties 相关参数</li>
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

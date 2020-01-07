@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="使用全文检索，中文分词是离不开的，这里我采用的是mmseg4j分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="使用全文检索，中文分词是离不开的，这里我采用的是mmseg4j分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/03/14/split-chinese-in-solr/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="使用全文检索，中文分词是离不开的，这里我采用的是mmseg4j分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/03/14/split-chinese-in-solr/" />
-<meta property="article:published_time" content="2014-03-14T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-03-14T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-03-14T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-03-14T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="在Solr中使用中文分词">
 <meta itemprop="description" content="使用全文检索，中文分词是离不开的，这里我采用的是mmseg4j分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。">
+
+
 <meta itemprop="datePublished" content="2014-03-14T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-03-14T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1672">
+<meta itemprop="wordCount" content="1677">
 
 
 
-<meta itemprop="keywords" content="solr,solrcloud," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="solr,solrcloud," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="在Solr中使用中文分词"/>
 <meta name="twitter:description" content="使用全文检索，中文分词是离不开的，这里我采用的是mmseg4j分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/search-engine/"> search-engine </a>
             </div>
-          <span class="more-meta"> 约 1672 字 </span>
+          <span class="more-meta"> 约 1677 字 </span>
           <span class="more-meta"> 预计阅读 4 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -138,19 +138,33 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#下载mmseg4j">下载mmseg4j</a></li>
+<li><a href="#配置schema-xml">配置schema.xml</a></li>
+<li><a href="#测试">测试</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <p>使用全文检索，中文分词是离不开的，这里我采用的是 <strong>mmseg4j</strong> 分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。</p>
-<h1 id="mmseg4j">下载mmseg4j</h1>
+      
+
+<p>使用全文检索，中文分词是离不开的，这里我采用的是 <strong>mmseg4j</strong> 分词器。mmseg4j分词器内置了对solr的支持，最新版本可支持4.X版本的sorl，使用起来很是方便。</p>
+
+<h1 id="下载mmseg4j">下载mmseg4j</h1>
+
 <p>GoogleCode地址：<a href="http://code.google.com/p/mmseg4j/">http://code.google.com/p/mmseg4j/</a></p>
+
 <p>请下载最新版本：mmseg4j-1.9.1，然后将mmseg4j-1.9.1/dist下的jar包拷贝至solr.war的lib目录，例如：<em>apache-tomcat-6.0.36/webapps/solr/WEB-INF/lib/</em></p>
-<h1 id="schemaxml">配置schema.xml</h1>
+
+<h1 id="配置schema-xml">配置schema.xml</h1>
+
 <p>使用mmseg4j中文分词器，首先需要在schema.xml文件中配置一个fieldType节点：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -158,27 +172,29 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;fieldType</span> <span class="na">name=</span><span class="s">&#34;text_zh&#34;</span> <span class="na">class=</span><span class="s">&#34;solr.TextField&#34;</span> <span class="na">positionIncrementGap=</span><span class="s">&#34;100&#34;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;analyzer</span><span class="nt">&gt;</span> 
+    <span class="nt">&lt;analyzer&gt;</span> 
         <span class="nt">&lt;tokenizer</span> <span class="na">class=</span><span class="s">&#34;com.chenlb.mmseg4j.solr.MMSegTokenizerFactory&#34;</span> <span class="na">mode=</span><span class="s">&#34;complex&#34;</span> <span class="nt">/&gt;</span>
     <span class="nt">&lt;/analyzer&gt;</span>
-<span class="nt">&lt;/fieldType&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/fieldType&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>然后就可以在field节点中引用该filedType了，假设你有个字段叫content需要支持中文分词，则需要定义示例filed节点如下：</p>
+</div>
+<p>然后就可以在field节点中引用该filedType了，假设你有个字段叫content需要支持中文分词，则需要定义示例filed节点如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&#34;content&#34;</span> <span class="na">type=</span><span class="s">&#34;text_zh&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;false&#34;</span> <span class="na">multiValued=</span><span class="s">&#34;true&#34;</span><span class="nt">/&gt;</span> 
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&#34;content&#34;</span> <span class="na">type=</span><span class="s">&#34;text_zh&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;false&#34;</span> <span class="na">multiValued=</span><span class="s">&#34;true&#34;</span><span class="nt">/&gt;</span> </code></pre></td></tr></table>
 </div>
-</div><p>接下来，重启solr服务器。</p>
-<h1 id="heading">测试</h1>
+</div>
+<p>接下来，重启solr服务器。</p>
+
+<h1 id="测试">测试</h1>
+
 <p>我这里使用的是broadleaf项目(broadleaf是什么，请参考：<a href="/2014/03/13/improve-the-search-function-in-broadleaf-project.html">BroadLeaf项目搜索功能改进</a>)中的schema.xml，需要修改成如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -249,7 +265,7 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34; ?&gt;</span>
 <span class="nt">&lt;schema</span> <span class="na">name=</span><span class="s">&#34;example&#34;</span> <span class="na">version=</span><span class="s">&#34;1.5&#34;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;fields</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;fields&gt;</span>
         <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&#34;namespace&#34;</span> <span class="na">type=</span><span class="s">&#34;string&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&#34;id&#34;</span> <span class="na">type=</span><span class="s">&#34;string&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&#34;productId&#34;</span> <span class="na">type=</span><span class="s">&#34;long&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
@@ -276,18 +292,18 @@
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_dt&#34;</span> <span class="na">type=</span><span class="s">&#34;date&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_dts&#34;</span> <span class="na">type=</span><span class="s">&#34;date&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="na">multiValued=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
 
-        <span class="c">&lt;!--</span><span class="c"> some trie</span><span class="c">-</span><span class="c">coded dynamic fields for faster range queries </span><span class="c">--&gt;</span>
+        <span class="c">&lt;!-- some trie-coded dynamic fields for faster range queries --&gt;</span>
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_ti&#34;</span> <span class="na">type=</span><span class="s">&#34;tint&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_tl&#34;</span> <span class="na">type=</span><span class="s">&#34;tlong&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_td&#34;</span> <span class="na">type=</span><span class="s">&#34;tdouble&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
         <span class="nt">&lt;dynamicField</span> <span class="na">name=</span><span class="s">&#34;*_tdt&#34;</span> <span class="na">type=</span><span class="s">&#34;tdate&#34;</span> <span class="na">indexed=</span><span class="s">&#34;true&#34;</span> <span class="na">stored=</span><span class="s">&#34;true&#34;</span> <span class="nt">/&gt;</span>
     <span class="nt">&lt;/fields&gt;</span>
     
-    <span class="nt">&lt;uniqueKey</span><span class="nt">&gt;</span>id<span class="nt">&lt;/uniqueKey&gt;</span>
+    <span class="nt">&lt;uniqueKey&gt;</span>id<span class="nt">&lt;/uniqueKey&gt;</span>
 
-    <span class="nt">&lt;types</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;types&gt;</span>
 		<span class="nt">&lt;fieldType</span> <span class="na">name=</span><span class="s">&#34;text_zh&#34;</span> <span class="na">class=</span><span class="s">&#34;solr.TextField&#34;</span> <span class="na">positionIncrementGap=</span><span class="s">&#34;100&#34;</span><span class="nt">&gt;</span>
-			<span class="nt">&lt;analyzer</span><span class="nt">&gt;</span> 
+			<span class="nt">&lt;analyzer&gt;</span> 
 				<span class="nt">&lt;tokenizer</span> <span class="na">class=</span><span class="s">&#34;com.chenlb.mmseg4j.solr.MMSegTokenizerFactory&#34;</span> <span class="na">mode=</span><span class="s">&#34;complex&#34;</span> <span class="nt">/&gt;</span>
 			<span class="nt">&lt;/analyzer&gt;</span>
 		<span class="nt">&lt;/fieldType&gt;</span>
@@ -313,22 +329,22 @@
             <span class="nt">&lt;/analyzer&gt;</span>
         <span class="nt">&lt;/fieldType&gt;</span>
     <span class="nt">&lt;/types&gt;</span>
-<span class="nt">&lt;/schema&gt;</span>
-</code></pre></td></tr></table>
+<span class="nt">&lt;/schema&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>接下来，在浏览器中进行测试,输入下面url：</p>
+</div>
+<p>接下来，在浏览器中进行测试,输入下面url：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">http://192.168.56.123:8080/solr/primary_shard2_replica1/select?q=*%3A*&amp;wt=json&amp;indent=true&amp;rows=6&amp;start=0&amp;fq=category%3A2002&amp;fq=namespace%3Ad&amp;fq=%7B%21tag%3Da%7D%28en_US_name_s%3A大理%29
-</code></pre></td></tr></table>
+<pre class="chroma">http://192.168.56.123:8080/solr/primary_shard2_replica1/select?q=*%3A*&amp;wt=json&amp;indent=true&amp;rows=6&amp;start=0&amp;fq=category%3A2002&amp;fq=namespace%3Ad&amp;fq=%7B%21tag%3Da%7D%28en_US_name_s%3A大理%29</pre></td></tr></table>
 </div>
-</div><p>以上搜索的是category=2002,namespace=d，<code>en_US_name_s</code>=大理的记录，查询结果为：</p>
+</div>
+<p>以上搜索的是category=2002,namespace=d，<code>en_US_name_s</code>=大理的记录，查询结果为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -367,9 +383,9 @@
 </span><span class="lnt">37
 </span><span class="lnt">38
 </span><span class="lnt">39
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">{
+<pre class="chroma">{
   &#34;responseHeader&#34;:{
     &#34;status&#34;:0,
     &#34;QTime&#34;:20},
@@ -407,11 +423,13 @@
         &#34;en_US_estatePrice_p&#34;:480.0,
         &#34;en_estatePrice_p&#34;:480.0,
         &#34;_version_&#34;:1462514915941023744}]
-  }}
-</code></pre></td></tr></table>
+  }}</pre></td></tr></table>
 </div>
-</div><p>通过查询结果，可以知道：只搜索&quot;大理&quot;关键字，可以查询出<code>en_US_name_s</code>为&quot;大理风情&quot;的记录。</p>
-<h1 id="heading-1">参考文章</h1>
+</div>
+<p>通过查询结果，可以知道：只搜索&rdquo;大理&rdquo;关键字，可以查询出<code>en_US_name_s</code>为&rdquo;大理风情&rdquo;的记录。</p>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li>[1] <a href="http://blog.csdn.net/zhyh1986/article/details/9856115">Solr4.4的安装与配置</a></li>
 </ul>
@@ -532,7 +550,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -545,7 +563,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

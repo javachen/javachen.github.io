@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2013/08/23/publish-proerties-using-zookeeper/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2013/08/23/publish-proerties-using-zookeeper/" />
-<meta property="article:published_time" content="2013-08-23T00:00:00+08:00" />
-<meta property="article:modified_time" content="2013-08-23T00:00:00+08:00" />
+<meta property="article:published_time" content="2013-08-23T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2013-08-23T00:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="使用ZooKeeper实现配置同步">
 <meta itemprop="description" content="应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。">
+
+
 <meta itemprop="datePublished" content="2013-08-23T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2013-08-23T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2184">
+<meta itemprop="wordCount" content="2188">
 
 
 
-<meta itemprop="keywords" content="zookeeper," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="zookeeper," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用ZooKeeper实现配置同步"/>
 <meta name="twitter:description" content="应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hadoop/"> hadoop </a>
             </div>
-          <span class="more-meta"> 约 2184 字 </span>
+          <span class="more-meta"> 约 2188 字 </span>
           <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -138,14 +138,32 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#前言">前言</a></li>
+<li><a href="#zookeeper">ZooKeeper</a></li>
+<li><a href="#数据发布与订阅">数据发布与订阅</a></li>
+<li><a href="#配置存储方案">配置存储方案</a></li>
+<li><a href="#基于zookeeper的配置信息同步方案">基于ZooKeeper的配置信息同步方案</a></li>
+<li><a href="#源代码">源代码</a></li>
+<li><a href="#优点">优点</a></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <h1 id="heading">前言</h1>
+      
+
+<h1 id="前言">前言</h1>
+
 <p>应用项目中都会有一些配置信息，这些配置信息数据量少，一般会保存到内存、文件或者数据库，有时候需要动态更新。当需要在多个应用服务器中修改这些配置文件时，需要做到快速、简单、不停止应用服务器的方式修改并同步配置信息到所有应用中去。本篇文章就是介绍如何使用ZooKeeper来实现配置的动态同步。</p>
+
 <h1 id="zookeeper">ZooKeeper</h1>
-<p>在《<a href="">hive Driver类运行过程</a>》一文中可以看到hive为了支持并发访问引入了ZooKeeper来实现分布式锁。参考《<a href="http://rdc.taobao.com/team/jm/archives/1232">ZooKeeper典型应用场景一览</a>》一文，ZooKeeper还可以用作其他用途，例如：</p>
+
+<p>在《[hive Driver类运行过程]()》一文中可以看到hive为了支持并发访问引入了ZooKeeper来实现分布式锁。参考《<a href="http://rdc.taobao.com/team/jm/archives/1232">ZooKeeper典型应用场景一览</a>》一文，ZooKeeper还可以用作其他用途，例如：</p>
+
 <ul>
 <li>数据发布与订阅（配置中心）</li>
 <li>负载均衡</li>
@@ -155,50 +173,74 @@
 <li>分布式锁</li>
 <li>分布式队列</li>
 </ul>
-<!-- raw HTML omitted -->
+
+<!-- more -->
+
 <p>一些在线系统在运行中，需要在不停止程序的情况下能够动态调整某一个变量的值并且能够及时生效。特别是当部署了多台应用服务器的时候，需要能够做到在一台机器上修改配置文件，然后在同步到所有应用服务器。这时候使用ZooKeeper来实现就很合适了。</p>
-<h1 id="heading-1">数据发布与订阅</h1>
+
+<h1 id="数据发布与订阅">数据发布与订阅</h1>
+
 <p>发布与订阅模型，即所谓的配置中心，顾名思义就是发布者将数据发布到ZK节点上，供订阅者动态获取数据，实现配置信息的集中式管理和动态更新。例如全局的配置信息，服务式服务框架的服务地址列表等就非常适合使用。</p>
+
 <p>使用ZooKeeper的发布与订阅模型，可以将应用中用到的一些配置信息放到ZK上进行集中管理。这类场景通常是这样：应用在启动的时候会主动来获取一次配置，同时，在节点上注册一个Watcher，这样一来，以后每次配置有更新的时候，都会实时通知到订阅的客户端，从来达到获取最新配置信息的目的。这样的场景适合数据量很小，但是数据更新可能会比较快的需求。</p>
-<h1 id="heading-2">配置存储方案</h1>
+
+<h1 id="配置存储方案">配置存储方案</h1>
+
 <p>配置文件通常有如下几种保存方式：</p>
+
 <ol>
-<li>
-<p>将配置信息保存在程序代码中
-这种方案简单，但每次修改配置都要重新编译、部署应用程序。显然这种方案很不方便，也不可靠，更无法做到修改的实时生效。</p>
-</li>
-<li>
-<p>将配置信息保存在xml文件或者属性文件中
-在参数信息保存在xml或者属性文件中，当需要修改参数时，直接修改 xml 文件。这样无需重新编译，只需重新部署修改的文件即可。但然后对所有的应用进行重新部署。这样做的缺点显而易见，要往上百台机器上重新部署应用，简直是一个噩梦。同时该方案还有一个缺点，就是配置修改无法做到实时生效。修改后往往过一段时间才能生效。</p>
-</li>
-<li>
-<p>将配置信息保存在数据库中
-当需要修改参数时，直接修改数据库，然后重启分布式应用程序，或者刷新分布式应用的缓存。尽管这种做法比以上两种方案简单，但却面临着单点失效问题。如果数据库服务器停机，则分布式应用程序的配置信息将无法更新。另外这种方案的配置修改生效实时性虽然比第二种方案好些，但仍然不能达到某些情况下的要求。</p>
-</li>
+<li><p>将配置信息保存在程序代码中
+这种方案简单，但每次修改配置都要重新编译、部署应用程序。显然这种方案很不方便，也不可靠，更无法做到修改的实时生效。</p></li>
+
+<li><p>将配置信息保存在xml文件或者属性文件中
+在参数信息保存在xml或者属性文件中，当需要修改参数时，直接修改 xml 文件。这样无需重新编译，只需重新部署修改的文件即可。但然后对所有的应用进行重新部署。这样做的缺点显而易见，要往上百台机器上重新部署应用，简直是一个噩梦。同时该方案还有一个缺点，就是配置修改无法做到实时生效。修改后往往过一段时间才能生效。</p></li>
+
+<li><p>将配置信息保存在数据库中
+当需要修改参数时，直接修改数据库，然后重启分布式应用程序，或者刷新分布式应用的缓存。尽管这种做法比以上两种方案简单，但却面临着单点失效问题。如果数据库服务器停机，则分布式应用程序的配置信息将无法更新。另外这种方案的配置修改生效实时性虽然比第二种方案好些，但仍然不能达到某些情况下的要求。</p></li>
 </ol>
-<h1 id="zookeeper-1">基于ZooKeeper的配置信息同步方案</h1>
+
+<h1 id="基于zookeeper的配置信息同步方案">基于ZooKeeper的配置信息同步方案</h1>
+
 <p>如果使用ZooKeeper来实现，就可以直接把配置信息保存到ZooKeeper中，或者把属性文件内容保存到ZooKeeper中，当属性文件内容发生变化时，就通知监听者如应用程序去重新读取配置文件。</p>
+
 <p>在网上搜索了一下，很能找到好用的现成的代码实现。有的基于ZooKeeper来扩张jdk的hashmap来存储配置参数，如：<a href="http://melin.iteye.com/blog/899435">使用ZooKeeper实现静态数据中心化配置管理</a>，也有人直接实现了一个基于java并发框架的工具包，如：<a href="https://github.com/openUtility/menagerie">menagerie</a>。</p>
-<hr>
+
+<hr />
+
 <p><code>注意</code>:以下部分文字和图来自：<a href="http://www.code365.org/wp-content/uploads/2012/02/%E5%9F%BA%E4%BA%8EZooKeeper%E7%9A%84%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF%E5%AD%98%E5%82%A8%E6%96%B9%E6%A1%88%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B01.pdf">基于ZooKeeper的配置信息存储方案的设计与实现1.pdf</a></p>
+
 <p>基于ZooKeeper的特性,借助ZooKeeper可以实现一个可靠的、简单的、修改配置能够实时生效的配置信息存储方案,整体的设计方案如图：</p>
-<p><img src="/images/zookeeper-01.jpg" alt="基于zookeeper的方案"></p>
+
+<p><img src="/images/zookeeper-01.jpg" alt="基于zookeeper的方案" /></p>
+
 <p>整个配置信息存储方案由三部分组成:ZooKeeper服务器集群、配置管理程序、分布式应用程序。</p>
+
 <p>ZooKeeper服务器集群存储配置信息,在服务器上创建一个保存数据的节点(创建节点操作);配置管理程序提供一个配置管理的UI界面或者命令行方式,用户通过配置界面修改ZooKeeper服务器节点上配置信息(设置节点数据操作);分布式应用连接到ZooKeeper集群上(创建ZooKeeper客户端操作),监听配置信息的变化(使用获取节点数据操作,并注册一个watcher)。</p>
+
 <p>当配置信息发生变化时，分布式应用会更新程序中使用配置信息。</p>
-<p><img src="/images/zookeeper-02.jpg" alt="修改配置的时许图"></p>
-<h1 id="heading-3">源代码</h1>
+
+<p><img src="/images/zookeeper-02.jpg" alt="修改配置的时许图" /></p>
+
+<h1 id="源代码">源代码</h1>
+
 <p>找到一个淘宝工程师写的实现方式， 代码见：<a href="https://github.com/javachen/learning-hadoop/tree/master/zkpublisher">zkpublisher</a></p>
-<h1 id="heading-4">优点</h1>
+
+<h1 id="优点">优点</h1>
+
 <p>借助 ZooKeeper我们实现的配置信息存储方案具有的优点如下:</p>
+
 <ol>
 <li>简单。尽管前期搭建ZooKeeper服务器集群较为麻烦,但是实现该方案后,修改配置整个过程变得简单很多。用户只要修改配置,无需进行其他任何操作,配置自动生效。</li>
 <li>可靠。ZooKeeper服务集群具有无单点失效的特性,使整个系统更加可靠。即使ZooKeeper 集群中的一台机器失效,也不会影响整体服务,更不会影响分布式应用配置信息的更新。</li>
 <li>实时。ZooKeeper的数据更新通知机制,可以在数据发生变化后,立即通知给分布式应用程序,具有很强的变化响应能力。</li>
 </ol>
-<h1 id="heading-5">总结</h1>
+
+<h1 id="总结">总结</h1>
+
 <p>本文参考了网上的一些文章，给出了基于ZooKeeper的配置信息同步方案,解决了传统配置信息同步方案的缺点如实时性差、可靠性差、复杂等。</p>
-<h1 id="heading-6">参考文章</h1>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="http://rdc.taobao.com/team/jm/archives/1232">ZooKeeper典型应用场景一览</a></li>
 <li><a href="http://melin.iteye.com/blog/899435">使用ZooKeeper实现静态数据中心化配置管理</a></li>
@@ -321,7 +363,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -334,7 +376,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

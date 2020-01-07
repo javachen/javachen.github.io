@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="本文介绍如何在RHEL系统安装MySQL主备环境" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="本文介绍如何在RHEL系统安装MySQL主备环境" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/04/06/mysql-config-for-master-slave-replication/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="本文介绍如何在RHEL系统安装MySQL主备环境" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/04/06/mysql-config-for-master-slave-replication/" />
-<meta property="article:published_time" content="2014-04-06T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-04-06T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-04-06T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-04-06T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="RHEL系统安装MySQL主备环境">
 <meta itemprop="description" content="本文介绍如何在RHEL系统安装MySQL主备环境">
+
+
 <meta itemprop="datePublished" content="2014-04-06T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-04-06T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="1530">
 
 
 
-<meta itemprop="keywords" content="mysql," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="mysql," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="RHEL系统安装MySQL主备环境"/>
 <meta name="twitter:description" content="本文介绍如何在RHEL系统安装MySQL主备环境"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,147 +139,165 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#1-master">1. 配置master并启动</a></li>
-    <li><a href="#2-slave">2. 配置slave并启动</a></li>
-    <li><a href="#3-">3. 主从分别授权用户</a></li>
-    <li><a href="#4-">4. 主库数据备份到从库</a></li>
-    <li><a href="#5-">5. 根据主状态启动从库</a></li>
-    <li><a href="#6-">6. 主从用于复制的进程</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#8-percona-tookit-pg-heartbeat">8. Percona-tookit 安装及pg-heartbeat使用</a></li>
-    <li><a href="#9-mysql">9. mysql主从互换</a></li>
-  </ul>
+<ul>
+<li><a href="#环境准备">环境准备</a></li>
+<li><a href="#原理说明">原理说明</a></li>
+<li><a href="#配置说明">配置说明</a>
+<ul>
+<li><a href="#1-配置master并启动">1. 配置master并启动</a></li>
+<li><a href="#2-配置slave并启动">2. 配置slave并启动</a></li>
+<li><a href="#3-主从分别授权用户">3. 主从分别授权用户</a></li>
+<li><a href="#4-主库数据备份到从库">4. 主库数据备份到从库</a></li>
+<li><a href="#5-根据主状态启动从库">5. 根据主状态启动从库</a></li>
+<li><a href="#6-主从用于复制的进程">6. 主从用于复制的进程</a></li>
+</ul></li>
+<li><a href="#7-主从状态监控">7. 主从状态监控</a>
+<ul>
+<li><a href="#8-percona-tookit-安装及pg-heartbeat使用">8. Percona-tookit 安装及pg-heartbeat使用</a></li>
+<li><a href="#9-mysql主从互换">9. mysql主从互换</a></li>
+</ul></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <h1 id="heading">环境准备</h1>
+      
+
+<h1 id="环境准备">环境准备</h1>
+
 <ul>
 <li>操作系统： rhel6.4</li>
 <li>数据库： percona 5.6.14</li>
 <li>使用3306端口保证端口未被占用，selinux关闭状态</li>
 </ul>
-<h1 id="heading-1">原理说明</h1>
+
+<h1 id="原理说明">原理说明</h1>
+
 <p>mysql的复制（Replication)是一个异步的复制，从一个mysql instance(称之为master)复制到另一个mysql instance(称之为slave).实现整个复制操作主要由三个进程完成的，其中俩个进程在slave(sql进程和io进程），另外一个进程在master（IO进程）上。</p>
+
 <p>要实施复制，首先要打开master端的binary log(bin-log)功能，否则无法实现。因为整个复制过程实际上就是slave从master端获取该日志然后在自己升上完全顺序的执行日志中所记录的各种操作。</p>
-<h1 id="heading-2">配置说明</h1>
-<h2 id="1-master">1. 配置master并启动</h2>
+
+<h1 id="配置说明">配置说明</h1>
+
+<h2 id="1-配置master并启动">1. 配置master并启动</h2>
+
 <p>拷贝配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">cp /usr/share/doc/Percona-Server-server-56-5.6.14/my-default.cnf /etc/my.cnf
-</code></pre></td></tr></table>
+<pre class="chroma">cp /usr/share/doc/Percona-Server-server-56-5.6.14/my-default.cnf /etc/my.cnf</pre></td></tr></table>
 </div>
-</div><p>编辑<code>/etc/my.cnf</code>：</p>
+</div>
+<p>编辑<code>/etc/my.cnf</code>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">[mysqld]
+<pre class="chroma">[mysqld]
 explicit_defaults_for_timestamp=true   ##开启查询缓存
 # log_bin
 log_bin = mysql-bin
-server_id = 36
-</code></pre></td></tr></table>
+server_id = 36</pre></td></tr></table>
 </div>
-</div><p>启动mysql服务：</p>
+</div>
+<p>启动mysql服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">service mysql start 
-</code></pre></td></tr></table>
+<pre class="chroma">service mysql start </pre></td></tr></table>
 </div>
-</div><h2 id="2-slave">2. 配置slave并启动</h2>
+</div>
+<h2 id="2-配置slave并启动">2. 配置slave并启动</h2>
+
 <p>拷贝配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">cp /usr/share/doc/Percona-Server-server-56-5.6.14/my-default.cnf /etc/my.cnf
-</code></pre></td></tr></table>
+<pre class="chroma">cp /usr/share/doc/Percona-Server-server-56-5.6.14/my-default.cnf /etc/my.cnf</pre></td></tr></table>
 </div>
-</div><p>编辑<code>/etc/my.cnf</code>：</p>
+</div>
+<p>编辑<code>/etc/my.cnf</code>：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">[mysqld]
+<pre class="chroma">[mysqld]
 explicit_defaults_for_timestamp=true 
 log_bin = mysql-bin
 server_id = 37
 relay_log=/var/lib/mysql/mysql-relay-bin ##传送过来的日志存放目录
 log_slave_updates=1
-read_only=1 ##这个参数只对普通用户生效，超级用户和复制用户无效
-</code></pre></td></tr></table>
+read_only=1 ##这个参数只对普通用户生效，超级用户和复制用户无效</pre></td></tr></table>
 </div>
-</div><p>启动mysql服务：</p>
+</div>
+<p>启动mysql服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">service mysql start 
-</code></pre></td></tr></table>
+<pre class="chroma">service mysql start </pre></td></tr></table>
 </div>
-</div><h2 id="3-">3. 主从分别授权用户</h2>
+</div>
+<h2 id="3-主从分别授权用户">3. 主从分别授权用户</h2>
+
 <p>在master,slave分别执行以下命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">#mysql
+<pre class="chroma">#mysql
 mysql-&gt;grant replication slave,replication client on *.* to repl@&#39;%&#39; identified by  &#39;123456&#39;;
-mysql-&gt;flush priviledges;
-</code></pre></td></tr></table>
+mysql-&gt;flush priviledges;</pre></td></tr></table>
 </div>
-</div><h2 id="4-">4. 主库数据备份到从库</h2>
+</div>
+<h2 id="4-主库数据备份到从库">4. 主库数据备份到从库</h2>
+
 <p>master上运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"># mysqldump -A &gt;all.sql
-</code></pre></td></tr></table>
+<pre class="chroma"># mysqldump -A &gt;all.sql</pre></td></tr></table>
 </div>
-</div><p>slave上运行：</p>
+</div>
+<p>slave上运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"># mysql &lt;all.sql
-</code></pre></td></tr></table>
+<pre class="chroma"># mysql &lt;all.sql</pre></td></tr></table>
 </div>
-</div><h2 id="5-">5. 根据主状态启动从库</h2>
+</div>
+<h2 id="5-根据主状态启动从库">5. 根据主状态启动从库</h2>
+
 <p>(1) 查询主库状态</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -287,37 +305,37 @@ mysql-&gt;flush priviledges;
 </span><span class="lnt">6
 </span><span class="lnt">7
 </span><span class="lnt">8
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql-&gt;show master status \G
+<pre class="chroma">mysql-&gt;show master status \G
  *************************** 1. row ***************************
              File: mysql-bin.000001
          Position: 697
      Binlog_Do_DB: 
  Binlog_Ignore_DB: 
 Executed_Gtid_Set: 
-1 row in set (0.00 sec)
-</code></pre></td></tr></table>
+1 row in set (0.00 sec)</pre></td></tr></table>
 </div>
-</div><p>(2) 从库启动复制</p>
+</div>
+<p>(2) 从库启动复制</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">#mysql
+<pre class="chroma">#mysql
 mysql-&gt;change master to
         -&gt;master_host=&#34;192.168.0.114&#34;,master_port=3306,master_user=&#34;repl&#34;,master_password=&#34;123456&#34;,master_log_file=&#34;mysql-bin.000001&#34;,master_log_pos=697;
-mysql-&gt;start slave;
-</code></pre></td></tr></table>
+mysql-&gt;start slave;</pre></td></tr></table>
 </div>
-</div><p>(3) 从库状态</p>
+</div>
+<p>(3) 从库状态</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -331,9 +349,9 @@ mysql-&gt;start slave;
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql&gt; show slave status \G
+<pre class="chroma">mysql&gt; show slave status \G
 *************************** 1. row ***************************
                Slave_IO_State: Waiting for master to send event
                   Master_Host: 192.168.0.114
@@ -346,145 +364,158 @@ mysql-&gt;start slave;
                 Relay_Log_Pos: 563
         Relay_Master_Log_File: mysql-bin.000001
          ....Exec_Master_Log_Pos: 697
-         ....
-</code></pre></td></tr></table>
+         ....</pre></td></tr></table>
 </div>
-</div><h2 id="6-">6. 主从用于复制的进程</h2>
+</div>
+<h2 id="6-主从用于复制的进程">6. 主从用于复制的进程</h2>
+
 <p>在master上查看进程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql-&gt;show processlist
-</code></pre></td></tr></table>
+<pre class="chroma">mysql-&gt;show processlist</pre></td></tr></table>
 </div>
-</div><p>1个如下状态的进程:</p>
+</div>
+<p>1个如下状态的进程:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Master has sent all binlog to slave; waiting for binlog to be updated
-</code></pre></td></tr></table>
+<pre class="chroma">Master has sent all binlog to slave; waiting for binlog to be updated</pre></td></tr></table>
 </div>
-</div><p>在slave上查看进程：</p>
+</div>
+<p>在slave上查看进程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql-&gt;show processlist
-</code></pre></td></tr></table>
+<pre class="chroma">mysql-&gt;show processlist</pre></td></tr></table>
 </div>
-</div><p>2个如下状态的进程</p>
+</div>
+<p>2个如下状态的进程</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Waiting for master to send event
-Slave has read all relay log; waiting for the slave I/O thread to update it
-</code></pre></td></tr></table>
+<pre class="chroma">Waiting for master to send event
+Slave has read all relay log; waiting for the slave I/O thread to update it</pre></td></tr></table>
 </div>
-</div><h1 id="7-">7. 主从状态监控</h1>
+</div>
+<h1 id="7-主从状态监控">7. 主从状态监控</h1>
+
 <p>常规做法是slave上<code>show slave status\G</code>中的两个变量的差值（<code>Read_Master_Log_Pos</code>，<code>Exec_Master_Log_Pos</code>),也可以使用percona提供的工具包<code>pt-heartbeat</code>。</p>
-<h2 id="8-percona-tookit-pg-heartbeat">8. Percona-tookit 安装及pg-heartbeat使用</h2>
+
+<h2 id="8-percona-tookit-安装及pg-heartbeat使用">8. Percona-tookit 安装及pg-heartbeat使用</h2>
+
 <p>工具集中包含<code>pt-heartbeat</code>, 安装依赖perl-DBD-MySQL， perl-IO-Socket-SSL:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">% rpm -ivh percona-toolkit-2.2.6-1.noarch.rpm
-</code></pre></td></tr></table>
+<pre class="chroma">% rpm -ivh percona-toolkit-2.2.6-1.noarch.rpm</pre></td></tr></table>
 </div>
-</div><p><strong>pg-heartbeat功能介绍：</strong></p>
+</div>
+<p><strong>pg-heartbeat功能介绍：</strong></p>
+
 <ul>
 <li>监控复制延迟</li>
 <li>测量复制落后时间</li>
 </ul>
+
 <p><em>实现机制：</em></p>
+
 <ul>
 <li>第一步，pt-heartbeat的&ndash;update线程会在指定的时间间隔更新一个时间戳。</li>
 <li>第二步，pt-heartbeat的–monitor线程或者–check线程连接到从上检查前面更新的时间戳，和主当地时间做比较，得出时间差。</li>
 </ul>
+
 <p><em>使用例子：</em></p>
+
 <p>1）初始化环境，创建一个后台进程定期更新主上的test库heartbeat表,默认是一秒可以–interval指定，执行后会生成一个heartbeat表，test为需要监控的同步库</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">pt-heartbeat -D test --update -u repl -p 123456 -h 192.168.0.108 --create-table --daemonize
-</code></pre></td></tr></table>
+<pre class="chroma">pt-heartbeat -D test --update -u repl -p 123456 -h 192.168.0.108 --create-table --daemonize</pre></td></tr></table>
 </div>
-</div><p>2）监控并输出slave落后时间</p>
+</div>
+<p>2）监控并输出slave落后时间</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">pt-heartbeat -D test --monitor -u repl -p 123456 -h 192.168.0.115
+<pre class="chroma">pt-heartbeat -D test --monitor -u repl -p 123456 -h 192.168.0.115
 0.00s [  0.00s,  0.00s,  0.00s ]           ###瞬时延迟 [一分钟平均延迟，五分钟平均延迟，十五分钟平均延迟]
 0.00s [  0.00s,  0.00s,  0.00s ]
-0.00s [  0.00s,  0.00s,  0.00s ]
-</code></pre></td></tr></table>
+0.00s [  0.00s,  0.00s,  0.00s ]</pre></td></tr></table>
 </div>
-</div><p>结果如下 会一直输出,断开一下连接得到如下结果，最后同步</p>
+</div>
+<p>结果如下 会一直输出,断开一下连接得到如下结果，最后同步</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">0.00s [  0.34s,  0.07s,  0.02s ]
-0.00s [  0.00s,  0.07s,  0.02s ]
-</code></pre></td></tr></table>
+<pre class="chroma">0.00s [  0.34s,  0.07s,  0.02s ]
+0.00s [  0.00s,  0.07s,  0.02s ]</pre></td></tr></table>
 </div>
-</div><p>3）只输出瞬时的差值</p>
+</div>
+<p>3）只输出瞬时的差值</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">#pt-heartbeat -D test --test -u repl -p 123456 -h 192.168.0.115
-0.00 ###只代表瞬时延迟
-</code></pre></td></tr></table>
+<pre class="chroma">#pt-heartbeat -D test --test -u repl -p 123456 -h 192.168.0.115
+0.00 ###只代表瞬时延迟</pre></td></tr></table>
 </div>
-</div><h2 id="9-mysql">9. mysql主从互换</h2>
+</div>
+<h2 id="9-mysql主从互换">9. mysql主从互换</h2>
+
 <p>(1) 停止从库复制,从新设置状态</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql-&gt;stop slave;
+<pre class="chroma">mysql-&gt;stop slave;
 mysql-&gt;reset master;
-mysql-&gt;reset slave;
-</code></pre></td></tr></table>
+mysql-&gt;reset slave;</pre></td></tr></table>
 </div>
-</div><p>(2) 如配置文件相同的情况下，配置文件无需更改。否者主备的配置文件交换。</p>
+</div>
+<p>(2) 如配置文件相同的情况下，配置文件无需更改。否者主备的配置文件交换。</p>
+
 <p>(3) 原先的主变为备</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">mysql-&gt;reset master;
-mysql-&gt;reset slave;
-</code></pre></td></tr></table>
+<pre class="chroma">mysql-&gt;reset master;
+mysql-&gt;reset slave;</pre></td></tr></table>
 </div>
-</div><p>从新配置change master to参数</p>
+</div>
+<p>从新配置change master to参数</p>
+
 <p>(4) 服务器重启</p>
+
 <p>如原先的主中有bin日志在从上为实现同步，可以认为读取bin日志的内容，在新的主中执行</p>
 
     </div>
@@ -526,13 +557,13 @@ mysql-&gt;reset slave;
           <a href="/tags/mysql/">mysql</a>
           </div>
       <nav class="post-nav">
-        <a class="prev" href="/2014/04/06/install-mysql-on-rhel-system/">
+        <a class="prev" href="/2014/04/07/install-postgresql-on-rhel-system/">
             <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">RHEL系统安装MySql5.7</span>
+            <span class="prev-text nav-default">RHEL系统安装PostgreSQL</span>
             <span class="prev-text nav-mobile">上一篇</span>
           </a>
-        <a class="next" href="/2014/04/01/deploy-a-captcha-server-using-lua-and-openresty/">
-            <span class="next-text nav-default">使用Lua和OpenResty搭建验证码服务器</span>
+        <a class="next" href="/2014/04/06/install-mysql-on-rhel-system/">
+            <span class="next-text nav-default">RHEL系统安装MySql5.7</span>
             <span class="next-text nav-mobile">下一篇</span>
             <i class="iconfont icon-right"></i>
           </a>
@@ -602,7 +633,7 @@ mysql-&gt;reset slave;
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -615,7 +646,21 @@ mysql-&gt;reset slave;
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

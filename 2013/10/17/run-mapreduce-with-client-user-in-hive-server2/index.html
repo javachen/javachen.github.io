@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="最近做了个web系统访问hive数据库，类似于官方自带的hwi，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="最近做了个web系统访问hive数据库，类似于官方自带的hwi，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2013/10/17/run-mapreduce-with-client-user-in-hive-server2/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="最近做了个web系统访问hive数据库，类似于官方自带的hwi，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2013/10/17/run-mapreduce-with-client-user-in-hive-server2/" />
-<meta property="article:published_time" content="2013-10-17T00:00:00+08:00" />
-<meta property="article:modified_time" content="2013-10-17T00:00:00+08:00" />
+<meta property="article:published_time" content="2013-10-17T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2013-10-17T00:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="HiveServer2中使用jdbc客户端用户运行mapreduce">
 <meta itemprop="description" content="最近做了个web系统访问hive数据库，类似于官方自带的hwi，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！">
+
+
 <meta itemprop="datePublished" content="2013-10-17T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2013-10-17T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4437">
+<meta itemprop="wordCount" content="4439">
 
 
 
-<meta itemprop="keywords" content="hive,hiveserver2," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hive,hiveserver2," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="HiveServer2中使用jdbc客户端用户运行mapreduce"/>
 <meta name="twitter:description" content="最近做了个web系统访问hive数据库，类似于官方自带的hwi，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hive/"> hive </a>
             </div>
-          <span class="more-meta"> 约 4437 字 </span>
+          <span class="more-meta"> 约 4439 字 </span>
           <span class="more-meta"> 预计阅读 9 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -139,51 +139,70 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#heading-1">小结</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#heading-3">为什么从环境变量中获取用户名称？</a></li>
-    <li><a href="#heading-4">小结</a></li>
-  </ul>
+<ul>
+<li><a href="#说明">说明</a></li>
+<li><a href="#hive-server2的启动">hive-server2的启动</a>
+<ul>
+<li><a href="#小结">小结</a></li>
+</ul></li>
+<li><a href="#提交hive任务">提交hive任务</a></li>
+<li><a href="#如何修改源代码">如何修改源代码</a>
+<ul>
+<li><a href="#为什么从环境变量中获取用户名称">为什么从环境变量中获取用户名称？</a></li>
+<li><a href="#小结-1">小结</a></li>
+</ul></li>
+<li><a href="#测试">测试</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+<li><a href="#enjoy-it">Enjoy it ！</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>最近做了个web系统访问hive数据库，类似于官方自带的hwi、安居客的<a href="https://github.com/anjuke/hwi">hwi改进版</a>和大众点评的<a href="http://blog.csdn.net/lalaguozhe/article/details/9614061">polestar</a>(<a href="https://github.com/dianping/polestar">github地址</a>)系统，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！</p>
-<h1 id="heading">说明</h1>
+      
+
+<p>最近做了个web系统访问hive数据库，类似于官方自带的hwi、安居客的<a href="https://github.com/anjuke/hwi">hwi改进版</a>和大众点评的<a href="http://blog.csdn.net/lalaguozhe/article/details/9614061">polestar</a>(<a href="https://github.com/dianping/polestar">github地址</a>)系统，但是和他们的实现不一样，查询Hive语句走的不是cli而是通过jdbc连接hive-server2。为了实现mapreduce任务中资源按用户调度，需要hive查询自动绑定当前用户、将该用户传到yarn服务端并使mapreduce程序以该用户运行。本文主要是记录实现该功能过程中遇到的一些问题以及解决方法,如果你有更好的方法和建议，欢迎留言发表您的看法！</p>
+
+<h1 id="说明">说明</h1>
+
 <p>集群环境使用的是cdh4.3，没有开启kerberos认证。</p>
+
 <blockquote>
 <p>写完这篇文章之后，在微博上收到<a href="http://weibo.com/shanchao1?from=profile&amp;wvr=5&amp;loc=infdomain">@单超eric</a>的<a href="http://weibo.com/1789178264/AeMItpBRk">评论</a>，发现cdh4.3中hive-server2已经实现<a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH4/latest/CDH4-Security-Guide/cdh4sg_topic_9_1.html#topic_9_1_unique_4">Impersonation</a>功能，再此对@单超eric的帮助表示感谢。</p>
 </blockquote>
+
 <p>so，你可以完全忽略本文后面的内容，直接看cloudera的HiveServer2 Impersonation是怎么做的。</p>
-<h1 id="hive-server2">hive-server2的启动</h1>
+
+<h1 id="hive-server2的启动">hive-server2的启动</h1>
+
 <p>先从hive-server2服务的启动开始说起。</p>
+
 <p>如果你是以服务的方式启动hive-server2进程，则启动hive-server2的用户为hive,运行mapreduce的用户也为hive，启动脚本如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">/etc/init.d/hive-server2 start
-</code></pre></td></tr></table>
+<pre class="chroma">/etc/init.d/hive-server2 start</pre></td></tr></table>
 </div>
-</div><p>如果你以命令行方式启动hive-server2进程，则启动hive-server2的用户为root,运行mapreduce的用户也为root，启动脚本如下：</p>
+</div>
+<p>如果你以命令行方式启动hive-server2进程，则启动hive-server2的用户为root,运行mapreduce的用户也为root，启动脚本如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">hive --service hiveserver2
-</code></pre></td></tr></table>
+<pre class="chroma">hive --service hiveserver2</pre></td></tr></table>
 </div>
-</div><p>为什么是上面的结论？这要从hive-server2的启动过程开始说明。</p>
-<!-- raw HTML omitted -->
+</div>
+<p>为什么是上面的结论？这要从hive-server2的启动过程开始说明。</p>
+
+<!-- more -->
+
 <p>查看HiveServer2.java的代码可以看到，hive-server2启动时会依次启动<code>cliService</code>和<code>thriftCLIService</code>，查看cliService的init()方法，可以看到如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -199,9 +218,9 @@
 </span><span class="lnt">14
 </span><span class="lnt">15
 </span><span class="lnt">16
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">public synchronized void init(HiveConf hiveConf) {
+<pre class="chroma">public synchronized void init(HiveConf hiveConf) {
     this.hiveConf = hiveConf;
 
     sessionManager = new SessionManager();
@@ -216,37 +235,37 @@
       throw new ServiceException(&#34;Unable to login to kerberos with given principal/keytab&#34;, e);
     }
     super.init(hiveConf);
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>从上面的代码可以看到在cliService初始化过程中会做登陆（从kertab中登陆）和获取用户名的操作：</p>
+</div>
+<p>从上面的代码可以看到在cliService初始化过程中会做登陆（从kertab中登陆）和获取用户名的操作：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">ShimLoader.getHadoopShims().getUGIForConf(hiveConf)
-</code></pre></td></tr></table>
+<pre class="chroma">ShimLoader.getHadoopShims().getUGIForConf(hiveConf)</pre></td></tr></table>
 </div>
-</div><p>上面代码最终会调用HadoopShimsSecure类的getUGIForConf方法：</p>
+</div>
+<p>上面代码最终会调用HadoopShimsSecure类的getUGIForConf方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">@Override
+<pre class="chroma">@Override
 public UserGroupInformation getUGIForConf(Configuration conf) throws IOException {
   return UserGroupInformation.getCurrentUser();
-}
-</code></pre></td></tr></table>
+}</pre></td></tr></table>
 </div>
-</div><p>UserGroupInformation.getCurrentUser()代码如下：</p>
+</div>
+<p>UserGroupInformation.getCurrentUser()代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -256,9 +275,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"> public synchronized
+<pre class="chroma"> public synchronized
   static UserGroupInformation getCurrentUser() throws IOException {
     AccessControlContext context = AccessController.getContext();
     Subject subject = Subject.getSubject(context);
@@ -267,13 +286,13 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
     } else {
       return new UserGroupInformation(subject);
     }
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>因为这时候服务刚启动，subject为空，故if分支会调用<code>getLoginUser()</code>方法，其代码如下：</p>
+</div>
+<p>因为这时候服务刚启动，subject为空，故if分支会调用<code>getLoginUser()</code>方法，其代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -313,9 +332,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt">38
 </span><span class="lnt">39
 </span><span class="lnt">40
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public synchronized 
+<pre class="chroma">  public synchronized 
   static UserGroupInformation getLoginUser() throws IOException {
     if (loginUser == null) {
       try {
@@ -354,27 +373,37 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
       }
     }
     return loginUser;
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>因为是第一次调用getLoginUser(),故loginUser为空，接下来会创建LoginContext并调用其login方法，login方法最终会调用HadoopLoginModule的commit()方法。</p>
+</div>
+<p>因为是第一次调用getLoginUser(),故loginUser为空，接下来会创建LoginContext并调用其login方法，login方法最终会调用HadoopLoginModule的commit()方法。</p>
+
 <p>下图是从hive-server2启动到执行HadoopLoginModule的commit()方法的调用图：</p>
-<p><img src="/images/hive-server2-invoke.png" alt="hive-server2启动过程"></p>
+
+<p><img src="/images/hive-server2-invoke.png" alt="hive-server2启动过程" /></p>
+
 <p>获取登陆用户的关键代码就在commit()，逻辑如下：</p>
+
 <ul>
 <li>如果使用了kerberos，则为kerberos登陆用户。hive-server2中如何使用kerberos登陆，请查看官方文档。</li>
 <li>如果kerberos用户为空并且没有开启security，则从系统环境变量中取<code>HADOOP_USER_NAME</code>的值</li>
 <li>如果环境变量中没有设置<code>HADOOP_USER_NAME</code>，则使用系统用户，即启动hive-server2进程的用户。</li>
 </ul>
-<h2 id="heading-1">小结</h2>
+
+<h2 id="小结">小结</h2>
+
 <p>hive-server2启动过程中会做登陆操作并获取到登陆用户，启动之后再次调用<code>UserGroupInformation.getCurrentUser()</code>取到的用户就为登陆用户了，这样会导致所有请求到hive-server2的hql最后都会以这个用户来运行mapreduce。</p>
-<h1 id="hive">提交hive任务</h1>
+
+<h1 id="提交hive任务">提交hive任务</h1>
+
 <p>现在来看hive任务是怎么提交到yarn服务端然后运行mapreduce的。</p>
-<p>为了调试简单，我在本机eclipse的hive源代码中配置<code>hive-site.xml、core-site.xml、mapred.xml、yarn-site.xml</code>连接测试集群,添加缺少的yarn依赖并解决hive-builtins中报错的问题，然后运行HiveServer2类的main方法。<em>注意</em>，我的电脑当前登陆用户为june，故启动hive-server2的用户为june。</p>
+
+<p>为了调试简单，我在本机eclipse的hive源代码中配置<code>hive-site.xml、core-site.xml、mapred.xml、yarn-site.xml</code>连接测试集群,添加缺少的yarn依赖并解决hive-builtins中报错的问题，然后运行HiveServer2类的main方法。_注意_，我的电脑当前登陆用户为june，故启动hive-server2的用户为june。</p>
+
 <p>然后，在运行jdbc测试类，运行一个简单的sql语句，大概如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -397,9 +426,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt">21
 </span><span class="lnt">22
 </span><span class="lnt">23
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">public static void test() {
+<pre class="chroma">public static void test() {
 	try {
 		Class.forName(&#34;org.apache.hive.jdbc.HiveDriver&#34;);
 
@@ -421,32 +450,34 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 	} catch (Exception e) {
 		e.printStackTrace();
 	}
-}
-</code></pre></td></tr></table>
+}</pre></td></tr></table>
 </div>
-</div><p>查看yarn监控地址<code>http://192.168.56.101:8088/cluster</code>，可以看到提交的mapreduce任务由june用户来运行。</p>
-<p><img src="/images/images1017-01.png" alt="yarn cluster monitor page"></p>
+</div>
+<p>查看yarn监控地址<code>http://192.168.56.101:8088/cluster</code>，可以看到提交的mapreduce任务由june用户来运行。</p>
+
+<p><img src="/images/images1017-01.png" alt="yarn cluster monitor page" /></p>
+
 <p>如何修改mapreduce任务的运行用户呢？如果了解hive提交mapreduce任务的过程的话，就应该知道hive任务会通过<code>org.apache.hadoop.mapred.JobClient</code>来提交。在JobClient的init方法中有如下代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public void init(JobConf conf) throws IOException {
+<pre class="chroma">  public void init(JobConf conf) throws IOException {
     setConf(conf);
     cluster = new Cluster(conf);
     clientUgi = UserGroupInformation.getCurrentUser();
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>JobClient类中提交mapreduce任务的代码如下，见submitJobInternal方法：</p>
+</div>
+<p>JobClient类中提交mapreduce任务的代码如下，见submitJobInternal方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -455,9 +486,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt">7
 </span><span class="lnt">8
 </span><span class="lnt">9
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Job job = clientUgi.doAs(new PrivilegedExceptionAction&lt;Job&gt; () {
+<pre class="chroma">Job job = clientUgi.doAs(new PrivilegedExceptionAction&lt;Job&gt; () {
 	@Override
 	public Job run() throws IOException, ClassNotFoundException, 
 	  InterruptedException {
@@ -465,15 +496,17 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 	  job.submit();
 	  return job;
 	}
-});
-</code></pre></td></tr></table>
+});</pre></td></tr></table>
 </div>
-</div><p>从前面知道，hive-server2启动中会进行登陆操作并且登陆用户为june，故clientUgi对应的登陆用户也为june，故提交的mapreduce任务也通过june用户来运行。</p>
-<h1 id="heading-2">如何修改源代码</h1>
+</div>
+<p>从前面知道，hive-server2启动中会进行登陆操作并且登陆用户为june，故clientUgi对应的登陆用户也为june，故提交的mapreduce任务也通过june用户来运行。</p>
+
+<h1 id="如何修改源代码">如何修改源代码</h1>
+
 <p>从上面代码可以知道，修改clientUgi的获取方式就可以改变提交任务的用户。UserGroupInformation中存在如下静态方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -483,9 +516,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">  public static UserGroupInformation createRemoteUser(String user) {
+<pre class="chroma">  public static UserGroupInformation createRemoteUser(String user) {
     if (user == null || &#34;&#34;.equals(user)) {
       throw new IllegalArgumentException(&#34;Null user&#34;);
     }
@@ -494,13 +527,13 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
     UserGroupInformation result = new UserGroupInformation(subject);
     result.setAuthenticationMethod(AuthenticationMethod.SIMPLE);
     return result;
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>故可以尝试使用该方法，修改JobClient的init方法如下：</p>
+</div>
+<p>故可以尝试使用该方法，修改JobClient的init方法如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -510,9 +543,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"> public void init(JobConf conf) throws IOException {
+<pre class="chroma"> public void init(JobConf conf) throws IOException {
     setConf(conf);
     cluster = new Cluster(conf);
     if(UserGroupInformation.isSecurityEnabled()){
@@ -521,22 +554,28 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
     	String user = conf.get(&#34;myExecuteName&#34;,&#34;NoName&#34;);
     	clientUgi = UserGroupInformation.createRemoteUser(user);
     }
-  }
-</code></pre></td></tr></table>
+  }</pre></td></tr></table>
 </div>
-</div><p>上面代码是在没有开启security的情况下，从环境变量（myExecuteName）获取jdbc客户端指定的用户名，然后创建一个远程的UserGroupInformation。</p>
-<h2 id="heading-3">为什么从环境变量中获取用户名称？</h2>
+</div>
+<p>上面代码是在没有开启security的情况下，从环境变量（myExecuteName）获取jdbc客户端指定的用户名，然后创建一个远程的UserGroupInformation。</p>
+
+<h2 id="为什么从环境变量中获取用户名称">为什么从环境变量中获取用户名称？</h2>
+
 <ol>
 <li>在不考虑安全的情况下，可以由客户端任意指定用户。</li>
 <li>没有使用jdbc连接信息中的用户，是因为这样会导致每次获取jdbc连接的时候都要指定用户名，这样就没法使用已有的连接池。</li>
 </ol>
+
 <p>编译代码、替换class文件，然后重新运行HiveServer2以及jdbc测试类，查看yarn监控地址<code>http://192.168.56.101:8088/cluster</code>，截图如下：</p>
-<p><img src="/images/images1017-02.png" alt="yarn cluster monitor page"></p>
+
+<p><img src="/images/images1017-02.png" alt="yarn cluster monitor page" /></p>
+
 <p>这时候mapreduce的运行用户变为NoName，这是因为从JobConf环境变量中找不到myExecuteName变量而使用默认值NoName的原因。</p>
+
 <p>查看hive-server2运行日志，会发现任务运行失败，关键异常信息如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -548,9 +587,9 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 </span><span class="lnt">10
 </span><span class="lnt">11
 </span><span class="lnt">12
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Caused by: org.apache.hadoop.security.AccessControlException: Permission denied: user=NoName, access=WRITE, inode=&#34;/tmp/hive-june/hive_2013-10-18_21-18-12_812_378750610917949668/_tmp.-ext-10001&#34;:june:hadoop:drwxr-xr-x
+<pre class="chroma">Caused by: org.apache.hadoop.security.AccessControlException: Permission denied: user=NoName, access=WRITE, inode=&#34;/tmp/hive-june/hive_2013-10-18_21-18-12_812_378750610917949668/_tmp.-ext-10001&#34;:june:hadoop:drwxr-xr-x
 	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.check(FSPermissionChecker.java:224)
 	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.check(FSPermissionChecker.java:204)
 	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.checkPermission(FSPermissionChecker.java:149)
@@ -561,30 +600,32 @@ public UserGroupInformation getUGIForConf(Configuration conf) throws IOException
 	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.renameToInt(FSNamesystem.java:2663)
 	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.renameTo(FSNamesystem.java:2642)
 	at org.apache.hadoop.hdfs.server.namenode.NameNodeRpcServer.rename(NameNodeRpcServer.java:610)
-	at org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolServerSideTranslatorPB.rename
-</code></pre></td></tr></table>
+	at org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolServerSideTranslatorPB.rename</pre></td></tr></table>
 </div>
-</div><p>出现上述异常是因为，mapreduce任务在运行过程中会生成一些临时文件，而NoName用户对临时文件没有写的权限，这些临时文件属于june用户。查看hdfs文件如下：</p>
+</div>
+<p>出现上述异常是因为，mapreduce任务在运行过程中会生成一些临时文件，而NoName用户对临时文件没有写的权限，这些临时文件属于june用户。查看hdfs文件如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@edh1 lib]# hadoop fs -ls /tmp/
+<pre class="chroma">[root@edh1 lib]# hadoop fs -ls /tmp/
 Found 6 items
 drwx------   - june hadoop          0 2013-10-15 01:33 /tmp/hadoop-yarn
-drwxr-xr-x   - june hadoop          0 2013-10-16 06:52 /tmp/hive-june
-</code></pre></td></tr></table>
+drwxr-xr-x   - june hadoop          0 2013-10-16 06:52 /tmp/hive-june</pre></td></tr></table>
 </div>
-</div><p><code>/tmp/hive-june</code>是hive执行过程中保存在hdfs的路径，由<code>hive.exec.scratchdir</code>定义，其默认值为<code>/tmp/hive-${user.name}</code>，而且这个文件是在<code>org.apache.hadoop.hive.ql.Context</code>类的构造方法中获取并在ExecDriver类的execute(DriverContext driverContext)方法中创建的。</p>
+</div>
+<p><code>/tmp/hive-june</code>是hive执行过程中保存在hdfs的路径，由<code>hive.exec.scratchdir</code>定义，其默认值为<code>/tmp/hive-${user.name}</code>，而且这个文件是在<code>org.apache.hadoop.hive.ql.Context</code>类的构造方法中获取并在ExecDriver类的execute(DriverContext driverContext)方法中创建的。</p>
+
 <p>类似这样的权限问题还会出现在hdfs文件<code>重命名、删除临时目录的时候</code>。为了避免出现这样的异常，需要修改<code>hive.exec.scratchdir</code>为当前用户对应的临时目录路径，并使用当前登陆用户创建、重命名、删除临时目录。</p>
+
 <p>修改获取<code>hive.exec.scratchdir</code>对应的临时目录代码如下，在Context类的够找方法中修改：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -594,9 +635,9 @@ drwxr-xr-x   - june hadoop          0 2013-10-16 06:52 /tmp/hive-june
 </span><span class="lnt"> 8
 </span><span class="lnt"> 9
 </span><span class="lnt">10
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">    String user = conf.get(myExecuteName，“”);
+<pre class="chroma">    String user = conf.get(myExecuteName，“”);
 
     if (user != null &amp;&amp; user.trim().length() &gt; 0) {
       nonLocalScratchPath =
@@ -605,31 +646,32 @@ drwxr-xr-x   - june hadoop          0 2013-10-16 06:52 /tmp/hive-june
       nonLocalScratchPath =
           new Path(HiveConf.getVar(conf, HiveConf.ConfVars.SCRATCHDIR),
               executionId);
-    }
-</code></pre></td></tr></table>
+    }</pre></td></tr></table>
 </div>
-</div><p>找到这些操作对应的代码似乎太过复杂了，修改的地方也有很多，因为这里是使用的hive-server2，故在对应的jdbc代码中修改似乎会简单很多，例如修改HiveSessionImpl类的以下三个方法：</p>
+</div>
+<p>找到这些操作对应的代码似乎太过复杂了，修改的地方也有很多，因为这里是使用的hive-server2，故在对应的jdbc代码中修改似乎会简单很多，例如修改HiveSessionImpl类的以下三个方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">public OperationHandle executeStatement(String statement, Map&lt;String, String&gt; confOverlay) throws HiveSQLException{}
+<pre class="chroma">public OperationHandle executeStatement(String statement, Map&lt;String, String&gt; confOverlay) throws HiveSQLException{}
 
 public void cancelOperation(final OperationHandle opHandle) throws HiveSQLException {}
 
-public void closeOperation(final OperationHandle opHandle) throws HiveSQLException {}
-</code></pre></td></tr></table>
+public void closeOperation(final OperationHandle opHandle) throws HiveSQLException {}</pre></td></tr></table>
 </div>
-</div><p>第一个方法是运行sql语句，第二个方法是取消运行，第三个方法是关闭连接。</p>
+</div>
+<p>第一个方法是运行sql语句，第二个方法是取消运行，第三个方法是关闭连接。</p>
+
 <p>executeStatement中所做的修改如下，将<code>operation.run();</code>改为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -648,9 +690,9 @@ public void closeOperation(final OperationHandle opHandle) throws HiveSQLExcepti
 </span><span class="lnt">17
 </span><span class="lnt">18
 </span><span class="lnt">19
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">    if (operation instanceof SQLOperation) {
+<pre class="chroma">    if (operation instanceof SQLOperation) {
         try {
           String user = hiveConf.getVar(ConfVars.HIVE_SERVER2_MAPREDUCE_USERNAME);
           ugi = UserGroupInformation.createRemoteUser(user);
@@ -668,76 +710,84 @@ public void closeOperation(final OperationHandle opHandle) throws HiveSQLExcepti
         }
       } else {
         operation.run();
-      }
-</code></pre></td></tr></table>
+      }</pre></td></tr></table>
 </div>
-</div><p>这里添加了判断，当operation操作时，才执行下面代码，这是为了保证从hive环境变量中获取myExecuteName的值不为空时才创建UserGroupInformation。</p>
+</div>
+<p>这里添加了判断，当operation操作时，才执行下面代码，这是为了保证从hive环境变量中获取myExecuteName的值不为空时才创建UserGroupInformation。</p>
+
 <p>myExecuteName是新定义的hive变量，主要是用于jdbc客户端通过set语句设置myExecuteName的值为当前登陆用户名称，然后在执行sql语句。代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Statement stmt = conn.createStatement();
+<pre class="chroma">Statement stmt = conn.createStatement();
 
 stmt.execute(&#34;set myExecuteName=aaaa&#34;);
 ResultSet rs = stmt.executeQuery(&#34;select count(1) from t&#34;);
 
 while (rs.next())
-	System.out.println(rs.getString(1));
-</code></pre></td></tr></table>
+	System.out.println(rs.getString(1));</pre></td></tr></table>
 </div>
-</div><h2 id="heading-4">小结</h2>
+</div>
+<h2 id="小结-1">小结</h2>
+
 <p>上面修改的类包括：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">org.apache.hadoop.mapred.JobClient //从环境变量获取从jdbc客户端传过来的用户，即myExecuteName的值，然后以该值运行mapreduce用户
+<pre class="chroma">org.apache.hadoop.mapred.JobClient //从环境变量获取从jdbc客户端传过来的用户，即myExecuteName的值，然后以该值运行mapreduce用户
 org.apache.hadoop.hive.ql.Context  //修改hive.exec.scratchdir的地址为从jdbc客户端传过来的用户对应的临时目录
-org.apache.hive.service.cli.session.HiveSessionImpl //修改运行sql、取消操作、关闭连接对应的方法
-</code></pre></td></tr></table>
+org.apache.hive.service.cli.session.HiveSessionImpl //修改运行sql、取消操作、关闭连接对应的方法</pre></td></tr></table>
 </div>
-</div><h1 id="heading-5">测试</h1>
+</div>
+<h1 id="测试">测试</h1>
+
 <p>是用javachen用户测试,hdfs上的临时目录如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">[root@edh1 lib]# hadoop fs -ls /tmp/
+<pre class="chroma">[root@edh1 lib]# hadoop fs -ls /tmp/
 Found 7 items
 drwx------   - june         hadoop          0 2013-10-15 01:33 /tmp/hadoop-yarn
 drwxr-xr-x   - javachen.space hadoop          0 2013-10-16 07:30 /tmp/hive-javachen.space
 drwxr-xr-x   - june         hadoop          0 2013-10-16 06:52 /tmp/hive-june
 drwxr-xr-x   - root         hadoop          0 2013-10-15 14:13 /tmp/hive-root
-drwxrwxrwt   - yarn         mapred          0 2013-10-16 07:30 /tmp/logs
-</code></pre></td></tr></table>
+drwxrwxrwt   - yarn         mapred          0 2013-10-16 07:30 /tmp/logs</pre></td></tr></table>
 </div>
-</div><p>监控页面截图：</p>
-<p><img src="/images/images1017-03.png" alt="yarn cluster monitor page"></p>
+</div>
+<p>监控页面截图：</p>
+
+<p><img src="/images/images1017-03.png" alt="yarn cluster monitor page" /></p>
+
 <p>除了简单测试之外，还需要测试修改后的代码是否影响源代码的运行以及hive cli的运行。</p>
-<h1 id="heading-6">参考文章</h1>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ol>
 <li><a href="https://cwiki.apache.org/confluence/display/Hive/Setting+up+HiveServer2">HiveServer2 Impersonation</a></li>
 <li><a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/CDH4/4.3.0/CDH4-Security-Guide/cdh4sg_topic_9_1.html">CDH4 HiveServer2 Security Configuration</a></li>
 </ol>
-<h1 id="enjoy-it-">Enjoy it ！</h1>
+
+<h1 id="enjoy-it">Enjoy it ！</h1>
 
     </div>
 
@@ -855,7 +905,7 @@ drwxrwxrwt   - yarn         mapred          0 2013-10-16 07:30 /tmp/logs
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -868,7 +918,21 @@ drwxrwxrwt   - yarn         mapred          0 2013-10-16 07:30 /tmp/logs
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

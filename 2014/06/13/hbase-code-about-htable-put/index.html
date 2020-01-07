@@ -23,7 +23,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/06/13/hbase-code-about-htable-put/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="在 HBase中，大部分的操作都是在RegionServer完成的，Client端想要插入、删除、查询数据都需要先找到相应的 RegionServer。什么叫相应的RegionServer？就是管理你要操作的那个Region的RegionServer。Client本身并 不知道哪个RegionServer管理哪个Region，那么它是如何找到相应的RegionServer的？本文就是在研究源码的基础上了解这个过程。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/06/13/hbase-code-about-htable-put/" />
-<meta property="article:published_time" content="2014-06-13T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-06-13T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-06-13T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-06-13T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="HBase源码分析：HTable put过程">
 <meta itemprop="description" content="在 HBase中，大部分的操作都是在RegionServer完成的，Client端想要插入、删除、查询数据都需要先找到相应的 RegionServer。什么叫相应的RegionServer？就是管理你要操作的那个Region的RegionServer。Client本身并 不知道哪个RegionServer管理哪个Region，那么它是如何找到相应的RegionServer的？本文就是在研究源码的基础上了解这个过程。">
+
+
 <meta itemprop="datePublished" content="2014-06-13T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-06-13T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="5915">
 
 
 
-<meta itemprop="keywords" content="hbase,hive," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hbase,hive," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="HBase源码分析：HTable put过程"/>
 <meta name="twitter:description" content="在 HBase中，大部分的操作都是在RegionServer完成的，Client端想要插入、删除、查询数据都需要先找到相应的 RegionServer。什么叫相应的RegionServer？就是管理你要操作的那个Region的RegionServer。Client本身并 不知道哪个RegionServer管理哪个Region，那么它是如何找到相应的RegionServer的？本文就是在研究源码的基础上了解这个过程。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,29 +139,41 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li>
-      <ul>
-        <li><a href="#hregionservermulti">HRegionServer的multi方法</a></li>
-        <li><a href="#hregionbatchmutate">HRegion的batchMutate</a></li>
-        <li><a href="#memstoreflusher-flush">MemStoreFlusher flush过程</a></li>
-      </ul>
-    </li>
-  </ul>
+<ul>
+<li><a href="#客户端代码">客户端代码</a></li>
+<li><a href="#服务端">服务端</a>
+<ul>
+<li>
+<ul>
+<li><a href="#hregionserver的multi方法">HRegionServer的multi方法</a></li>
+<li><a href="#hregion的batchmutate">HRegion的batchMutate</a></li>
+<li><a href="#memstoreflusher-flush过程">MemStoreFlusher flush过程</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>HBase版本：0.94.15-cdh4.7.0</p>
+      
+
+<p>HBase版本：0.94.15-cdh4.7.0</p>
+
 <p>在 HBase中，大部分的操作都是在RegionServer完成的，Client端想要插入、删除、查询数据都需要先找到相应的 RegionServer。什么叫相应的RegionServer？就是管理你要操作的那个Region的RegionServer。Client本身并 不知道哪个RegionServer管理哪个Region，那么它是如何找到相应的RegionServer的？本文就是在研究源码的基础上了解这个过程。</p>
+
 <p>首先来看看写过程的序列图：</p>
-<p><img src="/images/hbase-htable-put-sequence.jpg" alt=""></p>
-<h1 id="heading">客户端代码</h1>
+
+<p><img src="/images/hbase-htable-put-sequence.jpg" alt="" /></p>
+
+<h1 id="客户端代码">客户端代码</h1>
+
 <p>1、put方法</p>
+
 <p>HTable的put有两个方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -179,27 +191,28 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="kd">final</span> <span class="n">Put</span> <span class="n">put</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-	<span class="n">doPut</span><span class="o">(</span><span class="n">put</span><span class="o">)</span><span class="o">;</span>
+	<span class="n">doPut</span><span class="o">(</span><span class="n">put</span><span class="o">);</span>
 	<span class="k">if</span> <span class="o">(</span><span class="n">autoFlush</span><span class="o">)</span> <span class="o">{</span>
-	  <span class="n">flushCommits</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+	  <span class="n">flushCommits</span><span class="o">();</span>
 	<span class="o">}</span>
 <span class="o">}</span>
 
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">put</span><span class="o">(</span><span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Put</span><span class="o">&gt;</span> <span class="n">puts</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
 	<span class="k">for</span> <span class="o">(</span><span class="n">Put</span> <span class="n">put</span> <span class="o">:</span> <span class="n">puts</span><span class="o">)</span> <span class="o">{</span>
-	  <span class="n">doPut</span><span class="o">(</span><span class="n">put</span><span class="o">)</span><span class="o">;</span>
+	  <span class="n">doPut</span><span class="o">(</span><span class="n">put</span><span class="o">);</span>
 	<span class="o">}</span>
 	<span class="k">if</span> <span class="o">(</span><span class="n">autoFlush</span><span class="o">)</span> <span class="o">{</span>
-	  <span class="n">flushCommits</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+	  <span class="n">flushCommits</span><span class="o">();</span>
 	<span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>从上面代码可以看出：你既可以一次put一行记录也可以一次put多行记录，两个方法内部都会调用doPut方法，最后再来根据autoFlush（默认为true）判断是否需要flushCommits，在autoFlush为false的时候，如果当前容量超过了缓冲区大小（默认值为：2097152=2M），也会调用flushCommits方法。也就是说，在自动提交情况下，你可以手动控制通过一次put多条记录（这时候缓冲区不会满），然后将这些记录flush，以提高写操作tps。</p>
+</div>
+<p>从上面代码可以看出：你既可以一次put一行记录也可以一次put多行记录，两个方法内部都会调用doPut方法，最后再来根据autoFlush（默认为true）判断是否需要flushCommits，在autoFlush为false的时候，如果当前容量超过了缓冲区大小（默认值为：2097152=2M），也会调用flushCommits方法。也就是说，在自动提交情况下，你可以手动控制通过一次put多条记录（这时候缓冲区不会满），然后将这些记录flush，以提高写操作tps。</p>
+
 <p>doPut代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -210,19 +223,19 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">doPut</span><span class="o">(</span><span class="n">Put</span> <span class="n">put</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">{</span>
-	<span class="n">validatePut</span><span class="o">(</span><span class="n">put</span><span class="o">)</span><span class="o">;</span> <span class="c1">//验证Put有效，主要是判断kv的长度
-</span><span class="c1"></span>	<span class="n">writeBuffer</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">put</span><span class="o">)</span><span class="o">;</span> <span class="c1">//写入缓存
-</span><span class="c1"></span>	<span class="n">currentWriteBufferSize</span> <span class="o">+</span><span class="o">=</span> <span class="n">put</span><span class="o">.</span><span class="na">heapSize</span><span class="o">(</span><span class="o">)</span><span class="o">;</span> <span class="c1">//计算缓存容量 
+	<span class="n">validatePut</span><span class="o">(</span><span class="n">put</span><span class="o">);</span> <span class="c1">//验证Put有效，主要是判断kv的长度
+</span><span class="c1"></span>	<span class="n">writeBuffer</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">put</span><span class="o">);</span> <span class="c1">//写入缓存
+</span><span class="c1"></span>	<span class="n">currentWriteBufferSize</span> <span class="o">+=</span> <span class="n">put</span><span class="o">.</span><span class="na">heapSize</span><span class="o">();</span> <span class="c1">//计算缓存容量 
 </span><span class="c1"></span>	<span class="k">if</span> <span class="o">(</span><span class="n">currentWriteBufferSize</span> <span class="o">&gt;</span> <span class="n">writeBufferSize</span><span class="o">)</span> <span class="o">{</span>
-	  <span class="n">flushCommits</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>  <span class="c1">//如果超过缓存容量，则调用flushCommits()
+	  <span class="n">flushCommits</span><span class="o">();</span>  <span class="c1">//如果超过缓存容量，则调用flushCommits()
 </span><span class="c1"></span>	<span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>2、flushCommits方法如下：</p>
+</div>
+<p>2、flushCommits方法如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -258,62 +271,64 @@
 </span><span class="lnt">34
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">flushCommits</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">flushCommits</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
     <span class="k">try</span> <span class="o">{</span>
-      <span class="n">Object</span><span class="o">[</span><span class="o">]</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">writeBuffer</span><span class="o">.</span><span class="na">size</span><span class="o">(</span><span class="o">)</span><span class="o">]</span><span class="o">;</span>
+      <span class="n">Object</span><span class="o">[]</span> <span class="n">results</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Object</span><span class="o">[</span><span class="n">writeBuffer</span><span class="o">.</span><span class="na">size</span><span class="o">()];</span>
       <span class="k">try</span> <span class="o">{</span>
         <span class="c1">//调用HConnection来提交Put
-</span><span class="c1"></span>        <span class="k">this</span><span class="o">.</span><span class="na">connection</span><span class="o">.</span><span class="na">processBatch</span><span class="o">(</span><span class="n">writeBuffer</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">pool</span><span class="o">,</span> <span class="n">results</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>        <span class="k">this</span><span class="o">.</span><span class="na">connection</span><span class="o">.</span><span class="na">processBatch</span><span class="o">(</span><span class="n">writeBuffer</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">pool</span><span class="o">,</span> <span class="n">results</span><span class="o">);</span>
       <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="n">IOException</span><span class="o">(</span><span class="n">e</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IOException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
       <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
         <span class="c1">// mutate list so that it is empty for complete success, or contains
 </span><span class="c1"></span>        <span class="c1">// only failed records results are returned in the same order as the
 </span><span class="c1"></span>        <span class="c1">// requests in list walk the list backwards, so we can remove from list
 </span><span class="c1"></span>        <span class="c1">// without impacting the indexes of earlier members
-</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="na">length</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span><span class="o">&gt;</span><span class="o">=</span><span class="n">0</span><span class="o">;</span> <span class="n">i</span><span class="o">-</span><span class="o">-</span><span class="o">)</span> <span class="o">{</span>
+</span><span class="c1"></span>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="na">length</span> <span class="o">-</span> <span class="n">1</span><span class="o">;</span> <span class="n">i</span><span class="o">&gt;=</span><span class="n">0</span><span class="o">;</span> <span class="n">i</span><span class="o">--)</span> <span class="o">{</span>
           <span class="k">if</span> <span class="o">(</span><span class="n">results</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="k">instanceof</span> <span class="n">Result</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">// successful Puts are removed from the list here.
-</span><span class="c1"></span>            <span class="n">writeBuffer</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">i</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>            <span class="n">writeBuffer</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
           <span class="o">}</span>
         <span class="o">}</span>
       <span class="o">}</span>
     <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
       <span class="k">if</span> <span class="o">(</span><span class="n">clearBufferOnFail</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">writeBuffer</span><span class="o">.</span><span class="na">clear</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">writeBuffer</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
         <span class="n">currentWriteBufferSize</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
       <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
         <span class="c1">// the write buffer was adjusted by processBatchOfPuts
 </span><span class="c1"></span>        <span class="n">currentWriteBufferSize</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
         <span class="c1">//currentWriteBufferSize又重新计算了一遍，看来一批提交不一定会全部提交完 
 </span><span class="c1"></span>        <span class="k">for</span> <span class="o">(</span><span class="n">Put</span> <span class="n">aPut</span> <span class="o">:</span> <span class="n">writeBuffer</span><span class="o">)</span> <span class="o">{</span>
-          <span class="n">currentWriteBufferSize</span> <span class="o">+</span><span class="o">=</span> <span class="n">aPut</span><span class="o">.</span><span class="na">heapSize</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+          <span class="n">currentWriteBufferSize</span> <span class="o">+=</span> <span class="n">aPut</span><span class="o">.</span><span class="na">heapSize</span><span class="o">();</span>
         <span class="o">}</span>
       <span class="o">}</span>
     <span class="o">}</span>
-  <span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>其核心是调用this.connection的processBatch方法，其参数有：writeBuffer、tableName、pool、results</p>
+</div>
+<p>其核心是调用this.connection的processBatch方法，其参数有：writeBuffer、tableName、pool、results</p>
+
 <ul>
 <li>writeBuffer，缓冲区，带提交的数据</li>
 <li>tableName，表名</li>
 <li>pool，ExecutorService类，可以通过HTable构造方法传入一个参数来初始化（例如：HConnectionManager的<code>getTable(byte[] tableName, ExecutorService pool)</code>方法），也可以内部初始化。内部初始化时，其最大线程数由<code>hbase.htable.threads.max</code>设置，keepAliveTime由<code>hbase.htable.threads.keepalivetime</code>设置，默认为60秒</li>
 <li>results，保存运行结果</li>
 </ul>
+
 <p>在默认情况下，connection由如下方式初始化：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"> this.connection = HConnectionManager.getConnection(conf); //HConnection的实现类为HConnectionImplementation
-</code></pre></td></tr></table>
+<pre class="chroma"> this.connection = HConnectionManager.getConnection(conf); //HConnection的实现类为HConnectionImplementation</pre></td></tr></table>
 </div>
-</div><p>3、ConnectionImplementation的processBatch方法</p>
+</div>
+<p>3、ConnectionImplementation的processBatch方法</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -328,50 +343,60 @@
 </span><span class="lnt">13
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">processBatch</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="o">?</span> <span class="kd">extends</span> <span class="n">Row</span><span class="o">&gt;</span> <span class="n">list</span><span class="o">,</span>
-        <span class="kd">final</span> <span class="kt">byte</span><span class="o">[</span><span class="o">]</span> <span class="n">tableName</span><span class="o">,</span>
+<pre class="chroma"><code class="language-java" data-lang="java">   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">processBatch</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Row</span><span class="o">&gt;</span> <span class="n">list</span><span class="o">,</span>
+        <span class="kd">final</span> <span class="kt">byte</span><span class="o">[]</span> <span class="n">tableName</span><span class="o">,</span>
         <span class="n">ExecutorService</span> <span class="n">pool</span><span class="o">,</span>
-        <span class="n">Object</span><span class="o">[</span><span class="o">]</span> <span class="n">results</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">,</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">Object</span><span class="o">[]</span> <span class="n">results</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">,</span> <span class="n">InterruptedException</span> <span class="o">{</span>
       <span class="c1">// This belongs in HTable!!! Not in here.  St.Ack
 </span><span class="c1"></span>
       <span class="c1">// results must be the same size as list
-</span><span class="c1"></span>      <span class="k">if</span> <span class="o">(</span><span class="n">results</span><span class="o">.</span><span class="na">length</span> <span class="o">!</span><span class="o">=</span> <span class="n">list</span><span class="o">.</span><span class="na">size</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;argument results must be the same size as argument list&#34;</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>      <span class="k">if</span> <span class="o">(</span><span class="n">results</span><span class="o">.</span><span class="na">length</span> <span class="o">!=</span> <span class="n">list</span><span class="o">.</span><span class="na">size</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">IllegalArgumentException</span><span class="o">(</span><span class="s">&#34;argument results must be the same size as argument list&#34;</span><span class="o">);</span>
       <span class="o">}</span>
 
-      <span class="n">processBatchCallback</span><span class="o">(</span><span class="n">list</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">pool</span><span class="o">,</span> <span class="n">results</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span><span class="o">;</span>
-    <span class="o">}</span>
-</code></pre></td></tr></table>
+      <span class="n">processBatchCallback</span><span class="o">(</span><span class="n">list</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">pool</span><span class="o">,</span> <span class="n">results</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+    <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>最后是调用的processBatchCallback方法，第五个参数为空，即没有回调方法。</p>
+</div>
+<p>最后是调用的processBatchCallback方法，第五个参数为空，即没有回调方法。</p>
+
 <p>processBatchCallback方法内部可以失败后进行重试，重试次数为<code>hbase.client.retries.number</code>控制，默认为10，每一次重试直接都会休眠一下，每次休眠时间为:</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">pause</span> <span class="o">*</span> <span class="n">HConstants</span><span class="o">.</span><span class="na">RETRY_BACKOFF</span><span class="o">[</span><span class="n">ntries</span><span class="o">]</span><span class="o">+</span><span class="o">(</span><span class="kt">long</span><span class="o">)</span><span class="o">(</span><span class="n">normalPause</span> <span class="o">*</span> <span class="n">RANDOM</span><span class="o">.</span><span class="na">nextFloat</span><span class="o">(</span><span class="o">)</span> <span class="o">*</span> <span class="n">0</span><span class="o">.</span><span class="na">01f</span><span class="o">)</span><span class="o">;</span>
-<span class="c1">//RETRY_BACKOFF[] = { 1, 1, 1, 2, 2, 4, 4, 8, 16, 32, 64 }
-</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">pause</span> <span class="o">*</span> <span class="n">HConstants</span><span class="o">.</span><span class="na">RETRY_BACKOFF</span><span class="o">[</span><span class="n">ntries</span><span class="o">]+(</span><span class="kt">long</span><span class="o">)(</span><span class="n">normalPause</span> <span class="o">*</span> <span class="n">RANDOM</span><span class="o">.</span><span class="na">nextFloat</span><span class="o">()</span> <span class="o">*</span> <span class="n">0</span><span class="o">.</span><span class="na">01f</span><span class="o">);</span>
+<span class="o">//</span><span class="n">RETRY_BACKOFF</span><span class="o">[]</span> <span class="o">=</span> <span class="o">{</span> <span class="n">1</span><span class="o">,</span> <span class="n">1</span><span class="o">,</span> <span class="n">1</span><span class="o">,</span> <span class="n">2</span><span class="o">,</span> <span class="n">2</span><span class="o">,</span> <span class="n">4</span><span class="o">,</span> <span class="n">4</span><span class="o">,</span> <span class="n">8</span><span class="o">,</span> <span class="n">16</span><span class="o">,</span> <span class="n">32</span><span class="o">,</span> <span class="n">64</span> <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>pause通过<code>hbase.client.pause</code>设置，默认值为1000，即1秒；ntries为当前重复次数</p>
+</div>
+<p>pause通过<code>hbase.client.pause</code>设置，默认值为1000，即1秒；ntries为当前重复次数</p>
+
 <p>接下来，第一步，遍历List&lt;? extends Row&gt;，获取每一个行对应HRegion所在位置，并且按regionName对这些待put的行进行分组。</p>
+
 <p>第二步，发送异步请求到服务端。</p>
+
 <p>第三步，接收异步请求的结果，收集成功的和失败的，做好重试准备</p>
+
 <p>第四步，对于失败的，进行重试。</p>
+
 <p>达到重试次数之后，对运行结果判断是否有异常，如果有则抛出RetriesExhaustedWithDetailsException异常。</p>
+
 <p>由以上四步可以看出，重点在于第一、二步。</p>
+
 <p>第一步查找HRegion所在位置过程关键在<code>private HRegionLocation locateRegion(final byte [] tableName,final byte [] row, boolean useCache)</code>方法中，并且为递归方法，过程如下：</p>
+
 <ul>
 <li>调用locateRegionInMeta方法到.META.表中查找tableName的row所对应的HRegion所在位置，先从本地缓存查找，如果没有，则进行下一步；</li>
 <li>调用locateRegionInMeta方法到-ROOT-表中查找.META.所对应的HRegion所在位置，先从本地缓存查找，如果没有，则进行下一步</li>
 <li>通过rootRegionTracker（即从zk上）获取RootRegionServer地址，即找到-ROOT-表所在的RegionServer地址，然后获取到.META.所在位置，最后在获取.META.表上所有HRegion，并将其加入到本地缓存。</li>
 </ul>
+
 <p>通过示例描述如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -384,9 +409,9 @@
 </span><span class="lnt">11
 </span><span class="lnt">12
 </span><span class="lnt">13
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">获取 Table2，RowKey为RK10000的RegionServer
+<pre class="chroma">获取 Table2，RowKey为RK10000的RegionServer
 
 =&gt; 获取.META.，RowKey为Table2,RK10000, 99999999999999 的RegionServer
    
@@ -398,18 +423,20 @@
    
 =&gt; 从-ROOT-表中查到RowKey最接近（小于） .META.,Table2,RK10000,99999999999999,99999999999999 的一条Row，并得到.META.的RegionServer  
 
-=&gt; 从.META.表中查到RowKey最接近（小于）Table2,RK10000,99999999999999 的一条Row，并得到Table2的K10000的Row对应的HRegionLocation
-</code></pre></td></tr></table>
+=&gt; 从.META.表中查到RowKey最接近（小于）Table2,RK10000,99999999999999 的一条Row，并得到Table2的K10000的Row对应的HRegionLocation</pre></td></tr></table>
 </div>
-</div><p><strong>说明：</strong></p>
+</div>
+<p><strong>说明：</strong></p>
+
 <ul>
 <li>当我们创建一个表时，不管是否预建分区，该表创建之后，在.META.上会有一条记录的。</li>
 <li>在客户端第一次连接服务端时，会两次查询缓存并没有查到结果，最后在通过<code>-ROOT-</code>&ndash;&gt;<code>.META.</code>&ndash;&gt;HRegion找到对应的HRegion所在位置。</li>
 </ul>
+
 <p>第二步中，先是创建到RegionServer的连接，后是调用RegionServer上的multi方法，显然这是远程调用的过程。第二步中提交的任务通过下面代码创建：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -434,33 +461,33 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;</span> <span class="nf">createCallable</span><span class="o">(</span><span class="kd">final</span> <span class="n">HRegionLocation</span> <span class="n">loc</span><span class="o">,</span>
-        <span class="kd">final</span> <span class="n">MultiAction</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">multi</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">byte</span> <span class="o">[</span><span class="o">]</span> <span class="n">tableName</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">MultiAction</span><span class="o">&lt;</span><span class="n">R</span><span class="o">&gt;</span> <span class="n">multi</span><span class="o">,</span> <span class="kd">final</span> <span class="kt">byte</span> <span class="o">[]</span> <span class="n">tableName</span><span class="o">)</span> <span class="o">{</span>
   <span class="c1">// TODO: This does not belong in here!!! St.Ack  HConnections should
 </span><span class="c1"></span>  <span class="c1">// not be dealing in Callables; Callables have HConnections, not other
 </span><span class="c1"></span>  <span class="c1">// way around.
 </span><span class="c1"></span>  <span class="kd">final</span> <span class="n">HConnection</span> <span class="n">connection</span> <span class="o">=</span> <span class="k">this</span><span class="o">;</span>
-  <span class="k">return</span> <span class="k">new</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-   <span class="kd">public</span> <span class="n">MultiResponse</span> <span class="nf">call</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+  <span class="k">return</span> <span class="k">new</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;()</span> <span class="o">{</span>
+   <span class="kd">public</span> <span class="n">MultiResponse</span> <span class="nf">call</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
      <span class="n">ServerCallable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;</span> <span class="n">callable</span> <span class="o">=</span>
-       <span class="k">new</span> <span class="n">ServerCallable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;</span><span class="o">(</span><span class="n">connection</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-         <span class="kd">public</span> <span class="n">MultiResponse</span> <span class="nf">call</span><span class="o">(</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-           <span class="k">return</span> <span class="n">server</span><span class="o">.</span><span class="na">multi</span><span class="o">(</span><span class="n">multi</span><span class="o">)</span><span class="o">;</span>
+       <span class="k">new</span> <span class="n">ServerCallable</span><span class="o">&lt;</span><span class="n">MultiResponse</span><span class="o">&gt;(</span><span class="n">connection</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+         <span class="kd">public</span> <span class="n">MultiResponse</span> <span class="nf">call</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+           <span class="k">return</span> <span class="n">server</span><span class="o">.</span><span class="na">multi</span><span class="o">(</span><span class="n">multi</span><span class="o">);</span>
          <span class="o">}</span>
          <span class="nd">@Override</span>
          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">connect</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">reload</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-           <span class="n">server</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="na">getHRegionConnection</span><span class="o">(</span><span class="n">loc</span><span class="o">.</span><span class="na">getHostname</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="n">loc</span><span class="o">.</span><span class="na">getPort</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+           <span class="n">server</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="na">getHRegionConnection</span><span class="o">(</span><span class="n">loc</span><span class="o">.</span><span class="na">getHostname</span><span class="o">(),</span> <span class="n">loc</span><span class="o">.</span><span class="na">getPort</span><span class="o">());</span>
          <span class="o">}</span>
-       <span class="o">}</span><span class="o">;</span>
-     <span class="k">return</span> <span class="n">callable</span><span class="o">.</span><span class="na">withoutRetries</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+       <span class="o">};</span>
+     <span class="k">return</span> <span class="n">callable</span><span class="o">.</span><span class="na">withoutRetries</span><span class="o">();</span>
    <span class="o">}</span>
- <span class="o">}</span><span class="o">;</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+ <span class="o">};</span>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>从上面代码可以看到，通过<code>connection.getHRegionConnection(loc.getHostname(), loc.getPort())</code>创建一个HRegionInterface的实现类即HRegionServer，方法内使用了代理的方式创建对象。</p>
+</div>
+<p>从上面代码可以看到，通过<code>connection.getHRegionConnection(loc.getHostname(), loc.getPort())</code>创建一个HRegionInterface的实现类即HRegionServer，方法内使用了代理的方式创建对象。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -469,24 +496,30 @@
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="n">server</span> <span class="o">=</span> <span class="n">HBaseRPC</span><span class="o">.</span><span class="na">waitForProxy</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">rpcEngine</span><span class="o">,</span>
   <span class="n">serverInterfaceClass</span><span class="o">,</span> <span class="n">HRegionInterface</span><span class="o">.</span><span class="na">VERSION</span><span class="o">,</span>
   <span class="n">address</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">conf</span><span class="o">,</span>
-  <span class="k">this</span><span class="o">.</span><span class="na">maxRPCAttempts</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">rpcTimeout</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">rpcTimeout</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+  <span class="k">this</span><span class="o">.</span><span class="na">maxRPCAttempts</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">rpcTimeout</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">rpcTimeout</span><span class="o">);</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-1">服务端</h1>
+</div>
+<h1 id="服务端">服务端</h1>
+
 <p>上面客户端调用过程分析完毕，继续跟RegionServer服务端的处理。</p>
-<h3 id="hregionservermulti">HRegionServer的multi方法</h3>
+
+<h3 id="hregionserver的multi方法">HRegionServer的multi方法</h3>
+
 <p>对于客户端写操作，最终会调用HRegionServer的multi方法。</p>
+
 <p>因为传递到RegionServer都是按regionName分组的，故最后的操作实际上都是调用的HRegion对象的方法。</p>
+
 <p>该方法主要就是遍历multi并对actionsForRegion按rowid进行排序，然后分类别对action进行处理，Put和Delete操作会放到一起然后调用batchMutate方法批量提交：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">OperationStatus</span><span class="o">[</span><span class="o">]</span> <span class="n">codes</span> <span class="o">=</span><span class="n">region</span><span class="o">.</span><span class="na">batchMutate</span><span class="o">(</span><span class="n">mutationsWithLocks</span><span class="o">.</span><span class="na">toArray</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">[</span><span class="o">]</span><span class="o">{</span><span class="o">}</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="n">OperationStatus</span><span class="o">[]</span> <span class="n">codes</span> <span class="o">=</span><span class="n">region</span><span class="o">.</span><span class="na">batchMutate</span><span class="o">(</span><span class="n">mutationsWithLocks</span><span class="o">.</span><span class="na">toArray</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">[]{}));</span></code></pre></td></tr></table>
 </div>
-</div><p>其他的：</p>
+</div>
+<p>其他的：</p>
+
 <ul>
 <li>对于Get，会调用get方法；</li>
 <li>对于Exec，会调用execCoprocessor方法；</li>
@@ -494,10 +527,15 @@
 <li>对于Append，会调用append方法；</li>
 <li>对于RowMutations，会调用mutateRow方法；</li>
 </ul>
+
 <p>对于Put和Delete操作（保存在mutations中），在处理之前，先通过cacheFlusher检查memstore大小吃否超过限定值，如果是，则进行flush。</p>
+
 <p>接下来遍历mutations，为每个Mutation添加一个锁lock，然后再调用region的batchMutate方法。</p>
-<h3 id="hregionbatchmutate">HRegion的batchMutate</h3>
+
+<h3 id="hregion的batchmutate">HRegion的batchMutate</h3>
+
 <p>batchMutate方法内部，依次一个个处理：</p>
+
 <ul>
 <li>先检查是否只读</li>
 <li>检查当前资源是否支持update操作，会比较memstoreSize和blockingMemStoreSize大小，然后会阻塞线程</li>
@@ -508,11 +546,13 @@
 <li>写完之后，释放lock.readLock()锁</li>
 <li>判断是否需要flush memstore，如果需要，则调用requestFlush方法，其内部实际是通过RegionServerServices中的FlushRequester（其实现类为MemStoreFlusher）来执行flush操作</li>
 </ul>
-<h3 id="memstoreflusher-flush">MemStoreFlusher flush过程</h3>
+
+<h3 id="memstoreflusher-flush过程">MemStoreFlusher flush过程</h3>
+
 <p>HRegion中的requestFlush方法：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -530,30 +570,32 @@
 </span><span class="lnt">16
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">requestFlush</span><span class="o">(</span><span class="o">)</span> <span class="o">{</span>
-    <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">rsServices</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">requestFlush</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">rsServices</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
       <span class="k">return</span><span class="o">;</span>
     <span class="o">}</span>
     <span class="kd">synchronized</span> <span class="o">(</span><span class="n">writestate</span><span class="o">)</span> <span class="o">{</span>
-      <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">writestate</span><span class="o">.</span><span class="na">isFlushRequested</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">writestate</span><span class="o">.</span><span class="na">isFlushRequested</span><span class="o">())</span> <span class="o">{</span>
         <span class="k">return</span><span class="o">;</span>
       <span class="o">}</span>
       <span class="n">writestate</span><span class="o">.</span><span class="na">flushRequested</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
     <span class="o">}</span>
     <span class="c1">// Make request outside of synchronize block; HBASE-818.
-</span><span class="c1"></span>    <span class="k">this</span><span class="o">.</span><span class="na">rsServices</span><span class="o">.</span><span class="na">getFlushRequester</span><span class="o">(</span><span class="o">)</span><span class="o">.</span><span class="na">requestFlush</span><span class="o">(</span><span class="k">this</span><span class="o">)</span><span class="o">;</span>
-    <span class="k">if</span> <span class="o">(</span><span class="n">LOG</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
-      <span class="n">LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Flush requested on &#34;</span> <span class="o">+</span> <span class="k">this</span><span class="o">)</span><span class="o">;</span>
+</span><span class="c1"></span>    <span class="k">this</span><span class="o">.</span><span class="na">rsServices</span><span class="o">.</span><span class="na">getFlushRequester</span><span class="o">().</span><span class="na">requestFlush</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">LOG</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+      <span class="n">LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">&#34;Flush requested on &#34;</span> <span class="o">+</span> <span class="k">this</span><span class="o">);</span>
     <span class="o">}</span>
-  <span class="o">}</span>
-</code></pre></td></tr></table>
+  <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>上面this.rsServices.getFlushRequester()其实际上返回的是MemStoreFlusher类。</p>
-<p><img src="/images/hbase-MemStoreFlusher-class.jpg" alt=""></p>
+</div>
+<p>上面this.rsServices.getFlushRequester()其实际上返回的是MemStoreFlusher类。</p>
+
+<p><img src="/images/hbase-MemStoreFlusher-class.jpg" alt="" /></p>
+
 <p>MemStoreFlusher内部有一个队列和一个Map：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -563,56 +605,67 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-java" data-lang="java"><span class="c1">//保存待flush的对象
 </span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">BlockingQueue</span><span class="o">&lt;</span><span class="n">FlushQueueEntry</span><span class="o">&gt;</span> <span class="n">flushQueue</span> <span class="o">=</span>
-    <span class="k">new</span> <span class="n">DelayQueue</span><span class="o">&lt;</span><span class="n">FlushQueueEntry</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">new</span> <span class="n">DelayQueue</span><span class="o">&lt;</span><span class="n">FlushQueueEntry</span><span class="o">&gt;();</span>
 <span class="c1">//记录队列中存在哪些Region
 </span><span class="c1"></span><span class="kd">private</span> <span class="kd">final</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">HRegion</span><span class="o">,</span> <span class="n">FlushRegionEntry</span><span class="o">&gt;</span> <span class="n">regionsInQueue</span> <span class="o">=</span>
-    <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">HRegion</span><span class="o">,</span> <span class="n">FlushRegionEntry</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-</code></pre></td></tr></table>
+    <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">HRegion</span><span class="o">,</span> <span class="n">FlushRegionEntry</span><span class="o">&gt;();</span></code></pre></td></tr></table>
 </div>
-</div><p>MemStoreFlusher构造方法：</p>
+</div>
+<p>MemStoreFlusher构造方法：</p>
+
 <ul>
 <li>初始化threadWakeFrequency，该值由hbase.server.thread.wakefrequency设置，默认为10 * 1000</li>
 <li>初始化globalMemStoreLimit，该值为最大堆内存乘以hbase.regionserver.global.memstore.upperLimit的值，hbase.regionserver.global.memstore.upperLimit参数默认值为0.4</li>
 <li>初始化globalMemStoreLimitLowMark，该值为最大堆内存乘以hbase.regionserver.global.memstore.lowerLimit的值，hbase.regionserver.global.memstore.lowerLimit参数默认值为0.35</li>
 <li>初始化blockingWaitTime，该值由hbase.hstore.blockingWaitTime设置，默认为90000</li>
 </ul>
+
 <p>MemStoreFlusher实现了Runnable接口，在RegionServer启动过程中会启动一个线程，其run方法逻辑如下：</p>
+
 <ul>
 <li>只要RegionServer一直在运行，该线程就不会停止运行</li>
 <li>每隔threadWakeFrequency时间从flushQueue中取出一个对象</li>
 <li>如果取出的对象为空或者WakeupFlushThread，则判断：如果当前RegionServer的总大小大于globalMemStoreLimit值，则找到没有太多storefiles（只个数小于hbase.hstore.blockingStoreFiles的，该参数默认值为7）的最大的region和不管有多少storefiles的最大region，比较两个大小找出最大的一个，然后flush该region，并休眠1秒；最后在唤醒flush线程
+
 <ul>
 <li>先flush region上的memstore，这部分代码通过HRegion的internalFlushcache方法来完成，其内部使用了mvcc</li>
 <li>判断是否该拆分，如果是则拆分</li>
 <li>判断是否该压缩合并，如果是则合并</li>
-</ul>
-</li>
+</ul></li>
 <li>如果如果取出的对象为FlushRegionEntry，则flush该对象。
+
 <ul>
 <li>如果当前region不是meta region并且当前region的storefiles数大于<code>hbase.hstore.blockingStoreFiles</code>，先判断是否要拆分，然后再判断是否需要合并小文件。这个过程会阻塞blockingWaitTime值定义的时间。</li>
 <li>否则， 直接flush该region上的memstore（调用HRegion的internalFlushcache方法），然后再判断是否需要拆分和合并</li>
+</ul></li>
 </ul>
-</li>
-</ul>
-<h1 id="heading-2">总结</h1>
+
+<h1 id="总结">总结</h1>
+
 <p>最后总结一下，HRegionServer作用如下：</p>
+
 <ul>
 <li>使得被它管理的一系列HRegion能够被客户端来使用，每个HRegion对应了Table中的一个Region，HRegion中由多个HStore组成。</li>
 <li>主要负责响应用户I/O请求，向HDFS文件系统中读写数据。</li>
 </ul>
-<p><img src="http://images.cnblogs.com/cnblogs_com/chenli0513/image0030.jpg" alt=""></p>
+
+<p><img src="http://images.cnblogs.com/cnblogs_com/chenli0513/image0030.jpg" alt="" /></p>
+
 <p>HRegion定位过程：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">client -&gt; zookeeper -&gt; -ROOT- -&gt; .META -&gt; HRegion地址 -&gt; HRegionServer-&gt; HRegion
-</code></pre></td></tr></table>
+<pre class="chroma">client -&gt; zookeeper -&gt; -ROOT- -&gt; .META -&gt; HRegion地址 -&gt; HRegionServer-&gt; HRegion</pre></td></tr></table>
 </div>
-</div><p>在这个过程中客户端先通过zk找到Root表所在的RegionServer（通过zk上的/hbase/root-region-server节点获取），然后找到Meta表对应的HRegion地址，最后在Meta表里找到目标表所在的HRegion地址，这个过程客户端并没有和HMaster进行交互。</p>
+</div>
+<p>在这个过程中客户端先通过zk找到Root表所在的RegionServer（通过zk上的/hbase/root-region-server节点获取），然后找到Meta表对应的HRegion地址，最后在Meta表里找到目标表所在的HRegion地址，这个过程客户端并没有和HMaster进行交互。</p>
+
 <p>Client端并不会每次数据操作都做这整个路由过程，因为HRegion的相关信息会缓存到本地，当有变化时，通过zk监听器能够及时感知。</p>
+
 <p>数据写入过程：</p>
+
 <ul>
 <li>client先根据rowkey找到对应的region和regionserver</li>
 <li>client想regionserver提交写请求</li>
@@ -740,7 +793,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -753,7 +806,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

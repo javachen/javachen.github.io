@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。 YARN作为一个资源调度器，应该考虑到集群里面每" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。 YARN作为一个资源调度器，应该考虑到集群里面每" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2015/06/05/yarn-memory-and-cpu-configuration/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。 YARN作为一个资源调度器，应该考虑到集群里面每" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2015/06/05/yarn-memory-and-cpu-configuration/" />
-<meta property="article:published_time" content="2015-06-05T08:00:00+08:00" />
-<meta property="article:modified_time" content="2015-06-05T08:00:00+08:00" />
+<meta property="article:published_time" content="2015-06-05T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2015-06-05T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="YARN的内存和CPU配置">
 <meta itemprop="description" content="Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。 YARN作为一个资源调度器，应该考虑到集群里面每">
+
+
 <meta itemprop="datePublished" content="2015-06-05T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2015-06-05T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2802">
+<meta itemprop="wordCount" content="2814">
 
 
 
-<meta itemprop="keywords" content="yarn," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="yarn," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="YARN的内存和CPU配置"/>
 <meta name="twitter:description" content="Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。 YARN作为一个资源调度器，应该考虑到集群里面每"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hadoop/"> hadoop </a>
             </div>
-          <span class="more-meta"> 约 2802 字 </span>
+          <span class="more-meta"> 约 2814 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -138,19 +138,34 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#内存配置">内存配置</a></li>
+<li><a href="#cpu配置">CPU配置</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <p>Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。</p>
+      
+
+<p>Hadoop YARN同时支持内存和CPU两种资源的调度，本文介绍如何配置YARN对内存和CPU的使用。</p>
+
 <p>YARN作为一个资源调度器，应该考虑到集群里面每一台机子的计算资源，然后根据application申请的资源进行分配Container。Container是YARN里面资源分配的基本单位，具有一定的内存以及CPU资源。</p>
+
 <p>在YARN集群中，平衡内存、CPU、磁盘的资源的很重要的，根据经验，每两个container使用一块磁盘以及一个CPU核的时候可以使集群的资源得到一个比较好的利用。</p>
-<h1 id="heading">内存配置</h1>
-<p>关于<em>内存</em>相关的配置可以参考hortonwork公司的文档<a href="http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.1/bk_installing_manually_book/content/rpm-chap1-11.html">Determine HDP Memory Configuration Settings</a>来配置你的集群。</p>
+
+<h1 id="内存配置">内存配置</h1>
+
+<p>关于*内存*相关的配置可以参考hortonwork公司的文档<a href="http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.1/bk_installing_manually_book/content/rpm-chap1-11.html">Determine HDP Memory Configuration Settings</a>来配置你的集群。</p>
+
 <blockquote>
 <p>YARN以及MAPREDUCE所有可用的内存资源应该要除去系统运行需要的以及其他的hadoop的一些程序，总共保留的内存=系统内存+HBASE内存。</p>
 </blockquote>
+
 <p>可以参考下面的表格确定应该保留的内存：</p>
+
 <table>
 <thead>
 <tr>
@@ -159,57 +174,68 @@
 <th align="left">HBase需要的内存</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left">4GB</td>
 <td align="left">1GB</td>
 <td align="left">1GB</td>
 </tr>
+
 <tr>
 <td align="left">8GB</td>
 <td align="left">2GB</td>
 <td align="left">1GB</td>
 </tr>
+
 <tr>
 <td align="left">16GB</td>
 <td align="left">2GB</td>
 <td align="left">2GB</td>
 </tr>
+
 <tr>
 <td align="left">24GB</td>
 <td align="left">4GB</td>
 <td align="left">4GB</td>
 </tr>
+
 <tr>
 <td align="left">48GB</td>
 <td align="left">6GB</td>
 <td align="left">8GB</td>
 </tr>
+
 <tr>
 <td align="left">64GB</td>
 <td align="left">8GB</td>
 <td align="left">8GB</td>
 </tr>
+
 <tr>
 <td align="left">72GB</td>
 <td align="left">8GB</td>
 <td align="left">8GB</td>
 </tr>
+
 <tr>
 <td align="left">96GB</td>
 <td align="left">12GB</td>
 <td align="left">16GB</td>
 </tr>
+
 <tr>
 <td align="left">128GB</td>
 <td align="left">24GB</td>
 <td align="left">24GB</td>
 </tr>
+
 <tr>
 <td align="left">255GB</td>
 <td align="left">32GB</td>
 <td align="left">32GB</td>
 </tr>
+
 <tr>
 <td align="left">512GB</td>
 <td align="left">64GB</td>
@@ -217,15 +243,20 @@
 </tr>
 </tbody>
 </table>
+
 <p>计算每台机子最多可以拥有多少个container，可以使用下面的公式:</p>
+
 <p><code>containers = min (2*CORES, 1.8*DISKS, (Total available RAM) / MIN_CONTAINER_SIZE)</code></p>
+
 <p>说明：</p>
+
 <ul>
 <li><code>CORES</code>为机器CPU核数</li>
 <li><code>DISKS</code>为机器上挂载的磁盘个数</li>
 <li><code>Total available RAM</code>为机器总内存</li>
 <li><code>MIN_CONTAINER_SIZE</code>是指container最小的容量大小，这需要根据具体情况去设置，可以参考下面的表格：</li>
 </ul>
+
 <table>
 <thead>
 <tr>
@@ -233,28 +264,36 @@
 <th align="left">container最小值</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left">小于4GB</td>
 <td align="left">256MB</td>
 </tr>
+
 <tr>
 <td align="left">4GB到8GB之间</td>
 <td align="left">512MB</td>
 </tr>
+
 <tr>
 <td align="left">8GB到24GB之间</td>
 <td align="left">1024MB</td>
 </tr>
+
 <tr>
 <td align="left">大于24GB</td>
 <td align="left">2048MB</td>
 </tr>
 </tbody>
 </table>
+
 <p>每个container的平均使用内存大小计算方式为：</p>
+
 <p><code>RAM-per-container = max(MIN_CONTAINER_SIZE, (Total Available RAM) / containers))</code></p>
+
 <p>通过上面的计算，YARN以及MAPREDUCE可以这样配置：</p>
+
 <table>
 <thead>
 <tr>
@@ -264,6 +303,7 @@
 <th align="left">计算值</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left">yarn-site.xml</td>
@@ -271,48 +311,56 @@
 <td align="left">8192 MB</td>
 <td align="left">= containers * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml</td>
 <td align="left">yarn.scheduler.minimum-allocation-mb</td>
 <td align="left">1024MB</td>
 <td align="left">= RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml</td>
 <td align="left">yarn.scheduler.maximum-allocation-mb</td>
 <td align="left">8192 MB</td>
 <td align="left">= containers * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml (check)</td>
 <td align="left">yarn.app.mapreduce.am.resource.mb</td>
 <td align="left">1536 MB</td>
 <td align="left">= 2 * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml (check)</td>
 <td align="left">yarn.app.mapreduce.am.command-opts</td>
 <td align="left">-Xmx1024m</td>
 <td align="left">= 0.8 * 2 * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.map.memory.mb</td>
 <td align="left">1024 MB</td>
 <td align="left">= RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.reduce.memory.mb</td>
 <td align="left">1024 MB</td>
 <td align="left">= 2 * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.map.java.opts</td>
 <td align="left"></td>
 <td align="left">= 0.8 * RAM-per-container</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.reduce.java.opts</td>
@@ -321,14 +369,19 @@
 </tr>
 </tbody>
 </table>
+
 <p>举个例子：对于128G内存、32核CPU的机器，挂载了7个磁盘，根据上面的说明，系统保留内存为24G，不适应HBase情况下，系统剩余可用内存为104G，计算containers值如下：</p>
+
 <p><code>containers = min (2*32, 1.8* 7 , (128-24)/2) = min (64, 12.6 , 51) = 13</code></p>
+
 <p>计算RAM-per-container值如下：</p>
+
 <p><code>RAM-per-container = max (2, (124-24)/13) = max (2, 8) = 8</code></p>
+
 <p>你也可以使用脚本<a href="http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.1/bk_installing_manually_book/content/rpm-chap1-9.html">yarn-utils.py</a>来计算上面的值：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">  1
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">  1
 </span><span class="lnt">  2
 </span><span class="lnt">  3
 </span><span class="lnt">  4
@@ -469,144 +522,144 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">ast</span>
 
-<span class="sa"></span><span class="s1">&#39;&#39;&#39;</span><span class="s1"> Reserved for OS + DN + NM,  Map: Memory =&gt; Reservation </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">&#39;&#39;&#39; Reserved for OS + DN + NM,  Map: Memory =&gt; Reservation &#39;&#39;&#39;</span>
 <span class="n">reservedStack</span> <span class="o">=</span> <span class="p">{</span> <span class="mi">4</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">24</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">48</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="mi">64</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="mi">72</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="mi">96</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span> 
                    <span class="mi">128</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span> <span class="mi">256</span><span class="p">:</span><span class="mi">32</span><span class="p">,</span> <span class="mi">512</span><span class="p">:</span><span class="mi">64</span><span class="p">}</span>
-<span class="sa"></span><span class="s1">&#39;&#39;&#39;</span><span class="s1"> Reserved for HBase. Map: Memory =&gt; Reservation </span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">&#39;&#39;&#39; Reserved for HBase. Map: Memory =&gt; Reservation &#39;&#39;&#39;</span>
   
 <span class="n">reservedHBase</span> <span class="o">=</span> <span class="p">{</span><span class="mi">4</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">24</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">48</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="mi">64</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="mi">72</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="mi">96</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span> 
                    <span class="mi">128</span><span class="p">:</span><span class="mi">24</span><span class="p">,</span> <span class="mi">256</span><span class="p">:</span><span class="mi">32</span><span class="p">,</span> <span class="mi">512</span><span class="p">:</span><span class="mi">64</span><span class="p">}</span>
 <span class="n">GB</span> <span class="o">=</span> <span class="mi">1024</span>
 
-<span class="k">def</span> <span class="nf">getMinContainerSize</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="p">:</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">4</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">getMinContainerSize</span><span class="p">(</span><span class="n">memory</span><span class="p">):</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">):</span>
     <span class="k">return</span> <span class="mi">256</span>
-  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">8</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;=</span> <span class="mi">8</span><span class="p">):</span>
     <span class="k">return</span> <span class="mi">512</span>
-  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">24</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;=</span> <span class="mi">24</span><span class="p">):</span>
     <span class="k">return</span> <span class="mi">1024</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="k">return</span> <span class="mi">2048</span>
   <span class="k">pass</span>
 
-<span class="k">def</span> <span class="nf">getReservedStackMemory</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="p">:</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">reservedStack</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">getReservedStackMemory</span><span class="p">(</span><span class="n">memory</span><span class="p">):</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">reservedStack</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">memory</span><span class="p">)):</span>
     <span class="k">return</span> <span class="n">reservedStack</span><span class="p">[</span><span class="n">memory</span><span class="p">]</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">4</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">):</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span>
-  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&gt;</span><span class="o">=</span> <span class="mi">512</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&gt;=</span> <span class="mi">512</span><span class="p">):</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">64</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span>
   <span class="k">return</span> <span class="n">ret</span>
 
-<span class="k">def</span> <span class="nf">getReservedHBaseMem</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="p">:</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">reservedHBase</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">getReservedHBaseMem</span><span class="p">(</span><span class="n">memory</span><span class="p">):</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">reservedHBase</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">memory</span><span class="p">)):</span>
     <span class="k">return</span> <span class="n">reservedHBase</span><span class="p">[</span><span class="n">memory</span><span class="p">]</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">4</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">):</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span>
-  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&gt;</span><span class="o">=</span> <span class="mi">512</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&gt;=</span> <span class="mi">512</span><span class="p">):</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">64</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">2</span>
   <span class="k">return</span> <span class="n">ret</span>
                     
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="p">)</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
   <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
   <span class="n">out_hdlr</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-  <span class="n">out_hdlr</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1"> </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span><span class="p">)</span>
+  <span class="n">out_hdlr</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39; </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">))</span>
   <span class="n">out_hdlr</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
   <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">out_hdlr</span><span class="p">)</span>
   <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-  <span class="n">parser</span> <span class="o">=</span> <span class="n">optparse</span><span class="o">.</span><span class="n">OptionParser</span><span class="p">(</span><span class="p">)</span>
+  <span class="n">parser</span> <span class="o">=</span> <span class="n">optparse</span><span class="o">.</span><span class="n">OptionParser</span><span class="p">()</span>
   <span class="n">memory</span> <span class="o">=</span> <span class="mi">0</span>
   <span class="n">cores</span> <span class="o">=</span> <span class="mi">0</span>
   <span class="n">disks</span> <span class="o">=</span> <span class="mi">0</span>
   <span class="n">hbaseEnabled</span> <span class="o">=</span> <span class="bp">True</span>
-  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">-c</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">--cores</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
-                     <span class="n">help</span> <span class="o">=</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">Number of cores on each host</span><span class="s1">&#39;</span><span class="p">)</span>
-  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">-m</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">--memory</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span> 
-                    <span class="n">help</span> <span class="o">=</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">Amount of Memory on each host in GB</span><span class="s1">&#39;</span><span class="p">)</span>
-  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">-d</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">--disks</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> 
-                    <span class="n">help</span> <span class="o">=</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">Number of disks on each host</span><span class="s1">&#39;</span><span class="p">)</span>
-  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="sa"></span><span class="s1">&#39;</span><span class="s1">-k</span><span class="s1">&#39;</span><span class="p">,</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">--hbase</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">True</span><span class="s2">&#34;</span><span class="p">,</span>
-                    <span class="n">help</span> <span class="o">=</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">True if HBase is installed, False is not</span><span class="s1">&#39;</span><span class="p">)</span>
-  <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--cores&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
+                     <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Number of cores on each host&#39;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--memory&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span> 
+                    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Amount of Memory on each host in GB&#39;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--disks&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> 
+                    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Number of disks on each host&#39;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-k&#39;</span><span class="p">,</span> <span class="s1">&#39;--hbase&#39;</span><span class="p">,</span> <span class="n">default</span> <span class="o">=</span> <span class="s2">&#34;True&#34;</span><span class="p">,</span>
+                    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;True if HBase is installed, False is not&#39;</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
   
   <span class="n">cores</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">cores</span><span class="p">)</span>
   <span class="n">memory</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">memory</span><span class="p">)</span>
   <span class="n">disks</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">disks</span><span class="p">)</span>
   <span class="n">hbaseEnabled</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">hbase</span><span class="p">)</span>
   
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Using cores=</span><span class="s2">&#34;</span> <span class="o">+</span>  <span class="nb">str</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> memory=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">GB</span><span class="s2">&#34;</span> <span class="o">+</span>
-            <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> disks=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">disks</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> hbase=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">hbaseEnabled</span><span class="p">)</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Using cores=&#34;</span> <span class="o">+</span>  <span class="nb">str</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34; memory=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;GB&#34;</span> <span class="o">+</span>
+            <span class="s2">&#34; disks=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">disks</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34; hbase=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">hbaseEnabled</span><span class="p">))</span>
   <span class="n">minContainerSize</span> <span class="o">=</span> <span class="n">getMinContainerSize</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
   <span class="n">reservedStackMemory</span> <span class="o">=</span> <span class="n">getReservedStackMemory</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
   <span class="n">reservedHBaseMemory</span> <span class="o">=</span> <span class="mi">0</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">hbaseEnabled</span><span class="p">)</span><span class="p">:</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">hbaseEnabled</span><span class="p">):</span>
     <span class="n">reservedHBaseMemory</span> <span class="o">=</span> <span class="n">getReservedHBaseMem</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
   <span class="n">reservedMem</span> <span class="o">=</span> <span class="n">reservedStackMemory</span> <span class="o">+</span> <span class="n">reservedHBaseMemory</span>
   <span class="n">usableMem</span> <span class="o">=</span> <span class="n">memory</span> <span class="o">-</span> <span class="n">reservedMem</span>
-  <span class="n">memory</span> <span class="o">-</span><span class="o">=</span> <span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span><span class="p">:</span>
+  <span class="n">memory</span> <span class="o">-=</span> <span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">memory</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">):</span>
     <span class="n">memory</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">reservedMem</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">memory</span> <span class="o">-</span> <span class="n">reservedMem</span><span class="p">)</span>
     
-  <span class="n">memory</span> <span class="o">*</span><span class="o">=</span> <span class="n">GB</span>
+  <span class="n">memory</span> <span class="o">*=</span> <span class="n">GB</span>
   
   <span class="n">containers</span> <span class="o">=</span> <span class="nb">int</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cores</span><span class="p">,</span>
-                         <span class="nb">min</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.8</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">disks</span><span class="p">)</span><span class="p">)</span><span class="p">,</span>
-                              <span class="n">memory</span><span class="o">/</span><span class="n">minContainerSize</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">containers</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">2</span><span class="p">)</span><span class="p">:</span>
+                         <span class="nb">min</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.8</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">disks</span><span class="p">)),</span>
+                              <span class="n">memory</span><span class="o">/</span><span class="n">minContainerSize</span><span class="p">)))</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">containers</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">):</span>
     <span class="n">containers</span> <span class="o">=</span> <span class="mi">3</span>
 
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Profile: cores=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> memory=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">MB</span><span class="s2">&#34;</span>
-           <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> reserved=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">GB</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> usableMem=</span><span class="s2">&#34;</span>
-           <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">usableMem</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">GB</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2"> disks=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">disks</span><span class="p">)</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Profile: cores=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34; memory=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;MB&#34;</span>
+           <span class="o">+</span> <span class="s2">&#34; reserved=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;GB&#34;</span> <span class="o">+</span> <span class="s2">&#34; usableMem=&#34;</span>
+           <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">usableMem</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;GB&#34;</span> <span class="o">+</span> <span class="s2">&#34; disks=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">disks</span><span class="p">))</span>
     
   <span class="n">container_ram</span> <span class="o">=</span>  <span class="nb">abs</span><span class="p">(</span><span class="n">memory</span><span class="o">/</span><span class="n">containers</span><span class="p">)</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">container_ram</span> <span class="o">&gt;</span> <span class="n">GB</span><span class="p">)</span><span class="p">:</span>
-    <span class="n">container_ram</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">container_ram</span> <span class="o">/</span> <span class="mi">512</span><span class="p">)</span><span class="p">)</span> <span class="o">*</span> <span class="mi">512</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Num Container=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Container Ram=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">container_ram</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">MB</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Used Ram=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span> <span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">GB</span><span class="p">)</span><span class="p">)</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">GB</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">Unused Ram=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">GB</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">yarn.scheduler.minimum-allocation-mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">container_ram</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">yarn.scheduler.maximum-allocation-mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">yarn.nodemanager.resource.memory-mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="p">)</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">container_ram</span> <span class="o">&gt;</span> <span class="n">GB</span><span class="p">):</span>
+    <span class="n">container_ram</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">container_ram</span> <span class="o">/</span> <span class="mi">512</span><span class="p">))</span> <span class="o">*</span> <span class="mi">512</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Num Container=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Container Ram=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">container_ram</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;MB&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Used Ram=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span> <span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">GB</span><span class="p">)))</span> <span class="o">+</span> <span class="s2">&#34;GB&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;Unused Ram=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reservedMem</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&#34;GB&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;yarn.scheduler.minimum-allocation-mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">container_ram</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;yarn.scheduler.maximum-allocation-mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;yarn.nodemanager.resource.memory-mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">containers</span><span class="o">*</span><span class="n">container_ram</span><span class="p">))</span>
   <span class="n">map_memory</span> <span class="o">=</span> <span class="n">container_ram</span>
-  <span class="n">reduce_memory</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">container_ram</span> <span class="k">if</span> <span class="p">(</span><span class="n">container_ram</span> <span class="o">&lt;</span><span class="o">=</span> <span class="mi">2048</span><span class="p">)</span> <span class="k">else</span> <span class="n">container_ram</span>
+  <span class="n">reduce_memory</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">container_ram</span> <span class="k">if</span> <span class="p">(</span><span class="n">container_ram</span> <span class="o">&lt;=</span> <span class="mi">2048</span><span class="p">)</span> <span class="k">else</span> <span class="n">container_ram</span>
   <span class="n">am_memory</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">map_memory</span><span class="p">,</span> <span class="n">reduce_memory</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">mapreduce.map.memory.mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">map_memory</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">mapreduce.map.java.opts=-Xmx</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">map_memory</span><span class="p">)</span><span class="p">)</span> <span class="o">+</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">m</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">mapreduce.reduce.memory.mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reduce_memory</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">mapreduce.reduce.java.opts=-Xmx</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">reduce_memory</span><span class="p">)</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">m</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">yarn.app.mapreduce.am.resource.mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">am_memory</span><span class="p">)</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">yarn.app.mapreduce.am.command-opts=-Xmx</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span><span class="o">*</span><span class="n">am_memory</span><span class="p">)</span><span class="p">)</span> <span class="o">+</span> <span class="sa"></span><span class="s2">&#34;</span><span class="s2">m</span><span class="s2">&#34;</span><span class="p">)</span>
-  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="s2">mapreduce.task.io.sort.mb=</span><span class="s2">&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.4</span> <span class="o">*</span> <span class="n">map_memory</span><span class="p">)</span><span class="p">)</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;mapreduce.map.memory.mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">map_memory</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;mapreduce.map.java.opts=-Xmx&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">map_memory</span><span class="p">))</span> <span class="o">+</span><span class="s2">&#34;m&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;mapreduce.reduce.memory.mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">reduce_memory</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;mapreduce.reduce.java.opts=-Xmx&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">reduce_memory</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&#34;m&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;yarn.app.mapreduce.am.resource.mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">am_memory</span><span class="p">))</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;yarn.app.mapreduce.am.command-opts=-Xmx&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span><span class="o">*</span><span class="n">am_memory</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&#34;m&#34;</span><span class="p">)</span>
+  <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&#34;mapreduce.task.io.sort.mb=&#34;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">0.4</span> <span class="o">*</span> <span class="n">map_memory</span><span class="p">)))</span>
   <span class="k">pass</span>
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="sa"></span><span class="s1">&#39;</span><span class="s1">__main__</span><span class="s1">&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
   <span class="k">try</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">(</span><span class="p">)</span>
-  <span class="k">except</span><span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="ne">EOFError</span><span class="p">)</span><span class="p">:</span>
-    <span class="k">print</span><span class="p">(</span><span class="sa"></span><span class="s2">&#34;</span><span class="se">\n</span><span class="s2">Aborting ... Keyboard Interrupt.</span><span class="s2">&#34;</span><span class="p">)</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</code></pre></td></tr></table>
+    <span class="n">main</span><span class="p">()</span>
+  <span class="k">except</span><span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="ne">EOFError</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&#34;</span><span class="se">\n</span><span class="s2">Aborting ... Keyboard Interrupt.&#34;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre></td></tr></table>
 </div>
-</div><p>执行下面命令：</p>
+</div>
+<p>执行下面命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">python</span> <span class="n">yarn</span><span class="o">-</span><span class="n">utils</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="mi">32</span> <span class="o">-</span><span class="n">m</span> <span class="mi">128</span> <span class="o">-</span><span class="n">d</span> <span class="mi">7</span> <span class="o">-</span><span class="n">k</span> <span class="bp">False</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-python" data-lang="python"><span class="n">python</span> <span class="n">yarn</span><span class="o">-</span><span class="n">utils</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="mi">32</span> <span class="o">-</span><span class="n">m</span> <span class="mi">128</span> <span class="o">-</span><span class="n">d</span> <span class="mi">7</span> <span class="o">-</span><span class="n">k</span> <span class="bp">False</span></code></pre></td></tr></table>
 </div>
-</div><p>返回结果如下：</p>
+</div>
+<p>返回结果如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -624,7 +677,7 @@
 </span><span class="lnt">16
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback"> Using cores=32 memory=128GB disks=7 hbase=False
+<pre class="chroma"><code class="language-properties" data-lang="properties"> Using cores=32 memory=128GB disks=7 hbase=False
  Profile: cores=32 memory=106496MB reserved=24GB usableMem=104GB disks=7
  Num Container=13
  Container Ram=8192MB
@@ -639,10 +692,11 @@
  mapreduce.reduce.java.opts=-Xmx6553m
  yarn.app.mapreduce.am.resource.mb=8192
  yarn.app.mapreduce.am.command-opts=-Xmx6553m
- mapreduce.task.io.sort.mb=3276
-</code></pre></td></tr></table>
+ mapreduce.task.io.sort.mb=3276</code></pre></td></tr></table>
 </div>
-</div><p>这样的话，每个container内存为8G，似乎有点多，我更愿意根据集群使用情况任务将其调整为2G内存，则集群中下面的参数配置值如下：</p>
+</div>
+<p>这样的话，每个container内存为8G，似乎有点多，我更愿意根据集群使用情况任务将其调整为2G内存，则集群中下面的参数配置值如下：</p>
+
 <table>
 <thead>
 <tr>
@@ -651,47 +705,56 @@
 <th align="left">计算值</th>
 </tr>
 </thead>
+
 <tbody>
 <tr>
 <td align="left">yarn-site.xml</td>
 <td align="left">yarn.nodemanager.resource.memory-mb</td>
 <td align="left">= 52 * 2 =104 G</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml</td>
 <td align="left">yarn.scheduler.minimum-allocation-mb</td>
 <td align="left">= 2G</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml</td>
 <td align="left">yarn.scheduler.maximum-allocation-mb</td>
 <td align="left">= 52 * 2 = 104G</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml (check)</td>
 <td align="left">yarn.app.mapreduce.am.resource.mb</td>
 <td align="left">= 2 * 2=4G</td>
 </tr>
+
 <tr>
 <td align="left">yarn-site.xml (check)</td>
 <td align="left">yarn.app.mapreduce.am.command-opts</td>
 <td align="left">= 0.8 * 2 * 2=3.2G</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.map.memory.mb</td>
 <td align="left">= 2G</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.reduce.memory.mb</td>
 <td align="left">= 2 * 2=4G</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.map.java.opts</td>
 <td align="left">= 0.8 * 2=1.6G</td>
 </tr>
+
 <tr>
 <td align="left">mapred-site.xml</td>
 <td align="left">mapreduce.reduce.java.opts</td>
@@ -699,10 +762,11 @@
 </tr>
 </tbody>
 </table>
+
 <p>对应的xml配置为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -724,47 +788,54 @@
 </span><span class="lnt">20
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.nodemanager.resource.memory-mb<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>106496<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.nodemanager.resource.memory-mb<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>106496<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.scheduler.minimum-allocation-mb<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>2048<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.scheduler.minimum-allocation-mb<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>2048<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.scheduler.maximum-allocation-mb<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>106496<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.scheduler.maximum-allocation-mb<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>106496<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.app.mapreduce.am.resource.mb<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>4096<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.app.mapreduce.am.resource.mb<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>4096<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.app.mapreduce.am.command-opts<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>-Xmx3276m<span class="nt">&lt;/value&gt;</span>
-  <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.app.mapreduce.am.command-opts<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>-Xmx3276m<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><p>另外，还有一下几个参数：</p>
+</div>
+<p>另外，还有一下几个参数：</p>
+
 <ul>
 <li><code>yarn.nodemanager.vmem-pmem-ratio</code>：任务每使用1MB物理内存，最多可使用虚拟内存量，默认是2.1。</li>
 <li><code>yarn.nodemanager.pmem-check-enabled</code>：是否启动一个线程检查每个任务正使用的物理内存量，如果任务超出分配值，则直接将其杀掉，默认是true。</li>
 <li><code>yarn.nodemanager.vmem-pmem-ratio</code>：是否启动一个线程检查每个任务正使用的虚拟内存量，如果任务超出分配值，则直接将其杀掉，默认是true。</li>
 </ul>
+
 <p>第一个参数的意思是当一个map任务总共分配的物理内存为2G的时候，该任务的container最多内分配的堆内存为1.6G，可以分配的虚拟内存上限为2*2.1=4.2G。另外，照这样算下去，每个节点上YARN可以启动的Map数为104/2=52个。</p>
-<h1 id="cpu">CPU配置</h1>
+
+<h1 id="cpu配置">CPU配置</h1>
+
 <p>YARN中目前的CPU被划分成虚拟CPU（CPU virtual Core），这里的虚拟CPU是YARN自己引入的概念，初衷是，考虑到不同节点的CPU性能可能不同，每个CPU具有的计算能力也是不一样的，比如某个物理CPU的计算能力可能是另外一个物理CPU的2倍，这时候，你可以通过为第一个物理CPU多配置几个虚拟CPU弥补这种差异。用户提交作业时，可以指定每个任务需要的虚拟CPU个数。</p>
+
 <p>在YARN中，CPU相关配置参数如下：</p>
+
 <ul>
 <li><code>yarn.nodemanager.resource.cpu-vcores</code>：表示该节点上YARN可使用的虚拟CPU个数，默认是8，注意，目前推荐将该值设值为与物理CPU核数数目相同。如果你的节点CPU核数不够8个，则需要调减小这个值，而YARN不会智能的探测节点的物理CPU总数。</li>
 <li><code>yarn.scheduler.minimum-allocation-vcores</code>：单个任务可申请的最小虚拟CPU个数，默认是1，如果一个任务申请的CPU个数少于该数，则该对应的值改为这个数。</li>
 <li><code>yarn.scheduler.maximum-allocation-vcores</code>：单个任务可申请的最多虚拟CPU个数，默认是32。</li>
 </ul>
+
 <p>对于一个CPU核数较多的集群来说，上面的默认配置显然是不合适的，在我的测试集群中，4个节点每个机器CPU核数为31，留一个给操作系统，可以配置为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-xml" data-lang="xml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -774,17 +845,18 @@
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-xml" data-lang="xml">  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.nodemanager.resource.cpu-vcores<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>31<span class="nt">&lt;/value&gt;</span>
+<pre class="chroma"><code class="language-xml" data-lang="xml">  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.nodemanager.resource.cpu-vcores<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>31<span class="nt">&lt;/value&gt;</span>
   <span class="nt">&lt;/property&gt;</span>
-  <span class="nt">&lt;property</span><span class="nt">&gt;</span>
-      <span class="nt">&lt;name</span><span class="nt">&gt;</span>yarn.scheduler.maximum-allocation-vcores<span class="nt">&lt;/name&gt;</span>
-      <span class="nt">&lt;value</span><span class="nt">&gt;</span>124<span class="nt">&lt;/value&gt;</span>
-  <span class="nt">&lt;/property&gt;</span>
-</code></pre></td></tr></table>
+  <span class="nt">&lt;property&gt;</span>
+      <span class="nt">&lt;name&gt;</span>yarn.scheduler.maximum-allocation-vcores<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;value&gt;</span>124<span class="nt">&lt;/value&gt;</span>
+  <span class="nt">&lt;/property&gt;</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-1">参考文章</h1>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.1/bk_installing_manually_book/content/rpm-chap1-11.html">Determine HDP Memory Configuration Settings</a></li>
 <li><a href="http://dongxicheng.org/mapreduce-nextgen/hadoop-yarn-memory-cpu-scheduling/">Hadoop YARN如何调度内存和CPU</a></li>
@@ -905,7 +977,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -918,7 +990,21 @@
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

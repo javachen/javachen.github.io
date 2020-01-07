@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。 Secre" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。 Secre" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/11/10/kubernetes-resource-secret/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。 Secre" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/10/kubernetes-resource-secret/" />
-<meta property="article:published_time" content="2019-11-10T08:00:00+08:00" />
-<meta property="article:modified_time" content="2019-11-10T08:00:00+08:00" />
+<meta property="article:published_time" content="2019-11-10T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2019-11-10T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="Kubernetes资源对象之Secret">
 <meta itemprop="description" content="Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。 Secre">
+
+
 <meta itemprop="datePublished" content="2019-11-10T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-10T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="5222">
 
 
 
-<meta itemprop="keywords" content="kubernetes," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="kubernetes," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Kubernetes资源对象之Secret"/>
 <meta name="twitter:description" content="Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。 Secre"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,67 +139,80 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#service-account-secret">Service Account Secret</a></li>
-    <li><a href="#opaque">Opaque</a>
-      <ul>
-        <li><a href="#--from-literal">通过--from-literal</a></li>
-        <li><a href="#--from-file">通过--from-file</a></li>
-        <li><a href="#--from-env-file">通过--from-env-file</a></li>
-        <li><a href="#yaml">通过Yaml配置文件</a></li>
-        <li><a href="#kustomize-generator">通过Kustomize Generator创建</a></li>
-      </ul>
-    </li>
-    <li><a href="#kubernetesiodockercfg-secret">kubernetes.io/dockercfg Secret</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#pod">在Pod中使用</a>
-      <ul>
-        <li><a href="#volume">Volume方式</a></li>
-        <li><a href="#heading">环境变量方式</a></li>
-      </ul>
-    </li>
-  </ul>
-
-  <ul>
-    <li><a href="#pod-with-ssh-keys">Pod with ssh keys</a></li>
-    <li><a href="#pods-with-prod--test-credentials">Pods with prod / test credentials</a></li>
-    <li><a href="#dotfiles-in-secret-volume">Dotfiles in secret volume</a></li>
-  </ul>
+<ul>
+<li><a href="#secret类型">Secret类型</a>
+<ul>
+<li><a href="#service-account-secret">Service Account Secret</a></li>
+<li><a href="#opaque">Opaque</a>
+<ul>
+<li><a href="#通过-from-literal">通过<code>--from-literal</code></a></li>
+<li><a href="#通过-from-file">通过<code>--from-file</code></a></li>
+<li><a href="#通过-from-env-file">通过<code>--from-env-file</code></a></li>
+<li><a href="#通过yaml配置文件">通过Yaml配置文件</a></li>
+<li><a href="#通过kustomize-generator创建">通过Kustomize Generator创建</a></li>
+</ul></li>
+<li><a href="#kubernetes-io-dockercfg-secret">kubernetes.io/dockercfg Secret</a></li>
+</ul></li>
+<li><a href="#查看secret">查看Secret</a></li>
+<li><a href="#使用secret">使用Secret</a>
+<ul>
+<li><a href="#在pod中使用">在Pod中使用</a>
+<ul>
+<li><a href="#volume方式">Volume方式</a></li>
+<li><a href="#环境变量方式">环境变量方式</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#使用案例">使用案例</a>
+<ul>
+<li><a href="#pod-with-ssh-keys">Pod with ssh keys</a></li>
+<li><a href="#pods-with-prod-test-credentials">Pods with prod / test credentials</a></li>
+<li><a href="#dotfiles-in-secret-volume">Dotfiles in secret volume</a></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。</p>
-<h1 id="secret">Secret类型</h1>
+      
+
+<p>Secret 对象类型用来保存敏感信息，例如密码、OAuth 令牌和 ssh key。将这些信息放在 secret 中比放在 pod 的定义中或者 docker 镜像中来说更加安全和灵活。</p>
+
+<h1 id="secret类型">Secret类型</h1>
+
 <p>Secret可以以Volume或者环境变量的方式使用。</p>
+
 <p>Secret有三种类型：</p>
+
 <ul>
 <li><strong>Service Account</strong> ：用来访问Kubernetes API，由Kubernetes自动创建，并且会自动挂载到Pod的<code>/run/secrets/kubernetes.io/serviceaccount</code>目录中；</li>
 <li><strong>Opaque</strong> ：base64编码格式的Secret，用来存储密码、密钥等；</li>
 <li><strong>kubernetes.io/dockerconfigjson</strong> ：用来存储私有docker registry的认证信息。</li>
 </ul>
+
 <h2 id="service-account-secret">Service Account Secret</h2>
+
 <p>Service Account概念的引入是基于这样的使用场景：运行在pod里的进程需要调用Kubernetes API以及非Kubernetes API的其它服务。Service Account它并不是给kubernetes集群的用户使用的，而是给pod里面的进程使用的，它为pod提供必要的身份认证。</p>
+
 <p>为了能从Pod内部访问Kubernetes API，Kubernetes提供了Service Account资源。 Service Account会自动创建和挂载访问Kubernetes API的Secret，会挂载到Pod的 /var/run/secrets/kubernetes.io/serviceaccount目录中。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get sa
 NAME      SECRETS   AGE
-default   <span class="m">1</span>         2d2h
-</code></pre></td></tr></table>
+default   <span class="m">1</span>         2d2h</code></pre></td></tr></table>
 </div>
-</div><p>如果kubernetes开启了ServiceAccount（–admission_control=…,ServiceAccount,… ）那么会在每个namespace下面都会创建一个默认的default的sa。
+</div>
+<p>如果kubernetes开启了ServiceAccount（–admission_control=…,ServiceAccount,… ）那么会在每个namespace下面都会创建一个默认的default的sa。
 如下，其中最重要的就是secrets，它是每个sa下面都会拥有的一个加密的token。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -224,13 +237,13 @@ metadata:
   selfLink: /api/v1/namespaces/default/serviceaccounts/default
   uid: d7760016-acf9-4e4a-8c01-360abd5f9bc7
 secrets:
-- name: default-token-n768c
-</code></pre></td></tr></table>
+- name: default-token-n768c</code></pre></td></tr></table>
 </div>
-</div><p>查看secret：</p>
+</div>
+<p>查看secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -254,7 +267,7 @@ secrets:
 apiVersion: v1
 data:
   ca.crt: LS0tLS1CRUdJTiBDRV
-  namespace: <span class="nv">ZGVmYXVsdA</span><span class="o">=</span><span class="o">=</span>
+  namespace: <span class="nv">ZGVmYXVsdA</span><span class="o">==</span>
   token: ZXlKaGJHY2lPaUpTVXpQ1RB
 kind: Secret
 metadata:
@@ -267,27 +280,28 @@ metadata:
   resourceVersion: <span class="s2">&#34;265&#34;</span>
   selfLink: /api/v1/namespaces/default/secrets/default-token-n768c
   uid: 2a4680de-636a-456f-98ca-c9426e9fd722
-type: kubernetes.io/service-account-token
-</code></pre></td></tr></table>
+type: kubernetes.io/service-account-token</code></pre></td></tr></table>
 </div>
-</div><p>上面的内容是经过base64加密过后的，我们直接进入容器内：</p>
+</div>
+<p>上面的内容是经过base64加密过后的，我们直接进入容器内：</p>
+
 <p>当用户在该namespace下创建pod的时候都会默认使用这个sa，下面是get pod 截取的部分，可以看到kubernetes会把默认的sa挂载到容器内。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get pod
 NAME      READY   STATUS    RESTARTS   AGE
-example   1/1     Running   <span class="m">0</span>          40m
-</code></pre></td></tr></table>
+example   <span class="m">1</span>/1     Running   <span class="m">0</span>          40m</code></pre></td></tr></table>
 </div>
-</div><p>查看描述：</p>
+</div>
+<p>查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -331,7 +345,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    cni.projectcalico.org/podIP: 10.42.8.160/32
+    cni.projectcalico.org/podIP: <span class="m">10</span>.42.8.160/32
   creationTimestamp: <span class="s2">&#34;2019-11-08T04:52:44Z&#34;</span>
   labels:
     app: example
@@ -356,19 +370,19 @@ spec:
     image: nginx:latest
     imagePullPolicy: IfNotPresent
     name: nginx
-    resources: <span class="o">{</span><span class="o">}</span>
+    resources: <span class="o">{}</span>
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       name: default-token-n768c
-      readOnly: <span class="nb">true</span>
-</code></pre></td></tr></table>
+      readOnly: true</code></pre></td></tr></table>
 </div>
-</div><p>我们之间进入容器，查看挂载：</p>
+</div>
+<p>我们之间进入容器，查看挂载：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -379,44 +393,45 @@ spec:
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl <span class="nb">exec</span> -it example sh
 <span class="c1"># ls -l /var/run/secrets/kubernetes.io/serviceaccount</span>
 total <span class="m">0</span>
-lrwxrwxrwx <span class="m">1</span> root root <span class="m">13</span> Nov  <span class="m">8</span> 04:52 ca.crt -&gt; ..data/ca.crt
-lrwxrwxrwx <span class="m">1</span> root root <span class="m">16</span> Nov  <span class="m">8</span> 04:52 namespace -&gt; ..data/namespace
-lrwxrwxrwx <span class="m">1</span> root root <span class="m">12</span> Nov  <span class="m">8</span> 04:52 token -&gt; ..data/token
-</code></pre></td></tr></table>
+lrwxrwxrwx <span class="m">1</span> root root <span class="m">13</span> Nov  <span class="m">8</span> <span class="m">04</span>:52 ca.crt -&gt; ..data/ca.crt
+lrwxrwxrwx <span class="m">1</span> root root <span class="m">16</span> Nov  <span class="m">8</span> <span class="m">04</span>:52 namespace -&gt; ..data/namespace
+lrwxrwxrwx <span class="m">1</span> root root <span class="m">12</span> Nov  <span class="m">8</span> <span class="m">04</span>:52 token -&gt; ..data/token</code></pre></td></tr></table>
 </div>
-</div><p>可以看到已将ca.crt 、namespace和token放到容器内了，那么这个容器就可以通过https的请求访问apiserver了。</p>
+</div>
+<p>可以看到已将ca.crt 、namespace和token放到容器内了，那么这个容器就可以通过https的请求访问apiserver了。</p>
+
 <h2 id="opaque">Opaque</h2>
+
 <p>Opaue类型的Secret是一个map结构，用来存储密码、密钥等，其中vlaue要求以base64格式编码。</p>
+
 <p>创建Opaue类型的Secret有以下几种方式：</p>
-<h3 id="--from-literal">通过<code>--from-literal</code></h3>
+
+<h3 id="通过-from-literal">通过<code>--from-literal</code></h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic db-user-pass --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>admin --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="m">123456</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic db-user-pass --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>admin --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="m">123456</span></code></pre></td></tr></table>
 </div>
-</div><ul>
-<li>
-<p>每个&ndash;from-literal对应一个条目</p>
-</li>
-<li>
-<p><code>$, \, *,  !</code> 这些字符需要转义，可以用单引号括起来，例如，对于密码 <code>S!B\*d$zDsb</code></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create secret generic dev-db-secret --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>devuser --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s1">&#39;S!B\*d$zDsb&#39;</span>
-</code></pre></td></tr></table>
 </div>
-</div></li>
+<ul>
+<li><p>每个&ndash;from-literal对应一个条目</p></li>
+
+<li><p><code>$, \, *,  !</code> 这些字符需要转义，可以用单引号括起来，例如，对于密码 <code>S!B\*d$zDsb</code></p></li>
 </ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">  kubectl create secret generic dev-db-secret --from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span>devuser --from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s1">&#39;S!B\*d$zDsb&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
 <p>查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -439,19 +454,21 @@ Annotations:  &lt;none&gt;
 Type:  Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 password:  <span class="m">6</span> bytes
-username:  <span class="m">5</span> bytes
-</code></pre></td></tr></table>
+username:  <span class="m">5</span> bytes</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>注意：观察Data的key</li>
 </ul>
-<h3 id="--from-file">通过<code>--from-file</code></h3>
+
+<h3 id="通过-from-file">通过<code>--from-file</code></h3>
+
 <p>分别创建两个名为username.txt和password.txt的文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -460,16 +477,17 @@ username:  <span class="m">5</span> bytes
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">echo</span> -n <span class="s2">&#34;admin&#34;</span> &gt; ./username.txt
 <span class="nb">echo</span> -n <span class="s2">&#34;123456&#34;</span> &gt; ./password.txt
 
-kubectl create secret generic db-user-pass --from-file<span class="o">=</span>./username.txt --from-file<span class="o">=</span>./password.txt
-</code></pre></td></tr></table>
+kubectl create secret generic db-user-pass --from-file<span class="o">=</span>./username.txt --from-file<span class="o">=</span>./password.txt</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>每个文件内容对应一个条目</li>
 </ul>
+
 <p>查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -492,18 +510,19 @@ Annotations:  &lt;none&gt;
 Type:  Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 username.txt:  <span class="m">5</span> bytes
-password.txt:  <span class="m">6</span> bytes
-</code></pre></td></tr></table>
+password.txt:  <span class="m">6</span> bytes</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>注意：观察Data的key</li>
 </ul>
-<h3 id="--from-env-file">通过<code>--from-env-file</code></h3>
+
+<h3 id="通过-from-env-file">通过<code>--from-env-file</code></h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -516,16 +535,17 @@ password.txt:  <span class="m">6</span> bytes
 </span><span class="s">password=123456
 </span><span class="s">EOF</span>
 
-kubectl create secret generic db-user-pass --from-env-file<span class="o">=</span>env.txt
-</code></pre></td></tr></table>
+kubectl create secret generic db-user-pass --from-env-file<span class="o">=</span>env.txt</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>env.txt文件的每行Key=Value对应一个条目</li>
 </ul>
-<p>​	查看描述：</p>
+
+<p>​   查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -548,16 +568,17 @@ Annotations:  &lt;none&gt;
 Type:  Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 password:  <span class="m">6</span> bytes
-username:  <span class="m">5</span> bytes
-</code></pre></td></tr></table>
+username:  <span class="m">5</span> bytes</code></pre></td></tr></table>
 </div>
-</div><h3 id="yaml">通过Yaml配置文件</h3>
+</div>
+<h3 id="通过yaml配置文件">通过Yaml配置文件</h3>
+
 <p>Yaml文件中的数据必须是通过Base64编码的内容：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -568,13 +589,13 @@ username:  <span class="m">5</span> bytes
 <span class="nv">YWRtaW4</span><span class="o">=</span>
 
 <span class="nb">echo</span> -n <span class="s2">&#34;123456&#34;</span> <span class="p">|</span> base64
-MTIzNDU2
-</code></pre></td></tr></table>
+MTIzNDU2</code></pre></td></tr></table>
 </div>
-</div><p>创建secret：</p>
+</div>
+<p>创建secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -595,13 +616,13 @@ MTIzNDU2
 </span><span class="w"></span>data<span class="p">:</span><span class="w">
 </span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>YWRtaW4=<span class="w">
 </span><span class="w">  </span>password<span class="p">:</span><span class="w"> </span>MTIzNDU2<span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><p>查看描述：</p>
+</div>
+<p>查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -624,28 +645,28 @@ Annotations:  &lt;none&gt;
 Type:  Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 password:  <span class="m">6</span> bytes
-username:  <span class="m">5</span> bytes
-</code></pre></td></tr></table>
+username:  <span class="m">5</span> bytes</code></pre></td></tr></table>
 </div>
-</div><p>一个特别的例子，是保存一个配置文件：</p>
+</div>
+<p>一个特别的例子，是保存一个配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">apiUrl: &#34;https://my.api.com/api/v1&#34;
+<pre class="chroma">apiUrl: &#34;https://my.api.com/api/v1&#34;
 username: &#34;user&#34;
-password: &#34;password&#34;
-</code></pre></td></tr></table>
+password: &#34;password&#34;</pre></td></tr></table>
 </div>
-</div><p>你可以将配置文件这样保存在secret：</p>
+</div>
+<p>你可以将配置文件这样保存在secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -667,17 +688,18 @@ password: &#34;password&#34;
 </span><span class="w"></span>type<span class="p">:</span><span class="w"> </span>Opaque<span class="w">
 </span><span class="w"></span>stringData<span class="p">:</span><span class="w">
 </span><span class="w">  </span>config.yaml<span class="p">:</span><span class="w"> </span>|<span class="sd">-
-</span><span class="sd">   </span><span class="sd"> </span><span class="sd">apiUrl: &#34;https://my.api.com/api/v1&#34;</span><span class="w">
+</span><span class="sd">    apiUrl: &#34;https://my.api.com/api/v1&#34;</span><span class="w">
 </span><span class="w">    </span>username<span class="p">:</span><span class="w"> </span>{{username}}<span class="w">
 </span><span class="w">    </span>password<span class="p">:</span><span class="w"> </span>{{password}}<span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><p>{{username}} 和 {{password}} 模板里的变量在运行kubectl apply时会被替换</p>
+</div>
+<p>{{username}} 和 {{password}} 模板里的变量在运行kubectl apply时会被替换</p>
+
 <p>查看Secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -704,13 +726,13 @@ metadata:
   resourceVersion: <span class="s2">&#34;153340&#34;</span>
   selfLink: /api/v1/namespaces/default/secrets/mysecret
   uid: 63c6d1ac-6d4c-4e2d-b6c7-b93b96dffa70
-type: Opaque
-</code></pre></td></tr></table>
+type: Opaque</code></pre></td></tr></table>
 </div>
-</div><p>如果同时定义data和stringData，则stringData里面的值会被使用：</p>
+</div>
+<p>如果同时定义data和stringData，则stringData里面的值会被使用：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -729,13 +751,13 @@ type: Opaque
 </span><span class="w"></span>data<span class="p">:</span><span class="w">
 </span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>YWRtaW4=<span class="w">
 </span><span class="w"></span>stringData<span class="p">:</span><span class="w">
-</span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>administrator<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>administrator</code></pre></td></tr></table>
 </div>
-</div><p>结果：</p>
+</div>
+<p>结果：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -755,19 +777,22 @@ type: Opaque
 </span><span class="w">  </span>name<span class="p">:</span><span class="w"> </span>mysecret<span class="w">
 </span><span class="w">  </span>namespace<span class="p">:</span><span class="w"> </span>default<span class="w">
 </span><span class="w">  </span>resourceVersion<span class="p">:</span><span class="w"> </span><span class="s2">&#34;7579&#34;</span><span class="w">
-</span><span class="w">  </span>uid<span class="p">:</span><span class="w"> </span>91460ecb-e917<span class="m">-11e8</span>-98f2<span class="m">-025000000001</span><span class="w">
+</span><span class="w">  </span>uid<span class="p">:</span><span class="w"> </span>91460ecb-e917-<span class="m">11e8</span>-98f2-<span class="m">025000000001</span><span class="w">
 </span><span class="w"></span>type<span class="p">:</span><span class="w"> </span>Opaque<span class="w">
 </span><span class="w"></span>data<span class="p">:</span><span class="w">
-</span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>YWRtaW5pc3RyYXRvcg==<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">  </span>username<span class="p">:</span><span class="w"> </span>YWRtaW5pc3RyYXRvcg==</code></pre></td></tr></table>
 </div>
-</div><p><code>YWRtaW5pc3RyYXRvcg==</code> 解码后的值为 <code>administrator</code></p>
-<h3 id="kustomize-generator">通过Kustomize Generator创建</h3>
+</div>
+<p><code>YWRtaW5pc3RyYXRvcg==</code> 解码后的值为 <code>administrator</code></p>
+
+<h3 id="通过kustomize-generator创建">通过Kustomize Generator创建</h3>
+
 <p>kubernetes v1.14之后支持<a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/">managing objects using Kustomize</a></p>
+
 <p>在一个目录，创建kustomization.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -792,24 +817,24 @@ cat <span class="s">&lt;&lt;EOF &gt;./kustomization.yaml
 </span><span class="s">  files:
 </span><span class="s">  - username.txt
 </span><span class="s">  - password.txt
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><p>在kustomization目录创建Secret：</p>
+</div>
+<p>在kustomization目录创建Secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl apply -k .
-secret/db-user-pass-hh9ft6h8f9 created
-</code></pre></td></tr></table>
+secret/db-user-pass-hh9ft6h8f9 created</code></pre></td></tr></table>
 </div>
-</div><p>查看：</p>
+</div>
+<p>查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -838,15 +863,15 @@ Annotations:
 Type:         Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 password.txt:  <span class="m">6</span> bytes
-username.txt:  <span class="m">5</span> bytes
-</code></pre></td></tr></table>
+username.txt:  <span class="m">5</span> bytes</code></pre></td></tr></table>
 </div>
-</div><p>也可以改为literals的方式：</p>
+</div>
+<p>也可以改为literals的方式：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -863,15 +888,17 @@ username.txt:  <span class="m">5</span> bytes
 </span><span class="w">  </span>literals<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>username=admin<span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>password=<span class="m">123456</span><span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><h2 id="kubernetesiodockercfg-secret">kubernetes.io/dockercfg Secret</h2>
+</div>
+<h2 id="kubernetes-io-dockercfg-secret">kubernetes.io/dockercfg Secret</h2>
+
 <p>kubernetes.io/dockercfg类型的Secret用于存放私有Docker Registry的认证信息。 当Kubernetes在创建Pod并且需要从私有Docker Registry pull镜像时，需要使用认证信息，就会用到kubernetes.io/dockercfg类型的Secret。</p>
+
 <p>创建Harbor访问Secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -882,13 +909,13 @@ username.txt:  <span class="m">5</span> bytes
 </span><span class="se"></span>   -n harbor <span class="se">\
 </span><span class="se"></span>	--docker-server<span class="o">=</span>harbor.javachen.space  <span class="se">\
 </span><span class="se"></span>	--docker-username<span class="o">=</span>admin <span class="se">\
-</span><span class="se"></span>	--docker-password<span class="o">=</span>admin123
-</code></pre></td></tr></table>
+</span><span class="se"></span>	--docker-password<span class="o">=</span>admin123</code></pre></td></tr></table>
 </div>
-</div><p>查看描述：</p>
+</div>
+<p>查看描述：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -910,14 +937,14 @@ Annotations:  &lt;none&gt;
 Type:  kubernetes.io/dockerconfigjson
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
-.dockerconfigjson:  <span class="m">112</span> bytes
-</code></pre></td></tr></table>
+<span class="o">====</span>
+.dockerconfigjson:  <span class="m">112</span> bytes</code></pre></td></tr></table>
 </div>
-</div><p>在创建Pod时需要在Pod的spec设置imagePullSecrets，指定访问Docker Registry的登录信息：</p>
+</div>
+<p>在创建Pod时需要在Pod的spec设置imagePullSecrets，指定访问Docker Registry的登录信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -938,13 +965,13 @@ Type:  kubernetes.io/dockerconfigjson
 </span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>tomcat<span class="w">
 </span><span class="w">      </span>image<span class="p">:</span><span class="w"> </span>harbor.javachen.space/soft/tomcat<span class="w">
 </span><span class="w">  </span>imagePullSecrets<span class="p">:</span><span class="w">
-</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>harbor-registry-secret<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>harbor-registry-secret</code></pre></td></tr></table>
 </div>
-</div><p>或者是在Deployment中指定：</p>
+</div>
+<p>或者是在Deployment中指定：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -995,27 +1022,28 @@ Type:  kubernetes.io/dockerconfigjson
 </span><span class="w">          </span>imagePullPolicy<span class="p">:</span><span class="w"> </span>Always<span class="w">
 </span><span class="w">          </span>ports<span class="p">:</span><span class="w">
 </span><span class="w">            </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>http<span class="w">
-</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">              </span>containerPort<span class="p">:</span><span class="w"> </span><span class="m">80</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="secret-1">查看Secret</h1>
+</div>
+<h1 id="查看secret">查看Secret</h1>
+
 <p>通过kubectl get secret查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get secret db-user-pass
 NAME           TYPE     DATA   AGE
-db-user-pass   Opaque   <span class="m">2</span>      2s
-</code></pre></td></tr></table>
+db-user-pass   Opaque   <span class="m">2</span>      2s</code></pre></td></tr></table>
 </div>
-</div><p>查看描述信息：</p>
+</div>
+<p>查看描述信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1038,15 +1066,15 @@ Annotations:  &lt;none&gt;
 Type:  Opaque
 
 <span class="nv">Data</span>
-<span class="o">=</span><span class="o">=</span><span class="o">=</span><span class="o">=</span>
+<span class="o">====</span>
 password:  <span class="m">6</span> bytes
-username:  <span class="m">5</span> bytes
-</code></pre></td></tr></table>
+username:  <span class="m">5</span> bytes</code></pre></td></tr></table>
 </div>
-</div><p>以yaml方式查看：</p>
+</div>
+<p>以yaml方式查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1075,34 +1103,39 @@ metadata:
   resourceVersion: <span class="s2">&#34;131293&#34;</span>
   selfLink: /api/v1/namespaces/default/secrets/db-user-pass
   uid: fec15a8d-9d2d-46ff-abc9-1709d013a8da
-type: Opaque
-</code></pre></td></tr></table>
+type: Opaque</code></pre></td></tr></table>
 </div>
-</div><p>通过Base64将数据反编码：</p>
+</div>
+<p>通过Base64将数据反编码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">echo</span> -n <span class="s2">&#34;MTIzNDU2&#34;</span> <span class="p">|</span> base64 --decode
-<span class="m">123456</span>
-</code></pre></td></tr></table>
+<span class="m">123456</span></code></pre></td></tr></table>
 </div>
-</div><p>也可以修改：</p>
+</div>
+<p>也可以修改：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl edit secret db-user-pass
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl edit secret db-user-pass</code></pre></td></tr></table>
 </div>
-</div><h1 id="secret-2">使用Secret</h1>
+</div>
+<h1 id="使用secret">使用Secret</h1>
+
 <p>Secret 可以作为数据卷被挂载，或作为环境变量暴露出来以供 pod 中的容器使用。它们也可以被系统的其他部分使用，而不直接暴露在 pod 内。例如，它们可以保存凭据，系统的其他部分应该用它来代表您与外部系统进行交互。</p>
-<h2 id="pod">在Pod中使用</h2>
-<h3 id="volume">Volume方式</h3>
+
+<h2 id="在pod中使用">在Pod中使用</h2>
+
+<h3 id="volume方式">Volume方式</h3>
+
 <p>在 Pod 中的 volume 里使用 Secret：</p>
+
 <ol>
 <li>创建一个 secret 或者使用已有的 secret。多个 pod 可以引用同一个 secret。</li>
 <li>修改您的 pod 的定义在 <code>spec.volumes[]</code> 下增加一个 volume。可以给这个 volume 随意命名，它的 <code>spec.volumes[].secret.secretName</code> 必须等于 secret 对象的名字。</li>
@@ -1111,7 +1144,7 @@ type: Opaque
 </ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1156,16 +1189,19 @@ type: Opaque
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>foo<span class="w">
 </span><span class="w">    </span>secret<span class="p">:</span><span class="w">
 </span><span class="w">      </span>secretName<span class="p">:</span><span class="w"> </span>db-user-pass<span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><p>您想要用的每个 secret 都需要在 <code>spec.volumes</code> 中指明。</p>
+</div>
+<p>您想要用的每个 secret 都需要在 <code>spec.volumes</code> 中指明。</p>
+
 <p>如果 pod 中有多个容器，每个容器都需要自己的 <code>volumeMounts</code> 配置块，但是每个 secret 只需要一个 <code>spec.volumes</code>。</p>
+
 <p>您可以打包多个文件到一个 secret 中，或者使用的多个 secret，怎样方便就怎样来。</p>
+
 <p>进入容器，查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1180,14 +1216,15 @@ password  username
 <span class="c1"># cat /etc/foo/username</span>
 admin
 <span class="c1"># cat /etc/foo/password</span>
-<span class="m">123456</span>
-</code></pre></td></tr></table>
+<span class="m">123456</span></code></pre></td></tr></table>
 </div>
-</div><p>可以看到，Kubernetes会在指定的路径/etc/foo下为每条敏感数据创建一个文件，文件名就是数据条目的key，这里是/etc/foo/username和/etc/foo/password，value则以明文存放在文件中。</p>
+</div>
+<p>可以看到，Kubernetes会在指定的路径/etc/foo下为每条敏感数据创建一个文件，文件名就是数据条目的key，这里是/etc/foo/username和/etc/foo/password，value则以明文存放在文件中。</p>
+
 <p>我们也可以自定义存放数据的文件名，比如：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1240,15 +1277,17 @@ admin
 </span><span class="s">      path: my-group/my-username
 </span><span class="s">    - key: password
 </span><span class="s">      path: my-group/my-password 
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><p>这时候数据分别存放在/etc/foo/my-group/my-username和/etc/foo/my-group/my-password。</p>
+</div>
+<p>这时候数据分别存放在/etc/foo/my-group/my-username和/etc/foo/my-group/my-password。</p>
+
 <p>定义<strong>Secret</strong>文件的权限：</p>
+
 <p>您还可以指定 secret 将拥有的权限模式位文件。如果不指定，默认使用 <code>0644</code>。您可以为整个保密卷指定默认模式，如果需要，可以覆盖每个密钥。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1295,15 +1334,17 @@ admin
 </span><span class="w">    </span>secret<span class="p">:</span><span class="w">
 </span><span class="w">      </span>secretName<span class="p">:</span><span class="w"> </span>db-user-pass<span class="w">
 </span><span class="w">      </span>defaultMode<span class="p">:</span><span class="w"> </span><span class="m">256</span><span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><p>然后，secret 将被挂载到 <code>/etc/foo</code> 目录，所有通过该 secret volume 挂载创建的文件的权限都是 <code>0400</code>。</p>
+</div>
+<p>然后，secret 将被挂载到 <code>/etc/foo</code> 目录，所有通过该 secret volume 挂载创建的文件的权限都是 <code>0400</code>。</p>
+
 <p>请注意，JSON 规范不支持八进制符号，因此使用 256 值作为 0400 权限。如果您使用 yaml 而不是 json 作为 pod，则可以使用八进制符号以更自然的方式指定权限。</p>
+
 <p>您还可以是用映射，如上一个示例，并为不同的文件指定不同的权限，如下所示：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1358,15 +1399,17 @@ admin
 </span><span class="s">      mode: 511
 </span><span class="s">    - key: password
 </span><span class="s">      path: my-group/my-password 
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><p>在这种情况下，导致 <code>/etc/foo/my-group/my-username</code> 的文件的权限值为 <code>0777</code>。由于 JSON 限制，必须以十进制格式指定模式。</p>
+</div>
+<p>在这种情况下，导致 <code>/etc/foo/my-group/my-username</code> 的文件的权限值为 <code>0777</code>。由于 JSON 限制，必须以十进制格式指定模式。</p>
+
 <p><strong>挂载的 secret 被自动更新</strong></p>
+
 <p>以Volume方式使用的Secret支持动态更新：Secret更新后，容器中的数据也会更新。将password更新为abcdef，base64编码为 YWJjZGVm：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1395,24 +1438,26 @@ metadata:
   resourceVersion: <span class="s2">&#34;138726&#34;</span>
   selfLink: /api/v1/namespaces/default/secrets/db-user-pass
   uid: fec15a8d-9d2d-46ff-abc9-1709d013a8da
-type: Opaque
-</code></pre></td></tr></table>
+type: Opaque</code></pre></td></tr></table>
 </div>
-</div><p>几分钟后，新的password会同步到容器：</p>
+</div>
+<p>几分钟后，新的password会同步到容器：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl <span class="nb">exec</span> -it example sh
 <span class="c1"># cat /etc/foo/password</span>
-abcde
-</code></pre></td></tr></table>
+abcde</code></pre></td></tr></table>
 </div>
-</div><h3 id="heading">环境变量方式</h3>
+</div>
+<h3 id="环境变量方式">环境变量方式</h3>
+
 <p>将 secret 作为 pod 中的环境变量使用：</p>
+
 <ol>
 <li>创建一个 secret 或者使用一个已存在的 secret。多个 pod 可以引用同一个 secret。</li>
 <li>在每个容器中修改您想要使用 secret key 的 Pod 定义，为要使用的每个 secret key 添加一个环境变量。消费secret key 的环境变量应填充 secret 的名称，并键入 <code>env[x].valueFrom.secretKeyRef</code>。</li>
@@ -1420,7 +1465,7 @@ abcde
 </ol>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1471,13 +1516,13 @@ abcde
 </span><span class="s">  	      secretKeyRef:
 </span><span class="s">  	        name: db-user-pass
 </span><span class="s">  	        key: password
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><p>进入容器查看：</p>
+</div>
+<p>进入容器查看：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1488,24 +1533,26 @@ abcde
 <span class="c1"># echo $SECRET_USERNAME</span>
 admin
 <span class="c1"># echo $SECRET_PASSWORD</span>
-abcdef
-</code></pre></td></tr></table>
+abcdef</code></pre></td></tr></table>
 </div>
-</div><p>注意：环境变量读取Secret很方便，但不支持动态更新。</p>
-<h1 id="heading-1">使用案例</h1>
+</div>
+<p>注意：环境变量读取Secret很方便，但不支持动态更新。</p>
+
+<h1 id="使用案例">使用案例</h1>
+
 <h2 id="pod-with-ssh-keys">Pod with ssh keys</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl create secret generic ssh-key-secret --from-file=ssh-privatekey=/path/to/.ssh/id_rsa --from-file=ssh-publickey=/path/to/.ssh/id_rsa.pub
-</code></pre></td></tr></table>
+<pre class="chroma">kubectl create secret generic ssh-key-secret --from-file=ssh-privatekey=/path/to/.ssh/id_rsa --from-file=ssh-publickey=/path/to/.ssh/id_rsa.pub</pre></td></tr></table>
 </div>
-</div><p>创建一个pod：</p>
+</div>
+<p>创建一个pod：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1542,39 +1589,41 @@ abcdef
 </span><span class="w">    </span>volumeMounts<span class="p">:</span><span class="w">
 </span><span class="w">    </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>secret-volume<span class="w">
 </span><span class="w">      </span>readOnly<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
-</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/secret-volume&#34;</span><span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">      </span>mountPath<span class="p">:</span><span class="w"> </span><span class="s2">&#34;/etc/secret-volume&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>当容器运行成功之后，就会生成两个文件：</p>
+</div>
+<p>当容器运行成功之后，就会生成两个文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">/etc/secret-volume/ssh-publickey
-/etc/secret-volume/ssh-privatekey
-</code></pre></td></tr></table>
+<pre class="chroma">/etc/secret-volume/ssh-publickey
+/etc/secret-volume/ssh-privatekey</pre></td></tr></table>
 </div>
-</div><p>这样，容器就可以使用Secret和宿主机建立SSH连接。注意：这样是由风险的，建议使用 service account。</p>
-<h2 id="pods-with-prod--test-credentials">Pods with prod / test credentials</h2>
+</div>
+<p>这样，容器就可以使用Secret和宿主机建立SSH连接。注意：这样是由风险的，建议使用 service account。</p>
+
+<h2 id="pods-with-prod-test-credentials">Pods with prod / test credentials</h2>
+
 <p>创建生产和测试环境Secret：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl create secret generic prod-db-secret --from-literal=username=produser --from-literal=password=Y4nys7f11
+<pre class="chroma">kubectl create secret generic prod-db-secret --from-literal=username=produser --from-literal=password=Y4nys7f11
 
-kubectl create secret generic test-db-secret --from-literal=username=testuser --from-literal=password=iluvtests
-</code></pre></td></tr></table>
+kubectl create secret generic test-db-secret --from-literal=username=testuser --from-literal=password=iluvtests</pre></td></tr></table>
 </div>
-</div><p>创建pod.yaml：</p>
+</div>
+<p>创建pod.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1657,33 +1706,33 @@ kubectl create secret generic test-db-secret --from-literal=username=testuser --
 </span><span class="s">      - name: secret-volume
 </span><span class="s">        readOnly: true
 </span><span class="s">        mountPath: &#34;/etc/secret-volume&#34;
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><p>创建Pod：</p>
+</div>
+<p>创建Pod：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f pod.yaml
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl apply -f pod.yaml</code></pre></td></tr></table>
 </div>
-</div><p>执行成功后，每个容器都会挂载 ：</p>
+</div>
+<p>执行成功后，每个容器都会挂载 ：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">/etc/secret-volume/username
-/etc/secret-volume/password
-</code></pre></td></tr></table>
+<pre class="chroma">/etc/secret-volume/username
+/etc/secret-volume/password</pre></td></tr></table>
 </div>
-</div><p>进一步，可以在pod里面定义两个Service Accounts：prod-user使用prod-db-secret；test-user使用test-db-secret，然后配置文件可以简写为：</p>
+</div>
+<p>进一步，可以在pod里面定义两个Service Accounts：prod-user使用prod-db-secret；test-user使用test-db-secret，然后配置文件可以简写为：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1706,13 +1755,13 @@ kubectl create secret generic test-db-secret --from-literal=username=testuser --
 </span><span class="w">  </span>serviceAccount<span class="p">:</span><span class="w"> </span>prod-db-client<span class="w">
 </span><span class="w">  </span>containers<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>name<span class="p">:</span><span class="w"> </span>db-client-container<span class="w">
-</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>myClientImage<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>image<span class="p">:</span><span class="w"> </span>myClientImage</code></pre></td></tr></table>
 </div>
-</div><h2 id="dotfiles-in-secret-volume">Dotfiles in secret volume</h2>
+</div>
+<h2 id="dotfiles-in-secret-volume">Dotfiles in secret volume</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1767,20 +1816,22 @@ spec:
     volumeMounts:
     - name: secret-volume
       readOnly: <span class="nb">true</span>
-      mountPath: <span class="s2">&#34;/etc/secret-volume&#34;</span>
-</code></pre></td></tr></table>
+      mountPath: <span class="s2">&#34;/etc/secret-volume&#34;</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="heading-2">总结</h1>
+</div>
+<h1 id="总结">总结</h1>
+
 <p>清理文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">kubectl delete secret mysecret db-user-pass db-user-pass-hh9ft6h8f9
-</code></pre></td></tr></table>
+<pre class="chroma">kubectl delete secret mysecret db-user-pass db-user-pass-hh9ft6h8f9</pre></td></tr></table>
 </div>
-</div><h1 id="heading-3">参考文章</h1>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="https://www.cnblogs.com/tylerzhou/p/11027584.html">kubernetes的Service Account和secret</a></li>
 <li><a href="https://kubernetes.io/docs/concepts/configuration/secret/">Secrets</a></li>
@@ -1902,7 +1953,7 @@ spec:
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -1915,7 +1966,21 @@ spec:
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

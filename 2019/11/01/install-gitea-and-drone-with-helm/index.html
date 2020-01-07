@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Dron" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Dron" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/11/01/install-gitea-and-drone-with-helm/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Dron" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/01/install-gitea-and-drone-with-helm/" />
-<meta property="article:published_time" content="2019-11-01T08:00:00+08:00" />
-<meta property="article:modified_time" content="2019-11-01T08:00:00+08:00" />
+<meta property="article:published_time" content="2019-11-01T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2019-11-01T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="使用Helm安装Gitea和Drone">
 <meta itemprop="description" content="Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Dron">
+
+
 <meta itemprop="datePublished" content="2019-11-01T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-01T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="3456">
 
 
 
-<meta itemprop="keywords" content="kubernetes,helm,gitea,drone," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="kubernetes,helm,gitea,drone," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="使用Helm安装Gitea和Drone"/>
 <meta name="twitter:description" content="Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Dron"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -139,100 +139,114 @@
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
     <nav id="TableOfContents">
-  <ul>
-    <li><a href="#chart">查找Chart</a></li>
-    <li><a href="#chart-1">添加chart</a></li>
-    <li><a href="#chart-2">查看Chart说明</a></li>
-    <li><a href="#heading">创建证书</a></li>
-    <li><a href="#heading-1">安装</a></li>
-    <li><a href="#gitea-chart">修改Gitea Chart</a></li>
-    <li><a href="#chart-3">从本地Chart源码安装</a></li>
-    <li><a href="#ingresstcp">Ingress暴露TCP端口</a></li>
-    <li><a href="#heading-2">查看状态</a></li>
-    <li><a href="#heading-3">测试</a></li>
-    <li><a href="#heading-4">测试下载代码</a></li>
-    <li><a href="#heading-5">卸载</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#chart-4">查找chart</a></li>
-    <li><a href="#heading-6">创建证书</a></li>
-    <li><a href="#heading-7">创建配置文件</a></li>
-    <li><a href="#heading-8">安装</a></li>
-    <li><a href="#heading-9">测试</a></li>
-    <li><a href="#drone-chart">修改Drone Chart</a></li>
-    <li><a href="#chart-5">从本地Chart源码安装</a></li>
-    <li><a href="#giteaoauth">Gitea创建OAuth应用</a></li>
-    <li><a href="#heading-10">修改配置文件</a></li>
-    <li><a href="#heading-11">卸载</a></li>
-    <li><a href="#heading-12">测试</a></li>
-  </ul>
-
-  <ul>
-    <li><a href="#heading-13">测试代码提交</a></li>
-    <li><a href="#jobs">自动移除Jobs</a></li>
-  </ul>
+<ul>
+<li><a href="#安装gitea">安装Gitea</a>
+<ul>
+<li><a href="#查找chart">查找Chart</a></li>
+<li><a href="#添加chart">添加chart</a></li>
+<li><a href="#查看chart说明">查看Chart说明</a></li>
+<li><a href="#创建证书">创建证书</a></li>
+<li><a href="#安装">安装</a></li>
+<li><a href="#修改gitea-chart">修改Gitea Chart</a></li>
+<li><a href="#从本地chart源码安装">从本地Chart源码安装</a></li>
+<li><a href="#ingress暴露tcp端口">Ingress暴露TCP端口</a></li>
+<li><a href="#查看状态">查看状态</a></li>
+<li><a href="#测试">测试</a></li>
+<li><a href="#测试下载代码">测试下载代码</a></li>
+<li><a href="#卸载">卸载</a></li>
+</ul></li>
+<li><a href="#安装drone">安装Drone</a>
+<ul>
+<li><a href="#查找chart-1">查找chart</a></li>
+<li><a href="#创建证书-1">创建证书</a></li>
+<li><a href="#创建配置文件">创建配置文件</a></li>
+<li><a href="#安装-1">安装</a></li>
+<li><a href="#测试-1">测试</a></li>
+<li><a href="#修改drone-chart">修改Drone Chart</a></li>
+<li><a href="#从本地chart源码安装-1">从本地Chart源码安装</a></li>
+<li><a href="#gitea创建oauth应用">Gitea创建OAuth应用</a></li>
+<li><a href="#修改配置文件">修改配置文件</a></li>
+<li><a href="#卸载-1">卸载</a></li>
+<li><a href="#测试-2">测试</a></li>
+</ul></li>
+<li><a href="#drone集成gitea实现ci">Drone集成Gitea实现CI</a>
+<ul>
+<li><a href="#测试代码提交">测试代码提交</a></li>
+<li><a href="#自动移除jobs">自动移除Jobs</a></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
 </nav>
   </div>
 </div>
     <div class="post-content">
-      <p>Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Drone与流行的源代码管理系统无缝集成，包括GitHub、Gitlab、Gog、Gitea、Bitbucket等。</p>
+      
+
+<p>Drone是一种基于容器技术的持续交付系统。Drone使用简单的YAML配置文件来定义和执行Docker容器中的Pipelines。Drone与流行的源代码管理系统无缝集成，包括GitHub、Gitlab、Gog、Gitea、Bitbucket等。</p>
+
 <p>Gitea 是一个开源社区驱动的 <a href="http://gogs.io/">Gogs</a> <a href="https://blog.gitea.io/2016/12/welcome-to-gitea/">克隆</a>, 是一个轻量级的代码托管解决方案，后端采用 <a href="https://golang.org/">Go</a> 编写，采用 <a href="https://github.com/go-gitea/gitea/blob/master/LICENSE">MIT</a> 许可证。</p>
-<h1 id="gitea">安装Gitea</h1>
-<h2 id="chart">查找Chart</h2>
+
+<h1 id="安装gitea">安装Gitea</h1>
+
+<h2 id="查找chart">查找Chart</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm search repo gitea
-No results found
-</code></pre></td></tr></table>
+No results found</code></pre></td></tr></table>
 </div>
-</div><h2 id="chart-1">添加chart</h2>
+</div>
+<h2 id="添加chart">添加chart</h2>
+
 <p>添加阿里巴巴的chart仓库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm repo add alibaba https://apphub.aliyuncs.com
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm repo add alibaba https://apphub.aliyuncs.com</code></pre></td></tr></table>
 </div>
-</div><p>再次查找</p>
+</div>
+<p>再次查找</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm search repo gitea
 NAME         	CHART VERSION	APP VERSION	DESCRIPTION
-alibaba/gitea	1.9.1        	1.9.1      	A Helm chart <span class="k">for</span> gitea
-</code></pre></td></tr></table>
+alibaba/gitea	<span class="m">1</span>.9.1        	<span class="m">1</span>.9.1      	A Helm chart <span class="k">for</span> gitea</code></pre></td></tr></table>
 </div>
-</div><h2 id="chart-2">查看Chart说明</h2>
+</div>
+<h2 id="查看chart说明">查看Chart说明</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm repo update
 
-helm show readme alibaba/gitea
-</code></pre></td></tr></table>
+helm show readme alibaba/gitea</code></pre></td></tr></table>
 </div>
-</div><p>可以看到有两种安装方式，我这里选择ingress方式安装，并给ingress配置TLS证书。</p>
-<h2 id="heading">创建证书</h2>
+</div>
+<p>可以看到有两种安装方式，我这里选择ingress方式安装，并给ingress配置TLS证书。</p>
+
+<h2 id="创建证书">创建证书</h2>
+
 <p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> ，先要创建一个ClusterIssuer：javachen-space-letsencrypt-prod。</p>
+
 <p>因为证书是有命名空间的，所以需要在gitea命名空间创建证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -269,14 +283,15 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="s">  issuerRef:
 </span><span class="s">    name: javachen-space-letsencrypt-prod
 </span><span class="s">    kind: ClusterIssuer
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-1">安装</h2>
+</div>
+<h2 id="安装">安装</h2>
+
 <p>开启TLS，使用helm3安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -293,46 +308,48 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="se"></span>  --set expose.tls.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
 </span><span class="se"></span>  --set expose.tls.secretName<span class="o">=</span>gitea-javachen-space-cert <span class="se">\
 </span><span class="se"></span>  --set resources.limits.memory<span class="o">=</span>512Mi <span class="se">\
-</span><span class="se"></span>  alibaba/gitea
-</code></pre></td></tr></table>
+</span><span class="se"></span>  alibaba/gitea</code></pre></td></tr></table>
 </div>
-</div><p>出错日志：</p>
+</div>
+<p>出错日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Error: unable to build kubernetes objects from release manifest: \
-	unable to recognize &#34;&#34;: no matches for kind &#34;Deployment&#34; in version &#34;apps/v1beta2&#34;
-</code></pre></td></tr></table>
+<pre class="chroma">Error: unable to build kubernetes objects from release manifest: \
+	unable to recognize &#34;&#34;: no matches for kind &#34;Deployment&#34; in version &#34;apps/v1beta2&#34;</pre></td></tr></table>
 </div>
-</div><p>这是因为我使用的是k8s 1.16.2的版本，API做了变动，Deployment的API修改为apps/v1。</p>
-<h2 id="gitea-chart">修改Gitea Chart</h2>
+</div>
+<p>这是因为我使用的是k8s 1.16.2的版本，API做了变动，Deployment的API修改为apps/v1。</p>
+
+<h2 id="修改gitea-chart">修改Gitea Chart</h2>
+
 <p>找到 <a href="https://apphub.aliyuncs.com">https://apphub.aliyuncs.com</a> 仓库对应的源码仓库 <a href="https://github.com/cloudnativeapp/charts">https://github.com/cloudnativeapp/charts</a> ，克隆代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/cloudnativeapp/charts
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/cloudnativeapp/charts</code></pre></td></tr></table>
 </div>
-</div><p>修改Deployment文件</p>
+</div>
+<p>修改Deployment文件</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> charts
-sed -i <span class="s1">&#39;s/apps\/v1beta2/apps\/v1/g&#39;</span> submitted/gitea/templates/deployment.yaml
-</code></pre></td></tr></table>
+sed -i <span class="s1">&#39;s/apps\/v1beta2/apps\/v1/g&#39;</span> submitted/gitea/templates/deployment.yaml</code></pre></td></tr></table>
 </div>
-</div><p>我fork了一份 <a href="https://github.com/cloudnativeapp/charts">https://github.com/cloudnativeapp/charts</a>  代码，然后做了修改 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> ，除了修改Git chart里面的API版本，还添加了存储类的支持，详细请查看values.yaml</p>
+</div>
+<p>我fork了一份 <a href="https://github.com/cloudnativeapp/charts">https://github.com/cloudnativeapp/charts</a>  代码，然后做了修改 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> ，除了修改Git chart里面的API版本，还添加了存储类的支持，详细请查看values.yaml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -384,17 +401,18 @@ sed -i <span class="s1">&#39;s/apps\/v1beta2/apps\/v1/g&#39;</span> submitted/gi
 </span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>1Gi<span class="w">
 </span><span class="w">
 </span><span class="w"></span>extraContainers<span class="p">:</span><span class="w"> </span><span class="sd">|
-</span><span class="sd"></span><span class="sd">
-</span><span class="sd"></span><span class="sd">## additional volumes, e. g. for secrets used in an extraContainers.</span><span class="w">
+</span><span class="sd">
+</span><span class="sd">## additional volumes, e. g. for secrets used in an extraContainers.</span><span class="w">
 </span><span class="w"></span><span class="c">##</span><span class="w">
-</span><span class="w"></span>extraVolumes<span class="p">:</span><span class="w"> </span>|<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>extraVolumes<span class="p">:</span><span class="w"> </span>|</code></pre></td></tr></table>
 </div>
-</div><h2 id="chart-3">从本地Chart源码安装</h2>
+</div>
+<h2 id="从本地chart源码安装">从本地Chart源码安装</h2>
+
 <p>开启TLS，从我的仓库 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a> 里安装</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -425,13 +443,13 @@ helm install gitea --namespace gitea<span class="se">\
 </span><span class="se"></span>  --set persistence.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
 </span><span class="se"></span>  --set persistence.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.size<span class="o">=</span>5Gi <span class="se">\
-</span><span class="se"></span>  ./gitea
-</code></pre></td></tr></table>
+</span><span class="se"></span>  ./gitea</code></pre></td></tr></table>
 </div>
-</div><p>如果不开启TLS，则使用下面命令安装：</p>
+</div>
+<p>如果不开启TLS，则使用下面命令安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -452,15 +470,17 @@ helm install gitea --namespace gitea<span class="se">\
 </span><span class="se"></span>  --set persistence.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
 </span><span class="se"></span>  --set persistence.storageClass<span class="o">=</span>ceph-rbd <span class="se">\
 </span><span class="se"></span>  --set persistence.size<span class="o">=</span>5Gi <span class="se">\
-</span><span class="se"></span>  ./gitea
-</code></pre></td></tr></table>
+</span><span class="se"></span>  ./gitea</code></pre></td></tr></table>
 </div>
-</div><h2 id="ingresstcp">Ingress暴露TCP端口</h2>
+</div>
+<h2 id="ingress暴露tcp端口">Ingress暴露TCP端口</h2>
+
 <p>参考 <a href="https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/?spm=a2c4e.10696291.0.0.a27619a4RLzFYg#exposing-tcp-and-udp-services">Exposing TCP and UDP services</a> ，让Ingress暴露一个ssh端口。</p>
+
 <p>创建配置文件更新tcp-services：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -481,77 +501,94 @@ helm install gitea --namespace gitea<span class="se">\
 </span><span class="w"></span>data<span class="p">:</span><span class="w">
 </span><span class="w">  </span><span class="c"># namespace/service:protocol</span><span class="w">
 </span><span class="w">  </span><span class="m">3022</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;gitea/gitea:ssh&#34;</span><span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-2">查看状态</h2>
+</div>
+<h2 id="查看状态">查看状态</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -n gitea
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -n gitea</code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-3">测试</h2>
+</div>
+<h2 id="测试">测试</h2>
+
 <p>如果开启了TLS，则访问 <a href="https://gitea.javachen.space">https://gitea.javachen.space</a> ，否则访问  <a href="http://gitea.javachen.space">http://gitea.javachen.space</a> ，填入数据库：</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g8iiesm31hj31da0s6gpd.jpg" alt="image-20191101141225857"></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g8iiesm31hj31da0s6gpd.jpg" alt="image-20191101141225857" /></p>
+
 <p><strong>填入域名，SSH端口号填上面配置文件中的3022</strong></p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pouibtasj311u0psq5z.jpg" alt="image-20191107191404450"></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pouibtasj311u0psq5z.jpg" alt="image-20191107191404450" /></p>
+
 <p>修改服务器和第三方设置：</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8iih58nsgj31d00nqad3.jpg" alt="image-20191101141441592"></p>
-<h2 id="heading-4">测试下载代码</h2>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8iih58nsgj31d00nqad3.jpg" alt="image-20191101141441592" /></p>
+
+<h2 id="测试下载代码">测试下载代码</h2>
+
 <p>再次登录，注册账号 chenzj，登陆后在gitea中配置本地SSH密钥，然后创建一个test项目，本地通过ssh下载：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">git clone ssh://git@gitea.javachen.space:3022/chenzj/test.git
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone ssh://git@gitea.javachen.space:3022/chenzj/test.git</code></pre></td></tr></table>
 </div>
-</div><p>可以看到不需要使用密码。</p>
-<h2 id="heading-5">卸载</h2>
+</div>
+<p>可以看到不需要使用密码。</p>
+
+<h2 id="卸载">卸载</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del gitea  -n gitea
 
-kubectl delete pod,service,deploy,ingress,secret,pvc --all -n gitea
-</code></pre></td></tr></table>
+kubectl delete pod,service,deploy,ingress,secret,pvc --all -n gitea</code></pre></td></tr></table>
 </div>
-</div><h1 id="drone">安装Drone</h1>
+</div>
+<h1 id="安装drone">安装Drone</h1>
+
 <p>Drone 是用 Go 语言编写的基于 Docker 构建的开源轻量级 CI/CD 工具，可以通过 SaaS 服务和自托管服务两种方式使用，Drone 使用简单的 YAML 配置文件来定义和执行 Docker 容器中定义的 Pipeline，Drone 由两个部分组成：</p>
+
 <ul>
 <li><strong>Server</strong>端负责身份认证，仓库配置，用户、Secrets 以及 Webhook 相关的配置。</li>
 <li><strong>Agent</strong>端用于接受构建的作业和真正用于运行的 Pipeline 工作流。</li>
 </ul>
+
 <p>Server 和 Agent 都是非常轻量级的服务，大概只使用 10~15MB 内存，所以我们也可以很轻松的运行在笔记本、台式机甚至是 Raspberry PI 上面。</p>
+
 <p>要安装 Drone 是非常简单的，<a href="https://docs.drone.io/installation/">官方文档 </a>中提供了 Drone 集成 GitHub、GitLab、Gogs 等等的文档，可以直接部署在单节点、多个节点和 Kubernetes 集群当中。</p>
-<h2 id="chart-4">查找chart</h2>
+
+<h2 id="查找chart-1">查找chart</h2>
+
 <p>参考上面</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm search repo drone
 
-helm show readme alibaba/drone
-</code></pre></td></tr></table>
+helm show readme alibaba/drone</code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-6">创建证书</h2>
+</div>
+<h2 id="创建证书-1">创建证书</h2>
+
 <p>参考 <a href="/2019/11/04/using-cert-manager-with-nginx-ingress/">使用Cert Manager配置Let’s Encrypt证书</a> ，先要创建一个ClusterIssuer：wildcard-letsencrypt-prod。</p>
+
 <p>因为证书是有命名空间的，所以需要在drone命名空间创建证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -588,14 +625,15 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="s">  issuerRef:
 </span><span class="s">    name: javachen-space-letsencrypt-prod
 </span><span class="s">    kind: ClusterIssuer
-</span><span class="s">EOF</span>
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-7">创建配置文件</h2>
+</div>
+<h2 id="创建配置文件">创建配置文件</h2>
+
 <p>drone-gitea-values.yaml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -648,67 +686,74 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="w"></span>persistence<span class="p">:</span><span class="w">
 </span><span class="w">  </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">  </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd<span class="w">
-</span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>5Gi<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>5Gi</code></pre></td></tr></table>
 </div>
-</div><p>注意：上面配置了ceph的存储类ceph-rbd，需要提前创建。</p>
-<h2 id="heading-8">安装</h2>
+</div>
+<p>注意：上面配置了ceph的存储类ceph-rbd，需要提前创建。</p>
+
+<h2 id="安装-1">安装</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name gitea --namespace gitea -f drone-gitea-values.yaml alibaba/drone
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name gitea --namespace gitea -f drone-gitea-values.yaml alibaba/drone</code></pre></td></tr></table>
 </div>
-</div><p>出错日志：</p>
+</div>
+<p>出错日志：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">Error: unable to build kubernetes objects from release manifest: \
-	unable to recognize &#34;&#34;: no matches for kind &#34;Deployment&#34; in version &#34;apps/v1beta2&#34;
-</code></pre></td></tr></table>
+<pre class="chroma">Error: unable to build kubernetes objects from release manifest: \
+	unable to recognize &#34;&#34;: no matches for kind &#34;Deployment&#34; in version &#34;apps/v1beta2&#34;</pre></td></tr></table>
 </div>
-</div><p>这是因为我使用的是k8s 1.16.2的版本，API做了变动，Deployment的API修改为apps/v1。</p>
-<h2 id="heading-9">测试</h2>
-<p>如果上一步没问题，则浏览器访问 <a href="https://drone.javachen.space">https://drone.javachen.space</a>。</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8id8p2p2zj30lw09maas.jpg" alt="image-20191101111334474"></p>
+</div>
+<p>这是因为我使用的是k8s 1.16.2的版本，API做了变动，Deployment的API修改为apps/v1。</p>
+
+<h2 id="测试-1">测试</h2>
+
+<p>如果上一步没问题，则浏览器访问 <a href="https://drone.javachen.space。">https://drone.javachen.space。</a></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8id8p2p2zj30lw09maas.jpg" alt="image-20191101111334474" /></p>
+
 <p>发现授权失败，说明Gitea 1.5.1版本是需要传递ClientID进行授权，而当前Drone的chart是通过access token进行授权的。查看Drone官方文档 <a href="https://docs.drone.io/installation/providers/gitea/">https://docs.drone.io/installation/providers/gitea/</a> 发现必须先在Gitea中创建一个OAuth应用：</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g8idmks05dj31j20rcwht.jpg" alt="Application Create"></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6gy1g8idmks05dj31j20rcwht.jpg" alt="Application Create" /></p>
+
 <p>所以需要在Drone的Chart设置OAuth相关参数。</p>
-<h2 id="drone-chart">修改Drone Chart</h2>
+
+<h2 id="修改drone-chart">修改Drone Chart</h2>
+
 <p>我fork了一份 <a href="https://github.com/cloudnativeapp/charts">https://github.com/cloudnativeapp/charts</a> 代码，然后做了修改 <a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a></p>
+
 <ul>
-<li>
-<p>修改Deployment的API为apps/v1</p>
-</li>
-<li>
-<p>如果是gitea添加OAuth参数：</p>
+<li><p>修改Deployment的API为apps/v1</p></li>
+
+<li><p>如果是gitea添加OAuth参数：</p></li>
+</ul>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="w">  </span>gitea<span class="p">:</span><span class="w">
-</span><span class="w">    </span>clientID<span class="p">:</span><span class="w">
-</span><span class="w">    </span>clientSecretKey<span class="p">:</span><span class="w"> </span>clientSecret<span class="w">
-</span><span class="w">    </span>clientSecretValue<span class="p">:</span><span class="w">
-</span><span class="w">    </span>server<span class="p">:</span><span class="w">
-</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="w">    </span>gitea<span class="p">:</span><span class="w">
+</span><span class="w">      </span>clientID<span class="p">:</span><span class="w">
+</span><span class="w">      </span>clientSecretKey<span class="p">:</span><span class="w"> </span>clientSecret<span class="w">
+</span><span class="w">      </span>clientSecretValue<span class="p">:</span><span class="w">
+</span><span class="w">      </span>server<span class="p">:</span></code></pre></td></tr></table>
 </div>
-</div></li>
-</ul>
-<h2 id="chart-5">从本地Chart源码安装</h2>
+</div>
+<h2 id="从本地chart源码安装-1">从本地Chart源码安装</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -723,16 +768,19 @@ $ <span class="nb">cd</span> drone
 
 $ <span class="nb">pwd</span>
 <span class="c1">#后面安装drone时需要用到这个绝对路径</span>
-/home/chenzj/code/charts/drone
-</code></pre></td></tr></table>
+/home/chenzj/code/charts/drone</code></pre></td></tr></table>
 </div>
-</div><h2 id="giteaoauth">Gitea创建OAuth应用</h2>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8if11xslij312y0sumzm.jpg" alt="image-20191101121525490"></p>
-<h2 id="heading-10">修改配置文件</h2>
+</div>
+<h2 id="gitea创建oauth应用">Gitea创建OAuth应用</h2>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8if11xslij312y0sumzm.jpg" alt="image-20191101121525490" /></p>
+
+<h2 id="修改配置文件">修改配置文件</h2>
+
 <p>修改drone-gitea-values.yaml，添加gitea的OAuth参数</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -777,7 +825,7 @@ $ <span class="nb">pwd</span>
 </span><span class="w"></span>sourceControl<span class="p">:</span><span class="w">
 </span><span class="w">  </span>provider<span class="p">:</span><span class="w"> </span>gitea<span class="w">
 </span><span class="w">  </span>gitea<span class="p">:</span><span class="w">
-</span><span class="w">    </span>clientID<span class="p">:</span><span class="w"> </span>76eb1d51-7e5f<span class="m">-4616</span>-b812-3649a64cecda<span class="w">
+</span><span class="w">    </span>clientID<span class="p">:</span><span class="w"> </span>76eb1d51-7e5f-<span class="m">4616</span>-b812-3649a64cecda<span class="w">
 </span><span class="w">    </span>clientSecretKey<span class="p">:</span><span class="w"> </span>clientSecret<span class="w">
 </span><span class="w">    </span>clientSecretValue<span class="p">:</span><span class="w"> </span>0xDAtjq6b5Pk5HJQEzDBKU6JvXqQaA1XwjKj6QEKX10=<span class="w">
 </span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//gitea.javachen.space<span class="w">
@@ -791,43 +839,47 @@ $ <span class="nb">pwd</span>
 </span><span class="w"></span>persistence<span class="p">:</span><span class="w">
 </span><span class="w">  </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">  </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd<span class="w">
-</span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>5Gi<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>5Gi</code></pre></td></tr></table>
 </div>
-</div><p>从本地/home/chenzj/code/charts/drone目录安装：</p>
+</div>
+<p>从本地/home/chenzj/code/charts/drone目录安装：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm install --name drone  <span class="se">\
 </span><span class="se"></span>     --namespace drone -f drone-gitea-values.yaml <span class="se">\
-</span><span class="se"></span>     /home/chenzj/code/charts/drone
-</code></pre></td></tr></table>
+</span><span class="se"></span>     /home/chenzj/code/charts/drone</code></pre></td></tr></table>
 </div>
-</div><h2 id="heading-11">卸载</h2>
+</div>
+<h2 id="卸载-1">卸载</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm del drone -n drone
 
-kubectl delete pod,service,deploy,ingress,secret,pvc --all -n drone
-</code></pre></td></tr></table>
+kubectl delete pod,service,deploy,ingress,secret,pvc --all -n drone</code></pre></td></tr></table>
 </div>
-</div><p>其他ClusterRole、Role、ClusterRoleBinding根据提示，手动删除。</p>
-<h2 id="heading-12">测试</h2>
+</div>
+<p>其他ClusterRole、Role、ClusterRoleBinding根据提示，手动删除。</p>
+
+<h2 id="测试-2">测试</h2>
+
 <p>浏览器访问 <a href="https://drone.javachen.space">https://drone.javachen.space</a> ，跳到授权页面。</p>
-<h1 id="dronegiteaci">Drone集成Gitea实现CI</h1>
+
+<h1 id="drone集成gitea实现ci">Drone集成Gitea实现CI</h1>
+
 <p>在Gietea中创建drone用户，密码设置为dron，然后创建一个secret，用于Drone去获取Gitea里面仓库代码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -854,13 +906,13 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="s">data:
 </span><span class="s">  DRONE_GIT_USERNAME: ZHJvbmU=
 </span><span class="s">  DRONE_GIT_PASSWORD: ZHJvbmU=
-</span><span class="s">EOF</span> 
-</code></pre></td></tr></table>
+</span><span class="s">EOF</span> </code></pre></td></tr></table>
 </div>
-</div><p>修改drone-gitea-values.yaml代码如下：</p>
+</div>
+<p>修改drone-gitea-values.yaml代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -916,7 +968,7 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="w"></span>sourceControl<span class="p">:</span><span class="w">
 </span><span class="w">  </span>provider<span class="p">:</span><span class="w"> </span>gitea<span class="w">
 </span><span class="w">  </span>gitea<span class="p">:</span><span class="w">
-</span><span class="w">    </span>clientID<span class="p">:</span><span class="w"> </span>fdd12331-363a<span class="m">-4422</span>-a2c0-a9ab87650132<span class="w">
+</span><span class="w">    </span>clientID<span class="p">:</span><span class="w"> </span>fdd12331-363a-<span class="m">4422</span>-a2c0-a9ab87650132<span class="w">
 </span><span class="w">    </span>clientSecretKey<span class="p">:</span><span class="w"> </span>clientSecret<span class="w">
 </span><span class="w">    </span>clientSecretValue<span class="p">:</span><span class="w"> </span>tjEOSt3V48w845yb9SKPSC25IGGTht5TdVntS6tHPNg=<span class="w">
 </span><span class="w">    </span>server<span class="p">:</span><span class="w"> </span>https<span class="p">:</span>//gitea.javachen.space<span class="w">
@@ -937,17 +989,21 @@ cat <span class="s">&lt;&lt; EOF | kubectl create -f -
 </span><span class="w">  </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">  </span>storageClass<span class="p">:</span><span class="w"> </span>ceph-rbd<span class="w">
 </span><span class="w">  </span>size<span class="p">:</span><span class="w"> </span>5Gi<span class="w">
-</span><span class="w"></span>EOF<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
-</div><p>然后重新安装Drone</p>
-<h2 id="heading-13">测试代码提交</h2>
+</div>
+<p>然后重新安装Drone</p>
+
+<h2 id="测试代码提交">测试代码提交</h2>
+
 <p>在Gitea中创建项目，设置.drone.yaml，然后修改代码，提交触发Drone构建。查看gitea仓库中webhook：</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pjfq187jj31qy0hwmzl.jpg" alt="image-20191107160649862"></p>
-<p>参考：<a href="https://shipengliang.com/software-exp/centos7-docker-x509-certificate-signed-by-unknown-authority-%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88.html">CentOS7 Docker x509: certificate signed by unknown authority 解决方案</a></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pjfq187jj31qy0hwmzl.jpg" alt="image-20191107160649862" /></p>
+
+<p>参考：<a href="https://shipengliang.com/software-exp/centos7-docker-x509-certificate-signed-by-unknown-authority-解决方案.html">CentOS7 Docker x509: certificate signed by unknown authority 解决方案</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -962,26 +1018,30 @@ kubectl get secret -n harbor harbor-javachen-space-cert <span class="se">\
 </span><span class="se"></span>    -o <span class="nv">jsonpath</span><span class="o">=</span><span class="s2">&#34;{.data.tls\.crt}&#34;</span> <span class="p">|</span> base64 --decode <span class="p">|</span> <span class="se">\
 </span><span class="se"></span>    sudo tee /etc/docker/certs.d/harbor.javachen.space/ca.crt  
     
-sudo update-ca-trust
-</code></pre></td></tr></table>
+sudo update-ca-trust</code></pre></td></tr></table>
 </div>
-</div><p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pl284mwgj31hc0fqtbz.jpg" alt="image-20191107170305787"></p>
+</div>
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8pl284mwgj31hc0fqtbz.jpg" alt="image-20191107170305787" /></p>
+
 <p>说明，gitea的用户名和密码没有设置正确，重新检查一下配置。如果是在drone运行中，修改了密码，则需要重启drone或者重装，重新加载密码。</p>
+
 <p>再一次运行，出现异常：</p>
-<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8is16k9gtj31hs0ga77x.jpg" alt="image-20191101194520318"></p>
+
+<p><img src="https://tva1.sinaimg.cn/large/006y8mN6ly1g8is16k9gtj31hs0ga77x.jpg" alt="image-20191101194520318" /></p>
+
 <p>这个是由于Nginx的上传文件限制在1m引起，直接修改yml文件，在指定位置加上最下面一行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">nginx.ingress.kubernetes.io/proxy-body-size: 10m
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">nginx.ingress.kubernetes.io/proxy-body-size: 10m</code></pre></td></tr></table>
 </div>
-</div><p>因为我这里是使用Helm方式安装，所以要配置drone-gitea-values.yaml文件：</p>
+</div>
+<p>因为我这里是使用Helm方式安装，所以要配置drone-gitea-values.yaml文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -992,51 +1052,59 @@ sudo update-ca-trust
 </span><span class="w">  </span>enabled<span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
 </span><span class="w">  </span>annotations<span class="p">:</span><span class="w">
 </span><span class="w">    </span>kubernetes.io/ingress.class<span class="p">:</span><span class="w"> </span>nginx<span class="w">
-</span><span class="w">    </span>nginx.ingress.kubernetes.io/proxy-body-size<span class="p">:</span><span class="w"> </span>10m<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="w">    </span>nginx.ingress.kubernetes.io/proxy-body-size<span class="p">:</span><span class="w"> </span>10m</code></pre></td></tr></table>
 </div>
-</div><p>延伸：如果要支持websocket，则添加：</p>
+</div>
+<p>延伸：如果要支持websocket，则添加：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml">nginx.ingress.kubernetes.io/configuration-snippet<span class="p">:</span><span class="w"> </span><span class="sd">|
-</span><span class="sd">  </span><span class="sd">	</span><span class="sd">proxy_set_header Upgrade &#34;websocket&#34;;</span><span class="w">
-</span><span class="w">  	</span>proxy_set_header<span class="w"> </span>Connection<span class="w"> </span><span class="s2">&#34;Upgrade&#34;</span>;<span class="w">
-</span></code></pre></td></tr></table>
+</span><span class="sd">  	proxy_set_header Upgrade &#34;websocket&#34;;</span><span class="w">
+</span><span class="w">  	</span>proxy_set_header<span class="w"> </span>Connection<span class="w"> </span><span class="s2">&#34;Upgrade&#34;</span>;</code></pre></td></tr></table>
 </div>
-</div><p>当然，可以直接用kubectl修改：</p>
+</div>
+<p>当然，可以直接用kubectl修改：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get ingress  -n drone
 
-kubectl edit ing drone-drone -n drone
-</code></pre></td></tr></table>
+kubectl edit ing drone-drone -n drone</code></pre></td></tr></table>
 </div>
-</div><h2 id="jobs">自动移除Jobs</h2>
+</div>
+<h2 id="自动移除jobs">自动移除Jobs</h2>
+
 <p>默认情况下，执行完成后的Kubernetes Jobs不会自动从系统中清除，主要是为了便于对Pipeline执行过程中报错的故障排查。</p>
+
 <p>如果需要实现自动清理，这里我找到了两种方式，可以深入的去了解一下：</p>
+
 <ol>
 <li>设置Kubernetes的 <code>TTLAfterFinished</code> 特性，这也是Drone官方给出的解决方法</li>
 <li>通过第三方的工具来实现：<a href="https://github.com/lwolf/kube-cleanup-operator">lwolf/kube-cleanup-operator: Kubernetes Operator to automatically delete completed Jobs and their Pods</a></li>
 </ol>
-<h1 id="heading-14">总结</h1>
+
+<h1 id="总结">总结</h1>
+
 <p>本文主要记录安装Gitea和Drone的过程，主要遇到以下几点：</p>
+
 <ul>
 <li>因为k8s版本升级到1.16.2，导致仓库的yaml不能使用，所以需要手动修改chart再本地安装。</li>
-<li>最新版本的Drone集成Gitea，必须配置OAuth参数，所以本文修改了Drone和Gitea的chart源码：https://github.com/javachen/charts</li>
+<li>最新版本的Drone集成Gitea，必须配置OAuth参数，所以本文修改了Drone和Gitea的chart源码：<a href="https://github.com/javachen/charts">https://github.com/javachen/charts</a></li>
 <li>使用Ingress方式安装的Gitea，所以提交代码不能用ssh方式。使用HTTPS方式，必须设置用户名和密码，所以在k8s集群创建了 drone-gitea-login-secrets</li>
 <li>出问题，在Github上找答案</li>
 </ul>
-<h1 id="heading-15">参考文章</h1>
+
+<h1 id="参考文章">参考文章</h1>
+
 <ul>
 <li><a href="https://www.itfanr.cc/2019/07/11/run-drone-cicd-on-kubernetes/">在Kubernetes上执行Drone CI/CD</a></li>
 </ul>
@@ -1159,7 +1227,7 @@ kubectl edit ing drone-drone -n drone
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -1172,7 +1240,21 @@ kubectl edit ing drone-drone -n drone
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

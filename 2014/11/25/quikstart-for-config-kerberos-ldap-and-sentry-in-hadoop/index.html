@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2014/11/25/quikstart-for-config-kerberos-ldap-and-sentry-in-hadoop/" />
-<meta property="article:published_time" content="2014-11-25T08:00:00+08:00" />
-<meta property="article:modified_time" content="2014-11-25T08:00:00+08:00" />
+<meta property="article:published_time" content="2014-11-25T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2014-11-25T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="Hadoop集群部署权限总结">
 <meta itemprop="description" content="这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。">
+
+
 <meta itemprop="datePublished" content="2014-11-25T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-11-25T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3694">
+<meta itemprop="wordCount" content="3692">
 
 
 
-<meta itemprop="keywords" content="hadoop,kerberos,ldap,sentry," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="hadoop,kerberos,ldap,sentry," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Hadoop集群部署权限总结"/>
 <meta name="twitter:description" content="这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/hadoop/"> hadoop </a>
             </div>
-          <span class="more-meta"> 约 3694 字 </span>
+          <span class="more-meta"> 约 3692 字 </span>
           <span class="more-meta"> 预计阅读 8 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -138,26 +138,41 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#1-开始之前">1. 开始之前</a></li>
+<li><a href="#2-安装-kerberos">2. 安装 kerberos</a></li>
+<li><a href="#3-hadoop-集成-kerberos">3. hadoop 集成 kerberos</a></li>
+<li><a href="#3-使用-java-代码测试-kerberos">3 使用 java 代码测试 kerberos</a></li>
+<li><a href="#4-安装-ldap">4. 安装 ldap</a></li>
+<li><a href="#6-集成-sentry">6. 集成 sentry</a></li>
+<li><a href="#7-如何添加新用户并设置权限">7. 如何添加新用户并设置权限？</a></li>
+</ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      <p>这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。</p>
-<h1 id="1-">1. 开始之前</h1>
+      
+
+<p>这是一篇总结的文章，主要介绍 Hadoop 集群快速部署权限的步骤以及一些注意事项。如果你想了解详细的过程，请参考本博客中其他的文章。</p>
+
+<h1 id="1-开始之前">1. 开始之前</h1>
+
 <p>hadoop 集群一共有三个节点，每个节点的 ip、hostname、角色如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">192.168.56.121 cdh1 NameNode、kerberos-server、ldap-server、sentry-store
-192.168.56.122 cdh2 DataNode、yarn、hive、impala
-192.168.56.123 cdh3 DataNode、yarn、hive、impala
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="m">192</span>.168.56.121 cdh1 NameNode、kerberos-server、ldap-server、sentry-store
+<span class="m">192</span>.168.56.122 cdh2 DataNode、yarn、hive、impala
+<span class="m">192</span>.168.56.123 cdh3 DataNode、yarn、hive、impala</code></pre></td></tr></table>
 </div>
-</div><p>一些注意事项：</p>
+</div>
+<p>一些注意事项：</p>
+
 <ul>
 <li>操作系统为 CentOs6.2</li>
 <li>Hadoop 版本为 CDH5.2</li>
@@ -166,10 +181,11 @@
 <li>请确认防火墙关闭，以及集群内和 kerberos 以及 ldap 服务器保持<strong>时钟同步</strong>。</li>
 <li>cdh1 为管理节点，故需要做好 cdh1 到集群所有节点的<strong>无密码登陆</strong>，包括其本身。</li>
 </ul>
+
 <p>集群中每个节点的 hosts 如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -178,17 +194,17 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /etc/hosts
-127.0.0.1       localhost
+<span class="m">127</span>.0.0.1       localhost
 
-192.168.56.121 cdh1
-192.168.56.122 cdh2
-192.168.56.123 cdh3
-</code></pre></td></tr></table>
+<span class="m">192</span>.168.56.121 cdh1
+<span class="m">192</span>.168.56.122 cdh2
+<span class="m">192</span>.168.56.123 cdh3</code></pre></td></tr></table>
 </div>
-</div><p>为了方便管理集群，使用 cdh1 作为管理节点，并在 /opt/shell 目录编写了几脚本，/opt/shell/cmd.sh 用于批量执行命令：</p>
+</div>
+<p>为了方便管理集群，使用 cdh1 作为管理节点，并在 /opt/shell 目录编写了几脚本，/opt/shell/cmd.sh 用于批量执行命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -200,18 +216,18 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /opt/shell/cmd.sh
 
-<span class="c1">#!/bin/sh</span>
-
-<span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> 123<span class="p">;</span><span class="k">do</span>
-	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span>192.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
-	ssh 192.168.56.<span class="nv">$node</span> <span class="nv">$1</span>
-<span class="k">done</span>
-</code></pre></td></tr></table>
+<span class="cp">#!/bin/sh
+</span><span class="cp"></span>
+<span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> <span class="m">123</span><span class="p">;</span><span class="k">do</span>
+	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span><span class="m">192</span>.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
+	ssh <span class="m">192</span>.168.56.<span class="nv">$node</span> <span class="nv">$1</span>
+<span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><p>/opt/shell/cmd.sh 用于批量执行命令：</p>
+</div>
+<p>/opt/shell/cmd.sh 用于批量执行命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -223,18 +239,18 @@
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /opt/shell/syn.sh
 
-<span class="c1">#!/bin/sh</span>
-
-<span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> 123<span class="p">;</span><span class="k">do</span>
-	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span>192.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
-	scp -r <span class="nv">$1</span> 192.168.56.<span class="nv">$node</span>:<span class="nv">$2</span>
-<span class="k">done</span>
-</code></pre></td></tr></table>
+<span class="cp">#!/bin/sh
+</span><span class="cp"></span>
+<span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> <span class="m">123</span><span class="p">;</span><span class="k">do</span>
+	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span><span class="m">192</span>.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
+	scp -r <span class="nv">$1</span> <span class="m">192</span>.168.56.<span class="nv">$node</span>:<span class="nv">$2</span>
+<span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><p>/opt/shell/cluster.sh 用于批量维护集群各个服务：</p>
+</div>
+<p>/opt/shell/cluster.sh 用于批量维护集群各个服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -243,18 +259,19 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ cat /opt/shell/cluster.sh
-<span class="c1">#!/bin/sh</span>
-<span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> 123<span class="p">;</span><span class="k">do</span>
-	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span>192.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
-	ssh 192.168.56.<span class="nv">$node</span> <span class="s1">&#39;for src in `ls /etc/init.d|grep &#39;</span><span class="nv">$1</span><span class="s1">&#39;`;do service $src &#39;</span><span class="nv">$2</span><span class="s1">&#39;; done&#39;</span>
-<span class="k">done</span>
-</code></pre></td></tr></table>
+<span class="cp">#!/bin/sh
+</span><span class="cp"></span><span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> <span class="m">123</span><span class="p">;</span><span class="k">do</span>
+	<span class="nb">echo</span> <span class="s2">&#34;===============&#34;</span><span class="m">192</span>.168.56.<span class="nv">$node</span><span class="s2">&#34;===============&#34;</span>
+	ssh <span class="m">192</span>.168.56.<span class="nv">$node</span> <span class="s1">&#39;for src in `ls /etc/init.d|grep &#39;</span><span class="nv">$1</span><span class="s1">&#39;`;do service $src &#39;</span><span class="nv">$2</span><span class="s1">&#39;; done&#39;</span>
+<span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="2--kerberos">2. 安装 kerberos</h1>
+</div>
+<h1 id="2-安装-kerberos">2. 安装 kerberos</h1>
+
 <p>在 cdh1 节点修改 /etc/krb5.conf 如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -309,13 +326,13 @@
 
 <span class="o">[</span>domain_realm<span class="o">]</span>
  .javachen.space <span class="o">=</span> JAVACHEN.COM
- javachen.space <span class="o">=</span> JAVACHEN.COM
-</code></pre></td></tr></table>
+ javachen.space <span class="o">=</span> JAVACHEN.COM</code></pre></td></tr></table>
 </div>
-</div><p>修改 /var/kerberos/krb5kdc/kdc.conf 如下：</p>
+</div>
+<p>修改 /var/kerberos/krb5kdc/kdc.conf 如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -346,31 +363,31 @@
   <span class="nv">admin_keytab</span> <span class="o">=</span> /var/kerberos/krb5kdc/kadm5.keytab
   <span class="nv">supported_enctypes</span> <span class="o">=</span> aes256-cts:normal aes128-cts:normal des3-hmac-sha1:normal arcfour-hmac:normal des-hmac-sha1:normal des-cbc-md5:normal des-cbc-crc:normal
   <span class="nv">default_principal_flags</span> <span class="o">=</span> +renewable, +forwardable
- <span class="o">}</span>
-</code></pre></td></tr></table>
+ <span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>修改 /var/kerberos/krb5kdc/kadm5.acl  如下：</p>
+</div>
+<p>修改 /var/kerberos/krb5kdc/kadm5.acl  如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">*/admin@JAVACHEN.COM  *</pre></td></tr></table>
+</div>
+</div>
+<p>将 cdh1 上的 /etc/krb5.conf 同步到集群各个节点上：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">*/admin@JAVACHEN.COM  *
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/syn.sh /etc/krb5.conf /etc/krb5.conf</code></pre></td></tr></table>
 </div>
-</div><p>将 cdh1 上的 /etc/krb5.conf 同步到集群各个节点上：</p>
+</div>
+<p>写了一个脚本安装和初始化 kerberos，供大家参考（详细的脚本，请参考 <a href="https://github.com/javachen/hadoop-install/tree/master/shell/bin/install_kerberos.sh">install_kerberos.sh</a> 和 <a href="https://github.com/javachen/hadoop-install/tree/master/shell/bin/init_kerberos.sh">init_kerberos.sh</a> ）：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/syn.sh /etc/krb5.conf /etc/krb5.conf
-</code></pre></td></tr></table>
-</div>
-</div><p>写了一个脚本安装和初始化 kerberos，供大家参考（详细的脚本，请参考 <a href="https://github.com/javachen/hadoop-install/tree/master/shell/bin/install_kerberos.sh">install_kerberos.sh</a> 和 <a href="https://github.com/javachen/hadoop-install/tree/master/shell/bin/init_kerberos.sh">init_kerberos.sh</a> ）：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -437,14 +454,14 @@ service kadmin restart
 <span class="nv">HOSTNAME</span><span class="o">=</span><span class="sb">`</span>hostname -i<span class="sb">`</span>
 
 <span class="c1">#读取/etc/host文件中ip为 192.168.56 开头的机器名称并排除自己（kerberos 服务器）</span>
-<span class="k">for</span> host in  <span class="sb">`</span>cat /etc/hosts<span class="p">|</span>grep 192.168.56<span class="p">|</span>grep -v <span class="nv">$HOSTNAME</span><span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span> <span class="p">;</span><span class="k">do</span>
+<span class="k">for</span> host in  <span class="sb">`</span>cat /etc/hosts<span class="p">|</span>grep <span class="m">192</span>.168.56<span class="p">|</span>grep -v <span class="nv">$HOSTNAME</span><span class="p">|</span>awk <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span> <span class="p">;</span><span class="k">do</span>
 	<span class="k">for</span> user in hdfs<span class="p">;</span> <span class="k">do</span>
-		kadmin.local -q <span class="s2">&#34;</span><span class="s2">addprinc -randkey </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
-		kadmin.local -q <span class="s2">&#34;</span><span class="s2">xst -k /var/kerberos/krb5kdc/</span><span class="nv">$user</span><span class="s2">-un.keytab </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
+		kadmin.local -q <span class="s2">&#34;addprinc -randkey </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
+		kadmin.local -q <span class="s2">&#34;xst -k /var/kerberos/krb5kdc/</span><span class="nv">$user</span><span class="s2">-un.keytab </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
 	<span class="k">done</span>
 	<span class="k">for</span> user in HTTP hive yarn mapred impala zookeeper zkcli hbase llama sentry solr hue<span class="p">;</span> <span class="k">do</span>
-		kadmin.local -q <span class="s2">&#34;</span><span class="s2">addprinc -randkey </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
-		kadmin.local -q <span class="s2">&#34;</span><span class="s2">xst -k /var/kerberos/krb5kdc/</span><span class="nv">$user</span><span class="s2">.keytab </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
+		kadmin.local -q <span class="s2">&#34;addprinc -randkey </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
+		kadmin.local -q <span class="s2">&#34;xst -k /var/kerberos/krb5kdc/</span><span class="nv">$user</span><span class="s2">.keytab </span><span class="nv">$user</span><span class="s2">/</span><span class="nv">$host</span><span class="s2">@</span><span class="nv">$DNS</span><span class="s2">&#34;</span>
 	<span class="k">done</span>
 <span class="k">done</span>
 
@@ -461,13 +478,13 @@ kadmin.local -q <span class="s2">&#34;ktadd -k /etc/openldap/ldap.keytab ldap/cd
 /etc/init.d/slapd restart
 
 <span class="c1">#测试 ldap 是否可以正常使用</span>
-ldapsearch -x -b <span class="s1">&#39;dc=javachen,dc=com&#39;</span>
-</code></pre></td></tr></table>
+ldapsearch -x -b <span class="s1">&#39;dc=javachen,dc=com&#39;</span></code></pre></td></tr></table>
 </div>
-</div><p>运行上面的脚本，然后将上面生成的 keytab 同步到其他节点并设置权限：</p>
+</div>
+<p>运行上面的脚本，然后将上面生成的 keytab 同步到其他节点并设置权限：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -504,34 +521,37 @@ sh /opt/shell/cmd.sh <span class="s2">&#34;chown impala:hadoop /etc/impala/conf/
 sh /opt/shell/cmd.sh <span class="s2">&#34;chown zookeeper:hadoop /etc/zookeeper/conf/*.keytab ;chmod 400 /etc/zookeeper/conf/*.keytab&#34;</span>
 
 <span class="c1"># sentry 只安装在 cdh1 节点</span>
-chown sentry:hadoop /etc/sentry/conf/*.keytab <span class="p">;</span>chmod <span class="m">400</span> /etc/sentry/conf/*.keytab
-</code></pre></td></tr></table>
+chown sentry:hadoop /etc/sentry/conf/*.keytab <span class="p">;</span>chmod <span class="m">400</span> /etc/sentry/conf/*.keytab</code></pre></td></tr></table>
 </div>
-</div><p>在集群中每个节点安装 kerberos 客户端：</p>
+</div>
+<p>在集群中每个节点安装 kerberos 客户端：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;yum install krb5-workstation -y&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;yum install krb5-workstation -y&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>批量获取 root/admin 用户的 ticket</p>
+</div>
+<p>批量获取 root/admin 用户的 ticket</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;echo root|kinit root/admin&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;echo root|kinit root/admin&#34;</span></code></pre></td></tr></table>
 </div>
-</div><h1 id="3-hadoop--kerberos">3. hadoop 集成 kerberos</h1>
+</div>
+<h1 id="3-hadoop-集成-kerberos">3. hadoop 集成 kerberos</h1>
+
 <p>更新每个节点上的 JCE 文件并修改 /etc/default/hadoop-hdfs-datanode，并且修改 hdfs、yarn、mapred、hive 的配置文件。</p>
+
 <p>如果配置了 HA，则先配置 zookeeper 集成 kerberos。</p>
+
 <p>同步配置文件：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -544,13 +564,13 @@ sh /opt/shell/syn.sh /etc/zookeeper/conf /etc/zookeeper
 
 sh /opt/shell/cmd.sh <span class="s2">&#34;cd /etc/hadoop/conf/; chown root:yarn container-executor.cfg ; chmod 400 container-executor.cfg&#34;</span>
 
-sh /opt/shell/syn.sh /etc/hive/conf /etc/hive
-</code></pre></td></tr></table>
+sh /opt/shell/syn.sh /etc/hive/conf /etc/hive</code></pre></td></tr></table>
 </div>
-</div><p>接下来就是依次获取每个服务对应的 ticket 并启动对应的服务，我创建了一个脚本 /opt/shell/manager_cluster.sh 来做这件事：</p>
+</div>
+<p>接下来就是依次获取每个服务对应的 ticket 并启动对应的服务，我创建了一个脚本 /opt/shell/manager_cluster.sh 来做这件事：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -603,22 +623,22 @@ sh /opt/shell/syn.sh /etc/hive/conf /etc/hive
 <span class="nv">dir</span><span class="o">=</span><span class="nv">$role</span>
 <span class="nv">command</span><span class="o">=</span><span class="nv">$2</span>
 
-<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">=</span><span class="o">=</span> X<span class="s2">&#34;hdfs&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">==</span> X<span class="s2">&#34;hdfs&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
 	<span class="nv">dir</span><span class="o">=</span>hadoop
 <span class="k">fi</span>
 
-<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">=</span><span class="o">=</span> X<span class="s2">&#34;yarn&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">==</span> X<span class="s2">&#34;yarn&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
         <span class="nv">dir</span><span class="o">=</span>hadoop
 <span class="k">fi</span>
 
-<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">=</span><span class="o">=</span> X<span class="s2">&#34;mapred&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> X<span class="s2">&#34;</span><span class="nv">$role</span><span class="s2">&#34;</span> <span class="o">==</span> X<span class="s2">&#34;mapred&#34;</span> <span class="o">]</span><span class="p">;</span><span class="k">then</span>
         <span class="nv">dir</span><span class="o">=</span>hadoop
 <span class="k">fi</span>
 
 <span class="nb">echo</span> <span class="nv">$dir</span> <span class="nv">$role</span> <span class="nv">$command</span>
 <span class="k">for</span> node in <span class="m">121</span> <span class="m">122</span> <span class="m">123</span> <span class="p">;</span><span class="k">do</span>
-	<span class="nb">echo</span> <span class="s2">&#34;</span><span class="s2">========192.168.56.</span><span class="nv">$node</span><span class="s2">========</span><span class="s2">&#34;</span>
-	ssh 192.168.56.<span class="nv">$node</span> <span class="s1">&#39;
+	<span class="nb">echo</span> <span class="s2">&#34;========192.168.56.</span><span class="nv">$node</span><span class="s2">========&#34;</span>
+	ssh <span class="m">192</span>.168.56.<span class="nv">$node</span> <span class="s1">&#39;
 </span><span class="s1">		host=`hostname -f| tr &#34;[:upper:]&#34; &#34;[:lower:]&#34;`
 </span><span class="s1">		path=&#34;&#39;</span><span class="nv">$role</span><span class="s1">&#39;/$host&#34;
 </span><span class="s1">		#echo $path
@@ -641,13 +661,13 @@ sh /opt/shell/syn.sh /etc/hive/conf /etc/hive
 </span><span class="s1">		for src in `ls /etc/init.d|grep &#39;</span><span class="nv">$role</span><span class="s1">&#39;`;do service $src &#39;</span><span class="nv">$command</span><span class="s1">&#39;; done
 </span><span class="s1">
 </span><span class="s1">	&#39;</span>
-<span class="k">done</span>
-</code></pre></td></tr></table>
+<span class="k">done</span></code></pre></td></tr></table>
 </div>
-</div><p>启动命令：</p>
+</div>
+<p>启动命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -680,13 +700,13 @@ sh /opt/shell/cluster.sh hadoop-hdfs-datanode restart
 sh /opt/shell/manager_cluster.sh yarn restart
 sh /opt/shell/manager_cluster.sh mapred restart
 
-sh /opt/shell/manager_cluster.sh hive restart
-</code></pre></td></tr></table>
+sh /opt/shell/manager_cluster.sh hive restart</code></pre></td></tr></table>
 </div>
-</div><p>修改 impala 配置文件并同步到其他节点，然后启动 impala 服务：</p>
+</div>
+<p>修改 impala 配置文件并同步到其他节点，然后启动 impala 服务：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -701,15 +721,17 @@ sh /opt/shell/manager_cluster.sh hive restart
 
 sh /opt/shell/syn.sh /etc/impala/conf /etc/impala/
 sh /opt/shell/syn.sh /etc/default/impala /etc/default/impala
-sh /opt/shell/manager_cluster.sh impala restart
-</code></pre></td></tr></table>
+sh /opt/shell/manager_cluster.sh impala restart</code></pre></td></tr></table>
 </div>
-</div><p>到此，集群应该启动成功了。</p>
-<h1 id="3--java--kerberos">3 使用 java 代码测试 kerberos</h1>
+</div>
+<p>到此，集群应该启动成功了。</p>
+
+<h1 id="3-使用-java-代码测试-kerberos">3 使用 java 代码测试 kerberos</h1>
+
 <p>在 hdfs 中集成 kerberos 之前，可以先使用下面代码(Krb.java)进行测试：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-java" data-lang="java"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -789,66 +811,66 @@ sh /opt/shell/manager_cluster.sh impala restart
 
 <span class="kd">public</span> <span class="kd">class</span> <span class="nc">Krb</span> <span class="o">{</span>
     <span class="kd">private</span> <span class="kt">void</span> <span class="nf">loginImpl</span><span class="o">(</span><span class="kd">final</span> <span class="n">String</span> <span class="n">propertiesFileName</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;NB: system property to specify the krb5 config: [java.security.krb5.conf]&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;NB: system property to specify the krb5 config: [java.security.krb5.conf]&#34;</span><span class="o">);</span>
         <span class="c1">//System.setProperty(&#34;java.security.krb5.conf&#34;, &#34;/etc/krb5.conf&#34;);
 </span><span class="c1"></span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="s">&#34;java.version&#34;</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="s">&#34;java.version&#34;</span><span class="o">));</span>
 
-        <span class="n">System</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="s">&#34;sun.security.krb5.debug&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="s">&#34;sun.security.krb5.debug&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
 
-        <span class="kd">final</span> <span class="n">Subject</span> <span class="n">subject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Subject</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="n">Subject</span> <span class="n">subject</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Subject</span><span class="o">();</span>
 
-        <span class="kd">final</span> <span class="n">Krb5LoginModule</span> <span class="n">krb5LoginModule</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Krb5LoginModule</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="kd">final</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">optionMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="n">Krb5LoginModule</span> <span class="n">krb5LoginModule</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Krb5LoginModule</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">optionMap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;();</span>
 
-        <span class="k">if</span> <span class="o">(</span><span class="n">propertiesFileName</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">propertiesFileName</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">//optionMap.put(&#34;ticketCache&#34;, &#34;/tmp/krb5cc_1000&#34;);
-</span><span class="c1"></span>            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;keyTab&#34;</span><span class="o">,</span> <span class="s">&#34;/etc/krb5.keytab&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;principal&#34;</span><span class="o">,</span> <span class="s">&#34;foo&#34;</span><span class="o">)</span><span class="o">;</span> <span class="c1">// default realm
+</span><span class="c1"></span>            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;keyTab&#34;</span><span class="o">,</span> <span class="s">&#34;/etc/krb5.keytab&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;principal&#34;</span><span class="o">,</span> <span class="s">&#34;foo&#34;</span><span class="o">);</span> <span class="c1">// default realm
 </span><span class="c1"></span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;doNotPrompt&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;refreshKrb5Config&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;useTicketCache&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;renewTGT&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;useKeyTab&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;storeKey&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;isInitiator&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;doNotPrompt&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;refreshKrb5Config&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;useTicketCache&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;renewTGT&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;useKeyTab&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;storeKey&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;isInitiator&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span>
         <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-            <span class="n">File</span> <span class="n">f</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">propertiesFileName</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= loading property file [&#34;</span><span class="o">+</span><span class="n">f</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">(</span><span class="o">)</span><span class="o">+</span><span class="s">&#34;]&#34;</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">Properties</span> <span class="n">p</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Properties</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-            <span class="n">InputStream</span> <span class="n">is</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">f</span><span class="o">)</span><span class="o">;</span>
+            <span class="n">File</span> <span class="n">f</span> <span class="o">=</span> <span class="k">new</span> <span class="n">File</span><span class="o">(</span><span class="n">propertiesFileName</span><span class="o">);</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= loading property file [&#34;</span><span class="o">+</span><span class="n">f</span><span class="o">.</span><span class="na">getAbsolutePath</span><span class="o">()+</span><span class="s">&#34;]&#34;</span><span class="o">);</span>
+            <span class="n">Properties</span> <span class="n">p</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Properties</span><span class="o">();</span>
+            <span class="n">InputStream</span> <span class="n">is</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileInputStream</span><span class="o">(</span><span class="n">f</span><span class="o">);</span>
             <span class="k">try</span> <span class="o">{</span>
-                <span class="n">p</span><span class="o">.</span><span class="na">load</span><span class="o">(</span><span class="n">is</span><span class="o">)</span><span class="o">;</span>
+                <span class="n">p</span><span class="o">.</span><span class="na">load</span><span class="o">(</span><span class="n">is</span><span class="o">);</span>
             <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
-                <span class="n">is</span><span class="o">.</span><span class="na">close</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+                <span class="n">is</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
             <span class="o">}</span>
-            <span class="n">optionMap</span><span class="o">.</span><span class="na">putAll</span><span class="o">(</span><span class="o">(</span><span class="n">Map</span><span class="o">)</span><span class="n">p</span><span class="o">)</span><span class="o">;</span>
+            <span class="n">optionMap</span><span class="o">.</span><span class="na">putAll</span><span class="o">((</span><span class="n">Map</span><span class="o">)</span><span class="n">p</span><span class="o">);</span>
         <span class="o">}</span>
-        <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;debug&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">)</span><span class="o">;</span> <span class="c1">// switch on debug of the Java implementation
+        <span class="n">optionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&#34;debug&#34;</span><span class="o">,</span> <span class="s">&#34;true&#34;</span><span class="o">);</span> <span class="c1">// switch on debug of the Java implementation
 </span><span class="c1"></span>
-        <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">initialize</span><span class="o">(</span><span class="n">subject</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="n">optionMap</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">initialize</span><span class="o">(</span><span class="n">subject</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;(),</span> <span class="n">optionMap</span><span class="o">);</span>
 
-        <span class="kt">boolean</span> <span class="n">loginOk</span> <span class="o">=</span> <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">login</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= login:  &#34;</span> <span class="o">+</span> <span class="n">loginOk</span><span class="o">)</span><span class="o">;</span>
+        <span class="kt">boolean</span> <span class="n">loginOk</span> <span class="o">=</span> <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">login</span><span class="o">();</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= login:  &#34;</span> <span class="o">+</span> <span class="n">loginOk</span><span class="o">);</span>
 
-        <span class="kt">boolean</span> <span class="n">commitOk</span> <span class="o">=</span> <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= commit: &#34;</span> <span class="o">+</span> <span class="n">commitOk</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= Subject: &#34;</span> <span class="o">+</span> <span class="n">subject</span><span class="o">)</span><span class="o">;</span>
+        <span class="kt">boolean</span> <span class="n">commitOk</span> <span class="o">=</span> <span class="n">krb5LoginModule</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= commit: &#34;</span> <span class="o">+</span> <span class="n">commitOk</span><span class="o">);</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;======= Subject: &#34;</span> <span class="o">+</span> <span class="n">subject</span><span class="o">);</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;A property file with the login context can be specified as the 1st and the only paramater.&#34;</span><span class="o">)</span><span class="o">;</span>
-        <span class="kd">final</span> <span class="n">Krb</span> <span class="n">krb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Krb</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
-        <span class="n">krb</span><span class="o">.</span><span class="na">loginImpl</span><span class="o">(</span><span class="n">args</span><span class="o">.</span><span class="na">length</span> <span class="o">=</span><span class="o">=</span> <span class="n">0</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">args</span><span class="o">[</span><span class="n">0</span><span class="o">]</span><span class="o">)</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&#34;A property file with the login context can be specified as the 1st and the only paramater.&#34;</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">Krb</span> <span class="n">krb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Krb</span><span class="o">();</span>
+        <span class="n">krb</span><span class="o">.</span><span class="na">loginImpl</span><span class="o">(</span><span class="n">args</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="n">0</span> <span class="o">?</span> <span class="kc">null</span> <span class="o">:</span> <span class="n">args</span><span class="o">[</span><span class="n">0</span><span class="o">]);</span>
     <span class="o">}</span>
-<span class="o">}</span>
-</code></pre></td></tr></table>
+<span class="o">}</span></code></pre></td></tr></table>
 </div>
-</div><p>创建一个配置文件krb5.properties：</p>
+</div>
+<p>创建一个配置文件krb5.properties：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-properties" data-lang="properties"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -860,7 +882,7 @@ sh /opt/shell/manager_cluster.sh impala restart
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">keyTab=/etc/hadoop/conf/hdfs.keytab
+<pre class="chroma"><code class="language-properties" data-lang="properties">keyTab=/etc/hadoop/conf/hdfs.keytab
 principal=hdfs/cdh1@JAVACHEN.COM
 
 doNotPrompt=true
@@ -869,37 +891,36 @@ useTicketCache=true
 renewTGT=true
 useKeyTab=true
 storeKey=true
-isInitiator=true
-</code></pre></td></tr></table>
+isInitiator=true</code></pre></td></tr></table>
 </div>
-</div><p>编译 java 代码并运行：</p>
+</div>
+<p>编译 java 代码并运行：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
 </span><span class="lnt">7
-</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">
-<span class="c1"># 先销毁当前 ticket</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 先销毁当前 ticket</span>
 
 $ kdestroy
 
 $ javac Krb.java
 
-$ java -cp . Krb ./krb5.properties
-</code></pre></td></tr></table>
+$ java -cp . Krb ./krb5.properties</code></pre></td></tr></table>
 </div>
-</div><h1 id="4--ldap">4. 安装 ldap</h1>
+</div>
+<h1 id="4-安装-ldap">4. 安装 ldap</h1>
+
 <p>使用下面命令在 cdh1 节点快速安装 ldap-server：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -974,13 +995,13 @@ chown -R ldap:ldap /etc/openldap/slapd.d <span class="o">&amp;&amp;</span> chmod
 chkconfig --add slapd
 chkconfig --level <span class="m">345</span> slapd on
 
-/etc/init.d/slapd restart
-</code></pre></td></tr></table>
+/etc/init.d/slapd restart</code></pre></td></tr></table>
 </div>
-</div><p>集成 kerberos：</p>
+</div>
+<p>集成 kerberos：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -999,13 +1020,13 @@ rm -rf /etc/openldap/ldap.keytab
 kadmin.local -q <span class="s2">&#34;ktadd -k /etc/openldap/ldap.keytab ldap/cdh1@JAVACHEN.COM&#34;</span>
 
 chown -R ldap:ldap /etc/openldap/ldap.keytab
-/etc/init.d/slapd restart
-</code></pre></td></tr></table>
+/etc/init.d/slapd restart</code></pre></td></tr></table>
 </div>
-</div><p>创建 modify.ldif 文件用于更新数据库：</p>
+</div>
+<p>创建 modify.ldif 文件用于更新数据库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1033,9 +1054,9 @@ chown -R ldap:ldap /etc/openldap/ldap.keytab
 </span><span class="lnt">26
 </span><span class="lnt">27
 </span><span class="lnt">28
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">dn: olcDatabase={2}bdb,cn=config
+<pre class="chroma">dn: olcDatabase={2}bdb,cn=config
 changetype: modify
 replace: olcSuffix
 olcSuffix: dc=javachen,dc=com
@@ -1062,22 +1083,22 @@ add: olcAccess
 # Everyone can read everything
 olcAccess: {0}to dn.base=&#34;&#34; by * read
 # The ldapadm dn has full write access
-olcAccess: {1}to * by dn=&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34; write by * read
-</code></pre></td></tr></table>
+olcAccess: {1}to * by dn=&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34; write by * read</pre></td></tr></table>
 </div>
-</div><p>运行下面命令更新数据库：</p>
+</div>
+<p>运行下面命令更新数据库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ldapmodify -Y EXTERNAL -H ldapi:/// -f modify.ldif
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ldapmodify -Y EXTERNAL -H ldapi:/// -f modify.ldif</code></pre></td></tr></table>
 </div>
-</div><p>添加用户和组，创建 setup.ldif 如下：</p>
+</div>
+<p>添加用户和组，创建 setup.ldif 如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1104,9 +1125,9 @@ olcAccess: {1}to * by dn=&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34; wr
 </span><span class="lnt">25
 </span><span class="lnt">26
 </span><span class="lnt">27
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">dn: dc=javachen,dc=com
+<pre class="chroma">dn: dc=javachen,dc=com
 objectClass: top
 objectClass: dcObject
 objectclass: organization
@@ -1132,23 +1153,24 @@ sn: ldapadmin
 uidNumber: 1001
 gidNumber: 100
 homeDirectory: /home/ldap
-loginShell: /bin/bash
-</code></pre></td></tr></table>
+loginShell: /bin/bash</pre></td></tr></table>
 </div>
-</div><p>运行下面命令导入到数据库：</p>
+</div>
+<p>运行下面命令导入到数据库：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f setup.ldif
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f setup.ldif</code></pre></td></tr></table>
 </div>
-</div><p>接下来，可以在 ldap 服务器上创建一些本地系统用户，然后将这些用户导入到 ldap 服务中。</p>
+</div>
+<p>接下来，可以在 ldap 服务器上创建一些本地系统用户，然后将这些用户导入到 ldap 服务中。</p>
+
 <p>先安装 migrationtools 然后修改 /usr/share/migrationtools/migrate_common.ph 文件中的 defalut DNS domain 和 defalut base。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1165,11 +1187,9 @@ loginShell: /bin/bash
 </span><span class="lnt">15
 </span><span class="lnt">16
 </span><span class="lnt">17
-</span><span class="lnt">18
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">
-<span class="c1"># 创建 admin 组</span>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建 admin 组</span>
 groupadd admin
 
 <span class="c1"># 创建 test 和 hive 用户，用于后面测试 sentry</span>
@@ -1185,26 +1205,30 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#
 <span class="c1"># 将 admin 组导入到 ldap</span>
 grep -E <span class="s2">&#34;admin&#34;</span> /etc/group  &gt;/opt/group.txt
 /usr/share/migrationtools/migrate_group.pl /opt/group.txt /opt/group.ldif
-ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/group.ldif
-</code></pre></td></tr></table>
+ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/group.ldif</code></pre></td></tr></table>
 </div>
-</div><p>然后，你可以依次为每个用户设置密码，使用下面命令：</p>
+</div>
+<p>然后，你可以依次为每个用户设置密码，使用下面命令：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=hive,ou=people,dc=javachen,dc=com&#34;</span> -S
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=hive,ou=people,dc=javachen,dc=com&#34;</span> -S</code></pre></td></tr></table>
 </div>
-</div><p>另外，这些用户和组都是存在于 ldap 服务器上的，需要将其远程挂载到 hadoop 的每个节点上，否则，你需要在每个节点创建对应的用户和组（目前，测试是这样的）。</p>
-<h1 id="6--sentry">6. 集成 sentry</h1>
+</div>
+<p>另外，这些用户和组都是存在于 ldap 服务器上的，需要将其远程挂载到 hadoop 的每个节点上，否则，你需要在每个节点创建对应的用户和组（目前，测试是这样的）。</p>
+
+<h1 id="6-集成-sentry">6. 集成 sentry</h1>
+
 <p>这部分建议使用数据库的方式存储规则，不建议生产环境使用文件保存方式。</p>
+
 <p>详细的配置，请参考 <a href="/2014/11/14/config-impala-and-hive-with-sentry.html">Impala和Hive集成Sentry</a></p>
+
 <p>通过 beeline 使用 <code>hive/cdh1@JAVACHEN.COM</code> 连接 hive-server2 创建一些角色和组：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
@@ -1223,63 +1247,69 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#
 <span class="k">create</span> <span class="k">role</span> <span class="n">test_role</span><span class="p">;</span>
 <span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="n">testdb</span> <span class="k">TO</span> <span class="k">ROLE</span> <span class="n">test_role</span><span class="p">;</span>
 <span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="k">default</span> <span class="k">TO</span> <span class="k">ROLE</span> <span class="n">test_role</span><span class="p">;</span>
-<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">test_role</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">test</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">test_role</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">test</span><span class="p">;</span></code></pre></td></tr></table>
 </div>
-</div><p>上面 amdin 和 hive 组具有所有数据库的管理员权限，而 test 组只有 testdb 和 default 库的读写权限。</p>
+</div>
+<p>上面 amdin 和 hive 组具有所有数据库的管理员权限，而 test 组只有 testdb 和 default 库的读写权限。</p>
+
 <p>在 impala-shell 中通过 ldap 的方式传入不同的用户，可以测试读写权限。</p>
-<h1 id="7-">7. 如何添加新用户并设置权限？</h1>
+
+<h1 id="7-如何添加新用户并设置权限">7. 如何添加新用户并设置权限？</h1>
+
 <p>下面以 test2 账号为例，说明如何添加新的用户并设置访问权限。test2 需要具有以下权限</p>
+
 <ul>
 <li>dw_default 库：读权限</li>
 <li>dw_user 库 t1表：读权限</li>
 <li>dw_user 库 t2 表：读权限</li>
 </ul>
+
 <p>在 LDAP 服务器上 上添加 LDAP 用户并设置密码，首先添加系统用户：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">useradd test2
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">useradd test2</code></pre></td></tr></table>
 </div>
-</div><p>然后使用 LDAP 工具将该用户导入到 LDAP：</p>
+</div>
+<p>然后使用 LDAP 工具将该用户导入到 LDAP：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">grep -E <span class="s2">&#34;test2&#34;</span> /etc/passwd  &gt;/opt/passwd.txt
 /usr/share/migrationtools/migrate_passwd.pl /opt/passwd.txt /opt/passwd.ldif
-ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/passwd.ldif
-</code></pre></td></tr></table>
+ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#34;</span> -w secret -f /opt/passwd.ldif</code></pre></td></tr></table>
 </div>
-</div><p>给 test2 用户生成一个随机密码，然后修改 LDAP 中 test2 的密码：</p>
+</div>
+<p>给 test2 用户生成一个随机密码，然后修改 LDAP 中 test2 的密码：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=test2,ou=people,dc=javachen,dc=com&#34;</span> -S
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ldappasswd -x -D <span class="s1">&#39;uid=ldapadmin,ou=people,dc=javachen,dc=com&#39;</span> -w secret <span class="s2">&#34;uid=test2,ou=people,dc=javachen,dc=com&#34;</span> -S</code></pre></td></tr></table>
 </div>
-</div><p>在每台datanode机器上创建 test2 用户和 secure_analyst 分组，test2 属于 secure_analyst 分组：</p>
+</div>
+<p>在每台datanode机器上创建 test2 用户和 secure_analyst 分组，test2 属于 secure_analyst 分组：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;groupadd secure_analyst ; useradd test2; usermod -G secure_analyst,test2 test2&#34;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">sh /opt/shell/cmd.sh <span class="s2">&#34;groupadd secure_analyst ; useradd test2; usermod -G secure_analyst,test2 test2&#34;</span></code></pre></td></tr></table>
 </div>
-</div><p>在 hive 中创建角色：</p>
+</div>
+<p>在 hive 中创建角色：</p>
+
 <p>运行 <code>beeline -u &quot;jdbc:hive2://cdh1:10000/default;principal=hive/cdh1@JAVACHEN.COM&quot;</code>，然后输入下面语句在 sentry 中创建角色和授予权限给 secure_analyst 组：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-sql" data-lang="sql"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -1306,10 +1336,11 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#
 <span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">table</span> <span class="n">t2</span> <span class="k">TO</span> <span class="k">ROLE</span> <span class="n">dw_user_secure_r</span><span class="p">;</span>
   
 <span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">dw_default_r</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">secure_analyst</span><span class="p">;</span>
-<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">dw_user_secure_r</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">secure_analyst</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<span class="k">GRANT</span> <span class="k">ROLE</span> <span class="n">dw_user_secure_r</span> <span class="k">TO</span> <span class="k">GROUP</span> <span class="n">secure_analyst</span><span class="p">;</span></code></pre></td></tr></table>
 </div>
-</div><p>然后，需要 impala 刷新元数据，然后进行测试，可能会需要一些时间 impala-catalog 才能刷新过来。</p>
+</div>
+<p>然后，需要 impala 刷新元数据，然后进行测试，可能会需要一些时间 impala-catalog 才能刷新过来。</p>
+
 <p>最后进行测试，这部分略。</p>
 
     </div>
@@ -1430,7 +1461,7 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -1443,7 +1474,21 @@ ldapadd -x -D <span class="s2">&#34;uid=ldapadmin,ou=people,dc=javachen,dc=com&#
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 

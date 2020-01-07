@@ -16,14 +16,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="Docker Compose安装Redis集群" /><meta name="keywords" content="Java, Hadoop, Docker" />
+<meta name="author" content="JavaChen" /><meta name="description" content="Docker Compose安装Redis集群" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
 
 
 
-<meta name="generator" content="Hugo 0.62.0 with theme even" />
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
 
 
 <link rel="canonical" href="https://blog.javachen.space/2019/08/11/install-redis-cluster-with-docker-compose/" />
@@ -34,7 +34,7 @@
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<link href="/dist/even.d85ea23f.min.css" rel="stylesheet">
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 <link rel="stylesheet" href="/css/custom.css">
 
@@ -43,17 +43,21 @@
 <meta property="og:description" content="Docker Compose安装Redis集群" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/08/11/install-redis-cluster-with-docker-compose/" />
-<meta property="article:published_time" content="2019-08-11T08:00:00+08:00" />
-<meta property="article:modified_time" content="2019-08-11T08:00:00+08:00" />
+<meta property="article:published_time" content="2019-08-11T08:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2019-08-11T08:00:00&#43;08:00"/>
+
 <meta itemprop="name" content="Docker Compose安装Redis集群">
 <meta itemprop="description" content="Docker Compose安装Redis集群">
+
+
 <meta itemprop="datePublished" content="2019-08-11T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-08-11T08:00:00&#43;08:00" />
 <meta itemprop="wordCount" content="297">
 
 
 
-<meta itemprop="keywords" content="docker,redis," /><meta name="twitter:card" content="summary"/>
+<meta itemprop="keywords" content="docker,redis," />
+<meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Docker Compose安装Redis集群"/>
 <meta name="twitter:description" content="Docker Compose安装Redis集群"/>
 
@@ -82,12 +86,10 @@
   <ul class="mobile-menu-list">
     <a href="/">
         <li class="mobile-menu-item">Home</li>
-      </a><a href="/post/">
-        <li class="mobile-menu-item">Archives</li>
-      </a><a href="/tags/">
-        <li class="mobile-menu-item">Tags</li>
       </a><a href="/categories/">
         <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
       </a><a href="/about/">
         <li class="mobile-menu-item">About</li>
       </a>
@@ -104,11 +106,9 @@
     <li class="menu-item">
         <a class="menu-item-link" href="/">Home</a>
       </li><li class="menu-item">
-        <a class="menu-item-link" href="/post/">Archives</a>
+        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/tags/">Tags</a>
-      </li><li class="menu-item">
-        <a class="menu-item-link" href="/categories/">Categories</a>
       </li><li class="menu-item">
         <a class="menu-item-link" href="/about/">About</a>
       </li>
@@ -138,23 +138,23 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content">
-    <nav id="TableOfContents"></nav>
+    
   </div>
 </div>
     <div class="post-content">
       <p>拉取镜像：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">docker pull redis
-</code></pre></td></tr></table>
+<pre class="chroma">docker pull redis</pre></td></tr></table>
 </div>
-</div><p>使用host网络进行搭建集群</p>
+</div>
+<p>使用host网络进行搭建集群</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt"> 1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -183,69 +183,71 @@ docker run -d --name redis-node02 --net host <span class="se">\
 docker run -d --name redis-node03 --net host <span class="se">\
 </span><span class="se"></span>-v /data/docker/redis/node03:/data redis --cluster-enabled yes <span class="se">\
 </span><span class="se"></span>--cluster-config-file node03.conf --port <span class="m">6382</span> --appendonly yes <span class="se">\
-</span><span class="se"></span>--requirepass <span class="s2">&#34;123456&#34;</span>
-</code></pre></td></tr></table>
+</span><span class="se"></span>--requirepass <span class="s2">&#34;123456&#34;</span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li><code>--cluster-config-file</code>：指定生成的文件名称</li>
 </ul>
+
 <p>进入redis-node01容器进行操作</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">docker exec -it redis-node01 /bin/bash
-</code></pre></td></tr></table>
+<pre class="chroma">docker exec -it redis-node01 /bin/bash</pre></td></tr></table>
 </div>
-</div><p>创建集群：</p>
+</div>
+<p>创建集群：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">redis-cli --cluster create 192.168.56.100:6380 192.168.56.100:6381 192.168.56.100:6382 --cluster-replicas <span class="m">0</span> -a <span class="s1">&#39;123456&#39;</span>
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">redis-cli --cluster create <span class="m">192</span>.168.56.100:6380 <span class="m">192</span>.168.56.100:6381 <span class="m">192</span>.168.56.100:6382 --cluster-replicas <span class="m">0</span> -a <span class="s1">&#39;123456&#39;</span></code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li>192.168.56.100是宿主机的地址，这样就能被容器外的机器访问。</li>
 </ul>
+
 <p>查看集群信息：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ redis-cli -c -h 192.168.56.100 -p <span class="m">6380</span> -a <span class="s1">&#39;123456&#39;</span>
-$ 192.168.56.100:6380&gt; CLUSTER NODES
-590c09a 192.168.56.100:6381@16381 master - <span class="m">0</span> <span class="m">1565530654386</span> <span class="m">2</span> connected 5461-10922
-33c3802 192.168.56.100:6382@16382 master - <span class="m">0</span> <span class="m">1565530654000</span> <span class="m">3</span> connected 10923-16383
-d9ab57f 192.168.56.100:6380@16380 myself,master - <span class="m">0</span> <span class="m">1565530652000</span> <span class="m">1</span> connected 0-5460
-</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ redis-cli -c -h <span class="m">192</span>.168.56.100 -p <span class="m">6380</span> -a <span class="s1">&#39;123456&#39;</span>
+$ <span class="m">192</span>.168.56.100:6380&gt; CLUSTER NODES
+590c09a <span class="m">192</span>.168.56.100:6381@16381 master - <span class="m">0</span> <span class="m">1565530654386</span> <span class="m">2</span> connected <span class="m">5461</span>-10922
+33c3802 <span class="m">192</span>.168.56.100:6382@16382 master - <span class="m">0</span> <span class="m">1565530654000</span> <span class="m">3</span> connected <span class="m">10923</span>-16383
+d9ab57f <span class="m">192</span>.168.56.100:6380@16380 myself,master - <span class="m">0</span> <span class="m">1565530652000</span> <span class="m">1</span> connected <span class="m">0</span>-5460</code></pre></td></tr></table>
 </div>
-</div><ul>
+</div>
+<ul>
 <li><code>-c</code> 集群模式</li>
 </ul>
+
 <p>测试：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span></code></pre></td>
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-fallback" data-lang="fallback">192.168.56.100:6380&gt; set a 1
+<pre class="chroma">192.168.56.100:6380&gt; set a 1
 -&gt; Redirected to slot [15495] located at 192.168.56.100:6382
 OK
 192.168.56.100:6382&gt; get a
-&#34;1&#34;
-</code></pre></td></tr></table>
+&#34;1&#34;</pre></td></tr></table>
 </div>
 </div>
     </div>
@@ -364,7 +366,7 @@ OK
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="/dist/even.b665207e.min.js"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
 
 <script id="baidu_analytics">
   var _hmt = _hmt || [];
@@ -377,7 +379,21 @@ OK
   })();
 </script>
 
-
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
 
 
 
