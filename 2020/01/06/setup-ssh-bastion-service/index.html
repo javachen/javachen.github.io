@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-01-03T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-01-03T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3647">
+<meta itemprop="wordCount" content="3739">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 3647 字 </span>
+          <span class="more-meta"> 约 3739 字 </span>
           <span class="more-meta"> 预计阅读 8 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -1190,6 +1190,35 @@ Last login: Fri Jan  <span class="m">3</span> <span class="m">06</span>:22:06 <s
 <pre class="chroma"><code class="language-bash" data-lang="bash">PermitEmptyPasswords no</code></pre></td></tr></table>
 </div>
 </div>
+<p><strong>7、关闭密码登陆，使用公钥登陆</strong></p>
+
+<p>将本地的公钥文件复制到服务器上去：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat ~/.ssh/id_rsa.pub <span class="p">|</span> ssh chenzj@192.168.1.11 -p <span class="m">22</span> <span class="s2">&#34;cat &gt;&gt; ~/.ssh/authorized_keys&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>禁用密码登陆：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i -e <span class="s1">&#39;s/^#PasswordAuthentication.*$/PasswordAuthentication no/&#39;</span> /etc/ssh/sshd_config</code></pre></td></tr></table>
+</div>
+</div>
+<p>本地使用公钥登陆服务器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh chenzj@192.168.1.11 -p <span class="m">22</span></code></pre></td></tr></table>
+</div>
+</div>
 <p>以下是一些 /etc/ssh/ssh_config 优化建议：</p>
 
 <p><strong>1、修改协议版本</strong></p>
@@ -1233,15 +1262,15 @@ Last login: Fri Jan  <span class="m">3</span> <span class="m">06</span>:22:06 <s
 </span><span class="lnt">16
 </span><span class="lnt">17
 </span><span class="lnt">18
+</span><span class="lnt">19
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">sed -i -e <span class="s1">&#39;s/^#Port.*$/Port 22222/&#39;</span> /etc/ssh/sshd_config
-
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 禁止root登陆</span>
+sed -i -e <span class="s1">&#39;s/^PermitRootLogin.*$/PermitRootLogin no/&#39;</span> /etc/ssh/sshd_config
 <span class="c1"># 禁止密码登陆</span>
 sed -i -e <span class="s1">&#39;s/^#PasswordAuthentication.*$/PasswordAuthentication no/&#39;</span> /etc/ssh/sshd_config
-<span class="c1"># 禁用SSH 允许空密码</span>
+<span class="c1"># 禁用SSH允许空密码</span>
 sed -i -e <span class="s1">&#39;s/^#PermitEmptyPasswords.*$/PermitEmptyPasswords no/&#39;</span> /etc/ssh/sshd_config
-
 <span class="c1"># GSSAPI验证改为no，加快连接速度**</span>
 sed -i -e <span class="s1">&#39;s/^GSSAPIAuthentication.*$/GSSAPIAuthentication no/&#39;</span> /etc/ssh/sshd_config
 <span class="c1"># 禁用dns解析</span>
@@ -1249,10 +1278,12 @@ sed -i -e <span class="s1">&#39;s/^#UseDNS.*$/UseDNS no/&#39;</span> /etc/ssh/ss
 <span class="c1"># 配置SSH 最大认证尝试次数为4或更低</span>
 sed -i -e <span class="s1">&#39;s/^#MaxAuthTries.*$/MaxAuthTries 4/&#39;</span> /etc/ssh/sshd_config
 sed -i <span class="s1">&#39;s/#MaxStartups 10:30:100/MaxStartups 10:30:200/g&#39;</span> /etc/ssh/sshd_config
-
 <span class="c1"># 修改协议版本</span>
 sed -i -e <span class="s1">&#39;s/^#Protocol.*$/Protocol 2/&#39;</span> /etc/ssh/sshd_config
-sed -i <span class="s1">&#39;s/^[ ]*StrictHostKeyChecking.*/StrictHostKeyChecking no/g&#39;</span> /etc/ssh/ssh_config</code></pre></td></tr></table>
+sed -i <span class="s1">&#39;s/^[ ]*StrictHostKeyChecking.*/StrictHostKeyChecking no/g&#39;</span> /etc/ssh/ssh_config
+
+<span class="nb">echo</span> <span class="s2">&#34;ClientAliveInterval 60&#34;</span> &gt;&gt; /etc/ssh/sshd_config
+systemctl restart sshd</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="其他方案">其他方案</h1>

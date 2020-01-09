@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-01-07T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-01-07T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2579">
+<meta itemprop="wordCount" content="2807">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 2579 字 </span>
+          <span class="more-meta"> 约 2807 字 </span>
           <span class="more-meta"> 预计阅读 6 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -144,6 +144,7 @@
 <li><a href="#添加-helm-配置">添加 helm 配置</a></li>
 <li><a href="#部署">部署</a></li>
 <li><a href="#验证">验证</a></li>
+<li><a href="#openldap-端口开放">Openldap 端口开放</a></li>
 <li><a href="#创建内部用户">创建内部用户</a></li>
 <li><a href="#管理工具">管理工具</a>
 <ul>
@@ -325,7 +326,7 @@ openldap	openldap 	<span class="m">1</span>       	<span class="m">2020</span>-0
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl port-forward svc/openldap -n openldap <span class="m">8389</span>:389</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl port-forward svc/openldap -n openldap <span class="m">389</span>:389</code></pre></td></tr></table>
 </div>
 </div>
 <p>测试本地端口，验证下，端口已经成功暴露给了集群外：</p>
@@ -337,7 +338,7 @@ openldap	openldap 	<span class="m">1</span>       	<span class="m">2020</span>-0
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-shell" data-lang="shell">telnet localhost <span class="m">8389</span>
+<pre class="chroma"><code class="language-shell" data-lang="shell">telnet localhost <span class="m">389</span>
 Trying <span class="m">127</span>.0.0.1...
 Connected to localhost.
 Escape character is <span class="s1">&#39;^]&#39;</span>.</code></pre></td></tr></table>
@@ -389,7 +390,7 @@ Escape character is <span class="s1">&#39;^]&#39;</span>.</code></pre></td></tr>
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapsearch -x -H ldap://localhost:8389 -b <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ ldapsearch -x -H ldap://localhost:389 -b <span class="nv">dc</span><span class="o">=</span>javachen,dc<span class="o">=</span>com -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
 
 <span class="c1"># extended LDIF</span>
 #
@@ -430,8 +431,30 @@ result: <span class="m">0</span> Success
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-shell" data-lang="shell">$ ldapwhoami -h <span class="m">127</span>.0.0.1 -p <span class="m">8389</span> -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
+<pre class="chroma"><code class="language-shell" data-lang="shell">$ ldapwhoami -h <span class="m">127</span>.0.0.1 -p <span class="m">389</span> -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -w admin123
 dn:cn<span class="o">=</span>admin,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="openldap-端口开放">Openldap 端口开放</h1>
+
+<p>默认情况下openladp只能在kubernetes集群上通信，此处使用nodeport的方式进行端口开放 直接修改集群openldap service</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl edit -n openldap svc openldap</code></pre></td></tr></table>
+</div>
+</div>
+<p>添加nodePort: 389 和nodePort: 636 并将type修改为NodePort ，默认情况下kubernetes开放的端口为30000-32768，需要开放其他端口需要修改kube-apiserver启动参数 查看主机端口开放情况：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ netstat -tnpl <span class="p">|</span>grep :389
+tcp6       <span class="m">0</span>      <span class="m">0</span> :::389                  :::*                    LISTEN      <span class="m">5285</span>/kube-proxy  </code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="创建内部用户">创建内部用户</h1>
@@ -593,7 +616,7 @@ uniqueMember: <span class="nv">cn</span><span class="o">=</span>lihy,ou<span cla
 <pre class="chroma"><code class="language-shell" data-lang="shell"><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-shell" data-lang="shell">ldapadd -c -h localhost -p <span class="m">8389</span> -w admin123 -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -f ./users.ldif</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapadd -c -h localhost -p <span class="m">389</span> -w admin123 -D <span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span> -f ./users.ldif</code></pre></td></tr></table>
 </div>
 </div>
 <p>使用密码pass123验证一下新增的内部用户：</p>
@@ -604,7 +627,7 @@ uniqueMember: <span class="nv">cn</span><span class="o">=</span>lihy,ou<span cla
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">8389</span> -D <span class="s2">&#34;cn=lihy,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">389</span> -D <span class="s2">&#34;cn=lihy,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
 
 dn:cn<span class="o">=</span>lihy,ou<span class="o">=</span>users,dc<span class="o">=</span>javachen,dc<span class="o">=</span>com</code></pre></td></tr></table>
 </div>
@@ -716,7 +739,7 @@ types: suffix_group: <span class="nv">ou</span><span class="o">=</span>Group,dc<
 </span><span class="cp"></span>
 <span class="c1"># const</span>
 <span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
-<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;389&#34;</span>
 <span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
 <span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
 
@@ -795,7 +818,7 @@ cat <span class="s">&lt;&lt;EOF | ldapmodify -c -h $LDAP_SERVER_IP -p $LDAP_SERV
 </span><span class="cp"></span>
 <span class="c1"># const</span>
 <span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
-<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;389&#34;</span>
 <span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
 <span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
 
@@ -856,7 +879,7 @@ modifying entry <span class="s2">&#34;cn=lisi,ou=People,dc=javachen,dc=com&#34;<
 </span><span class="cp"></span>
 <span class="c1"># const</span>
 <span class="nv">LDAP_SERVER_IP</span><span class="o">=</span><span class="s2">&#34;localhost&#34;</span>
-<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;8389&#34;</span>
+<span class="nv">LDAP_SERVER_PORT</span><span class="o">=</span><span class="s2">&#34;389&#34;</span>
 <span class="nv">LDAP_ADMIN_USER</span><span class="o">=</span><span class="s2">&#34;cn=admin,dc=javachen,dc=com&#34;</span>
 <span class="nv">LDAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">&#34;admin123&#34;</span>
 
@@ -888,7 +911,7 @@ ldapdelete -c -h <span class="nv">$LDAP_SERVER_IP</span> -p <span class="nv">$LD
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">8389</span> -D <span class="s2">&#34;cn=zhangsan,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
+<pre class="chroma"><code class="language-shell" data-lang="shell">ldapwhoami -h localhost -p <span class="m">389</span> -D <span class="s2">&#34;cn=zhangsan,ou=People,dc=javachen,dc=com&#34;</span> -w pass123
 ldap_bind: Invalid credentials <span class="o">(</span><span class="m">49</span><span class="o">)</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -907,9 +930,8 @@ ldap_bind: Invalid credentials <span class="o">(</span><span class="m">49</span>
 <li><a href="https://jaseywang.me/2017/03/04/全网统一账户实践/">全网统一账户实践</a></li>
 <li><a href="https://www.luochunhui.com/blog/openldap/">OpenLdap管理</a></li>
 <li><a href="https://linuxtechlab.com/openldap-complete-guide-install-configure-ldap-centos-rhel/">OpenLDAP: Complete guide to install &amp; configure LDAP on CentOS/RHEL</a></li>
-<li><a href="https://www.openldap.org/">OpenLDAP</a></li>
-<li><a href="https://www.openldap.org/doc/admin24/quickstart.html">A Quick-Start Guide</a></li>
-<li><a href="https://www.ldap-account-manager.org/">LDAP Account Manager</a></li>
+<li><a href="https://coder4.com/homs_online/toolchain/ldap.html">LDAP 内部账号管理系统</a></li>
+<li><a href="https://www.k8sz.com/post/kubernetesldap/">kubernetes之LDAP安装</a></li>
 </ul>
 
     </div>
