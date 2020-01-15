@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="获取docker容器的主机虚拟网卡 1 2 3 4 5 6 7 8 9 10 11 12 13 14 #首先得到容器进程的pid CON_PID=$(docker inspect &amp;#39;--format={{ .State.Pid }}&amp;#39; test) #首先得到容器的命名空间目录 CON_NET_SANDBOX=$(docker inspect &amp;#39;--format={{ .NetworkSettings.SandboxKey }}&amp;#39; test)" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+<meta name="author" content="JavaChen" /><meta name="description" content="清理 清理所有无用对象 清理所有的stopped的容器、所有dangling状态的image、无用网络。 1 docker system prune 清理docker容器 清理所有st" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
@@ -40,26 +40,26 @@
 
 
 <meta property="og:title" content="Docker常用命令" />
-<meta property="og:description" content="获取docker容器的主机虚拟网卡 1 2 3 4 5 6 7 8 9 10 11 12 13 14 #首先得到容器进程的pid CON_PID=$(docker inspect &#39;--format={{ .State.Pid }}&#39; test) #首先得到容器的命名空间目录 CON_NET_SANDBOX=$(docker inspect &#39;--format={{ .NetworkSettings.SandboxKey }}&#39; test)" />
+<meta property="og:description" content="清理 清理所有无用对象 清理所有的stopped的容器、所有dangling状态的image、无用网络。 1 docker system prune 清理docker容器 清理所有st" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/28/some-commads-of-docker/" />
 <meta property="article:published_time" content="2019-11-28T08:00:00&#43;08:00"/>
 <meta property="article:modified_time" content="2019-11-28T08:00:00&#43;08:00"/>
 
 <meta itemprop="name" content="Docker常用命令">
-<meta itemprop="description" content="获取docker容器的主机虚拟网卡 1 2 3 4 5 6 7 8 9 10 11 12 13 14 #首先得到容器进程的pid CON_PID=$(docker inspect &#39;--format={{ .State.Pid }}&#39; test) #首先得到容器的命名空间目录 CON_NET_SANDBOX=$(docker inspect &#39;--format={{ .NetworkSettings.SandboxKey }}&#39; test)">
+<meta itemprop="description" content="清理 清理所有无用对象 清理所有的stopped的容器、所有dangling状态的image、无用网络。 1 docker system prune 清理docker容器 清理所有st">
 
 
 <meta itemprop="datePublished" content="2019-11-28T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-28T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="826">
+<meta itemprop="wordCount" content="1129">
 
 
 
 <meta itemprop="keywords" content="docker," />
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Docker常用命令"/>
-<meta name="twitter:description" content="获取docker容器的主机虚拟网卡 1 2 3 4 5 6 7 8 9 10 11 12 13 14 #首先得到容器进程的pid CON_PID=$(docker inspect &#39;--format={{ .State.Pid }}&#39; test) #首先得到容器的命名空间目录 CON_NET_SANDBOX=$(docker inspect &#39;--format={{ .NetworkSettings.SandboxKey }}&#39; test)"/>
+<meta name="twitter:description" content="清理 清理所有无用对象 清理所有的stopped的容器、所有dangling状态的image、无用网络。 1 docker system prune 清理docker容器 清理所有st"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/docker/"> docker </a>
             </div>
-          <span class="more-meta"> 约 826 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
+          <span class="more-meta"> 约 1129 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -140,17 +140,22 @@
   <div class="post-toc-content">
     <nav id="TableOfContents">
 <ul>
-<li>
+<li><a href="#清理">清理</a>
 <ul>
-<li><a href="#获取docker容器的主机虚拟网卡">获取docker容器的主机虚拟网卡</a></li>
+<li><a href="#清理所有无用对象">清理所有无用对象</a></li>
+<li><a href="#清理docker容器">清理docker容器</a></li>
+<li><a href="#清理镜像">清理镜像</a></li>
+<li><a href="#清理volumes">清理volumes</a></li>
+<li><a href="#清理网络">清理网络</a></li>
+</ul></li>
+<li><a href="#查看">查看</a>
+<ul>
+<li><a href="#查看docker容器的主机虚拟网卡">查看docker容器的主机虚拟网卡</a></li>
 <li><a href="#查看已经安装的镜像">查看已经安装的镜像</a></li>
-<li><a href="#删除停止或已创建状态的实例">删除停止或已创建状态的实例</a></li>
-<li><a href="#删除虚悬镜像">删除虚悬镜像</a></li>
-<li><a href="#删除repository是长uuid的镜像">删除REPOSITORY是长uuid的镜像</a></li>
 <li><a href="#列出registry中的镜像">列出registry中的镜像</a></li>
-<li><a href="#删除registry中的某个镜像">删除registry中的某个镜像</a></li>
 <li><a href="#列出k8s中使用到的镜像">列出k8s中使用到的镜像</a></li>
 </ul></li>
+<li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
   </div>
@@ -158,7 +163,139 @@
     <div class="post-content">
       
 
-<h2 id="获取docker容器的主机虚拟网卡">获取docker容器的主机虚拟网卡</h2>
+<h1 id="清理">清理</h1>
+
+<h2 id="清理所有无用对象">清理所有无用对象</h2>
+
+<p>清理所有的stopped的容器、所有dangling状态的image、无用网络。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker system prune</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="清理docker容器">清理docker容器</h2>
+
+<p>清理所有stopped的容器，当我们stop docker容器的时候，docker容器并不会自动清理，除非在run的时候就添加了<code>--rm</code>选项。可以使用<code>docker container prune</code>清理，也可以<code>docker ps -a</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker container prune</code></pre></td></tr></table>
+</div>
+</div>
+<p>停止并清理所有容器</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker container stop <span class="k">$(</span>docker container ls -aq<span class="k">)</span>
+docker container rm <span class="k">$(</span>docker container ls -aq<span class="k">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>删除停止或已创建状态的容器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker rm <span class="k">$(</span>docker ps -a -q --filter <span class="nv">status</span><span class="o">=</span>exited<span class="k">)</span>
+
+docker ps --filter <span class="nv">status</span><span class="o">=</span>exited<span class="p">|</span>sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>xargs docker rm
+docker ps --filter <span class="nv">status</span><span class="o">=</span>created<span class="p">|</span>sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>xargs docker rm</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="清理镜像">清理镜像</h2>
+
+<p>删除REPOSITORY是长uuid的镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 删除REPOSITORY是长uuid的镜像</span>
+docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{if($1 ~ /[0-9a-f]{32}/) print $1&#34;:&#34;$2}&#39;</span><span class="p">|</span>xargs docker rmi
+<span class="c1"># 删除TAG是长长uuid的镜像</span>
+docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{if($2 ~ /[0-9a-f]{64}/) print $1&#34;:&#34;$2}&#39;</span><span class="p">|</span>xargs docker rmi</code></pre></td></tr></table>
+</div>
+</div>
+<p>清理虚悬镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker image prune --force</code></pre></td></tr></table>
+</div>
+</div>
+<p>清理所有没有使用的镜像，慎用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker image prune -a</pre></td></tr></table>
+</div>
+</div>
+<p>删除registry中的某个镜像。docker registry上的镜像默认是不允许删除的，如要删除，需要在启动docker registry时指定环境变量<code>REGISTRY_STORAGE_DELETE_ENABLED=true</code>，然后可以利用以下脚本删除镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="o">=</span><span class="m">127</span>.0.0.1:5000
+<span class="k">function</span> delete_image <span class="o">{</span>
+    <span class="nv">imgFullName</span><span class="o">=</span><span class="nv">$1</span>
+    <span class="nv">img</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$imgFullName</span> <span class="p">|</span> awk -F <span class="s1">&#39;:&#39;</span> <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
+    <span class="nv">tag</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$imgFullName</span> <span class="p">|</span> awk -F <span class="s1">&#39;:&#39;</span> <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span>
+    
+    <span class="c1"># delete image&#39;s blobs</span>
+    <span class="k">for</span> digest in <span class="sb">`</span>curl -H <span class="s1">&#39;Accept: application/vnd.docker.distribution.manifest.v2+json&#39;</span> -s <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/manifests/<span class="si">${</span><span class="nv">tag</span><span class="si">}</span> <span class="p">|</span> jq <span class="s2">&#34;.layers[].digest&#34;</span> <span class="p">|</span> tr -d <span class="s1">&#39;&#34;&#39;</span><span class="sb">`</span><span class="p">;</span> <span class="k">do</span>
+      curl -X DELETE <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/blobs/<span class="si">${</span><span class="nv">digest</span><span class="si">}</span>      
+    <span class="k">done</span>
+    
+    <span class="c1"># delete image&#39;s manifest</span>
+    <span class="nv">imgDigest</span><span class="o">=</span><span class="sb">`</span>curl -H <span class="s1">&#39;Accept: application/vnd.docker.distribution.manifest.v2+json&#39;</span> -s <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/manifests/<span class="si">${</span><span class="nv">tag</span><span class="si">}</span> <span class="p">|</span> jq <span class="s2">&#34;.config.digest&#34;</span> <span class="p">|</span> tr -d <span class="s1">&#39;&#34;&#39;</span><span class="sb">`</span>
+    curl -X DELETE <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>//manifests/<span class="si">${</span><span class="nv">imgDigest</span><span class="si">}</span>
+<span class="o">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="清理volumes">清理volumes</h2>
+
+<p><code>docker volume prune</code>可以清理没有使用的volumes。</p>
+
+<h2 id="清理网络">清理网络</h2>
+
+<p><code>docker network prune</code>可以清理没用使用的networks。</p>
+
+<h1 id="查看">查看</h1>
+
+<h2 id="查看docker容器的主机虚拟网卡">查看docker容器的主机虚拟网卡</h2>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -204,45 +341,6 @@ rm -f /var/run/netns/<span class="nv">$CON_PID</span></code></pre></td></tr></ta
 <pre class="chroma"><code class="language-bash" data-lang="bash">docker images --format <span class="s1">&#39;{{.Repository}}:{{.Tag}}&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
-<h2 id="删除停止或已创建状态的实例">删除停止或已创建状态的实例</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">docker rm <span class="k">$(</span>docker ps -a -q --filter <span class="nv">status</span><span class="o">=</span>exited<span class="k">)</span>
-
-docker ps --filter <span class="nv">status</span><span class="o">=</span>exited<span class="p">|</span>sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>xargs docker rm
-docker ps --filter <span class="nv">status</span><span class="o">=</span>created<span class="p">|</span>sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{print $1}&#39;</span><span class="p">|</span>xargs docker rm</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="删除虚悬镜像">删除虚悬镜像</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">docker image prune --force</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="删除repository是长uuid的镜像">删除REPOSITORY是长uuid的镜像</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 删除REPOSITORY是长uuid的镜像</span>
-docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{if($1 ~ /[0-9a-f]{32}/) print $1&#34;:&#34;$2}&#39;</span><span class="p">|</span>xargs docker rmi
-<span class="c1"># 删除TAG是长长uuid的镜像</span>
-docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;</span><span class="p">|</span>awk <span class="s1">&#39;{if($2 ~ /[0-9a-f]{64}/) print $1&#34;:&#34;$2}&#39;</span><span class="p">|</span>xargs docker rmi</code></pre></td></tr></table>
-</div>
-</div>
 <h2 id="列出registry中的镜像">列出registry中的镜像</h2>
 
 <p>官方的docker registry虽然提供了一系列操作镜像的Restful API，但查看镜像列表并不直观，于是可以使用以下脚本查看registry中的镜像列表：</p>
@@ -262,45 +360,6 @@ docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;
     <span class="nb">echo</span> <span class="nv">$img</span>:<span class="nv">$tag</span>
   <span class="k">done</span>
 <span class="k">done</span></code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="删除registry中的某个镜像">删除registry中的某个镜像</h2>
-
-<p>docker registry上的镜像默认是不允许删除的，如要删除，需要在启动docker registry时指定环境变量<code>REGISTRY_STORAGE_DELETE_ENABLED=true</code>，然后可以利用以下脚本删除镜像：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="o">=</span><span class="m">127</span>.0.0.1:5000
-<span class="k">function</span> delete_image <span class="o">{</span>
-    <span class="nv">imgFullName</span><span class="o">=</span><span class="nv">$1</span>
-    <span class="nv">img</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$imgFullName</span> <span class="p">|</span> awk -F <span class="s1">&#39;:&#39;</span> <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
-    <span class="nv">tag</span><span class="o">=</span><span class="sb">`</span><span class="nb">echo</span> <span class="nv">$imgFullName</span> <span class="p">|</span> awk -F <span class="s1">&#39;:&#39;</span> <span class="s1">&#39;{print $2}&#39;</span><span class="sb">`</span>
-    
-    <span class="c1"># delete image&#39;s blobs</span>
-    <span class="k">for</span> digest in <span class="sb">`</span>curl -H <span class="s1">&#39;Accept: application/vnd.docker.distribution.manifest.v2+json&#39;</span> -s <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/manifests/<span class="si">${</span><span class="nv">tag</span><span class="si">}</span> <span class="p">|</span> jq <span class="s2">&#34;.layers[].digest&#34;</span> <span class="p">|</span> tr -d <span class="s1">&#39;&#34;&#39;</span><span class="sb">`</span><span class="p">;</span> <span class="k">do</span>
-      curl -X DELETE <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/blobs/<span class="si">${</span><span class="nv">digest</span><span class="si">}</span>      
-    <span class="k">done</span>
-    
-    <span class="c1"># delete image&#39;s manifest</span>
-    <span class="nv">imgDigest</span><span class="o">=</span><span class="sb">`</span>curl -H <span class="s1">&#39;Accept: application/vnd.docker.distribution.manifest.v2+json&#39;</span> -s <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>/manifests/<span class="si">${</span><span class="nv">tag</span><span class="si">}</span> <span class="p">|</span> jq <span class="s2">&#34;.config.digest&#34;</span> <span class="p">|</span> tr -d <span class="s1">&#39;&#34;&#39;</span><span class="sb">`</span>
-    curl -X DELETE <span class="si">${</span><span class="nv">DOCKER_REGISTRY_ADDR</span><span class="si">}</span>/v2/<span class="si">${</span><span class="nv">img</span><span class="si">}</span>//manifests/<span class="si">${</span><span class="nv">imgDigest</span><span class="si">}</span>
-<span class="o">}</span></code></pre></td></tr></table>
 </div>
 </div>
 <h2 id="列出k8s中使用到的镜像">列出k8s中使用到的镜像</h2>
@@ -326,6 +385,13 @@ docker images <span class="p">|</span> sed -n -e <span class="s1">&#39;2,$p&#39;
 <span class="k">done</span></code></pre></td></tr></table>
 </div>
 </div>
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://linuxize.com/post/how-to-remove-docker-images-containers-volumes-and-networks/">How To Remove Docker Containers, Images, Volumes, and Networks</a></li>
+<li></li>
+</ul>
+
     </div>
 
     <div class="post-copyright">
