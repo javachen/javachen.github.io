@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>安装Keycloak - 关注Java、Hadoop、Kubernetes和BI</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="压缩包安装 参考 https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts 脚本下载安装： 1 2 3 4 5 6 7 8 9 10 export VERSION=`curl -s https://repo1.maven.org/maven2/org/keycloak/keycloak-server-dist/ | sed -e &amp;#39;s/&amp;lt;[^&amp;gt;]*&amp;gt;//g&amp;#39; | grep -i final | cut -d &amp;#39;/&amp;#39; -f1 | tail -n1` export KEYCLOAK=&amp;#34;keycloak-${VERSION}&amp;#34; ARCHIVE=&amp;#34;${KEYCLOAK}.tar.gz&amp;#34; DIST=&amp;#34;keycloak-server-dist&amp;#34; URL=&amp;#34;https://repo1.maven.org/maven2/org/keycloak/$DIST/${VERSION}/$DIST-${VERSION}.tar.gz&amp;#34; curl -o $ARCHIVE $URL tar xzf $ARCHIVE rm -f $ARCHIVE 创建admin账号，" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/02/10/install-keycloak/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="安装Keycloak" />
+<meta property="og:description" content="压缩包安装 参考 https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts 脚本下载安装： 1 2 3 4 5 6 7 8 9 10 export VERSION=`curl -s https://repo1.maven.org/maven2/org/keycloak/keycloak-server-dist/ | sed -e &#39;s/&lt;[^&gt;]*&gt;//g&#39; | grep -i final | cut -d &#39;/&#39; -f1 | tail -n1` export KEYCLOAK=&#34;keycloak-${VERSION}&#34; ARCHIVE=&#34;${KEYCLOAK}.tar.gz&#34; DIST=&#34;keycloak-server-dist&#34; URL=&#34;https://repo1.maven.org/maven2/org/keycloak/$DIST/${VERSION}/$DIST-${VERSION}.tar.gz&#34; curl -o $ARCHIVE $URL tar xzf $ARCHIVE rm -f $ARCHIVE 创建admin账号，" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/02/10/install-keycloak/" />
+<meta property="article:published_time" content="2020-02-10T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-02-10T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="安装Keycloak">
+<meta itemprop="description" content="压缩包安装 参考 https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts 脚本下载安装： 1 2 3 4 5 6 7 8 9 10 export VERSION=`curl -s https://repo1.maven.org/maven2/org/keycloak/keycloak-server-dist/ | sed -e &#39;s/&lt;[^&gt;]*&gt;//g&#39; | grep -i final | cut -d &#39;/&#39; -f1 | tail -n1` export KEYCLOAK=&#34;keycloak-${VERSION}&#34; ARCHIVE=&#34;${KEYCLOAK}.tar.gz&#34; DIST=&#34;keycloak-server-dist&#34; URL=&#34;https://repo1.maven.org/maven2/org/keycloak/$DIST/${VERSION}/$DIST-${VERSION}.tar.gz&#34; curl -o $ARCHIVE $URL tar xzf $ARCHIVE rm -f $ARCHIVE 创建admin账号，">
+
+
+<meta itemprop="datePublished" content="2020-02-10T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-02-10T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1778">
+
+
+
+<meta itemprop="keywords" content="keycloak," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="安装Keycloak"/>
+<meta name="twitter:description" content="压缩包安装 参考 https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts 脚本下载安装： 1 2 3 4 5 6 7 8 9 10 export VERSION=`curl -s https://repo1.maven.org/maven2/org/keycloak/keycloak-server-dist/ | sed -e &#39;s/&lt;[^&gt;]*&gt;//g&#39; | grep -i final | cut -d &#39;/&#39; -f1 | tail -n1` export KEYCLOAK=&#34;keycloak-${VERSION}&#34; ARCHIVE=&#34;${KEYCLOAK}.tar.gz&#34; DIST=&#34;keycloak-server-dist&#34; URL=&#34;https://repo1.maven.org/maven2/org/keycloak/$DIST/${VERSION}/$DIST-${VERSION}.tar.gz&#34; curl -o $ARCHIVE $URL tar xzf $ARCHIVE rm -f $ARCHIVE 创建admin账号，"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">安装Keycloak</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-02-10 </span>
+        <div class="post-category">
+            <a href="/categories/devops/"> devops </a>
+            </div>
+          <span class="more-meta"> 约 1778 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#压缩包安装">压缩包安装</a></li>
+<li><a href="#docker安装">Docker安装</a></li>
+<li><a href="#docker-compose安装">docker-compose安装</a></li>
+<li><a href="#helm安装">Helm安装</a></li>
+<li><a href="#创建-realm-和-user">创建 Realm 和 User</a></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="压缩包安装">压缩包安装</h1>
+
+<p>参考 <a href="https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts">https://github.com/keycloak/keycloak-quickstarts/tree/latest/scripts</a> 脚本下载安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">VERSION</span><span class="o">=</span><span class="sb">`</span>curl -s https://repo1.maven.org/maven2/org/keycloak/keycloak-server-dist/ <span class="p">|</span> sed -e <span class="s1">&#39;s/&lt;[^&gt;]*&gt;//g&#39;</span> <span class="p">|</span> grep -i final <span class="p">|</span> cut -d <span class="s1">&#39;/&#39;</span> -f1 <span class="p">|</span> tail -n1<span class="sb">`</span>
+<span class="nb">export</span> <span class="nv">KEYCLOAK</span><span class="o">=</span><span class="s2">&#34;keycloak-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">&#34;</span>
+
+<span class="nv">ARCHIVE</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="nv">KEYCLOAK</span><span class="si">}</span><span class="s2">.tar.gz&#34;</span>
+<span class="nv">DIST</span><span class="o">=</span><span class="s2">&#34;keycloak-server-dist&#34;</span>
+<span class="nv">URL</span><span class="o">=</span><span class="s2">&#34;https://repo1.maven.org/maven2/org/keycloak/</span><span class="nv">$DIST</span><span class="s2">/</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">/</span><span class="nv">$DIST</span><span class="s2">-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.tar.gz&#34;</span>
+
+curl -o <span class="nv">$ARCHIVE</span> <span class="nv">$URL</span>
+tar xzf <span class="nv">$ARCHIVE</span>
+rm -f <span class="nv">$ARCHIVE</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>创建admin账号，设置密码是admin123</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">$KEYCLOAK</span>/bin/add-user-keycloak.sh -u admin -p admin</code></pre></td></tr></table>
+</div>
+</div>
+<p>启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nv">$KEYCLOAK</span>/bin/standalone.sh -Djava.net.preferIPv4Stack<span class="o">=</span><span class="nb">true</span> &gt; keycloak.log <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">&amp;</span>
+
+<span class="c1"># 修改端口</span>
+<span class="c1"># $KEYCLOAK/bin/standalone.sh -Djava.net.preferIPv4Stack=true \</span>
+<span class="c1">#    -Djboss.socket.binding.port-offset=100 &gt; keycloak.log 2&gt;&amp;1 &amp;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>访问 <a href="http://192.168.56.21:8080/auth/admin/">http://192.168.56.21:8080/auth/admin/</a> ，登陆Admin Console，输入用户名和密码admin。</p>
+
+<h1 id="docker安装">Docker安装</h1>
+
+<p>安装Postgres数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker run -d --name postgres -p <span class="m">5432</span>:5432 -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span><span class="m">123456</span> postgres
+
+docker <span class="nb">exec</span> -it postgres psql -Upostgres -w -c <span class="s2">&#34;CREATE DATABASE keycloak WITH OWNER postgres;&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使用docker安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker run -d <span class="se">\
+</span><span class="se"></span>  --name keycloak <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">KEYCLOAK_USER</span><span class="o">=</span>admin <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">KEYCLOAK_PASSWORD</span><span class="o">=</span>admin123 <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_VENDOR</span><span class="o">=</span>POSTGRES <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_ADDR</span><span class="o">=</span><span class="m">192</span>.168.1.111 <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_PORT</span><span class="o">=</span><span class="m">5432</span> <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_DATABASE</span><span class="o">=</span>keycloak <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_USER</span><span class="o">=</span>postgres <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">DB_PASSWORD</span><span class="o">=</span><span class="m">123456</span> <span class="se">\
+</span><span class="se"></span>  -e <span class="nv">JDBC_PARAMS</span><span class="o">=</span><span class="s1">&#39;connectTimeout=30&#39;</span> <span class="se">\
+</span><span class="se"></span>  -p <span class="m">8080</span>:8080 <span class="se">\
+</span><span class="se"></span>  jboss/keycloak</code></pre></td></tr></table>
+</div>
+</div>
+<p>在此之后，我们只需登录到容器并导航到<code>bin</code>文件夹。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker exec -it keycloak /bin/bash
+cd keycloak/bin</pre></td></tr></table>
+</div>
+</div>
+<p>我们需要从CLI客户端登录keycloak服务器，之后我们不再需要身份验证：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">./kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin123</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="docker-compose安装">docker-compose安装</h1>
+
+<p>参考 <a href="https://github.com/keycloak/keycloak-containers/blob/master/docker-compose-examples">https://github.com/keycloak/keycloak-containers/blob/master/docker-compose-examples</a> ：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile">version: <span class="s1">&#39;3&#39;</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span>services:<span class="err">
+</span><span class="err"></span>  postgres:<span class="err">
+</span><span class="err"></span>      image: postgres<span class="err">
+</span><span class="err"></span>      volumes:<span class="err">
+</span><span class="err"></span>        - ./data:/var/lib/postgresql/data<span class="err">
+</span><span class="err"></span>      environment:<span class="err">
+</span><span class="err"></span>        POSTGRES_DB: keycloak<span class="err">
+</span><span class="err"></span>        POSTGRES_USER: admin<span class="err">
+</span><span class="err"></span>        POSTGRES_PASSWORD: <span class="m">123456</span><span class="err">
+</span><span class="err"></span>  keycloak:<span class="err">
+</span><span class="err"></span>      image: quay.io/keycloak/keycloak:latest<span class="err">
+</span><span class="err"></span>      environment:<span class="err">
+</span><span class="err"></span>        DB_VENDOR: POSTGRES<span class="err">
+</span><span class="err"></span>        DB_ADDR: postgres<span class="err">
+</span><span class="err"></span>        DB_DATABASE: keycloak<span class="err">
+</span><span class="err"></span>        DB_USER: keycloak<span class="err">
+</span><span class="err"></span>        DB_SCHEMA: public<span class="err">
+</span><span class="err"></span>        DB_PASSWORD: <span class="m">123456</span><span class="err">
+</span><span class="err"></span>        KEYCLOAK_USER: admin<span class="err">
+</span><span class="err"></span>        KEYCLOAK_PASSWORD: admin123<span class="err">
+</span><span class="err"></span>        <span class="c1"># Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn&#39;t be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.</span><span class="err">
+</span><span class="err"></span>        <span class="c1">#JDBC_PARAMS: &#34;ssl=true&#34;</span><span class="err">
+</span><span class="err"></span>      ports:<span class="err">
+</span><span class="err"></span>        - <span class="m">8080</span>:8080<span class="err">
+</span><span class="err"></span>      depends_on:<span class="err">
+</span><span class="err"></span>        - postgres</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="helm安装">Helm安装</h1>
+
+<p>创建命名空间：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace keycloak</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建TLS证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl create -f -   
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: Certificate
+</span><span class="s">metadata:
+</span><span class="s">  name: keycloak-test-javachen-com-cn-cert
+</span><span class="s">  namespace: keycloak
+</span><span class="s">spec:
+</span><span class="s">  secretName: keycloak-test-javachen-com-cn-cert
+</span><span class="s">  renewBefore: 720h
+</span><span class="s">  dnsNames:
+</span><span class="s">  - &#34;keycloak.javachen.com&#34;
+</span><span class="s">  - &#34;keycloak.test.javachen.com&#34;
+</span><span class="s">  issuerRef:
+</span><span class="s">    name: cert-manager-webhook-dnspod-cluster-issuer
+</span><span class="s">    kind: ClusterIssuer
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>添加chart：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/javachen/charts
+<span class="nb">cd</span> charts</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建values文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF &gt; keycloak-values.yaml
+</span><span class="s">keycloak:
+</span><span class="s">  image: 8.0.2
+</span><span class="s">  username: admin
+</span><span class="s">  password: admin123
+</span><span class="s">  persistence:
+</span><span class="s">    deployPostgres: false
+</span><span class="s">    dbVendor: postgres
+</span><span class="s">    dbName: keycloak
+</span><span class="s">    dbHost: 192.168.1.111
+</span><span class="s">    dbPort: 5432 
+</span><span class="s">    dbUser: postgres
+</span><span class="s">    dbPassword: &#34;123456&#34;
+</span><span class="s">  ingress:
+</span><span class="s">    enabled: true
+</span><span class="s">    annotations:
+</span><span class="s">      kubernetes.io/ingress.class: nginx
+</span><span class="s">      nginx.ingress.kubernetes.io/ssl-redirect: &#34;true&#34;
+</span><span class="s">      nginx.ingress.kubernetes.io/proxy-body-size: 100m
+</span><span class="s">    hosts:
+</span><span class="s">      - keycloak.javachen.com
+</span><span class="s">      - keycloak.test.javachen.com
+</span><span class="s">    tls:
+</span><span class="s">      - secretName: keycloak-test-javachen-com-cn-cert
+</span><span class="s">        hosts:
+</span><span class="s">          - keycloak.javachen.com
+</span><span class="s">          - keycloak.test.javachen.com
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>helm3安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">helm install keycloak -n keycloak -f keycloak-values.yaml ./keycloak</pre></td></tr></table>
+</div>
+</div>
+<p>卸载：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm del keycloak -n keycloak </code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建-realm-和-user">创建 Realm 和 User</h1>
+
+<p>这里使用命令行创建，先登陆：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl <span class="nb">exec</span> -it pod/keycloak-0 -n keycloak -- bash
+bash-4.4$ <span class="nb">cd</span> /opt/jboss/keycloak/bin
+bash-4.4$ ./kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user keycloak --password admin123</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建realm，名称为test：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">./kcadm.sh create realms -s realm=test -s enabled=true</pre></td></tr></table>
+</div>
+</div>
+<p>创建两个客户端：client-cli、client-rest：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 注意2个选项：publicClient=true和 directAccessGrantsEnabled=true。第一个使这个客户端公开，这意味着我们的cURL客户端可以在不提供任何秘密的情况下启动登录。第二个使我们能够使用用户名和密码直接登录。</span>
+$ ./kcadm.sh create clients -r <span class="nb">test</span> -s <span class="nv">clientId</span><span class="o">=</span>client-cli -s <span class="nv">enabled</span><span class="o">=</span><span class="nb">true</span> -s <span class="nv">publicClient</span><span class="o">=</span><span class="nb">true</span> -s <span class="nv">baseUrl</span><span class="o">=</span>http://localhost:8080 -s <span class="nv">adminUrl</span><span class="o">=</span>http://localhost:8080 -s <span class="nv">directAccessGrantsEnabled</span><span class="o">=</span><span class="nb">true</span>
+Created new client with id <span class="s1">&#39;5b276dc0-fc52-4580-bb80-5c7c08f58ab6&#39;</span>
+
+<span class="c1"># bearerOnly=true告诉Keycloak客户端永远不会启动登录过程，但是当它收到Bearer令牌时，它将检查所述令牌的有效性。</span>
+$ ./kcadm.sh create clients -r <span class="nb">test</span> -s <span class="nv">clientId</span><span class="o">=</span>client-rest -s <span class="nv">enabled</span><span class="o">=</span><span class="nb">true</span> -s <span class="nv">baseUrl</span><span class="o">=</span>http://localhost:8080 -s <span class="nv">bearerOnly</span><span class="o">=</span><span class="nb">true</span>
+Created new client with id <span class="s1">&#39;c85662e8-9979-492f-8251-c517624abe6b&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 client-rest 客户端创建两个角色：admin、user</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 注意client后的id是我们创建客户端输出的id</span>
+./kcadm.sh create clients/c85662e8-9979-492f-8251-c517624abe6b/roles -r <span class="nb">test</span> -s <span class="nv">name</span><span class="o">=</span>admin -s <span class="s1">&#39;description=Admin role&#39;</span>
+
+./kcadm.sh create clients/c85662e8-9979-492f-8251-c517624abe6b/roles -r <span class="nb">test</span> -s <span class="nv">name</span><span class="o">=</span>user -s <span class="s1">&#39;description=User role&#39;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>获取 client-rest 客户端的配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">./kcadm.sh get clients/c85662e8-9979-492f-8251-c517624abe6b/installation/providers/keycloak-oidc-keycloak-json -r test</code></pre></td></tr></table>
+</div>
+</div>
+<p>应该返回类似于此的内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-json" data-lang="json"><span class="p">{</span>
+  <span class="nt">&#34;realm&#34;</span> <span class="p">:</span> <span class="s2">&#34;test&#34;</span><span class="p">,</span>
+  <span class="nt">&#34;bearer-only&#34;</span> <span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&#34;auth-server-url&#34;</span> <span class="p">:</span> <span class="s2">&#34;http:////localhost:8080/auth/&#34;</span><span class="p">,</span>
+  <span class="nt">&#34;ssl-required&#34;</span> <span class="p">:</span> <span class="s2">&#34;external&#34;</span><span class="p">,</span>
+  <span class="nt">&#34;resource&#34;</span> <span class="p">:</span> <span class="s2">&#34;client-rest&#34;</span><span class="p">,</span>
+  <span class="nt">&#34;verify-token-audience&#34;</span> <span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&#34;use-resource-role-mappings&#34;</span> <span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&#34;confidential-port&#34;</span> <span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>创建两个用户：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 创建admin用户</span>
+./kcadm.sh create users -r <span class="nb">test</span> -s <span class="nv">username</span><span class="o">=</span>admin -s <span class="nv">enabled</span><span class="o">=</span><span class="nb">true</span>
+Created new user with id <span class="s1">&#39;2ad3144d-5914-407c-91dd-b8974c4939df&#39;</span>
+
+<span class="c1"># 设置admin密码</span>
+./kcadm.sh update users/2ad3144d-5914-407c-91dd-b8974c4939df/reset-password -r <span class="nb">test</span> -s <span class="nv">type</span><span class="o">=</span>password -s <span class="nv">value</span><span class="o">=</span>admin -s <span class="nv">temporary</span><span class="o">=</span><span class="nb">false</span> -n
+
+<span class="c1"># 追加到admin角色中，注意：从不在生产中使用此方法，它仅用于演示目的！</span>
+./kcadm.sh add-roles -r <span class="nb">test</span> --uusername<span class="o">=</span>admin --cclientid client-rest --rolename admin
+
+<span class="c1"># 创建user用户</span>
+./kcadm.sh create users -r <span class="nb">test</span> -s <span class="nv">username</span><span class="o">=</span>user -s <span class="nv">enabled</span><span class="o">=</span><span class="nb">true</span>
+Created new user with id <span class="s1">&#39;1a23e416-43ba-4e33-b7a9-cdcec2f83273&#39;</span>
+
+<span class="c1"># 设置user密码</span>
+./kcadm.sh update users/1a23e416-43ba-4e33-b7a9-cdcec2f83273/reset-password -r <span class="nb">test</span> -s <span class="nv">type</span><span class="o">=</span>password -s <span class="nv">value</span><span class="o">=</span>admin -s <span class="nv">temporary</span><span class="o">=</span><span class="nb">false</span> -n
+
+<span class="c1"># 追加到user角色中：</span>
+./kcadm.sh add-roles -r <span class="nb">test</span> --uusername<span class="o">=</span>user --cclientid client-rest --rolename user</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="http://support.supermap.com.cn/DataWarehouse/WebDocHelp/iPortal/iP/iportal_management/Portal_Security/Keycloak_install_config.htm">Keycloak安装与配置</a></li>
+<li><a href="https://www.jianshu.com/p/c9b1ecd28813">Keycloak单点登录</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/29127296">浅析Keycloak单点登陆平台</a></li>
+<li><a href="http://javafoot.net/index.php/zh/14-keycloak">keyCloak让登陆认证模块失业</a></li>
+<li><a href="https://www.zybuluo.com/EggGump/note/1211864">keycloak 基本操作</a></li>
+<li><a href="https://gitee.com/itmuch/spring-cloud-yes/blob/master/doc/keycloak-learn/Keycloak搭建手把手操作指南.md">Keycloak搭建手把手操作指南</a></li>
+</ul>
+
+<p>和spring集成：</p>
+
+<ul>
+<li><a href="https://juejin.im/entry/5ab4c2bc6fb9a028c06ac234">Keycloak系列(一) — Keycloak集成LDAP</a></li>
+<li><a href="https://tech.bejond.org/2018/03/26/Keycloak和Grafana集成实现单点登录/">Keycloak和Grafana集成实现单点登录</a></li>
+<li><a href="https://www.zybuluo.com/EggGump/note/1223485">将keycloak用于保护rest资源</a></li>
+<li><a href="https://segmentfault.com/a/1190000018190135">Spring Security整合KeyCloak保护Rest API</a></li>
+<li><a href="https://blog.csdn.net/Java_fenxiang/article/details/88753957">使用Keycloak实现安全的SpringBoot微服务</a></li>
+<li><a href="https://link.zhihu.com/?target=https%3A//github.com/yourwafer/keycloak-sso">基于Springboot, React实现的Demo</a></li>
+<li><a href="https://blog.tzxcode.cn/2019/08/08/keycloak1/">springboot2集成oauth2和keycloak以及admin rest api记录</a></li>
+<li><a href="http://www.spring4all.com/article/1496">Spring Boot整合Keycloak快速入门指南</a></li>
+<li><a href="https://365airsoft.com/zh-CN/questions/1208186/swaggerzhongdekeycloakjicheng">Swagger中的Keycloak集成 </a></li>
+</ul>
+
+<p>和kuberntes集成</p>
+
+<ul>
+<li><a href="https://juejin.im/post/5da2f1015188256818619137">使用 KeyCloak 对 Kubernetes 进行统一用户管理</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/cloud/library/cl-lo-openid-connect-kubernetes-authentication2/index.html">使用 OpenID Connect Token 进行 Kubernetes 身份认证和授权</a></li>
+<li><a href="https://blog.fleeto.us/post/sidecar-oauth-for-kubernetes-apps/">Kubernetes 中用 Sidecar 为应用添加 Oauth 功能</a></li>
+<li><a href="https://blog.hdls.me/15647317755993.html">使用 KeyCloak 对 Kubernetes 进行统一用户管理</a></li>
+<li><a href="[https://www.kkzxak47.com/2019/07/30/%E4%BD%BF%E7%94%A8%E4%BC%81%E4%B8%9A%E5%BE%AE%E4%BF%A1%E7%99%BB%E5%BD%95keycloak/](https://www.kkzxak47.com/2019/07/30/使用企业微信登录keycloak/)">使用企业微信 (Identity Provider) 登录Keycloak (Identity Broker) </a></li>
+<li><a href="https://www.qingtingip.com/h_187180.html">Keycloak授权服务指南</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-02-10
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/keycloak/">keycloak</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/02/07/install-openldap-with-docker-and-k8s/">
+            <span class="next-text nav-default">容器化部署OpenLdap</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>
