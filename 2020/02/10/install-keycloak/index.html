@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-02-10T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-02-10T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="4897">
+<meta itemprop="wordCount" content="5905">
 
 
 
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 4897 字 </span>
-          <span class="more-meta"> 预计阅读 10 分钟 </span>
+          <span class="more-meta"> 约 5905 字 </span>
+          <span class="more-meta"> 预计阅读 12 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -150,7 +150,7 @@
 <li><a href="#创建-realm">创建 Realm</a></li>
 <li><a href="#创建角色">创建角色</a></li>
 <li><a href="#创建用户">创建用户</a></li>
-<li><a href="#创建客户端">创建客户端</a></li>
+<li><a href="#创建client">创建client</a></li>
 <li><a href="#集成ldap">集成LDAP</a></li>
 <li><a href="#集成github">集成Github</a></li>
 <li><a href="#openid-connect-and-oauth-2-0">OpenID Connect and OAuth 2.0</a>
@@ -549,9 +549,11 @@ cd keycloak/bin</pre></td></tr></table>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbtv4t2zvjj31ee0u0dlq.jpg" alt="image-20200212195449483" /></p>
 
+<p>为保护不同的应用，通常创建不同的Realm，各Realm间的数据和配置是独立的。初始创建的Realm为Master，Master是最高级别的Realm。Master Realm内的admin用户（授予admin角色的用户）拥有查看和管理任何其它realm的权限。因此，不推荐使用master realm管理用户和应用，而应仅供超级管理员来创建和管理realm。</p>
+
 <h2 id="创建-realm">创建 Realm</h2>
 
-<p>Master Realm仅仅是用来创建和管理其他Realm，可以创建一个新的Realm：</p>
+<p>每个realm有专用的管理控制台，可以设置自已的管理员账号，可以创建一个新的Realm：</p>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbtv5q4x36j31f60u0dlr.jpg" alt="image-20200212195542516" /></p>
 
@@ -571,6 +573,14 @@ cd keycloak/bin</pre></td></tr></table>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbty2ai4m7j31gu0u0dln.jpg" alt="image-20200212213612182" /></p>
 
+<p>Require SSL有三个选项：all requests、external requests、none，默认为external requests，在生产环境中应配置为all requests。</p>
+
+<ul>
+<li>all requests： 所有请求都需通过HTTPS访问</li>
+<li>external requests： localhost和私有IP不需通过HTTPS访问</li>
+<li>none：任何客户端都不需HTTPS</li>
+</ul>
+
 <p>设置邮箱：</p>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbty46vl24j31ay0u00zx.jpg" alt="image-20200212213800533" /></p>
@@ -581,7 +591,16 @@ cd keycloak/bin</pre></td></tr></table>
 
 <h2 id="创建角色">创建角色</h2>
 
-<p>在Keycloak中角色分为 Realm 角色和Client角色两种，这里，创建一个Realm角色 user：</p>
+<p>Role分为两种级别：Realm、Client，默认Realm Role：offline_access、uma_authorization。
+OpenID规范中定义了：</p>
+
+<ul>
+<li><p>offline access，用户登录获得offline token，当用户退出后offline token仍可使用。在很多场景中是非常有用的，比如每日离线备份数据。要获得offline token除需offline_access角色外，还需指定offline_access Scope。默认，offline token不会过期，但需每30天刷新一次。</p></li>
+
+<li><p>uma_authorization：User-Managed Access</p></li>
+</ul>
+
+<p>这里，创建一个Realm角色 user：</p>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbtv9ofgq0j31d30u0dk3.jpg" alt="image-20200212195931009" /></p>
 
@@ -615,7 +634,21 @@ cd keycloak/bin</pre></td></tr></table>
 
 <p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbtvhv0rflj31u80nadj7.jpg" alt="image-20200212200722649" /></p>
 
-<h2 id="创建客户端">创建客户端</h2>
+<h2 id="创建client">创建client</h2>
+
+<p>Client是realm中受信任的应用。</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/0082zybpgy1gbtyund9dqj31qy0o078r.jpg" alt="image-20200212220327116" /></p>
+
+<p>默认有以下几个client：</p>
+
+<ul>
+<li>admin-cli：admin cli客户端</li>
+<li>account：用户管理的client，可以设置邮箱、修改密码</li>
+<li>broker：</li>
+<li>realm-management： 预置了realm管理角色，创建realm管理员时需要分配这些角色</li>
+<li>security-admin-console： realm管理控制台</li>
+</ul>
 
 <p>创建一个客户端，名称为 app：</p>
 
@@ -646,9 +679,9 @@ cd keycloak/bin</pre></td></tr></table>
 
 <ul>
 <li>如果设置为public，则有以下参数：</li>
-<li>Standard Flow Enabled：</li>
-<li>Implicit Flow Enabled：</li>
-<li>Direct Access Grants Enabled：是否启用用户名和秘密访问</li>
+<li>Standard Flow Enabled：即OAuth 2.0规范中的Authorization Code Flow，推荐使用的认证流程，安全性高。keycloak验证用户后附加一次性、临时的Authorization Code重定向到浏览器，浏览器凭此Code与keycloak交换token（identity、access和refresh token）</li>
+<li>Implicit Flow Enabled：keycloak验证用户后直接返回identity和access token</li>
+<li>Direct Access Grants Enabled：REST client使用用户名和秘密访获取token的方式，使用HTTP Post请求，响应结果包含access和refresh token</li>
 <li>Root URL：</li>
 <li>Valid Redirect URIs：重定向地址</li>
 <li>Base URL：应用的首页地址</li>
@@ -1856,25 +1889,18 @@ Created new client with id <span class="s1">&#39;c85662e8-9979-492f-8251-c517624
 <p>和spring集成：</p>
 
 <ul>
-<li><p><a href="https://juejin.im/entry/5ab4c2bc6fb9a028c06ac234">Keycloak系列(一) — Keycloak集成LDAP</a></p></li>
+<li><a href="https://juejin.im/entry/5ab4c2bc6fb9a028c06ac234">Keycloak系列(一) — Keycloak集成LDAP</a></li>
+<li><a href="https://tech.bejond.org/2018/03/26/Keycloak和Grafana集成实现单点登录/">Keycloak和Grafana集成实现单点登录</a></li>
+<li><a href="https://www.zybuluo.com/EggGump/note/1223485">将keycloak用于保护rest资源</a></li>
+<li><a href="https://segmentfault.com/a/1190000018190135">Spring Security整合KeyCloak保护Rest API</a></li>
+<li><a href="https://blog.csdn.net/Java_fenxiang/article/details/88753957">使用Keycloak实现安全的SpringBoot微服务</a></li>
+<li><a href="https://link.zhihu.com/?target=https%3A//github.com/yourwafer/keycloak-sso">基于Springboot, React实现的Demo</a></li>
+<li><a href="https://blog.tzxcode.cn/2019/08/08/keycloak1/">springboot2集成oauth2和keycloak以及admin rest api记录</a></li>
+<li><a href="http://www.spring4all.com/article/1496">Spring Boot整合Keycloak快速入门指南</a></li>
+<li><a href="https://365airsoft.com/zh-CN/questions/1208186/swaggerzhongdekeycloakjicheng">Swagger中的Keycloak集成 </a></li>
+<li><a href="https://www.geek-share.com/detail/2783430020.html">Spring Boot/Angular整合Keycloak实现单点登录功能</a>
 
-<li><p><a href="https://tech.bejond.org/2018/03/26/Keycloak和Grafana集成实现单点登录/">Keycloak和Grafana集成实现单点登录</a></p></li>
-
-<li><p><a href="https://www.zybuluo.com/EggGump/note/1223485">将keycloak用于保护rest资源</a></p></li>
-
-<li><p><a href="https://segmentfault.com/a/1190000018190135">Spring Security整合KeyCloak保护Rest API</a></p></li>
-
-<li><p><a href="https://blog.csdn.net/Java_fenxiang/article/details/88753957">使用Keycloak实现安全的SpringBoot微服务</a></p></li>
-
-<li><p><a href="https://link.zhihu.com/?target=https%3A//github.com/yourwafer/keycloak-sso">基于Springboot, React实现的Demo</a></p></li>
-
-<li><p><a href="https://blog.tzxcode.cn/2019/08/08/keycloak1/">springboot2集成oauth2和keycloak以及admin rest api记录</a></p></li>
-
-<li><p><a href="http://www.spring4all.com/article/1496">Spring Boot整合Keycloak快速入门指南</a></p></li>
-
-<li><p><a href="https://365airsoft.com/zh-CN/questions/1208186/swaggerzhongdekeycloakjicheng">Swagger中的Keycloak集成 </a></p></li>
-
-<li><p><a href="https://www.geek-share.com/detail/2783430020.html">Spring Boot/Angular整合Keycloak实现单点登录功能</a></p></li>
+<br /></li>
 </ul>
 
 <p>和kuberntes集成</p>
