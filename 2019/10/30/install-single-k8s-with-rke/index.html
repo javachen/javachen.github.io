@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2019-10-30T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-10-30T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="7001">
+<meta itemprop="wordCount" content="5665">
 
 
 
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 7001 字 </span>
-          <span class="more-meta"> 预计阅读 14 分钟 </span>
+          <span class="more-meta"> 约 5665 字 </span>
+          <span class="more-meta"> 预计阅读 12 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -171,21 +171,7 @@
 <li><a href="#升级内核到4-44">升级内核到4.44</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#安装docker">安装docker</a>
-<ul>
-<li><a href="#检查系统内核和模块">检查系统内核和模块</a></li>
-<li><a href="#安装docker-ce">安装Docker-ce</a></li>
-<li><a href="#启动docker">启动Docker</a></li>
-<li><a href="#修改配置文件">修改配置文件</a>
-<ul>
-<li><a href="#registry-mirrors"><code>registry-mirrors</code></a></li>
-<li><a href="#dns"><code>dns</code></a></li>
-<li><a href="#log-driver"><code>log-driver</code></a></li>
-<li><a href="#cgroup-driver"><code>cgroup driver</code></a></li>
-<li><a href="#storage-driver"><code>storage-driver</code></a></li>
-</ul></li>
-<li><a href="#重新加载配置">重新加载配置</a></li>
-</ul></li>
+<li><a href="#安装docker">安装docker</a></li>
 <li><a href="#安装k8s">安装k8s</a>
 <ul>
 <li><a href="#下载rke">下载RKE</a></li>
@@ -785,238 +771,7 @@ reboot
 </div>
 <h1 id="安装docker">安装docker</h1>
 
-<h2 id="检查系统内核和模块">检查系统内核和模块</h2>
-
-<p>检查系统内核和模块是否适合运行 docker (仅适用于 linux 系统)</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">curl -s https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh &gt; check-config.sh
-bash ./check-config.sh</code></pre></td></tr></table>
-</div>
-</div>
-<p>现在docker存储驱动都是使用的overlay2(不要使用devicemapper，这个坑非常多)，我们重点关注overlay2是否不是绿色</p>
-
-<h2 id="安装docker-ce">安装Docker-ce</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">yum install -y yum-utils device-mapper-persistent-data lvm2
-
-wget -O /etc/yum.repos.d/docker-ce.repo https://download.docker.com/linux/centos/docker-ce.repo
-sudo sed -i <span class="s1">&#39;s+download.docker.com+mirrors.cloud.tencent.com/docker-ce+&#39;</span> /etc/yum.repos.d/docker-ce.repo
-
-yum install docker-ce -y</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="启动docker">启动Docker</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl <span class="nb">enable</span> docker <span class="o">&amp;&amp;</span> systemctl start docker</code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="修改配置文件">修改配置文件</h2>
-
-<h3 id="registry-mirrors"><code>registry-mirrors</code></h3>
-
-<p>Docker镜像：</p>
-
-<ol>
-<li><a href="https://www.daocloud.io/mirror#accelerator-doc">Daocloud</a>，具体用法见网站。</li>
-<li><a href="http://mirrors.ustc.edu.cn/help/dockerhub.html">中科大</a>，具体用法见网站。</li>
-</ol>
-
-<h3 id="dns"><code>dns</code></h3>
-
-<p>Docker内置了一个DNS Server，它用来做两件事情：</p>
-
-<ol>
-<li>解析docker network里的容器或Service的IP地址</li>
-<li>把解析不了的交给外部DNS Server解析（<code>dns</code>参数设定的地址）</li>
-</ol>
-
-<p>默认情况下，<code>dns</code>参数值为Google DNS nameserver：<code>8.8.8.8</code>和<code>8.8.4.4</code>。我们得改成国内的DNS地址，比如：</p>
-
-<ol>
-<li><code>1.2.4.8</code></li>
-<li>阿里DNS：<code>223.5.5.5</code>和<code>223.6.6.6</code></li>
-<li>114DNS：<code>114.114.114.114</code>、<code>114.114.115.115</code></li>
-<li>腾讯 DNS：<code>119.29.29.29</code>、<code>182.254.116.116</code></li>
-</ol>
-
-<p>比如：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json">  <span class="s2">&#34;dns&#34;</span><span class="err">:</span> <span class="p">[</span><span class="s2">&#34;119.29.29.29&#34;</span><span class="p">,</span> <span class="s2">&#34;182.254.116.116&#34;</span><span class="p">]</span></code></pre></td></tr></table>
-</div>
-</div>
-<h3 id="log-driver"><code>log-driver</code></h3>
-
-<p><a href="https://docs.docker.com/config/containers/logging/configure/">Log driver</a>是Docker用来接收来自容器内部<code>stdout/stderr</code>的日志的模块，Docker默认的log driver是<a href="https://docs.docker.com/config/containers/logging/json-file/">JSON File logging driver</a>。这里只讲<code>json-file</code>的配置，其他的请查阅相关文档。</p>
-
-<p><code>json-file</code>会将容器日志存储在docker host machine的<code>/var/lib/docker/containers//-json.log</code>（需要root权限才能够读），既然日志是存在磁盘上的，那么就要磁盘消耗的问题。下面介绍两个关键参数：</p>
-
-<ol>
-<li><code>max-size</code>，单个日志文件最大尺寸，当日志文件超过此尺寸时会滚动，即不再往这个文件里写，而是写到一个新的文件里。默认值是-1，代表无限。</li>
-<li><code>max-files</code>，最多保留多少个日志文件。默认值是1。</li>
-</ol>
-
-<p>根据服务器的硬盘尺寸设定合理大小，比如：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json">  <span class="s2">&#34;log-driver&#34;</span><span class="err">:</span> <span class="s2">&#34;json-file&#34;</span><span class="err">,</span>
-  <span class="s2">&#34;log-opts&#34;</span><span class="err">:</span> <span class="p">{</span>
-    <span class="nt">&#34;max-size&#34;</span><span class="p">:</span> <span class="s2">&#34;100m&#34;</span><span class="p">,</span>
-    <span class="nt">&#34;max-files&#34;</span><span class="p">:</span><span class="s2">&#34;5&#34;</span>
-  <span class="p">}</span></code></pre></td></tr></table>
-</div>
-</div>
-<h3 id="cgroup-driver"><code>cgroup driver</code></h3>
-
-<p>根据文档<a href="https://kubernetes.io/docs/setup/cri/">CRI installation</a>中的内容，对于使用systemd作为init system的Linux的发行版，使用systemd作为docker的cgroup driver可以确保服务器节点在资源紧张的情况更加稳定，因此这里修改各个节点上docker的cgroup driver为systemd。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="s2">&#34;exec-opts&#34;</span>: <span class="o">[</span><span class="s2">&#34;native.cgroupdriver=systemd&#34;</span><span class="o">]</span></code></pre></td></tr></table>
-</div>
-</div>
-<h3 id="storage-driver"><code>storage-driver</code></h3>
-
-<p>Docker推荐使用<a href="https://docs.docker.com/storage/storagedriver/overlayfs-driver/#configure-docker-with-the-overlay-or-overlay2-storage-driver">overlay2</a>作为Storage driver。你可以通过<code>docker info | grep Storage</code>来确认一下当前使用的是什么：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ docker info <span class="p">|</span> grep <span class="s1">&#39;Storage&#39;</span>
-Storage Driver: overlay2</code></pre></td></tr></table>
-</div>
-</div>
-<p>如果结果不是overlay2，那你就需要配置一下了：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-json" data-lang="json">  <span class="s2">&#34;storage-driver&#34;</span><span class="err">:</span> <span class="s2">&#34;overlay2&#34;</span></code></pre></td></tr></table>
-</div>
-</div>
-<p>创建或修改<code>/etc/docker/daemon.json</code>：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span><span class="lnt">22
-</span><span class="lnt">23
-</span><span class="lnt">24
-</span><span class="lnt">25
-</span><span class="lnt">26
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/docker/daemon.json <span class="s">&lt;&lt;EOF
-</span><span class="s">{
-</span><span class="s">    &#34;oom-score-adjust&#34;: -1000,
-</span><span class="s">    &#34;log-driver&#34;: &#34;json-file&#34;,
-</span><span class="s">    &#34;log-opts&#34;: {
-</span><span class="s">      &#34;max-size&#34;: &#34;100m&#34;,
-</span><span class="s">      &#34;max-file&#34;: &#34;5&#34;
-</span><span class="s">    },
-</span><span class="s">  	&#34;dns&#34;: [&#34;119.29.29.29&#34;, &#34;182.254.116.116&#34;],
-</span><span class="s">    &#34;bip&#34;: &#34;172.17.10.1/24&#34;,
-</span><span class="s">    &#34;registry-mirrors&#34;: [
-</span><span class="s">    	&#34;https://hub.daocloud.io&#34;,
-</span><span class="s">      &#34;https://docker.mirrors.ustc.edu.cn/&#34;,
-</span><span class="s">      &#34;https://registry.docker-cn.com&#34;
-</span><span class="s">    ],
-</span><span class="s">    &#34;graph&#34;:&#34;/var/lib/docker&#34;,
-</span><span class="s">    &#34;exec-opts&#34;: [&#34;native.cgroupdriver=systemd&#34;],
-</span><span class="s">    &#34;storage-driver&#34;: &#34;overlay2&#34;,
-</span><span class="s">    &#34;storage-opts&#34;: [
-</span><span class="s">      &#34;overlay2.override_kernel_check=true&#34;
-</span><span class="s">    ]
-</span><span class="s">}
-</span><span class="s">EOF</span>
-
-sed -i <span class="s1">&#39;/containerd.sock.*/ s/$/ -H tcp:\/\/0.0.0.0:2375 -H unix:\/\/var\/run\/docker.sock /&#39;</span> <span class="se">\
-</span><span class="se"></span>	/usr/lib/systemd/system/docker.service</code></pre></td></tr></table>
-</div>
-</div>
-<p>防止FORWARD的DROP策略影响转发,给docker daemon添加下列参数修正，当然暴力点也可以<code>iptables -P FORWARD ACCEPT</code></p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">mkdir -p /etc/systemd/system/docker.service.d/
-cat&gt;/etc/systemd/system/docker.service.d/10-docker.conf<span class="s">&lt;&lt;EOF
-</span><span class="s">[Service]
-</span><span class="s">ExecStartPost=/sbin/iptables -I FORWARD -s 0.0.0.0/0 -j ACCEPT
-</span><span class="s">ExecStopPost=/bin/bash -c &#39;/sbin/iptables -D FORWARD -s 0.0.0.0/0 -j ACCEPT &amp;&gt; /dev/null || :&#39;
-</span><span class="s">EOF</span></code></pre></td></tr></table>
-</div>
-</div>
-<h2 id="重新加载配置">重新加载配置</h2>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">systemctl <span class="nb">enable</span> --now docker
-systemctl daemon-reload <span class="o">&amp;&amp;</span> systemctl restart docker</code></pre></td></tr></table>
-</div>
-</div>
-<p>如果enable docker的时候报错开启debug，如何开见 <a href="https://github.com/zhangguanzhang/Kubernetes-ansible/wiki/systemctl-running-debug">https://github.com/zhangguanzhang/Kubernetes-ansible/wiki/systemctl-running-debug</a></p>
+<p>请参考相关文章。</p>
 
 <h1 id="安装k8s">安装k8s</h1>
 

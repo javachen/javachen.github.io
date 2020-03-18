@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2014-02-23T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2014-02-23T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="7124">
+<meta itemprop="wordCount" content="7016">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 7124 字 </span>
+          <span class="more-meta"> 约 7016 字 </span>
           <span class="more-meta"> 预计阅读 15 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -173,6 +173,7 @@
 <ul>
 <li><a href="#6-1-搭建一个每台机器不同配置的实验环境">6.1、搭建一个每台机器不同配置的实验环境</a></li>
 <li><a href="#6-2-批量搭建一组服务器">6.2、批量搭建一组服务器</a></li>
+<li><a href="#6-3-ssh-直接登陆">6.3 ssh 直接登陆</a></li>
 </ul></li>
 </ul></li>
 <li><a href="#7-参考文章">7、参考文章</a></li>
@@ -1557,82 +1558,17 @@ lo: <span class="nv">flags</span><span class="o">=</span><span class="m">73</spa
 ifup eth0</code></pre></td></tr></table>
 </div>
 </div>
-<p>因为vagrant ssh`需要连接NAT网卡，故现在无法执行成功，这个时候可以这样访问：</p>
+<h3 id="6-3-ssh-直接登陆">6.3 ssh 直接登陆</h3>
+
+<p>参考：<a href="https://stackoverflow.com/questions/10864372/how-to-ssh-to-vagrant-without-actually-running-vagrant-ssh">https://stackoverflow.com/questions/10864372/how-to-ssh-to-vagrant-without-actually-running-vagrant-ssh</a></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ ssh vagrant@192.168.56.11  -o <span class="nv">StrictHostKeyChecking</span><span class="o">=</span>no -o<span class="se">\
-</span><span class="se"></span> <span class="nv">UserKnownHostsFile</span><span class="o">=</span>/dev/null -i .vagrant/machines/node1/virtualbox/private_key
-
-$ ssh vagrant@192.168.56.12  -o <span class="nv">StrictHostKeyChecking</span><span class="o">=</span>no -o<span class="se">\
-</span><span class="se"></span><span class="nv">UserKnownHostsFile</span><span class="o">=</span>/dev/null -i .vagrant/machines/node2/virtualbox/private_key
-
-$ ssh vagrant@192.168.56.13  -o <span class="nv">StrictHostKeyChecking</span><span class="o">=</span>no -o<span class="se">\
-</span><span class="se"></span><span class="nv">UserKnownHostsFile</span><span class="o">=</span>/dev/null -i .vagrant/machines/node3/virtualbox/private_key</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh <span class="k">$(</span>vagrant ssh-config <span class="p">|</span> awk <span class="s1">&#39;NR&gt;1 {print &#34; -o &#34;$1&#34;=&#34;$2}&#39;</span><span class="k">)</span> localhost</code></pre></td></tr></table>
 </div>
 </div>
-<p>配置yum源：</p>
-
-<p>下载CentOS-7-x86_64-DVD-1810.iso拷贝到vagrant共享目录，在node1节点上配置yum：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
-</span><span class="lnt"> 2
-</span><span class="lnt"> 3
-</span><span class="lnt"> 4
-</span><span class="lnt"> 5
-</span><span class="lnt"> 6
-</span><span class="lnt"> 7
-</span><span class="lnt"> 8
-</span><span class="lnt"> 9
-</span><span class="lnt">10
-</span><span class="lnt">11
-</span><span class="lnt">12
-</span><span class="lnt">13
-</span><span class="lnt">14
-</span><span class="lnt">15
-</span><span class="lnt">16
-</span><span class="lnt">17
-</span><span class="lnt">18
-</span><span class="lnt">19
-</span><span class="lnt">20
-</span><span class="lnt">21
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">mount /vagrant/CentOS-7-x86_64-DVD-1810.iso /mnt/
-rm -rf /etc/yum.repos.d/*
-<span class="nb">echo</span> <span class="s2">&#34;
-</span><span class="s2">[base]
-</span><span class="s2">name=CentOS
-</span><span class="s2">baseurl=file:///mnt/
-</span><span class="s2">gpgcheck=0
-</span><span class="s2">&#34;</span>  &gt; /etc/yum.repos.d/centos7.repo
-
-yum install vsftpd
-cp -r /mnt/* /var/ftp/pub
-chkconfig vsftpd on
-service vsftpd start
-
-
-<span class="nb">echo</span> <span class="s2">&#34;
-</span><span class="s2">[base]
-</span><span class="s2">name=CentOS
-</span><span class="s2">baseurl=ftp://192.168.56.11/pub/
-</span><span class="s2">gpgcheck=0
-</span><span class="s2">&#34;</span>  &gt; /etc/yum.repos.d/centos7.repo</code></pre></td></tr></table>
-</div>
-</div>
-<p>在node2和node3上配置centos7.repo。</p>
-
 <h1 id="7-参考文章">7、参考文章</h1>
 
 <p><a href="https://www.jianshu.com/p/d56d42b8d97f">Vagrant&ndash;快速搭建实验环境利器</a></p>

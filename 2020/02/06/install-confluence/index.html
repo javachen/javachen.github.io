@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-02-06T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-02-06T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="673">
+<meta itemprop="wordCount" content="991">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/devops/"> devops </a>
             </div>
-          <span class="more-meta"> 约 673 字 </span>
+          <span class="more-meta"> 约 991 字 </span>
           <span class="more-meta"> 预计阅读 2 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -143,6 +143,13 @@
 <li><a href="#安装postgres">安装Postgres</a></li>
 <li><a href="#docker安装">Docker安装</a></li>
 <li><a href="#k8s安装">K8s安装</a></li>
+<li><a href="#升级版本">升级版本</a></li>
+<li><a href="#其他问题">其他问题</a>
+<ul>
+<li><a href="#异常">异常</a></li>
+<li><a href="#confluenc宏乱码解决">Confluenc宏乱码解决</a></li>
+<li><a href="#修改忘记密码链接">修改忘记密码链接</a></li>
+</ul></li>
 <li><a href="#参考文章">参考文章</a></li>
 </ul>
 </nav>
@@ -222,7 +229,7 @@
 <pre class="chroma"><code class="language-bash" data-lang="bash">docker cp atlassian-agent.jar confluence:/opt/atlassian/confluence/
 
 docker <span class="nb">exec</span> -it confluence bash
-<span class="nb">echo</span> <span class="s1">&#39;export CATALINA_OPTS=&#34;-javaagent:/opt/atlassian/confluence/atlassian-agent.jar ${CATALINA_OPTS}&#34;&#39;</span> <span class="se">\
+<span class="nb">echo</span> <span class="s1">&#39;export CATALINA_OPTS=&#34;-Duser.timezone=GMT+08 -javaagent:/opt/atlassian/confluence/atlassian-agent.jar ${CATALINA_OPTS}&#34;&#39;</span> <span class="se">\
 </span><span class="se"></span>	&gt;&gt; /opt/atlassian/confluence/bin/setenv.sh
 
 docker restart confluence</code></pre></td></tr></table>
@@ -237,15 +244,13 @@ docker restart confluence</code></pre></td></tr></table>
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="k">FROM</span><span class="s">  atlassian/confluence-server:7.3.1</span><span class="err">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="k">FROM</span><span class="s">  atlassian/confluence-server:7.3.3</span><span class="err">
 </span><span class="err">
-</span><span class="err"></span><span class="c"># 将代理破解包加入容器</span><span class="err">
+</span><span class="err"></span>user confluence<span class="err">
 </span><span class="err"></span>COPY <span class="s2">&#34;atlassian-agent.jar&#34;</span> /opt/atlassian/confluence/<span class="err">
 </span><span class="err">
-</span><span class="err"></span><span class="c"># 设置启动加载代理包</span><span class="err">
 </span><span class="err"></span><span class="k">RUN</span> <span class="nb">echo</span> <span class="s1">&#39;export CATALINA_OPTS=&#34;-javaagent:/opt/atlassian/confluence/atlassian-agent.jar ${CATALINA_OPTS}&#34;&#39;</span> &gt;&gt; /opt/atlassian/confluence/bin/setenv.sh </code></pre></td></tr></table>
 </div>
 </div>
@@ -256,8 +261,8 @@ docker restart confluence</code></pre></td></tr></table>
 </span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">docker build -t javachen/confluence-server:7.3.1 .
-docker push javachen/confluence-server:7.3.1</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">docker build -t javachen/confluence-server:7.3.3 .
+docker push javachen/confluence-server:7.3.3</code></pre></td></tr></table>
 </div>
 </div>
 <p>获取license：</p>
@@ -278,15 +283,15 @@ docker push javachen/confluence-server:7.3.1</code></pre></td></tr></table>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># Confluence</span>
 java -jar atlassian-agent.jar -p conf -m junecloud@163.com -n junecloud <span class="se">\
-</span><span class="se"></span>	-o http://wesine.com -s BOYX-UEMX-WRLS-MKBW
+</span><span class="se"></span>	-o http://javachen.com -s BLYI-OHFJ-KTJN-M6C9
 
 <span class="c1"># Confluence Questions</span>
 java -jar atlassian-agent.jar -p questions -m junecloud@163.com -n junecloud <span class="se">\
-</span><span class="se"></span>	-o http://wesine.com -s BOYX-UEMX-WRLS-MKBW
+</span><span class="se"></span>	-o http://javachen.com -s BOYX-UEMX-WRLS-MKBW
 
 <span class="c1"># 团队日程表</span>
 java -jar atlassian-agent.jar -p tc -m junecloud@163.com -n junecloud <span class="se">\
-</span><span class="se"></span>	-o http://javachen.xyz -s BOYX-UEMX-WRLS-MKBW</code></pre></td></tr></table>
+</span><span class="se"></span>	-o http://javachen.com -s BOYX-UEMX-WRLS-MKBW</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="k8s安装">K8s安装</h1>
@@ -385,11 +390,13 @@ cd charts</pre></td></tr></table>
 </span><span class="lnt">33
 </span><span class="lnt">34
 </span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF &gt; confluence-values.yaml
 </span><span class="s">image:
-</span><span class="s">  repository: javachen/confluence-server:7.3.1
+</span><span class="s">  repository: javachen/confluence-server:7.3.3
 </span><span class="s">ingress:
 </span><span class="s">  enabled: true
 </span><span class="s">  annotations:
@@ -405,6 +412,8 @@ cd charts</pre></td></tr></table>
 </span><span class="s">        - confluence.javachen.xyz
 </span><span class="s">        - confluence.test.javachen.xyz
 </span><span class="s">env:
+</span><span class="s">  - name: TZ
+</span><span class="s">    value: Asia/Shanghai
 </span><span class="s">  - name: JVM_MINIMUM_MEMORY
 </span><span class="s">    value: &#34;3072m&#34;
 </span><span class="s">  - name: JVM_MAXIMUM_MEMORY
@@ -420,7 +429,7 @@ cd charts</pre></td></tr></table>
 </span><span class="s">  enabled: true
 </span><span class="s">  storageClass: &#34;ceph-rbd&#34;
 </span><span class="s">  accessMode: ReadWriteOnce
-</span><span class="s">  size: 5Gi
+</span><span class="s">  size: 20Gi
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
 </div>
@@ -428,9 +437,11 @@ cd charts</pre></td></tr></table>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">helm install confluence -n confluence -f confluence-values.yaml ./confluence</code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">helm install confluence -n confluence -f confluence-values.yaml ./confluence
+helm install confluence -f confluence-values.yaml ./confluence</code></pre></td></tr></table>
 </div>
 </div>
 <p>卸载：</p>
@@ -443,6 +454,92 @@ cd charts</pre></td></tr></table>
 </div>
 </div>
 <p>安装个人偏好的插件：RefinedToolki</p>
+
+<h1 id="升级版本">升级版本</h1>
+
+<p>备份数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">mkdir backup
+cd backup
+docker exec -it postgres pg_dump -U postgres -d confluence -f confluence.sql
+docker cp postgres:/confluence.sql .</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl cp pod/confluence-84db7f669c-hwcf9:/var/atlassian/application-data/confluence/backups/backup-2020_03_17.zip .
+
+kubectl exec -it pod/confluence-84db7f669c-hwcf9 -n confluence -- bash</pre></td></tr></table>
+</div>
+</div>
+<h1 id="其他问题">其他问题</h1>
+
+<h2 id="异常">异常</h2>
+
+<p>1、confluence ip变更之后，登陆失败，日志提示异常</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ApplicationPermissionException: Forbidden (403) Encountered a &#34;403 - Forbidden&#34; error while loading</pre></td></tr></table>
+</div>
+</div>
+<p>参考：<a href="https://community.atlassian.com/t5/Confluence-questions/ApplicationPermissionException-Forbidden-403-Encountered-a-quot/qaq-p/667228">https://community.atlassian.com/t5/Confluence-questions/ApplicationPermissionException-Forbidden-403-Encountered-a-quot/qaq-p/667228</a></p>
+
+<p>解决办法：</p>
+
+<ul>
+<li>K8s中，通过env环境变量设置 JVM_MAXIMUM_MEMORY 值为 <code>4096m -Datlassian.recovery.password=admin</code></li>
+<li>改用ldap目录</li>
+</ul>
+
+<h2 id="confluenc宏乱码解决">Confluenc宏乱码解决</h2>
+
+<p>下载中文编码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">wget https://mirror.shileizcc.com/wiki_Resources/Confluence/chinses.tar.gz
+tar zxf chinses.tar.gz</code></pre></td></tr></table>
+</div>
+</div>
+<p>dockerfile</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="k">FROM</span><span class="s"> javachen/confluence-server:7.3.3</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span>COPY ./chinses/ /usr/share/fonts/truetype/chinses<span class="err">
+</span><span class="err"></span><span class="k">RUN</span> chmod <span class="m">644</span> /usr/share/fonts/truetype/chinese/* <span class="se">\
+</span><span class="se"></span>		<span class="o">&amp;&amp;</span> fc-cache -fv <span class="se">\
+</span><span class="se"></span>		<span class="o">&amp;&amp;</span> RUN <span class="nb">echo</span> <span class="s1">&#39;CATALINA_OPTS=&#34;-Dconfluence.document.conversion.fontpath=/usr/share/fonts/truetype ${CATALINA_OPTS}&#34;&#39;</span> &gt;&gt; /opt/atlassian/jira/bin/setenv.sh</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="修改忘记密码链接">修改忘记密码链接</h2>
+
+<p>参考 <a href="https://confluence.atlassian.com/doc/confluence-installation-and-upgrade-guide-214864161.html">https://confluence.atlassian.com/doc/confluence-installation-and-upgrade-guide-214864161.html</a></p>
 
 <h1 id="参考文章">参考文章</h1>
 

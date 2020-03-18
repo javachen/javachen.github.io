@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>Rancher使用letsEncrypt生成证书并做DNS01校验 - 关注Java、Hadoop、Kubernetes和BI</title>
+  <title>Helm安装Rancher并配置DNS01校验证书 - 关注Java、Hadoop、Kubernetes和BI</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="JavaChen" /><meta name="description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+<meta name="author" content="JavaChen" /><meta name="description" content="版本说明 版本说明： Rancher：v2.3.5 Cert-Manager：v0.12.0 Rancher Chart源码 Rancher Chart源码在 https://github.com/rancher/rancher/tree/master/chart ，当前ranche" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
 
 
 <meta name="baidu-site-verification" content="OMsbiDfo1G" />
@@ -39,27 +39,27 @@
 <link rel="stylesheet" href="/css/custom.css">
 
 
-<meta property="og:title" content="Rancher使用letsEncrypt生成证书并做DNS01校验" />
-<meta property="og:description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的" />
+<meta property="og:title" content="Helm安装Rancher并配置DNS01校验证书" />
+<meta property="og:description" content="版本说明 版本说明： Rancher：v2.3.5 Cert-Manager：v0.12.0 Rancher Chart源码 Rancher Chart源码在 https://github.com/rancher/rancher/tree/master/chart ，当前ranche" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.javachen.space/2019/11/07/rancher-tls-with-letsencrypt-dns01/" />
 <meta property="article:published_time" content="2019-11-07T08:00:00&#43;08:00"/>
 <meta property="article:modified_time" content="2019-11-07T08:00:00&#43;08:00"/>
 
-<meta itemprop="name" content="Rancher使用letsEncrypt生成证书并做DNS01校验">
-<meta itemprop="description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的">
+<meta itemprop="name" content="Helm安装Rancher并配置DNS01校验证书">
+<meta itemprop="description" content="版本说明 版本说明： Rancher：v2.3.5 Cert-Manager：v0.12.0 Rancher Chart源码 Rancher Chart源码在 https://github.com/rancher/rancher/tree/master/chart ，当前ranche">
 
 
 <meta itemprop="datePublished" content="2019-11-07T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-07T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1514">
+<meta itemprop="wordCount" content="1583">
 
 
 
-<meta itemprop="keywords" content="kubernetes,rancher,tls," />
+<meta itemprop="keywords" content="rancher,tls,cert-manager," />
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Rancher使用letsEncrypt生成证书并做DNS01校验"/>
-<meta name="twitter:description" content="前面使用Helm安装Rancher HA集群，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的"/>
+<meta name="twitter:title" content="Helm安装Rancher并配置DNS01校验证书"/>
+<meta name="twitter:description" content="版本说明 版本说明： Rancher：v2.3.5 Cert-Manager：v0.12.0 Rancher Chart源码 Rancher Chart源码在 https://github.com/rancher/rancher/tree/master/chart ，当前ranche"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -122,14 +122,14 @@
           <article class="post">
     
     <header class="post-header">
-      <h1 class="post-title">Rancher使用letsEncrypt生成证书并做DNS01校验</h1>
+      <h1 class="post-title">Helm安装Rancher并配置DNS01校验证书</h1>
 
       <div class="post-meta">
         <span class="post-time"> 2019-11-07 </span>
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1514 字 </span>
+          <span class="more-meta"> 约 1583 字 </span>
           <span class="more-meta"> 预计阅读 4 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -156,10 +156,6 @@
     <div class="post-content">
       
 
-<p>前面<a href="/2019/11/03/install-rancher-ha-with-helm/">使用Helm安装Rancher HA集群</a>，配置证书的时候，因为没有权威证书，所以测试过利用Rancher和自签名文件来生成证书，但是生成的证书在浏览器不被信任。当时，也测试过通过letsEncrypt来生成，但是没有配置成功。把Rancher的Chart源码阅读之后，将源码修改了，增加了DNS01校验方式，最后测试成功。</p>
-
-<p>在阅读本文章之前，先阅读<a href="/2019/11/03/install-rancher-ha-with-helm/">使用Helm安装Rancher HA集群</a></p>
-
 <h1 id="版本说明">版本说明</h1>
 
 <p>版本说明：</p>
@@ -171,7 +167,7 @@
 
 <h1 id="rancher-chart源码">Rancher Chart源码</h1>
 
-<p>Rancher Chart源码在 <a href="https://github.com/rancher/rancher/tree/master/chart">https://github.com/rancher/rancher/tree/master/chart</a> ，当前rancher版本为2.3.3，可以看下<a href="https://github.com/rancher/rancher/blob/master/chart/templates/issuer-letsEncrypt.yaml">创建Issuer的源码</a> issuer-letsEncrypt.yaml：</p>
+<p>Rancher Chart源码在 <a href="https://github.com/rancher/rancher/tree/master/chart">https://github.com/rancher/rancher/tree/master/chart</a> ，当前rancher版本为2.3.5，可以看下<a href="https://github.com/rancher/rancher/blob/master/chart/templates/issuer-letsEncrypt.yaml">创建Issuer的源码</a> issuer-letsEncrypt.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="lnt"> 1
@@ -381,7 +377,7 @@ rancher-stable/rancher	<span class="m">2</span>.3.5        	v2.3.5     	Install 
 tar zxvf rancher-2.3.5.tgz</code></pre></td></tr></table>
 </div>
 </div>
-<p>修改chart/templates/issuer-letsEncrypt.yaml：</p>
+<p>1、修改chart/templates/issuer-letsEncrypt.yaml：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -418,6 +414,13 @@ tar zxvf rancher-2.3.5.tgz</code></pre></td></tr></table>
 </span><span class="lnt">32
 </span><span class="lnt">33
 </span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">{{</span>- <span class="k">if</span> eq .Values.tls <span class="s2">&#34;ingress&#34;</span> -<span class="o">}}</span>
@@ -428,7 +431,7 @@ apiVersion: cert-manager.io/v1alpha2
     <span class="o">{{</span>- <span class="k">else</span> <span class="k">if</span> or <span class="o">(</span>.Capabilities.APIVersions.Has <span class="s2">&#34;certmanager.k8s.io/v1alpha1&#34;</span><span class="o">)</span> <span class="o">(</span>and <span class="o">(</span>eq <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._0<span class="o">)</span> <span class="m">0</span><span class="o">)</span> <span class="o">(</span>lt <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._1<span class="o">)</span> <span class="m">11</span><span class="o">))</span> <span class="o">}}</span>
 apiVersion: certmanager.k8s.io/v1alpha1
     <span class="o">{{</span>- end <span class="o">}}</span>
-kind: Issuer
+kind: ClusterIssuer
 metadata:
   name: <span class="o">{{</span> template <span class="s2">&#34;rancher.fullname&#34;</span> . <span class="o">}}</span>
   labels:
@@ -446,17 +449,33 @@ spec:
     email: <span class="o">{{</span> .Values.letsEncrypt.email <span class="o">}}</span>
     privateKeySecretRef:
       name: letsencrypt-<span class="o">{{</span> .Values.letsEncrypt.environment <span class="o">}}</span>
+    <span class="o">{{</span>- <span class="k">if</span> or <span class="o">(</span>.Capabilities.APIVersions.Has <span class="s2">&#34;cert-manager.io/v1alpha2&#34;</span><span class="o">)</span> <span class="o">(</span>and <span class="o">(</span>eq <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._0<span class="o">)</span> <span class="m">0</span><span class="o">)</span> <span class="o">(</span>ge <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._1<span class="o">)</span> <span class="m">11</span><span class="o">))</span> <span class="o">}}</span>
 <span class="o">{{</span>- <span class="k">if</span> .Values.letsEncrypt.solvers  <span class="o">}}</span>   
     solvers:  
 <span class="o">{{</span> toYaml .Values.letsEncrypt.solvers <span class="p">|</span> indent <span class="m">4</span> <span class="o">}}</span>
 <span class="o">{{</span>- <span class="k">else</span> <span class="o">}}</span>
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+<span class="o">{{</span>- end <span class="o">}}</span> 
+    <span class="o">{{</span>- <span class="k">else</span> <span class="k">if</span> or <span class="o">(</span>.Capabilities.APIVersions.Has <span class="s2">&#34;certmanager.k8s.io/v1alpha1&#34;</span><span class="o">)</span> <span class="o">(</span>and <span class="o">(</span>eq <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._0<span class="o">)</span> <span class="m">0</span><span class="o">)</span> <span class="o">(</span>lt <span class="o">(</span>int <span class="nv">$certmanagerVer</span>._1<span class="o">)</span> <span class="m">11</span><span class="o">))</span> <span class="o">}}</span>
     http01: <span class="o">{}</span>
-<span class="o">{{</span>- end <span class="o">}}</span>  
+    <span class="o">{{</span>- end <span class="o">}}</span>
   <span class="o">{{</span>- end -<span class="o">}}</span>
 <span class="o">{{</span>- end -<span class="o">}}</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>修改rancher/values.yaml，在environment下面添加<code>solvers: []</code></p>
+<p>说明：改动的地方有：</p>
+
+<ul>
+<li>Issuer改为ClusterIssuer，避免出现没有权限访问secret的问题</li>
+<li>添加自定义的 .Values.letsEncrypt.solvers</li>
+</ul>
+
+<p>2、修改rancher/ingress.yaml，将cert-manager.io/issuer改为cert-manager.io/cluster-issuer，certmanager.k8s.io/issuer改为certmanager.k8s.io/cluster-issuer。</p>
+
+<p>3、修改rancher/values.yaml，在environment下面添加<code>solvers: []</code></p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -556,25 +575,31 @@ spec:
 </span><span class="lnt">12
 </span><span class="lnt">13
 </span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get secret,certificate,ClusterIssuer -n cattle-system
-
 NAME                                   TYPE                                  DATA   AGE
-secret/cattle-token-zwq9x              kubernetes.io/service-account-token   <span class="m">3</span>      27s
-secret/default-token-ps9vd             kubernetes.io/service-account-token   <span class="m">3</span>      27s
-secret/rancher-token-wcdlh             kubernetes.io/service-account-token   <span class="m">3</span>      10s
-secret/sh.helm.release.v1.rancher.v1   helm.sh/release.v1                    <span class="m">1</span>      10s
-secret/tls-rancher-ingress             kubernetes.io/tls                     <span class="m">3</span>      26s
+secret/cattle-credentials-5582582      Opaque                                <span class="m">2</span>      98d
+secret/cattle-token-nxsvr              kubernetes.io/service-account-token   <span class="m">3</span>      98d
+secret/default-token-sx45c             kubernetes.io/service-account-token   <span class="m">3</span>      98d
+secret/letsencrypt-production          Opaque                                <span class="m">1</span>      96m
+secret/rancher-token-l2s27             kubernetes.io/service-account-token   <span class="m">3</span>      10m
+secret/sh.helm.release.v1.rancher.v1   helm.sh/release.v1                    <span class="m">1</span>      10m
+secret/tls-rancher                     kubernetes.io/tls                     <span class="m">2</span>      98d
+secret/tls-rancher-ingress             kubernetes.io/tls                     <span class="m">3</span>      98d
 
 NAME                                              READY   SECRET                AGE
-certificate.cert-manager.io/tls-rancher-ingress   False   tls-rancher-ingress   10s
+certificate.cert-manager.io/tls-rancher-ingress   True    tls-rancher-ingress   10m
 
-NAME                                    READY   AGE
-clusterissuer.cert-manager.io/rancher   True    10s</code></pre></td></tr></table>
+NAME                                                                       READY   AGE
+clusterissuer.cert-manager.io/cert-manager-webhook-dnspod-cluster-issuer   True    58m
+clusterissuer.cert-manager.io/rancher</code></pre></td></tr></table>
 </div>
 </div>
-<p>可以看到letsEncrypt自动创建了证书 rancher-letsencrypt-prod ，查看证书状态：</p>
+<p>可以看到letsEncrypt自动创建了证书 tls-rancher-ingress ，查看证书状态：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -582,21 +607,13 @@ clusterissuer.cert-manager.io/rancher   True    10s</code></pre></td></tr></tabl
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
-</span><span class="lnt">9
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">kubectl describe clusterissuer rancher -n cattle-system
-
+<pre class="chroma">kubectl get secret,certificate,ClusterIssuer -n cattle-system
 kubectl describe certificate tls-rancher-ingress -n cattle-system
-
-kubectl describe CertificateRequest tls-rancher-ingress-2667258947 -n cattle-system
-
-kubectl describe order tls-rancher-ingress-2667258947 -n cattle-system
-
-kubectl describe Challenge tls-rancher-ingress-2667258947-2022664050-2433006835 -n cattle-system</pre></td></tr></table>
+kubectl describe CertificateRequest tls-rancher-ingress-485758058 -n cattle-system
+kubectl describe order tls-rancher-ingress-2260491668 -n cattle-system
+kubectl describe Challenge tls-rancher-ingress-2260491668-881515835-3335958646 -n cattle-system</pre></td></tr></table>
 </div>
 </div>
 <p>当tls-rancher-ingress状态为true时候，证书就创建成功了。</p>
@@ -669,7 +686,7 @@ kubectl delete ServiceAccount,ClusterRoleBinding,Role,clusterissuer rancher -n c
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">helm upgrade rancher --namespace cattle-system <span class="se">\
-</span><span class="se"></span>	./rancher --version v2.3.3 -f rancher-values.yaml</code></pre></td></tr></table>
+</span><span class="se"></span>	./rancher --version v2.3.5 -f rancher-values.yaml</code></pre></td></tr></table>
 </div>
 </div>
 <blockquote>
@@ -729,9 +746,9 @@ kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
   </div>
 </div><footer class="post-footer">
       <div class="post-tags">
-          <a href="/tags/kubernetes/">kubernetes</a>
           <a href="/tags/rancher/">rancher</a>
           <a href="/tags/tls/">tls</a>
+          <a href="/tags/cert-manager/">cert-manager</a>
           </div>
       <nav class="post-nav">
         <a class="prev" href="/2019/11/10/kubernetes-resource-secret/">
@@ -740,7 +757,7 @@ kubectl -n cattle-system get deploy rancher</code></pre></td></tr></table>
             <span class="prev-text nav-mobile">上一篇</span>
           </a>
         <a class="next" href="/2019/11/04/using-cert-manager-with-nginx-ingress/">
-            <span class="next-text nav-default">使用Cert Manager配置Let’s Encrypt证书</span>
+            <span class="next-text nav-default">使用Cert Manager生成Let’s Encrypt证书</span>
             <span class="next-text nav-mobile">下一篇</span>
             <i class="iconfont icon-right"></i>
           </a>
