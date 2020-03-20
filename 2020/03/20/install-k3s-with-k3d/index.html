@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用K3d安装K3s - 关注Java、Hadoop、Kubernetes和BI</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="安装K3d 脚本安装： 1 2 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash homebrew安装： 1 brew install k3d 设置环境变量： 1 export KUBECONFIG=&amp;#34;$(k3d get-kubeconfig --name=&amp;#39;k3s-default&amp;#39;)&amp;#34; 本地安装kubectl: 1 2 3 4 5 6 7" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/03/20/install-k3s-with-k3d/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用K3d安装K3s" />
+<meta property="og:description" content="安装K3d 脚本安装： 1 2 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash homebrew安装： 1 brew install k3d 设置环境变量： 1 export KUBECONFIG=&#34;$(k3d get-kubeconfig --name=&#39;k3s-default&#39;)&#34; 本地安装kubectl: 1 2 3 4 5 6 7" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/03/20/install-k3s-with-k3d/" />
+<meta property="article:published_time" content="2020-03-20T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-03-20T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="使用K3d安装K3s">
+<meta itemprop="description" content="安装K3d 脚本安装： 1 2 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash homebrew安装： 1 brew install k3d 设置环境变量： 1 export KUBECONFIG=&#34;$(k3d get-kubeconfig --name=&#39;k3s-default&#39;)&#34; 本地安装kubectl: 1 2 3 4 5 6 7">
+
+
+<meta itemprop="datePublished" content="2020-03-20T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-03-20T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="979">
+
+
+
+<meta itemprop="keywords" content="k3s,k3d," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用K3d安装K3s"/>
+<meta name="twitter:description" content="安装K3d 脚本安装： 1 2 wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh | bash homebrew安装： 1 brew install k3d 设置环境变量： 1 export KUBECONFIG=&#34;$(k3d get-kubeconfig --name=&#39;k3s-default&#39;)&#34; 本地安装kubectl: 1 2 3 4 5 6 7"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用K3d安装K3s</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-03-20 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 979 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装k3d">安装K3d</a></li>
+<li><a href="#创建k3s集群">创建k3s集群</a></li>
+<li><a href="#暴露服务">暴露服务</a>
+<ul>
+<li><a href="#ingress">Ingress</a></li>
+<li><a href="#nodeport">NodePort</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="安装k3d">安装K3d</h1>
+
+<p>脚本安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">wget -q -O - https://raw.githubusercontent.com/rancher/k3d/master/install.sh <span class="p">|</span> bash
+curl -s https://raw.githubusercontent.com/rancher/k3d/master/install.sh <span class="p">|</span> bash</code></pre></td></tr></table>
+</div>
+</div>
+<p>homebrew安装：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">brew install k3d</pre></td></tr></table>
+</div>
+</div>
+<p>设置环境变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">KUBECONFIG</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>k3d get-kubeconfig --name<span class="o">=</span><span class="s1">&#39;k3s-default&#39;</span><span class="k">)</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>本地安装kubectl:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+</span><span class="s">[kubernetes]
+</span><span class="s">name=Kubernetes
+</span><span class="s">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+</span><span class="s">enabled=1
+</span><span class="s">gpgcheck=1
+</span><span class="s">gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg 
+</span><span class="s">  http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+</span><span class="s">EOF</span>
+
+yum install kubectl -y
+
+ln /usr/bin/kubectl /usr/local/bin/kubectl</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看docker容器内集群信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl cluster-info</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看帮助文档：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ k3d -h
+NAME:
+   k3d - Run k3s in Docker!
+
+USAGE:
+   k3d <span class="o">[</span>global options<span class="o">]</span> <span class="nb">command</span> <span class="o">[</span><span class="nb">command</span> options<span class="o">]</span> <span class="o">[</span>arguments...<span class="o">]</span>
+
+VERSION:
+   v1.7.0
+
+COMMANDS:
+     check-tools, ct   Check <span class="k">if</span> docker is running
+     shell             Start a subshell <span class="k">for</span> a cluster
+     create, c         Create a single- or multi-node k3s cluster in docker containers
+     add-node          <span class="o">[</span>EXPERIMENTAL<span class="o">]</span> Add nodes to an existing k3d/k3s cluster <span class="o">(</span>k3d by default<span class="o">)</span>
+     delete, d, del    Delete cluster
+     stop              Stop cluster
+     start             Start a stopped cluster
+     list, ls, l       List all clusters
+     get-kubeconfig    Get kubeconfig location <span class="k">for</span> cluster
+     import-images, i  Import a comma- or space-separated list of container images from your <span class="nb">local</span> docker daemon into the cluster
+     version           print k3d and k3s version
+     help, h           Shows a list of commands or <span class="nb">help</span> <span class="k">for</span> one <span class="nb">command</span>
+
+GLOBAL OPTIONS:
+   --verbose      Enable verbose output
+   --timestamp    Enable timestamps in logs messages
+   --help, -h     show <span class="nb">help</span>
+   --version, -v  print the version</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建k3s集群">创建k3s集群</h1>
+
+<p>创建一个集群，设置参数不使用traefik：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">k3d create --server-arg <span class="s2">&#34;--no-deploy=traefik&#34;</span> </code></pre></td></tr></table>
+</div>
+</div>
+<p>下载arkade</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -sSL https://dl.get-arkade.dev <span class="p">|</span> sudo sh</code></pre></td></tr></table>
+</div>
+</div>
+<p>接下来可以通过arkade安装应用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">arkade install --help</code></pre></td></tr></table>
+</div>
+</div>
+<p>删除默认集群：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">k3d delete</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="暴露服务">暴露服务</h1>
+
+<p>参考 <a href="https://github.com/rancher/k3d/blob/master/docs/examples.md">https://github.com/rancher/k3d/blob/master/docs/examples.md</a></p>
+
+<h2 id="ingress">Ingress</h2>
+
+<p>1、创建集群：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">k3d create --publish 8081:80 --workers 2</pre></td></tr></table>
+</div>
+</div>
+<p>2、设置环境变量：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">export</span> <span class="nv">KUBECONFIG</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>k3d get-kubeconfig --name<span class="o">=</span><span class="s1">&#39;k3s-default&#39;</span><span class="k">)</span><span class="s2">&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>安装kubectl，参考上文。查看集群信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl cluster-info
+Kubernetes master is running at https://localhost:6443
+CoreDNS is running at https://localhost:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Met</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看节点信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get node -o wide
+NAME                       STATUS   ROLES    AGE   VERSION        INTERNAL-IP   EXTERNAL-IP   OS-IMAGE   KERNEL-VERSION               CONTAINER-RUNTIME
+k3d-k3s-default-worker-1   Ready    &lt;none&gt;   10m   v1.17.3+k3s1   <span class="m">172</span>.19.0.4    &lt;none&gt;        Unknown    <span class="m">4</span>.10.4-1.el7.elrepo.x86_64   containerd://1.3.3-k3s1
+k3d-k3s-default-worker-0   Ready    &lt;none&gt;   10m   v1.17.3+k3s1   <span class="m">172</span>.19.0.3    &lt;none&gt;        Unknown    <span class="m">4</span>.10.4-1.el7.elrepo.x86_64   containerd://1.3.3-k3s1
+k3d-k3s-default-server     Ready    master   10m   v1.17.3+k3s1   <span class="m">172</span>.19.0.2    &lt;none&gt;        Unknown    <span class="m">4</span>.10.4-1.el7.elrepo.x86_64   containerd://1.3.3-k3s1</code></pre></td></tr></table>
+</div>
+</div>
+<p>3、创建nginx deployment：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create deployment nginx --image<span class="o">=</span>nginx</code></pre></td></tr></table>
+</div>
+</div>
+<p>4、创建一个clueterip服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create service clusterip nginx --tcp<span class="o">=</span><span class="m">80</span>:80</code></pre></td></tr></table>
+</div>
+</div>
+<p>5、创建一个Ingress，注意：k3s默认安装了treafik ingress</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: nginx
+</span><span class="s">  annotations:
+</span><span class="s">    ingress.kubernetes.io/ssl-redirect: &#34;false&#34;
+</span><span class="s">spec:
+</span><span class="s">  rules:
+</span><span class="s">  - http:
+</span><span class="s">      paths:
+</span><span class="s">      - path: /
+</span><span class="s">        backend:
+</span><span class="s">          serviceName: nginx
+</span><span class="s">          servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get pod,svc,ing
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/nginx-86c57db685-vsmlq   <span class="m">1</span>/1     Running   <span class="m">0</span>          3m44s
+
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>   AGE
+service/kubernetes   ClusterIP   <span class="m">10</span>.43.0.1      &lt;none&gt;        <span class="m">443</span>/TCP   8m45s
+service/nginx        ClusterIP   <span class="m">10</span>.43.71.250   &lt;none&gt;        <span class="m">80</span>/TCP    3m38s
+
+NAME                       HOSTS   ADDRESS      PORTS   AGE
+ingress.extensions/nginx   *       <span class="m">172</span>.19.0.3   <span class="m">80</span>      119s</code></pre></td></tr></table>
+</div>
+</div>
+<p>可以看到ingress的地址为 172.19.0.3，是docker容器的IP，k3d创建k3s集群时，通过 <code>--publish 8081:80</code> 将容器的80端口暴露到宿主机的8081了，所以可以本地访问8081</p>
+
+<p>6、本地访问：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">curl localhost:8081/</pre></td></tr></table>
+</div>
+</div>
+<p>通过浏览器访问：<a href="http://144.34.194.100:8081/">http://144.34.194.100:8081/</a></p>
+
+<h2 id="nodeport">NodePort</h2>
+
+<p>1、创建集群：</p>
+
+<p>将k3d-k3s-default-worker-0节点上的30080端口暴露到宿主机的8082端口</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">k3d create --publish <span class="m">8082</span>:30080@k3d-k3s-default-worker-0 --workers <span class="m">2</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>2、3步骤和上面一样</p>
+
+<p>4、创建Service</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Service
+</span><span class="s">metadata:
+</span><span class="s">  labels:
+</span><span class="s">    app: nginx
+</span><span class="s">  name: nginx
+</span><span class="s">spec:
+</span><span class="s">  ports:
+</span><span class="s">  - name: 80-80
+</span><span class="s">    nodePort: 30080
+</span><span class="s">    port: 80
+</span><span class="s">    protocol: TCP
+</span><span class="s">    targetPort: 80
+</span><span class="s">  selector:
+</span><span class="s">    app: nginx
+</span><span class="s">  type: NodePort
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>5、本地访问：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl localhost:8082/</code></pre></td></tr></table>
+</div>
+</div>
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-03-20
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/k3s/">k3s</a>
+          <a href="/tags/k3d/">k3d</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/2020/03/20/k3s-cert-manager-letsencrypt/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">TLS on K3s with traefik, cert manger and letsencrypt</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/2020/03/19/install-k3s-with-k3sup/">
+            <span class="next-text nav-default">使用K3sup安装K3S</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>

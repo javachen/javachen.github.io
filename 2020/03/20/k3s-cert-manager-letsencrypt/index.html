@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>TLS on K3s with traefik, cert manger and letsencrypt - 关注Java、Hadoop、Kubernetes和BI</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="原文：https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt ，本文只是我的测试" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/03/20/k3s-cert-manager-letsencrypt/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="TLS on K3s with traefik, cert manger and letsencrypt" />
+<meta property="og:description" content="原文：https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt ，本文只是我的测试" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/03/20/k3s-cert-manager-letsencrypt/" />
+<meta property="article:published_time" content="2020-03-20T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-03-20T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="TLS on K3s with traefik, cert manger and letsencrypt">
+<meta itemprop="description" content="原文：https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt ，本文只是我的测试">
+
+
+<meta itemprop="datePublished" content="2020-03-20T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-03-20T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="851">
+
+
+
+<meta itemprop="keywords" content="k3s,cert-manager," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="TLS on K3s with traefik, cert manger and letsencrypt"/>
+<meta name="twitter:description" content="原文：https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt ，本文只是我的测试"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">TLS on K3s with traefik, cert manger and letsencrypt</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-03-20 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 851 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#安装cert-manager">安装cert-manager</a></li>
+<li><a href="#创建certificateissuer">创建CertificateIssuer</a></li>
+<li><a href="#创建测试例子">创建测试例子</a>
+<ul>
+<li><a href="#创建命名空间">创建命名空间</a></li>
+<li><a href="#创建测试应用">创建测试应用</a></li>
+<li><a href="#ingress配置自签名的tls证书">Ingress配置自签名的TLS证书</a></li>
+<li><a href="#创建使用-http-01-校验的-clusterissuer">创建使用 HTTP-01 校验的 ClusterIssuer</a></li>
+</ul></li>
+<li><a href="#参考文章">参考文章</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<p>原文：<a href="https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt">https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt</a> ，本文只是我的测试记录。</p>
+
+<h1 id="安装cert-manager">安装cert-manager</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl create namespace cert-manager
+
+<span class="c1"># This step is neccessary for installation and explained in the docs</span>
+$ kubectl label namespace cert-manager certmanager.k8s.io/disable-validation<span class="o">=</span><span class="nb">true</span>
+
+<span class="c1"># create CRDs and install all other resources</span>
+$ kubectl apply --validate<span class="o">=</span><span class="nb">false</span> -f https://github.com/jetstack/cert-manager/releases/download/v0.13.0/cert-manager.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl get pods --namespace cert-manager
+NAME                                       READY   STATUS    RESTARTS   AGE
+cert-manager-cainjector-75b6bc7b8b-vsdkt   <span class="m">1</span>/1     Running   <span class="m">0</span>          92m
+cert-manager-6f578f4565-9v5hh              <span class="m">1</span>/1     Running   <span class="m">0</span>          92m
+cert-manager-webhook-8444c4bc77-rlsv5      <span class="m">1</span>/1     Running   <span class="m">0</span>          92m</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建certificateissuer">创建CertificateIssuer</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: letsencrypt-prod
+</span><span class="s">spec:
+</span><span class="s">  acme:
+</span><span class="s">    email: junecloud@163.com
+</span><span class="s">    privateKeySecretRef:
+</span><span class="s">      name: letsencrypt-prod-secret
+</span><span class="s">    server: https://acme-v02.api.letsencrypt.org/directory
+</span><span class="s">    solvers:
+</span><span class="s">      - http01:
+</span><span class="s">          ingress:
+</span><span class="s">            class: traefik
+</span><span class="s">        selector: {}
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get clusterissuer letsencrypt-prod
+kubectl describe clusterissuer letsencrypt-prod</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建测试例子">创建测试例子</h1>
+
+<h2 id="创建命名空间">创建命名空间</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl create namespace flasktestsimple</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建测试应用">创建测试应用</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: apps/v1
+</span><span class="s">kind: Deployment
+</span><span class="s">metadata:
+</span><span class="s">  name: flasktest
+</span><span class="s">  namespace: flasktestsimple
+</span><span class="s">  labels:
+</span><span class="s">    name: flasktestbackend
+</span><span class="s">spec:
+</span><span class="s">  selector:
+</span><span class="s">    matchLabels:
+</span><span class="s">      name: flasktestbackend
+</span><span class="s">  template:
+</span><span class="s">    metadata:
+</span><span class="s">      labels:
+</span><span class="s">        name: flasktestbackend
+</span><span class="s">    spec:
+</span><span class="s">      containers:
+</span><span class="s">        - name: backend
+</span><span class="s">          image: joelsaunders91/flask-test
+</span><span class="s">          ports:
+</span><span class="s">            - containerPort: 5000
+</span><span class="s">---            
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Service
+</span><span class="s">metadata:
+</span><span class="s">  name: flasktest
+</span><span class="s">  namespace: flasktestsimple
+</span><span class="s">spec:
+</span><span class="s">  ports:
+</span><span class="s">    - name: http
+</span><span class="s">      port: 80
+</span><span class="s">      protocol: TCP
+</span><span class="s">      targetPort: 5000
+</span><span class="s">  selector:
+</span><span class="s">    name: flasktestbackend
+</span><span class="s">---
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: flasktest-ingress
+</span><span class="s">  namespace: flasktestsimple
+</span><span class="s">  annotations:
+</span><span class="s">    kubernetes.io/ingress.class: traefik
+</span><span class="s">spec:
+</span><span class="s">  rules:
+</span><span class="s">  - host: dashboard.javachen.space
+</span><span class="s">    http:
+</span><span class="s">      paths:
+</span><span class="s">        - path: /
+</span><span class="s">          backend:
+</span><span class="s">            serviceName: flasktest
+</span><span class="s">            servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl get all -n flasktestsimple</code></pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问 <a href="https://dashboard.javachen.space/">https://dashboard.javachen.space/</a> ，可以看到：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">Hello World!</pre></td></tr></table>
+</div>
+</div>
+<h2 id="ingress配置自签名的tls证书">Ingress配置自签名的TLS证书</h2>
+
+<p>使用自动创建证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: flasktest-ingress
+</span><span class="s">  namespace: flasktestsimple
+</span><span class="s">  annotations:
+</span><span class="s">    kubernetes.io/ingress.class: traefik
+</span><span class="s">    cert-manager.io/cluster-issuer: letsencrypt-prod
+</span><span class="s">spec:
+</span><span class="s">  tls:
+</span><span class="s">    - secretName: flasktestsimple-javachen-space-tls
+</span><span class="s">      hosts:
+</span><span class="s">        - dashboard.javachen.space
+</span><span class="s">  rules:
+</span><span class="s">  - host: dashboard.javachen.space
+</span><span class="s">    http:
+</span><span class="s">      paths:
+</span><span class="s">        - path: /
+</span><span class="s">          backend:
+</span><span class="s">            serviceName: flasktest
+</span><span class="s">            servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl -n flasktestsimple describe certificate
+  Normal  GeneratedKey  48s   cert-manager  Generated a new private key
+  Normal  Requested     48s   cert-manager  Created new CertificateRequest resource <span class="s2">&#34;flasktestsimple-javachen-space-tls-937547818&#34;</span>
+  Normal  Issued        25s   cert-manager  Certificate issued successfully</code></pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问 <a href="https://dashboard.javachen.space/">https://dashboard.javachen.space/</a> ，可以看到：</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/00831rSTgy1gd0c97r8vjj31jq0oqq8p.jpg" alt="image-20200320134058370" /></p>
+
+<p>可以看到证书签发机构不被信任。</p>
+
+<h2 id="创建使用-http-01-校验的-clusterissuer">创建使用 HTTP-01 校验的 ClusterIssuer</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: cert-manager.io/v1alpha2
+</span><span class="s">kind: ClusterIssuer
+</span><span class="s">metadata:
+</span><span class="s">  name: letsencrypt-prod-http01-cluster-issuer
+</span><span class="s">spec:
+</span><span class="s">  acme:
+</span><span class="s">    server: https://acme-v02.api.letsencrypt.org/directory
+</span><span class="s">    email: junecloud@163.com
+</span><span class="s">    privateKeySecretRef:
+</span><span class="s">      name: letsencrypt-http01-secret
+</span><span class="s">    solvers:
+</span><span class="s">    - selector: {} # An empty &#39;selector&#39; means that this solver matches all domains
+</span><span class="s">      http01: # ACME HTTP-01 solver configurations
+</span><span class="s">        ingress:
+</span><span class="s">          class: traefik
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>删除Ingress、secret、证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl -n flasktestsimple delete ingress flasktest-ingress
+kubectl -n flasktestsimple delete certificate flasktestsimple-javachen-space-tls
+kubectl -n flasktestsimple delete secret flasktestsimple-javachen-space-tls</code></pre></td></tr></table>
+</div>
+</div>
+<p>更新Ingress：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt; EOF | kubectl apply -f -
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: flasktest-ingress
+</span><span class="s">  namespace: flasktestsimple
+</span><span class="s">  annotations:
+</span><span class="s">    kubernetes.io/ingress.class: traefik
+</span><span class="s">    cert-manager.io/cluster-issuer: letsencrypt-prod-http01-cluster-issuer
+</span><span class="s">spec:
+</span><span class="s">  tls:
+</span><span class="s">    - secretName: flasktestsimple-javachen-space-tls
+</span><span class="s">      hosts:
+</span><span class="s">        - dashboard.javachen.space
+</span><span class="s">  rules:
+</span><span class="s">  - host: dashboard.javachen.space
+</span><span class="s">    http:
+</span><span class="s">      paths:
+</span><span class="s">        - path: /
+</span><span class="s">          backend:
+</span><span class="s">            serviceName: flasktest
+</span><span class="s">            servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看证书：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl -n flasktestsimple describe certificate</code></pre></td></tr></table>
+</div>
+</div>
+<p>浏览器访问 <a href="https://dashboard.javachen.space/">https://dashboard.javachen.space/</a> ，可以看到证书被信任</p>
+
+<p><img src="https://tva1.sinaimg.cn/large/00831rSTgy1gd0ciao1iej31m40rs474.jpg" alt="image-20200320134941899" /></p>
+
+<h1 id="参考文章">参考文章</h1>
+
+<ul>
+<li><a href="https://www.thebookofjoel.com/cheap-production-k3s-with-dashboard-ui">Cheap K3s Kubernetes Cluster with Dashboard UI</a></li>
+<li><a href="https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt">TLS on K3s with traefik, cert manger and letsencrypt</a></li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-03-20
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/k3s/">k3s</a>
+          <a href="/tags/cert-manager/">cert-manager</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/03/20/install-k3s-with-k3d/">
+            <span class="next-text nav-default">使用K3d安装K3s</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>
