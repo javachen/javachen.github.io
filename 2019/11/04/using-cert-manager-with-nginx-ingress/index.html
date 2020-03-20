@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2019-11-04T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-04T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3115">
+<meta itemprop="wordCount" content="3289">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 3115 字 </span>
+          <span class="more-meta"> 约 3289 字 </span>
           <span class="more-meta"> 预计阅读 7 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -235,13 +235,13 @@
 </span><span class="s">apiVersion: cert-manager.io/v1alpha2
 </span><span class="s">kind: ClusterIssuer
 </span><span class="s">metadata:
-</span><span class="s">  name: letsencrypt-staging-http01
+</span><span class="s">  name: letsencrypt-stage-http01-cluster-issuer
 </span><span class="s">spec:
 </span><span class="s">  acme:
 </span><span class="s">    server: https://acme-staging-v02.api.letsencrypt.org/directory
 </span><span class="s">    email: junecloud@163.com
 </span><span class="s">    privateKeySecretRef:
-</span><span class="s">      name: letsencrypt-staging-http01
+</span><span class="s">      name: letsencrypt-stage-http01-secret
 </span><span class="s">    solvers:
 </span><span class="s">    - selector: {} # An empty &#39;selector&#39; means that this solver matches all domains
 </span><span class="s">      http01: # ACME HTTP-01 solver configurations
@@ -509,13 +509,15 @@ helm install cert-manager-webhook-godaddy --namespace cert-manager <span class="
 </span><span class="w">  </span>secretName<span class="p">:</span><span class="w"> </span>kubernetes-dashboard-tls<span class="w">
 </span><span class="w">  </span>renewBefore<span class="p">:</span><span class="w"> </span>240h<span class="w">
 </span><span class="w">  </span>issuerRef<span class="p">:</span><span class="w">
-</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-staging-http01<span class="w">
+</span><span class="w">    </span>name<span class="p">:</span><span class="w"> </span>letsencrypt-stage-http01-cluster-issuer<span class="w">
 </span><span class="w">    </span>kind<span class="p">:</span><span class="w"> </span>ClusterIssuer<span class="w">
 </span><span class="w">  </span>dnsNames<span class="p">:</span><span class="w">
 </span><span class="w">  </span>-<span class="w"> </span>dashboard.javachen.space<span class="w">
 </span><span class="w"></span>EOF</code></pre></td></tr></table>
 </div>
 </div>
+<p>配置说明：</p>
+
 <ul>
 <li><code>secretName</code>: 指示证书最终存到哪个 Secret 中</li>
 <li><code>issuerRef.kind</code>: ClusterIssuer 或 Issuer，ClusterIssuer 可以被任意 namespace 的 Certificate 引用，Issuer 只能被当前 namespace 的 Certificate 引用。</li>
@@ -524,6 +526,31 @@ helm install cert-manager-webhook-godaddy --namespace cert-manager <span class="
 <li><code>dnsNames</code>: 对应证书的 Subject Alternative Names (SANs) 字段</li>
 </ul>
 
+<p>使用说明：</p>
+
+<ul>
+<li>使用该方式，需要在域名提供商那里添加一个DNS的A记录 dashboard.javachen.space，绑定到公网地址</li>
+</ul>
+
+<p><img src="https://tva1.sinaimg.cn/large/00831rSTgy1gcydx2iu0bj31iq03qt8y.jpg" alt="image-20200318210719918" /></p>
+
+<ul>
+<li>Ingress 服务的 EXTERNAL-IP 有一个外网可以访问的IP地址。ps：在k3s中traefik服务的 EXTERNAL-IP 就是当前机器的外网的地址，这是k3s特性？详细说明，可以参考 <a href="https://opensource.com/article/20/3/ssl-letsencrypt-k3s">https://opensource.com/article/20/3/ssl-letsencrypt-k3s</a></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">  $ kubectl get svc -n kube-system<span class="p">|</span>grep traefik
+  NAME                 TYPE           CLUSTER-IP      EXTERNAL-IP      PORT<span class="o">(</span>S<span class="o">)</span>                      AGE
+  traefik-prometheus   ClusterIP      <span class="m">10</span>.43.41.166    &lt;none&gt;           <span class="m">9100</span>/TCP                     21m
+  traefik              LoadBalancer   <span class="m">10</span>.43.95.236    <span class="m">144</span>.34.194.100  <span class="m">80</span>:31064/TCP,443:31072/TCP   21m</code></pre></td></tr></table>
+</div>
+</div>
 <p>或者使用cert-manager-webhook-dnspod-cluster-issuer创建证书：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
@@ -655,6 +682,7 @@ kubectl describe Challenge kubernetes-dashboard-cert-3747773282-2036746768-17988
 <h1 id="参考文章">参考文章</h1>
 
 <ul>
+<li><a href="https://opensource.com/article/20/3/ssl-letsencrypt-k3s">Make SSL certs easy with k3s</a></li>
 <li><a href="https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt">https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt</a></li>
 <li><a href="[http://idcsec.com/2019/07/11/%E4%BD%BF%E7%94%A8-letsencrypt%E9%85%8D%E7%BD%AEkubernetes-ingress-nginx%E5%85%8D%E8%B4%B9https%E8%AF%81%E4%B9%A6/](http://idcsec.com/2019/07/11/使用-letsencrypt配置kubernetes-ingress-nginx免费https证书/)">使用 LetsEncrypt配置kubernetes ingress-nginx免费HTTPS证书</a></li>
 <li><a href="https://www.cnblogs.com/blackmood/p/11425366.html">cert-manager管理k8s集群证书</a></li>
