@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>安装K3S - 关注Java、Hadoop、Kubernetes和BI</title>
+  <title>安装K3S - JavaChen Blog</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-03-18T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-03-18T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1947">
+<meta itemprop="wordCount" content="1927">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/kubernetes/"> kubernetes </a>
             </div>
-          <span class="more-meta"> 约 1947 字 </span>
+          <span class="more-meta"> 约 1927 字 </span>
           <span class="more-meta"> 预计阅读 4 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -210,13 +210,17 @@ chmod +x /usr/local/bin/k3s</code></pre></td></tr></table>
 </span><span class="lnt">3
 </span><span class="lnt">4
 </span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#默认安装</span>
 curl -sfL https://get.k3s.io <span class="p">|</span> sh -
 
 <span class="c1">#使用docker</span>
-curl -sfL https://get.k3s.io <span class="p">|</span> <span class="nv">INSTALL_K3S_EXEC</span><span class="o">=</span><span class="s2">&#34;--docker&#34;</span> sh -</code></pre></td></tr></table>
+curl -sfL https://get.k3s.io <span class="p">|</span> <span class="nv">INSTALL_K3S_EXEC</span><span class="o">=</span><span class="s2">&#34;--docker&#34;</span> sh -
+
+curl -sfL https://get.k3s.io <span class="p">|</span> <span class="nv">INSTALL_K3S_EXEC</span><span class="o">=</span><span class="s2">&#34;--docker --no-deploy=traefik&#34;</span> sh -</code></pre></td></tr></table>
 </div>
 </div>
 <ul>
@@ -263,6 +267,15 @@ chcon: can<span class="err">&#39;</span>t apply partial context to unlabeled fil
 <span class="o">[</span>INFO<span class="o">]</span>  systemd: Enabling k3s unit
 Created symlink from /etc/systemd/system/multi-user.target.wants/k3s.service to /etc/systemd/system/k3s.service.
 <span class="o">[</span>INFO<span class="o">]</span>  systemd: Starting k3s</code></pre></td></tr></table>
+</div>
+</div>
+<p>安装成功之后，一个kubeconfig文件保存在/etc/rancher/k3s/k3s.yaml。我们可以将其保存到kubectl的目录下面。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat /etc/rancher/k3s/k3s.yaml &gt; ~/.kube/config</code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="检查状态">检查状态</h1>
@@ -535,15 +548,6 @@ GLOBAL OPTIONS:
 </span><span class="se"></span>	<span class="s1">&#39;--docker&#39;</span> <span class="err">\</span></code></pre></td></tr></table>
 </div>
 </div>
-<p>安装成功之后，一个kubeconfig文件保存在/etc/rancher/k3s/k3s.yaml。我们可以将其保存到kubectl的目录下面。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat /etc/rancher/k3s/k3s.yaml &gt; ~/.kube/config</code></pre></td></tr></table>
-</div>
-</div>
 <h1 id="集成calico">集成calico</h1>
 
 <p>在k3s启动参数中添加 &ldquo;&ndash;docker &ndash;flannel-backend=none&rdquo; 进行安装。</p>
@@ -751,24 +755,21 @@ kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/<span c
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">kubectl proxy --address<span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span> --port<span class="o">=</span><span class="m">8001</span> --accept-hosts<span class="o">=</span><span class="s1">&#39;.*&#39;</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1">#配置端口转发</span>
+ssh -L8001:localhost:8001 root@&lt;ip-adress of the master&gt;
+
+kubectl proxy --address<span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span> --port<span class="o">=</span><span class="m">8001</span> --accept-hosts<span class="o">=</span><span class="s1">&#39;.*&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
 <ul>
 <li>需要指定 <code>--accept-hosts</code> 选项，否则浏览器访问 dashboard 页面时提示 “Unauthorized”；</li>
 </ul>
 
-<p>在你自己电脑上执行ssh代理命令，或者如果是使用的虚拟机，则可以配置端口转发。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><span class="lnt">1
-</span></pre></td>
-<td class="lntd">
-<pre class="chroma">ssh -L8001:localhost:8001 user@&lt;ip-adress of the master&gt;</pre></td></tr></table>
-</div>
-</div>
 <p>这样就可以用本地地址访问：<a href="http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/">http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/</a></p>
 
 <p>2、使用端口转发</p>
