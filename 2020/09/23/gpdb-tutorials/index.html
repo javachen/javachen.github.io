@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Greenplum Database Tutorials - JavaChen Blog</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="介绍 Greenplum官方有一个 Greenplum Database Tutorials ，里面是使用的虚拟机，本文使用 docker 容器部署一个 Greenplum 实例进行测试。 准备环境 docker 部署 安装 docker： 1 2 3 4 5" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/09/23/gpdb-tutorials/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.b90a1cc1.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Greenplum Database Tutorials" />
+<meta property="og:description" content="介绍 Greenplum官方有一个 Greenplum Database Tutorials ，里面是使用的虚拟机，本文使用 docker 容器部署一个 Greenplum 实例进行测试。 准备环境 docker 部署 安装 docker： 1 2 3 4 5" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/09/23/gpdb-tutorials/" />
+<meta property="article:published_time" content="2020-09-23T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-09-23T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="Greenplum Database Tutorials">
+<meta itemprop="description" content="介绍 Greenplum官方有一个 Greenplum Database Tutorials ，里面是使用的虚拟机，本文使用 docker 容器部署一个 Greenplum 实例进行测试。 准备环境 docker 部署 安装 docker： 1 2 3 4 5">
+
+
+<meta itemprop="datePublished" content="2020-09-23T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-09-23T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="945">
+
+
+
+<meta itemprop="keywords" content="greenplum," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Greenplum Database Tutorials"/>
+<meta name="twitter:description" content="介绍 Greenplum官方有一个 Greenplum Database Tutorials ，里面是使用的虚拟机，本文使用 docker 容器部署一个 Greenplum 实例进行测试。 准备环境 docker 部署 安装 docker： 1 2 3 4 5"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Greenplum Database Tutorials</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-09-23 </span>
+        <div class="post-category">
+            <a href="/categories/greenplum/"> greenplum </a>
+            </div>
+          <span class="more-meta"> 约 945 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#介绍">介绍</a></li>
+<li><a href="#准备环境">准备环境</a>
+<ul>
+<li><a href="#docker-部署">docker 部署</a></li>
+</ul></li>
+<li><a href="#测试">测试</a>
+<ul>
+<li><a href="#准备测试数据">准备测试数据</a></li>
+<li><a href="#创建用户和角色">创建用户和角色</a></li>
+<li><a href="#创建数据库">创建数据库</a></li>
+<li><a href="#创建schema">创建schema</a></li>
+<li><a href="#创建表">创建表</a></li>
+<li><a href="#加载数据">加载数据</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="介绍">介绍</h1>
+
+<p>Greenplum官方有一个 <a href="http://greenplum-db.github.io/gpdb-sandbox-tutorials/">Greenplum Database Tutorials</a> ，里面是使用的虚拟机，本文使用 docker 容器部署一个 Greenplum 实例进行测试。</p>
+
+<h1 id="准备环境">准备环境</h1>
+
+<h2 id="docker-部署">docker 部署</h2>
+
+<p>安装 docker：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">curl -fsSL get.docker.com -o get-docker.sh
+sudo sh get-docker.sh --mirror Aliyun
+
+sudo systemctl <span class="nb">enable</span> docker
+sudo systemctl start docker</code></pre></td></tr></table>
+</div>
+</div>
+<p>使用如下命令拉取这个镜像：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker pull pivotaldata/gpdb-devel</pre></td></tr></table>
+</div>
+</div>
+<p>下载官方示例数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">git clone https://github.com/greenplum-db/gpdb-sandbox-tutorials.git
+cd gpdb-sandbox-tutorials
+tar zxf faa.tar.gz</pre></td></tr></table>
+</div>
+</div>
+<p>启动GP容器，并挂载上述教程示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker rm $(docker ps -aq)
+
+docker run -it -d \
+-p 15432:15432 \
+--name gp_tutorials \
+--hostname gp-tutorials \
+-v ~/gpdb-sandbox-tutorials:/tutorials \
+pivotaldata/gpdb-devel </pre></td></tr></table>
+</div>
+</div>
+<p>进入容器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">docker exec -it gp_tutorials bash</pre></td></tr></table>
+</div>
+</div>
+<p>首次切换gpadmin用户，会自动启动gp数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">bash-4.1# su gpadmin</pre></td></tr></table>
+</div>
+</div>
+<p>修改pgdb的配置文件，允许客户端所在网络可以连接：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> /workspace/gpdb/gpAux/gpdemo/datadirs/qddir/demoDataDir-1 
+
+vi pg_hba.conf 
+<span class="c1">#添加 host all all 172.17.0.2/32 trust</span> 
+
+gpstop -r </code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="测试">测试</h1>
+
+<h2 id="准备测试数据">准备测试数据</h2>
+
+<p>登录greenplum，设置环境变量</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ssh gpadmin@&lt;gpmaster&gt;
+. /usr/local/greenplum-db/greenplum_path.sh</code></pre></td></tr></table>
+</div>
+</div>
+<p>下载示例代码</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">git clone https://github.com/greenplum-db/gpdb-sandbox-tutorials.git
+<span class="nb">cd</span> gpdb-sandbox-tutorials
+tar zxf faa.tar.gz</code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建用户和角色">创建用户和角色</h2>
+
+<p>使用createuser工具创建</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ createuser -P user1 -d
+Enter password <span class="k">for</span> new role:
+Enter it again:
+Shall the new role be a superuser? <span class="o">(</span>y/n<span class="o">)</span> n
+Shall the new role be allowed to create databases? <span class="o">(</span>y/n<span class="o">)</span> y
+Shall the new role be allowed to create more new roles? <span class="o">(</span>y/n<span class="o">)</span> n
+NOTICE:  resource queue required -- using default resource queue
+<span class="s2">&#34;pg_default&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>创建 user1 用户，拥有创建db权限</p>
+</blockquote>
+
+<p>使用psql创建：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">psql template1
+template1=# CREATE USER user2 WITH PASSWORD &#39;pivotal&#39; NOSUPERUSER;
+
+template1=# \du</pre></td></tr></table>
+</div>
+</div>
+<p>创建用户组，并将用户添加到该组：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">template1=# CREATE ROLE users;
+template1=# GRANT users TO user1, user2;
+
+template1=# \du</pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建数据库">创建数据库</h2>
+
+<p>创建数据库：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">dropdb tutorial
+createdb tutorial
+psql -l
+
+psql -U user1 -h `hostname` tutorial</pre></td></tr></table>
+</div>
+</div>
+<p>授权：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ psql -U gpadmin tutorial
+tutorial=# GRANT ALL PRIVILEGES ON DATABASE tutorial TO user1, user2;</pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建schema">创建schema</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="nb">cd</span> ~/gpdb-sandbox-tutorials/faa
+$ psql -U user1 -h <span class="sb">`</span>hostname<span class="sb">`</span> tutorial
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># DROP SCHEMA IF EXISTS faa CASCADE;</span>
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># CREATE SCHEMA faa;</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># SET SEARCH_PATH TO faa, public, pg_catalog, gp_toolkit;</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># SHOW search_path;</span>
+             search_path
+-------------------------------------
+ faa, public, pg_catalog, gp_toolkit
+<span class="o">(</span><span class="m">1</span> row<span class="o">)</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># ALTER ROLE user1 SET search_path TO faa, public, pg_catalog, gp_toolkit;</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \q</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="创建表">创建表</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ <span class="nb">cd</span> ~/gpdb-sandbox-tutorials/faa
+
+$ psql -U user1 -h <span class="sb">`</span>hostname<span class="sb">`</span> tutorial
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_dim_tables.sql</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \dt</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \q</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="加载数据">加载数据</h2>
+
+<p>使用 COPY 命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ cd ~/gpdb-sandbox-tutorials/faa
+
+tutorial-# =# \i copy_into_airlines.sql
+tutorial-# =# \i copy_into_airports.sql
+tutorial-# =# \i copy_into_delay_groups.sql
+tutorial-# =# \i copy_into_distance_groups.sql
+tutorial-# =# \i copy_into_wac.sql</pre></td></tr></table>
+</div>
+</div>
+<p>使用 gpdist 加载数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ gpfdist -d ~/gpdb-sandbox-tutorials/faa -p <span class="m">8081</span> &gt; /tmp/gpfdist.log <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">&amp;</span>
+
+$ ps -A <span class="p">|</span> grep gpfdist
+
+more /tmp/gpfdist.log
+
+$ psql -U gpadmin tutorial
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_load_tables.sql</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_ext_table.sql</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1">#  INSERT INTO faa.faa_otp_load SELECT * FROM faa.ext_load_otp;</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \x</span>
+Expanded display is on.
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># SELECT DISTINCT relname, errmsg, count(*)</span>
+           FROM faa.faa_load_errors GROUP BY <span class="m">1</span>,2<span class="p">;</span>
+-<span class="o">[</span> RECORD <span class="m">1</span> <span class="o">]</span>-------------------------------------------------
+relname <span class="p">|</span> ext_load_otp
+errmsg  <span class="p">|</span> invalid input syntax <span class="k">for</span> integer: <span class="s2">&#34;&#34;</span>, column deptime
+count   <span class="p">|</span> <span class="m">26526</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \q</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>使用 gpload 加载数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ps -A <span class="p">|</span> grep gpfdist
+killall gpfdist
+
+vi gpload.yaml
+---
+VERSION: <span class="m">1</span>.0.0.1
+<span class="c1"># describe the Greenplum database parameters</span>
+DATABASE: tutorial
+USER: gpadmin
+HOST: localhost
+PORT: <span class="m">5432</span>
+<span class="c1"># describe the location of the source files</span>
+<span class="c1"># in this example, the database master lives on the same host as the source files</span>
+GPLOAD:
+   INPUT:
+    - SOURCE:
+         LOCAL_HOSTNAME:
+           - gpdb-sandbox
+         PORT: <span class="m">8081</span>
+         FILE:
+           - /Users/gpadmin/gpdb-sandbox-tutorials/faa/otp*.gz
+    - FORMAT: csv
+    - QUOTE: <span class="s1">&#39;&#34;&#39;</span>
+    - ERROR_LIMIT: <span class="m">50000</span>
+    - ERROR_TABLE: faa.faa_load_errors
+   OUTPUT:
+    - TABLE: faa.faa_otp_load
+    - MODE: INSERT
+   PRELOAD:
+    - TRUNCATE: <span class="nb">true</span>
+    
+    
+$ gpload -f gpload.yaml -l gpload.log</code></pre></td></tr></table>
+</div>
+</div>
+<p>参考 ：<a href="https://developer.aliyun.com/article/57656">https://developer.aliyun.com/article/57656</a></p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-09-23
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechatpay.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/greenplum/">greenplum</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/03/20/k3s-cert-manager-letsencrypt/">
+            <span class="next-text nav-default">TLS on K3s with traefik, cert manger and letsencrypt</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="javachen/javachen.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>
