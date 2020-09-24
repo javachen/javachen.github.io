@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2019-11-20T08:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2019-11-20T08:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="3695">
+<meta itemprop="wordCount" content="3699">
 
 
 
@@ -129,7 +129,7 @@
         <div class="post-category">
             <a href="/categories/database/"> database </a>
             </div>
-          <span class="more-meta"> 约 3695 字 </span>
+          <span class="more-meta"> 约 3699 字 </span>
           <span class="more-meta"> 预计阅读 8 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
@@ -171,8 +171,8 @@
 <ul>
 <li><a href="#创建模板">创建模板</a></li>
 <li><a href="#初始化数据库-1">初始化数据库</a></li>
-<li><a href="#设置数据库时区">设置数据库时区</a></li>
 <li><a href="#设置环境变量">设置环境变量</a></li>
+<li><a href="#设置数据库时区">设置数据库时区</a></li>
 </ul></li>
 </ul></li>
 <li><a href="#修改配置">修改配置</a>
@@ -305,9 +305,13 @@ sed -i -e <span class="s1">&#39;s/^SELINUX=enforcing/SELINUX=disabled/g&#39;</sp
 </span><span class="lnt">20
 </span><span class="lnt">21
 </span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; /etc/ntp.conf <span class="s">&lt;&lt; EOF
+<pre class="chroma"><code class="language-bash" data-lang="bash">yum install ntp -y
+
+cat &gt; /etc/ntp.conf <span class="s">&lt;&lt; EOF
 </span><span class="s">#在与上级时间服务器联系时所花费的时间，记录在driftfile参数后面的文件
 </span><span class="s">driftfile /var/lib/ntp/drift
 </span><span class="s">#默认关闭所有的 NTP 联机服务
@@ -878,7 +882,6 @@ ssh-copy-id dw-test-node003</code></pre></td></tr></table>
 </span><span class="lnt">31
 </span><span class="lnt">32
 </span><span class="lnt">33
-</span><span class="lnt">34
 </span></code></pre></td>
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">cat &gt; gpinitsystem_config <span class="s">&lt;&lt;EOF
@@ -912,7 +915,6 @@ ssh-copy-id dw-test-node003</code></pre></td></tr></table>
 </span><span class="s">#Mirror Segment的数据目录,配置几次资源目录就是每个子节点有几个实例（推荐4-8个，这里配置了4个，primary与mirror文件夹个数对应）
 </span><span class="s">declare -a MIRROR_DATA_DIRECTORY=(/gpdata/mirror0 /gpdata/mirror1)
 </span><span class="s">
-</span><span class="s">DATABASE_NAME=postgres
 </span><span class="s">MASTER_MAX_CONNECT=250
 </span><span class="s">EOF</span></code></pre></td></tr></table>
 </div>
@@ -962,17 +964,6 @@ gpinitstandby -S /gdata/master/gpseg-1 -s dw-test-node001
 gpinitstandby -S /gdata/master/gpseg-1 -P <span class="m">5433</span> -s dw-test-node001</code></pre></td></tr></table>
 </div>
 </div>
-<h3 id="设置数据库时区">设置数据库时区</h3>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
-</span><span class="lnt">2
-</span></code></pre></td>
-<td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">gpconfig -s TimeZone
-gpconfig -c TimeZone -v <span class="s1">&#39;Asia/Shanghai&#39;</span></code></pre></td></tr></table>
-</div>
-</div>
 <h3 id="设置环境变量">设置环境变量</h3>
 
 <p>切换到gpadmin用户：</p>
@@ -1017,6 +1008,17 @@ cat &gt;&gt;  ~/.bashrc <span class="s">&lt;&lt;EOF
 <td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash">scp ~/.bashrc dw-test-node002:~
 ssh dw-test-node002 <span class="s2">&#34;source ~/.bashrc&#34;</span></code></pre></td></tr></table>
+</div>
+</div>
+<h3 id="设置数据库时区">设置数据库时区</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">gpconfig -s TimeZone
+gpconfig -c TimeZone -v <span class="s1">&#39;Asia/Shanghai&#39;</span></code></pre></td></tr></table>
 </div>
 </div>
 <h1 id="修改配置">修改配置</h1>
@@ -1180,7 +1182,7 @@ sudo mv greenplum.service /usr/lib/systemd/system/</code></pre></td></tr></table
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
-<pre class="chroma">psql -p 5432 -h 192.168.1.131 -U gpadmin -d postgres</pre></td></tr></table>
+<pre class="chroma">psql -p 5432 -h 192.168.56.141 -U gpadmin -d postgres</pre></td></tr></table>
 </div>
 </div>
 <h1 id="清空数据">清空数据</h1>
