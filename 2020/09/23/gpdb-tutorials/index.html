@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-09-23T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-09-23T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="1245">
+<meta itemprop="wordCount" content="2387">
 
 
 
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/greenplum/"> greenplum </a>
             </div>
-          <span class="more-meta"> 约 1245 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
+          <span class="more-meta"> 约 2387 字 </span>
+          <span class="more-meta"> 预计阅读 5 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -153,6 +153,18 @@
 <li><a href="#创建schema">创建schema</a></li>
 <li><a href="#创建表">创建表</a></li>
 <li><a href="#加载数据">加载数据</a></li>
+<li><a href="#查询和性能调优">查询和性能调优</a>
+<ul>
+<li><a href="#analyze">Analyze</a></li>
+<li><a href="#查看执行计划">查看执行计划</a></li>
+<li><a href="#修改优化器">修改优化器</a></li>
+<li><a href="#索引">索引</a></li>
+<li><a href="#行和列">行和列</a></li>
+<li><a href="#查看segments数据">查看segments数据</a></li>
+<li><a href="#分区">分区</a></li>
+<li><a href="#集成分析工具">集成分析工具</a></li>
+<li><a href="#备份和恢复操作">备份和恢复操作</a></li>
+</ul></li>
 </ul></li>
 <li><a href="#参考文章">参考文章</a></li>
 </ul>
@@ -531,6 +543,8 @@ $ psql -U user1 -h <span class="sb">`</span>hostname<span class="sb">`</span> tu
 <h2 id="加载数据">加载数据</h2>
 
 <p>1、使用 COPY 命令</p>
+
+<p>使用COPY方式加载外部文件，可以指定文件类型、文件格式、日志信息，greenplum便会自动解析，将数据加载到目标表，这种方式比单纯的insert语句效率高，但它不是并行的，适合于加载少量数据。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -552,6 +566,105 @@ tutorial-# =# \i copy_into_wac.sql</pre></td></tr></table>
 </div>
 </div>
 <p>2、使用 gpdist 加载数据</p>
+
+<p>gpfdist程序运行在数据存放的节点上，它将数据均匀分布到每个节点上，它是并行工作的，文件可以是按照特定格式存储后压缩的gzip文件，也可以是未压缩的原文件；这种方式适用于大数据加载。</p>
+
+<p>需要先创建gpfdist进程</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ gpfdist -d /tutorials/faa -p <span class="m">8081</span> &gt; /tmp/gpfdist.log <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">&amp;</span>
+
+$ ps -A <span class="p">|</span> grep gpfdist
+
+more /tmp/gpfdist.log</code></pre></td></tr></table>
+</div>
+</div>
+<p>gpfdist类似文件服务器，需要指定端口，文件目录信息；gpfdist创建以后需要创建一张external table</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ psql -U gpadmin tutorial
+
+tutorial=# \i create_load_tables.sql
+
+tutorial=# \i create_ext_table.sql</pre></td></tr></table>
+</div>
+</div>
+<p>因为gpfdist要将数据均匀的分布到每个节点上，所以创建EXTERNAL TABLE时LOCATION中指定的地址要是集群内的节点能够访问的地址，如果指定为127.0.0.1仅仅是当前服务器可以访问，其它节点访问不了，系统会报错拒绝连接。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=#  INSERT INTO faa.faa_otp_load SELECT * FROM faa.ext_load_otp;
+
+tutorial=# select count(*) from faa.faa_otp_load;
+  count  
+---------
+ 1024552
+(1 row)
+
+tutorial=# \q</pre></td></tr></table>
+</div>
+</div>
+<p>Greenplum也支持通过external table对外部文件的访问，但数据不能存放到内存中，每次操作成本很高。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=# select count(*) from faa.ext_load_otp; 
+NOTICE:  Found 26526 data formatting errors (26526 or more input rows). Rejected related input data.
+  count  
+---------
+ 1024552
+(1 row)</pre></td></tr></table>
+</div>
+</div>
+<p>最后停止gpfdist进程：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ps -A | grep gpfdist
+
+killall gpfdist</pre></td></tr></table>
+</div>
+</div>
+<p>3、使用 gpload 加载数据</p>
+
+<p>gpfdist的操作需要我们一步步的配置和执行，Greenplum提供了一个封装好的依赖配置的工具GPLOAD。</p>
+
+<p>首先我们创建所需的配置文件gpload01.yaml</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
@@ -569,29 +682,220 @@ tutorial-# =# \i copy_into_wac.sql</pre></td></tr></table>
 </span><span class="lnt">13
 </span><span class="lnt">14
 </span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
 </span></code></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ gpfdist -d /tutorials/faa -p <span class="m">8081</span> &gt; /tmp/gpfdist.log <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">&amp;</span>
-
-$ ps -A <span class="p">|</span> grep gpfdist
-
-more /tmp/gpfdist.log
-
-$ psql -U gpadmin tutorial
-
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_load_tables.sql</span>
-
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_ext_table.sql</span>
-
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1">#  INSERT INTO faa.faa_otp_load SELECT * FROM faa.ext_load_otp;</span>
-
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \q</span></code></pre></td></tr></table>
+<pre class="chroma"><code class="language-bash" data-lang="bash">vi gpload.yaml
+---
+VERSION: <span class="m">1</span>.0.0.1
+<span class="c1"># describe the Greenplum database parameters</span>
+DATABASE: tutorial
+USER: gpadmin
+HOST: localhost
+PORT: <span class="m">5432</span>
+<span class="c1"># describe the location of the source files</span>
+<span class="c1"># in this example, the database master lives on the same host as the source files</span>
+GPLOAD:
+   INPUT:
+    - SOURCE:
+         LOCAL_HOSTNAME:
+           - gpdb-sandbox
+         PORT: <span class="m">8081</span>
+         FILE:
+           - /Users/gpadmin/gpdb-sandbox-tutorials/faa/otp*.gz
+    - FORMAT: csv
+    - QUOTE: <span class="s1">&#39;&#34;&#39;</span>
+    - ERROR_LIMIT: <span class="m">50000</span>
+    - ERROR_TABLE: faa.faa_load_errors
+   OUTPUT:
+    - TABLE: faa.faa_otp_load
+    - MODE: INSERT
+   PRELOAD:
+    - TRUNCATE: true</code></pre></td></tr></table>
 </div>
 </div>
-<p>3、使用 gpload 加载数据</p>
+<p>注意检查端口是否被占用，文件路径是否正确；最后执行加载数据：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpload -f gpload.yaml -l gpload.log</pre></td></tr></table>
+</div>
+</div>
+<p>日志提示临时创建的external table，数据插入、更新、错误信息，还提示怎么查看错误数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=# select count(*) from faa.faa_otp_load;
+  count  
+---------
+ 1024552
+(1 row)</pre></td></tr></table>
+</div>
+</div>
+<p>GPLOAD提供更多的支持和自动化操作，也更方便定制某些特殊的操作，比如监控和统计。</p>
+
+<p>4、创建和加载事实表</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ psql -U gpadmin tutorial
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_fact_tables.sql</span>
+
+<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i load_into_fact_table.sql</span></code></pre></td></tr></table>
+</div>
+</div>
+<h2 id="查询和性能调优">查询和性能调优</h2>
+
+<h3 id="analyze">Analyze</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=# ANALYZE faa.d_airports;
+ANALYZE
+tutorial=# ANALYZE faa.d_airlines;
+ANALYZE
+tutorial=# ANALYZE faa.d_wac;
+ANALYZE
+tutorial=# ANALYZE faa.d_cancellation_codes;
+ANALYZE
+tutorial=# ANALYZE faa.faa_otp_load;
+ANALYZE
+tutorial=# ANALYZE faa.otp_r;
+ANALYZE
+tutorial=# ANALYZE faa.otp_c;
+ANALYZE</pre></td></tr></table>
+</div>
+</div>
+<h3 id="查看执行计划">查看执行计划</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=# \timing on
+tutorial=# \i create_sample_table.sql
+tutorial=# EXPLAIN SELECT COUNT(*) FROM sample WHERE id &gt; 100;
+tutorial=# EXPLAIN ANALYZE SELECT COUNT(*) FROM sample WHERE id &gt; 100;</pre></td></tr></table>
+</div>
+</div>
+<h3 id="修改优化器">修改优化器</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpconfig -s optimizer
+Values on all segments are consistent
+GUC          : optimizer
+Master  value: off
+Segment value: off</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpconfig -c optimizer -v on --masteronly</pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpstop -u</pre></td></tr></table>
+</div>
+</div>
+<h3 id="索引">索引</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">psql -U gpadmin tutorial
+
+tutorial=# \i create_sample_table.sql
+
+tutorial=# SELECT * from sample WHERE big = 12345;
+   id    |  big  | wee | stuff
+---------+-------+-----+-------
+   12345 | 12345 |   0 |
+ 1012346 | 12345 |   0 |
+ 2012347 | 12345 |   0 |
+(3 rows)
+
+tutorial=# EXPLAIN SELECT * from sample WHERE big = 12345;
+
+tutorial=# CREATE INDEX sample_big_index ON sample(big);
+
+tutorial=# EXPLAIN SELECT * FROM sample WHERE big = 12345;</pre></td></tr></table>
+</div>
+</div>
+<h3 id="行和列">行和列</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
 </span><span class="lnt"> 2
 </span><span class="lnt"> 3
 </span><span class="lnt"> 4
@@ -624,58 +928,94 @@ $ psql -U gpadmin tutorial
 </span><span class="lnt">31
 </span><span class="lnt">32
 </span><span class="lnt">33
-</span></code></pre></td>
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">ps -A <span class="p">|</span> grep gpfdist
-killall gpfdist
+<pre class="chroma">tutorial=# CREATE TABLE FAA.OTP_C (LIKE faa.otp_r) WITH (appendonly=true,orientation=column)DISTRIBUTED BY (UniqueCarrier, FlightNum) PARTITION BY RANGE(FlightDate)(PARTITION mth START(&#39;2009-06-01&#39;::date) END (&#39;2010-10-31&#39;::date) EVERY (&#39;1 mon&#39;::interval));
 
-vi gpload.yaml
----
-VERSION: <span class="m">1</span>.0.0.1
-<span class="c1"># describe the Greenplum database parameters</span>
-DATABASE: tutorial
-USER: gpadmin
-HOST: localhost
-PORT: <span class="m">5432</span>
-<span class="c1"># describe the location of the source files</span>
-<span class="c1"># in this example, the database master lives on the same host as the source files</span>
-GPLOAD:
-   INPUT:
-    - SOURCE:
-         LOCAL_HOSTNAME:
-           - gpdb-sandbox
-         PORT: <span class="m">8081</span>
-         FILE:
-           - /Users/gpadmin/gpdb-sandbox-tutorials/faa/otp*.gz
-    - FORMAT: csv
-    - QUOTE: <span class="s1">&#39;&#34;&#39;</span>
-    - ERROR_LIMIT: <span class="m">50000</span>
-    - ERROR_TABLE: faa.faa_load_errors
-   OUTPUT:
-    - TABLE: faa.faa_otp_load
-    - MODE: INSERT
-   PRELOAD:
-    - TRUNCATE: <span class="nb">true</span>
-    
-    
-$ gpload -f gpload.yaml -l gpload.log</code></pre></td></tr></table>
+tutorial=# INSERT INTO faa.otp_c SELECT * FROM faa.otp_r;
+
+tutorial=# \d faa.otp_r
+
+tutorial=# \d faa.otp_c
+
+tutorial=# SELECT pg_size_pretty(pg_relation_size(&#39;faa.otp_r&#39;));
+ pg_size_pretty
+----------------
+ 256 MB
+(1 row)
+
+tutorial=# SELECT pg_size_pretty(pg_total_relation_size(&#39;faa.otp_r&#39;));
+ pg_size_pretty
+----------------
+ 256 MB
+(1 row)
+
+tutorial=# SELECT pg_size_pretty(pg_relation_size(&#39;faa.otp_c&#39;));
+ pg_size_pretty
+----------------
+ 0 bytes
+(1 row)
+
+tutorial=# SELECT pg_size_pretty(pg_total_relation_size(&#39;faa.otp_c&#39;));
+ pg_size_pretty
+----------------
+ 288 kB
+(1 row)
+
+tutorial=#
+tutorial=# SELECT pg_size_pretty(pg_total_relation_size(&#39;faa.otp_c&#39;));
+ pg_size_pretty
+----------------
+ 288 kB
+(1 row)</pre></td></tr></table>
 </div>
 </div>
-<p>4、创建和加载事实表</p>
+<h3 id="查看segments数据">查看segments数据</h3>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">tutorial=# SELECT gp_segment_id, COUNT(*) FROM faa.otp_c GROUP BY gp_segment_id ORDER BY gp_segment_id;</pre></td></tr></table>
+</div>
+</div>
+<h3 id="分区">分区</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
 </span><span class="lnt">2
 </span><span class="lnt">3
 </span><span class="lnt">4
-</span></code></pre></td>
+</span><span class="lnt">5
+</span></pre></td>
 <td class="lntd">
-<pre class="chroma"><code class="language-bash" data-lang="bash">$ psql -U gpadmin tutorial
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i create_fact_tables.sql</span>
+<pre class="chroma">tutorial=# \timing on
 
-<span class="nv">tutorial</span><span class="o">=</span><span class="c1"># \i load_into_fact_table.sql</span></code></pre></td></tr></table>
+tutorial=#  SELECT MAX(depdelay) FROM faa.otp_c WHERE UniqueCarrier = &#39;UA&#39;;
+
+tutorial=# SELECT MAX(depdelay) FROM faa.otp_c WHERE flightdate =&#39;2009-11-01&#39;;</pre></td></tr></table>
 </div>
 </div>
+<h3 id="集成分析工具">集成分析工具</h3>
+
+<ul>
+<li><a href="http://madlib.incubator.apache.org/">http://madlib.incubator.apache.org</a></li>
+<li><a href="https://zeppelin.incubator.apache.org/">https://zeppelin.incubator.apache.org</a></li>
+</ul>
+
+<h3 id="备份和恢复操作">备份和恢复操作</h3>
+
+<ul>
+<li>To run a full backup:<code>gpcrondump -x tutorial -u /tmp -a -r</code></li>
+<li>To view the backups:<code>ls -al /tmp/db_dumps</code></li>
+<li>To restore the data:<code>gpdbrestore -T faa.otp_r -s tutorial -u /tmp -a</code></li>
+</ul>
+
 <h1 id="参考文章">参考文章</h1>
 
 <ul>
@@ -722,7 +1062,11 @@ $ gpload -f gpload.yaml -l gpload.log</code></pre></td></tr></table>
           <a href="/tags/greenplum/">greenplum</a>
           </div>
       <nav class="post-nav">
-        
+        <a class="prev" href="/2020/09/24/greenplum-spark-connector-usage/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">Pivotal Greenplum-Spark Connector</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
         <a class="next" href="/2020/03/20/k3s-cert-manager-letsencrypt/">
             <span class="next-text nav-default">TLS on K3s with traefik, cert manger and letsencrypt</span>
             <span class="next-text nav-mobile">下一篇</span>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用K3d和Vagrant搭建Kubernetes集群 - JavaChen Blog</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="前置条件 VirtualBox Vagrant 使用Vagrant创建虚Centos拟机 创建目录 k3d-cluster： 1 2 3 mkdir k3d-cluster cd k3d-cluster mkdir ./shared 创建Vagrantfile： 1 2 3 4 5" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/09/25/install-a-local-cluster-using-k3d-and-vagrant/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.9a8d6025.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="使用K3d和Vagrant搭建Kubernetes集群" />
+<meta property="og:description" content="前置条件 VirtualBox Vagrant 使用Vagrant创建虚Centos拟机 创建目录 k3d-cluster： 1 2 3 mkdir k3d-cluster cd k3d-cluster mkdir ./shared 创建Vagrantfile： 1 2 3 4 5" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/09/25/install-a-local-cluster-using-k3d-and-vagrant/" />
+<meta property="article:published_time" content="2020-09-24T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-09-24T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="使用K3d和Vagrant搭建Kubernetes集群">
+<meta itemprop="description" content="前置条件 VirtualBox Vagrant 使用Vagrant创建虚Centos拟机 创建目录 k3d-cluster： 1 2 3 mkdir k3d-cluster cd k3d-cluster mkdir ./shared 创建Vagrantfile： 1 2 3 4 5">
+
+
+<meta itemprop="datePublished" content="2020-09-24T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-09-24T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="1290">
+
+
+
+<meta itemprop="keywords" content="kubernetes、k3d、k3s," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用K3d和Vagrant搭建Kubernetes集群"/>
+<meta name="twitter:description" content="前置条件 VirtualBox Vagrant 使用Vagrant创建虚Centos拟机 创建目录 k3d-cluster： 1 2 3 mkdir k3d-cluster cd k3d-cluster mkdir ./shared 创建Vagrantfile： 1 2 3 4 5"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用K3d和Vagrant搭建Kubernetes集群</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-09-25 </span>
+        <div class="post-category">
+            <a href="/categories/kubernetes/"> kubernetes </a>
+            </div>
+          <span class="more-meta"> 约 1290 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#前置条件">前置条件</a></li>
+<li><a href="#使用vagrant创建虚centos拟机">使用Vagrant创建虚Centos拟机</a></li>
+<li><a href="#创建k3d集群">创建k3d集群</a></li>
+<li><a href="#部署-pod">部署<strong>Pod</strong></a></li>
+<li><a href="#暴露pod">暴露Pod</a></li>
+<li><a href="#部署kubernetes-dashboard">部署Kubernetes Dashboard</a></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="前置条件">前置条件</h1>
+
+<ul>
+<li>VirtualBox</li>
+<li>Vagrant</li>
+</ul>
+
+<h1 id="使用vagrant创建虚centos拟机">使用Vagrant创建虚Centos拟机</h1>
+
+<p>创建目录 k3d-cluster：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">mkdir k3d-cluster
+cd k3d-cluster
+mkdir ./shared</pre></td></tr></table>
+</div>
+</div>
+<p>创建Vagrantfile：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-ruby" data-lang="ruby"><span class="c1"># -*- mode: ruby -*-</span>
+<span class="c1"># vi: set ft=ruby :</span>
+
+<span class="no">Vagrant</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="s2">&#34;2&#34;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">box</span> <span class="o">=</span> <span class="s2">&#34;generic/centos7&#34;</span>
+
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">box_check_update</span> <span class="o">=</span> <span class="kp">true</span>
+
+  <span class="c1"># Forwarded port mapping: 8052 -&gt; 8502 for exposed service</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="s2">&#34;forwarded_port&#34;</span><span class="p">,</span> <span class="ss">guest</span><span class="p">:</span> <span class="mi">8502</span><span class="p">,</span> <span class="ss">host</span><span class="p">:</span> <span class="mi">8502</span>
+  <span class="c1"># Forwarded port mapping: 8052 -&gt; 8502 for kubernetes dasboard</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="s2">&#34;forwarded_port&#34;</span><span class="p">,</span> <span class="ss">guest</span><span class="p">:</span> <span class="mi">8503</span><span class="p">,</span> <span class="ss">host</span><span class="p">:</span> <span class="mi">8503</span>
+
+  <span class="c1"># Create a private network, which allows host-only access to the machine</span>
+  <span class="c1"># using a specific IP.</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">network</span> <span class="s2">&#34;private_network&#34;</span><span class="p">,</span> <span class="ss">ip</span><span class="p">:</span> <span class="s2">&#34;192.168.56.151&#34;</span>
+
+  <span class="c1"># Share an additional folder to the guest VM</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">synced_folder</span> <span class="s2">&#34;./shared&#34;</span><span class="p">,</span> <span class="s2">&#34;/vagrant_data&#34;</span>
+
+  <span class="c1"># Customize hostname of the guestVM </span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="s2">&#34;k3d-cluster&#34;</span>
+
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provider</span> <span class="s2">&#34;virtualbox&#34;</span> <span class="k">do</span> <span class="o">|</span><span class="n">vb</span><span class="o">|</span>
+    <span class="c1"># Customize the amount of memory on the guest VM:</span>
+    <span class="n">vb</span><span class="o">.</span><span class="n">memory</span> <span class="o">=</span> <span class="s2">&#34;2048&#34;</span>
+  <span class="k">end</span>
+
+  <span class="c1"># Enable provisioning guest VM with shell script</span>
+  <span class="n">config</span><span class="o">.</span><span class="n">vm</span><span class="o">.</span><span class="n">provision</span> <span class="s2">&#34;shell&#34;</span><span class="p">,</span> <span class="ss">inline</span><span class="p">:</span> <span class="s">&lt;&lt;-SHELL
+</span><span class="s"></span>    <span class="n">yum</span> <span class="n">update</span> <span class="o">-</span><span class="n">y</span>
+
+    <span class="c1"># Install Docker</span>
+    <span class="n">curl</span> <span class="o">-</span><span class="n">fsSL</span> <span class="n">get</span><span class="o">.</span><span class="n">docker</span><span class="o">.</span><span class="n">com</span> <span class="o">-</span><span class="n">o</span> <span class="n">get</span><span class="o">-</span><span class="n">docker</span><span class="o">.</span><span class="n">sh</span>
+    <span class="n">sh</span> <span class="n">get</span><span class="o">-</span><span class="n">docker</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">mirror</span> <span class="no">Aliyun</span>
+
+    <span class="c1"># Install k3d</span>
+    <span class="c1"># Reference: https://github.com/rancher/k3d</span>
+    <span class="n">wget</span> <span class="o">-</span><span class="n">q</span> <span class="o">-</span><span class="n">O</span> <span class="o">-</span> <span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">raw</span><span class="o">.</span><span class="n">githubusercontent</span><span class="o">.</span><span class="n">com</span><span class="sr">/rancher/</span><span class="n">k3d</span><span class="sr">/main/ins</span><span class="n">tall</span><span class="o">.</span><span class="n">sh</span> <span class="o">|</span> <span class="n">bash</span>
+
+    <span class="c1"># Install kubectl</span>
+    <span class="n">curl</span> <span class="o">-</span><span class="no">LO</span> <span class="s2">&#34;https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl&#34;</span>
+    <span class="n">mv</span> <span class="n">kubectl</span> <span class="sr">/usr/</span><span class="n">local</span><span class="sr">/bin/</span>
+    <span class="n">chmod</span> <span class="o">+</span><span class="n">x</span> <span class="sr">/usr/</span><span class="n">local</span><span class="sr">/bin/</span><span class="n">kubectl</span>
+    
+    <span class="c1"># Add vagrant user to docker group (Running docker command without sudo)</span>
+    <span class="n">usermod</span> <span class="o">-</span><span class="n">aG</span> <span class="n">docker</span> <span class="n">vagrant</span>
+  <span class="no">SHELL</span>
+<span class="k">end</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>启动：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">vagrant up</pre></td></tr></table>
+</div>
+</div>
+<p>登录：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">vagrant ssh</pre></td></tr></table>
+</div>
+</div>
+<p>验证版本：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ docker version
+Client: Docker Engine - Community
+ Version:           <span class="m">19</span>.03.13
+ API version:       <span class="m">1</span>.40
+ Go version:        go1.13.15
+ Git commit:        4484c46d9d
+ Built:             Wed Sep <span class="m">16</span> <span class="m">17</span>:03:45 <span class="m">2020</span>
+ OS/Arch:           linux/amd64
+ Experimental:      <span class="nb">false</span>
+ 
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ k3d --version
+k3d version v3.0.2
+k3s version v1.18.8-k3s1 <span class="o">(</span>default<span class="o">)</span></code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="创建k3d集群">创建k3d集群</h1>
+
+<p>创建一个三节点的集群：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">k3d cluster create --agents 3 --servers 1 -p 8502:80@loadbalancer mycluster</pre></td></tr></table>
+</div>
+</div>
+<p>查看集群信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ kubectl cluster-info
+Kubernetes master is running at https://0.0.0.0:39141
+CoreDNS is running at https://0.0.0.0:39141/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+Metrics-server is running at https://0.0.0.0:39141/api/v1/namespaces/kube-system/services/https:metrics-server:/proxy</code></pre></td></tr></table>
+</div>
+</div>
+<p>查看节点信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ k3d cluster list
+NAME        SERVERS   AGENTS   LOADBALANCER
+mycluster   <span class="m">1</span>/1       <span class="m">3</span>/3      <span class="nb">true</span>
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get nodes
+NAME                     STATUS   ROLES    AGE   VERSION
+k3d-mycluster-agent-0    Ready    &lt;none&gt;   57s   v1.18.8+k3s1
+k3d-mycluster-agent-2    Ready    &lt;none&gt;   57s   v1.18.8+k3s1
+k3d-mycluster-agent-1    Ready    &lt;none&gt;   56s   v1.18.8+k3s1
+k3d-mycluster-server-0   Ready    master   56s   v1.18.8+k3s1</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="部署-pod">部署<strong>Pod</strong></h1>
+
+<p>部署：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: apps/v1
+</span><span class="s">kind: Deployment
+</span><span class="s">metadata:
+</span><span class="s">  name: echoserver
+</span><span class="s">  labels:
+</span><span class="s">    app: echoserver
+</span><span class="s">spec:
+</span><span class="s">  replicas: 3
+</span><span class="s">  selector:
+</span><span class="s">    matchLabels:
+</span><span class="s">      app: echoserver
+</span><span class="s">  template:
+</span><span class="s">    metadata:
+</span><span class="s">      labels:
+</span><span class="s">        app: echoserver
+</span><span class="s">    spec:
+</span><span class="s">      containers:
+</span><span class="s">      - name: echoserver
+</span><span class="s">        image: datamanos/echoserver
+</span><span class="s">        imagePullPolicy: IfNotPresent
+</span><span class="s">        ports:
+</span><span class="s">        - containerPort: 8080
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get deployments
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+echoserver   <span class="m">3</span>/3     <span class="m">0</span>            <span class="m">3</span>           2s
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get pods
+NAME                          READY   STATUS    RESTARTS   AGE
+echoserver-7f7449cfcf-xfmkn   <span class="m">1</span>/1     Running   <span class="m">0</span>          2m7s
+echoserver-7f7449cfcf-cmw2r   <span class="m">1</span>/1     Running   <span class="m">0</span>          83s
+echoserver-7f7449cfcf-wqzb2   <span class="m">1</span>/1     Running   <span class="m">0</span>          39s
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get rs
+NAME                    DESIRED   CURRENT   READY   AGE
+echoserver-7f7449cfcf   <span class="m">3</span>         <span class="m">3</span>         <span class="m">3</span>       9s
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get pods --show-labels
+NAME                          READY   STATUS    RESTARTS   AGE     LABELS
+echoserver-7f7449cfcf-xfmkn   <span class="m">1</span>/1     Running   <span class="m">0</span>          2m19s   <span class="nv">app</span><span class="o">=</span>echoserver,pod-template-hash<span class="o">=</span>7f7449cfcf
+echoserver-7f7449cfcf-cmw2r   <span class="m">1</span>/1     Running   <span class="m">0</span>          95s     <span class="nv">app</span><span class="o">=</span>echoserver,pod-template-hash<span class="o">=</span>7f7449cfcf
+echoserver-7f7449cfcf-wqzb2   <span class="m">1</span>/1     Running   <span class="m">0</span>          51s     <span class="nv">app</span><span class="o">=</span>echoserver,pod-template-hash<span class="o">=</span>7f7449cfcf</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="暴露pod">暴露Pod</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: Service
+</span><span class="s">metadata:
+</span><span class="s">  name: echoserver
+</span><span class="s">spec:
+</span><span class="s">  selector:
+</span><span class="s">    app: echoserver
+</span><span class="s">  ports:
+</span><span class="s">  - port: 80
+</span><span class="s">    targetPort: 8080
+</span><span class="s">    protocol: TCP
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get services
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT<span class="o">(</span>S<span class="o">)</span>   AGE
+kubernetes   ClusterIP   <span class="m">10</span>.43.0.1      &lt;none&gt;        <span class="m">443</span>/TCP   5m37s
+echoserver   ClusterIP   <span class="m">10</span>.43.32.222   &lt;none&gt;        <span class="m">80</span>/TCP    8s
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl describe service echoserver
+Name:              echoserver
+Namespace:         default
+Labels:            &lt;none&gt;
+Annotations:       &lt;none&gt;
+Selector:          <span class="nv">app</span><span class="o">=</span>echoserver
+Type:              ClusterIP
+IP:                <span class="m">10</span>.43.32.222
+Port:              &lt;unset&gt;  <span class="m">80</span>/TCP
+TargetPort:        <span class="m">8080</span>/TCP
+Endpoints:         <span class="m">10</span>.42.0.5:8080,10.42.2.5:8080,10.42.3.5:8080
+Session Affinity:  None
+Events:            &lt;none&gt;
+
+<span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ kubectl get ep echoserver
+NAME         ENDPOINTS                                      AGE
+echoserver   <span class="m">10</span>.42.0.5:8080,10.42.2.5:8080,10.42.3.5:8080   9m48s</code></pre></td></tr></table>
+</div>
+</div>
+<p>创建一个 ingress，k3d默认使用的<a href="https://traefik.io/traefik/">traefik</a></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: extensions/v1beta1
+</span><span class="s">kind: Ingress
+</span><span class="s">metadata:
+</span><span class="s">  name: nginx
+</span><span class="s">  annotations:
+</span><span class="s">    ingress.kubernetes.io/ssl-redirect: &#34;false&#34;
+</span><span class="s">spec:
+</span><span class="s">  rules:
+</span><span class="s">  - http:
+</span><span class="s">      paths:
+</span><span class="s">      - path: /
+</span><span class="s">        backend:
+</span><span class="s">          serviceName: echoserver
+</span><span class="s">          servicePort: 80
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看状态：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[vagrant@k3d-cluster ~]$ kubectl get ingress
+NAME    CLASS    HOSTS   ADDRESS      PORTS   AGE
+nginx   &lt;none&gt;   *       172.18.0.3   80      7m30s</pre></td></tr></table>
+</div>
+</div>
+<p>访问服务：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="o">[</span>vagrant@k3d-cluster ~<span class="o">]</span>$ curl localhost:8502
+
+Hostname: echoserver-7f7449cfcf-cmw2r
+
+Pod Information:
+	-no pod information available-
+
+Server values:
+	<span class="nv">server_version</span><span class="o">=</span>nginx: <span class="m">1</span>.13.3 - lua: <span class="m">10008</span>
+
+Request Information:
+	<span class="nv">client_address</span><span class="o">=</span><span class="m">10</span>.42.2.4
+	<span class="nv">method</span><span class="o">=</span>GET
+	real <span class="nv">path</span><span class="o">=</span>/
+	<span class="nv">query</span><span class="o">=</span>
+	<span class="nv">request_version</span><span class="o">=</span><span class="m">1</span>.1
+	<span class="nv">request_uri</span><span class="o">=</span>http://localhost:8080/
+
+Request Headers:
+	<span class="nv">accept</span><span class="o">=</span>*/*
+	accept-encoding<span class="o">=</span>gzip
+	<span class="nv">host</span><span class="o">=</span>localhost:8502
+	user-agent<span class="o">=</span>curl/7.29.0
+	x-forwarded-for<span class="o">=</span><span class="m">10</span>.42.0.3
+	x-forwarded-host<span class="o">=</span>localhost:8502
+	x-forwarded-port<span class="o">=</span><span class="m">8502</span>
+	x-forwarded-proto<span class="o">=</span>http
+	x-forwarded-server<span class="o">=</span>traefik-758cd5fc85-nbh2s
+	x-real-ip<span class="o">=</span><span class="m">10</span>.42.0.3
+
+Request Body:
+	-no body in request-</code></pre></td></tr></table>
+</div>
+</div>
+<h1 id="部署kubernetes-dashboard">部署Kubernetes Dashboard</h1>
+
+<p>部署：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">[vagrant@k3d-cluster ~]$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml</pre></td></tr></table>
+</div>
+</div>
+<p>创建ServiceAccount：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: v1
+</span><span class="s">kind: ServiceAccount
+</span><span class="s">metadata:
+</span><span class="s">  name: admin
+</span><span class="s">  namespace: kubernetes-dashboard
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>创建ClusterRoleBinding：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">cat <span class="s">&lt;&lt;EOF | kubectl apply -f -
+</span><span class="s">apiVersion: rbac.authorization.k8s.io/v1
+</span><span class="s">kind: ClusterRoleBinding
+</span><span class="s">metadata:
+</span><span class="s">  name: admin
+</span><span class="s">roleRef:
+</span><span class="s">  apiGroup: rbac.authorization.k8s.io
+</span><span class="s">  kind: ClusterRole
+</span><span class="s">  name: cluster-admin
+</span><span class="s">subjects:
+</span><span class="s">- kind: ServiceAccount
+</span><span class="s">  name: admin
+</span><span class="s">  namespace: kubernetes-dashboard
+</span><span class="s">EOF</span></code></pre></td></tr></table>
+</div>
+</div>
+<p>查看 ClusterRole：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">kubectl get clusterrole | grep cluster-admin</pre></td></tr></table>
+</div>
+</div>
+<p>获取token：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma"> kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin | awk &#39;{print $1}&#39;)</pre></td></tr></table>
+</div>
+</div>
+<p>访问 dashboard：<a href="http://192.168.56.151:8503/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"><strong>http://192.168.56.151:8503/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</strong>.</a></p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-09-24
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechat.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/kubernetesk3dk3s/">kubernetes、k3d、k3s</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/09/24/greenplum-spark-connector-usage/">
+            <span class="next-text nav-default">Pivotal Greenplum-Spark Connector</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="junetalk/junetalk.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2020
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>
