@@ -52,7 +52,7 @@
 
 <meta itemprop="datePublished" content="2020-09-23T00:00:00&#43;08:00" />
 <meta itemprop="dateModified" content="2020-09-23T00:00:00&#43;08:00" />
-<meta itemprop="wordCount" content="2387">
+<meta itemprop="wordCount" content="2720">
 
 
 
@@ -129,8 +129,8 @@
         <div class="post-category">
             <a href="/categories/greenplum/"> greenplum </a>
             </div>
-          <span class="more-meta"> 约 2387 字 </span>
-          <span class="more-meta"> 预计阅读 5 分钟 </span>
+          <span class="more-meta"> 约 2720 字 </span>
+          <span class="more-meta"> 预计阅读 6 分钟 </span>
         <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
     </header>
@@ -771,6 +771,8 @@ GPLOAD:
 <h2 id="查询和性能调优">查询和性能调优</h2>
 
 <h3 id="analyze">Analyze</h3>
+
+<p>在加载数据之后，建议对表进行分析一下。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt"> 1
@@ -821,6 +823,8 @@ tutorial=# EXPLAIN ANALYZE SELECT COUNT(*) FROM sample WHERE id &gt; 100;</pre><
 </div>
 </div>
 <h3 id="修改优化器">修改优化器</h3>
+
+<p>查看优化器：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
@@ -836,14 +840,18 @@ GUC          : optimizer
 Master  value: off
 Segment value: off</pre></td></tr></table>
 </div>
-</div><div class="highlight"><div class="chroma">
+</div>
+<p>开启优化器：</p>
+<div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
 <td class="lntd">
 <pre class="chroma">gpconfig -c optimizer -v on --masteronly</pre></td></tr></table>
 </div>
-</div><div class="highlight"><div class="chroma">
+</div>
+<p>重新加载：</p>
+<div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre class="chroma"><span class="lnt">1
 </span></pre></td>
@@ -1010,12 +1018,118 @@ tutorial=# SELECT MAX(depdelay) FROM faa.otp_c WHERE flightdate =&#39;2009-11-01
 
 <h3 id="备份和恢复操作">备份和恢复操作</h3>
 
-<ul>
-<li>To run a full backup:<code>gpcrondump -x tutorial -u /tmp -a -r</code></li>
-<li>To view the backups:<code>ls -al /tmp/db_dumps</code></li>
-<li>To restore the data:<code>gpdbrestore -T faa.otp_r -s tutorial -u /tmp -a</code></li>
-</ul>
+<p>并行备份和恢复使用 gpbackup 和 gprestore ，下载地址：<a href="https://network.pivotal.io/products/pivotal-gpdb-backup-restore">https://network.pivotal.io/products/pivotal-gpdb-backup-restore</a></p>
 
+<p>非并行使用 pg_dump。</p>
+
+<p>备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpbackup --dbname tutorial</pre></td></tr></table>
+</div>
+</div>
+<p>备份后的文件保存在：<code>$MASTER_DATA_DIRECTORY/backups/&lt;YYYYMMDD&gt;/&lt;YYYYMMDDHHMMSS&gt;/</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ll /gpdata/master/gpseg-1/backups/20200925</pre></td></tr></table>
+</div>
+</div>
+<p>指定保存路径：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpbackup --dbname tutorial --backup-dir /home/gpadmin/backups
+find /home/gpadmin/backups/ -type f</pre></td></tr></table>
+</div>
+</div>
+<p>还原数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ dropdb tutorial
+$ gprestore --timestamp 20200925045206 --create-db</pre></td></tr></table>
+</div>
+</div>
+<p>指定任务数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gprestore --timestamp 20200925045206 --create-db --jobs 8</pre></td></tr></table>
+</div>
+</div>
+<p>查看报告：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">cd /gpdata/master/gpseg-1/backups/20200925/20200925045206
+
+cat gpbackup_20200925045206_report
+
+cat gprestore_20200925045206_20200925045320_report</pre></td></tr></table>
+</div>
+</div>
+<p>指定schema备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-schema wikipedia
+$ gpbackup --dbname demo --exclude-schema twitter
+
+$ gpbackup --dbname demo --include-schema wikipedia --include-schema twitter</pre></td></tr></table>
+</div>
+</div>
+<p>通过文件指定：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpbackup --dbname demo --include-schema-file /users/home/gpadmin/backup-schemas</pre></td></tr></table>
+</div>
+</div>
+<p>指定表备份：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-table-file /home/gpadmin/table-list.txt</pre></td></tr></table>
+</div>
+</div>
+<p>可以同时指定：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-schema mydata --exclude-table mydata.addresses</pre></td></tr></table>
+</div>
+</div>
 <h1 id="参考文章">参考文章</h1>
 
 <ul>
@@ -1121,7 +1235,7 @@ tutorial=# SELECT MAX(depdelay) FROM faa.otp_c WHERE flightdate =&#39;2009-11-01
   <span class="copyright-year">
     &copy; 
     2009 - 
-    2020
+    2021
     <span class="heart">
       <i class="iconfont icon-heart"></i>
     </span>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Greenplum数据库备份和恢复 - JavaChen Blog</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="JavaChen" /><meta name="description" content="概述 Greenplum数据库支持并行和非并行的方法来备份和恢复数据库。 并行操作的规模不受系统中Segment数量的影响，因为每台Segmen" /><meta name="keywords" content="Java, Hadoop, Docker, Kubernetes" />
+
+
+<meta name="baidu-site-verification" content="OMsbiDfo1G" />
+
+
+
+<meta name="generator" content="Hugo 0.54.0 with theme even" />
+
+
+<link rel="canonical" href="https://blog.javachen.space/2020/09/26/greenplum-backup-and-restore/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<link href="/dist/even.9a8d6025.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/custom.css">
+
+
+<meta property="og:title" content="Greenplum数据库备份和恢复" />
+<meta property="og:description" content="概述 Greenplum数据库支持并行和非并行的方法来备份和恢复数据库。 并行操作的规模不受系统中Segment数量的影响，因为每台Segmen" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.javachen.space/2020/09/26/greenplum-backup-and-restore/" />
+<meta property="article:published_time" content="2020-09-26T00:00:00&#43;08:00"/>
+<meta property="article:modified_time" content="2020-09-26T00:00:00&#43;08:00"/>
+
+<meta itemprop="name" content="Greenplum数据库备份和恢复">
+<meta itemprop="description" content="概述 Greenplum数据库支持并行和非并行的方法来备份和恢复数据库。 并行操作的规模不受系统中Segment数量的影响，因为每台Segmen">
+
+
+<meta itemprop="datePublished" content="2020-09-26T00:00:00&#43;08:00" />
+<meta itemprop="dateModified" content="2020-09-26T00:00:00&#43;08:00" />
+<meta itemprop="wordCount" content="9017">
+
+
+
+<meta itemprop="keywords" content="greenplum," />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Greenplum数据库备份和恢复"/>
+<meta name="twitter:description" content="概述 Greenplum数据库支持并行和非并行的方法来备份和恢复数据库。 并行操作的规模不受系统中Segment数量的影响，因为每台Segmen"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">JavaChen Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/about/">
+        <li class="mobile-menu-item">About</li>
+      </a>
+  </ul>
+</nav>
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">JavaChen Blog</a>
+</div>
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/about/">About</a>
+      </li>
+  </ul>
+</nav>
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Greenplum数据库备份和恢复</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2020-09-26 </span>
+        <div class="post-category">
+            <a href="/categories/greenplum/"> greenplum </a>
+            </div>
+          <span class="more-meta"> 约 9017 字 </span>
+          <span class="more-meta"> 预计阅读 18 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content">
+    <nav id="TableOfContents">
+<ul>
+<li><a href="#概述">概述</a>
+<ul>
+<li><a href="#使用gpbackup和gprestore做并行备份">使用gpbackup和gprestore做并行备份</a></li>
+<li><a href="#使用pg-dump做非并行备份">使用pg_dump做非并行备份</a></li>
+</ul></li>
+<li><a href="#使用gpbackup和gprestore并行备份">使用gpbackup和gprestore并行备份</a>
+<ul>
+<li><a href="#需求和限制">需求和限制</a></li>
+<li><a href="#备份或还原中包含的对象">备份或还原中包含的对象</a></li>
+<li><a href="#备份和恢复命令">备份和恢复命令</a>
+<ul>
+<li><a href="#备份数据">备份数据</a></li>
+<li><a href="#恢复数据">恢复数据</a></li>
+<li><a href="#报告文件">报告文件</a></li>
+<li><a href="#历史文件">历史文件</a></li>
+<li><a href="#返回值">返回值</a></li>
+</ul></li>
+<li><a href="#过滤备份或恢复">过滤备份或恢复</a>
+<ul>
+<li><a href="#根据叶子分区过滤">根据叶子分区过滤</a></li>
+<li><a href="#使用gprestore过滤">使用gprestore过滤</a></li>
+</ul></li>
+<li><a href="#配置邮件通知">配置邮件通知</a></li>
+<li><a href="#理解备份文件">理解备份文件</a></li>
+<li><a href="#增量备份">增量备份</a></li>
+</ul></li>
+</ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      
+
+<h1 id="概述">概述</h1>
+
+<p>Greenplum数据库支持并行和非并行的方法来备份和恢复数据库。 并行操作的规模不受系统中Segment数量的影响，因为每台Segment主机都同时把其数据写入到本地的磁盘存储上。 如果使用非并行备份和恢复操作，数据必须通过网络从Segment被发送到Master，后者把所有的数据写入它的存储中。 除了把I/O限制在一台主机上之外，非并行备份要求Master拥有足够的本地磁盘存储以保存整个数据库。</p>
+
+<h2 id="使用gpbackup和gprestore做并行备份">使用gpbackup和gprestore做并行备份</h2>
+
+<p>gpbackup和gprestore是Greenplum数据库的备份和恢复工具。 gpbackup在每个独立的表级别使用ACCESS SHARE锁，而不是在pg_class catalog表里加EXCLUSIVE锁。 这使得你可以在backup期间执行DML语句，如CREATE，ALTER，DROP和TRUNCATE操作，只要这些操作没有执行在备份的数据上。</p>
+
+<p>使用gpbackup创建的备份文件旨在提供将来恢复单个数据库对象及其依赖项的功能，例如函数和所需的用户定义数据类型。 参考<a href="http://docs-cn.greenplum.org/v6/admin_guide/managing/backup-gpbackup.html#topic_yrr_hqw_sbb">使用gpbackup和gprestore并行备份</a>获取更多信息。</p>
+
+<h2 id="使用pg-dump做非并行备份">使用pg_dump做非并行备份</h2>
+
+<p>PostgreSQL pg_dump和pg_dumpall非并行备份工具可以用来在master主机上创建一个单独的，包含所有节点数据的dump文件。</p>
+
+<p>PostgreSQL的非并行工具应该在特殊场合使用。 它们比使用Greenplum backup工具要慢得多，因为所有数据都必须通过master。 此外，通常情况是master主机没有足够的磁盘空间来保存整个分布式Greenplum数据库的备份。</p>
+
+<p>pg_restore工具需要pg_dump或pg_dumpall创建的压缩dump文件。 在开始还原之前，应修改dump文件中的CREATE TABLE语句以包含Greenplum DISTRIBUTED子句。 如果您不包含DISTRIBUTED子句，Greenplum数据库会分配默认值，这可能不是最佳值。 有关详细信息，请参阅*Greenplum数据库参考指南*中的CREATE TABLE。</p>
+
+<p>使用并行的备份文件来做一个非并行的恢复，可以从每个segment节点拷贝备份文件到master节点，然后通过master加装它们。</p>
+
+<p>Figure 1. 使用并行的备份文件来做一个非并行的恢复
+<img src="http://docs-cn.greenplum.org/v6/admin_guide/graphics/nonpar_restore.jpg" alt="img" /></p>
+
+<p>备份Greenplum数据库数据的另一种非并行方法是使用COPY TO SQL命令将数据库中的全部或部分表复制到master主机上的分隔文本文件。</p>
+
+<h1 id="使用gpbackup和gprestore并行备份">使用gpbackup和gprestore并行备份</h1>
+
+<p>gpbackup和gprestore是Greenplum数据库工具，可为Greenplum数据库创建和恢复备份集。 默认情况下，gpbackup仅在Greenplum数据库master数据目录中存储备份的对象元数据文件和DDL文件。 Greenplum数据库节点使用COPY &hellip; ON SEGMENT命令将备份表的数据存储在位于每个节点的backups目录中的压缩CSV数据文件中。</p>
+
+<p>元数据备份文件包含gprestore并行恢复完整备份集所需的所有信息。 备份元数据还提供了在gprestore的未来版本中仅用于还原数据集中的单个对象以及任何依赖对象的框架。</p>
+
+<p>将表数据存储在CSV文件中还提供了使用其他恢复工具（如gpload）在同一群集或其他群集中加载数据的机会。 默认情况下，为节点上的每个表创建一个文件。 您可以使用gpbackup指定&ndash;leaf-partition-data选项，以便为分区表的每个叶子分区创建一个数据文件，而不是单个文件。 此选项还允许您按叶分区筛选备份集。</p>
+
+<p>每个gpbackup任务都使用Greenplum数据库中的单个事务。 在此事务期间，元数据将在master主机上备份，并且每个节点主机上的每个表的数据将使用COPY &hellip; ON SEGMENT命令并行写入CSV备份文件。 备份进程在备份的每个表上获取ACCESS SHARE锁。</p>
+
+<h2 id="需求和限制">需求和限制</h2>
+
+<p>gpbackup和gprestore工具在Greenplum数据库5.5.0和之后的版本可用。</p>
+
+<p>gpbackup 和 gprestore有如下限制：</p>
+
+<ul>
+<li><p>如果在父分区表上创建索引，则gpbackup不会在父分区的子分区表上备份相同的索引，因为在子分区上创建相同的索引会导致错误。 但是，如果您交换分区，则gpbackup不会检测到交换分区上的索引是从新父表继承的。 在这种情况下，gpbackup备份冲突的CREATE INDEX语句，这会在还原备份集时导致错误。</p></li>
+
+<li><p>您可以执行gpbackup的多个实例，但每次执行都需要不同的时间戳。</p></li>
+
+<li><p>数据库对象过滤目前仅限于schema和表。</p></li>
+
+<li><p>如果使用gpbackup &ndash;single-data-file选项将表备份组合到每个节点的单个文件中， 则无法使用gprestore执行并行还原操作（无法将&ndash;jobs设置为大于1的值）。</p></li>
+
+<li><p>您不能将&ndash;exclude-table-file与&ndash;leaf-partition-data一起使用。 虽然您可以在使用&ndash;exclude-table-file指定的文件中指定叶子分区名称，但gpbackup会忽略分区名称。</p></li>
+
+<li><p>在运行DDL命令的同时使用gpbackup备份数据库可能会导致 gpbackup 失败，以确保备份集内的一致性。 例如，如果在备份操作开始后删除了表，则 gpbackup 将退出并显示错误消息 ERROR: relation <schema.table> does not exist。</p></li>
+</ul>
+
+<p>由于表锁定问题，在备份操作期间删除表时，gpbackup可能会失败。 gpbackup生成要备份的表列表，并在表上获取ACCESS SHARED锁。 如果表上保留了EXCLUSIVE LOCK，则gpbackup会在释放现有锁后获取ACCESS SHARED锁。 如果gpbackup尝试获取表上的锁时表不再存在，则gpbackup将退出并显示错误消息。</p>
+
+<p>对于可能在备份期间删除的表，可以使用gpbackup表过滤选项（例如&ndash;exclude-table或&ndash;exclude-schema）从备份中排除表。</p>
+
+<ul>
+<li>使用gpexpand创建的备份只能还原到与源集群具有相同数量的节点实例的Greenplum数据库集群。 如果运行gpexpand将节点添加到集群，则在扩容完成后无法恢复在扩容之前所做的备份。</li>
+</ul>
+
+<h2 id="备份或还原中包含的对象">备份或还原中包含的对象</h2>
+
+<p>下表列出了使用 gpbackup 和 gprestore 备份和还原的对象。 使用 &ndash;dbname 选项为您指定备份的数据库对象。 默认情况下也会备份全局对象（Greenplum数据库系统对象），但只有在 gprestore 中包含 &ndash;with-globals 选项时才会还原它们。</p>
+
+<table>
+<thead>
+<tr>
+<th>数据库(使用&ndash;dbname指定的数据库)</th>
+<th align="left">全局(需要指定&ndash;with-globals选项来还原)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>会话级别的配置参数设置(GUCs)<br />Schemas<br />过程语言扩展<br />序列<br />注释<br />表<br />Indexes<br />所有者<br />可写外部表(DDL only)<br />可读外部表(DDL only)<br />函数<br />聚合<br />类型转换<br />类型<br />视图<br />协议<br />触发器。（虽然Greenplum数据库不支持触发器，但会备份和恢复任何存在的触发器定义。）<br />规则<br />域<br />运算符，运算符族和运算符类<br />转换<br />扩展<br />文本搜索解析器，词典，模板和配置</td>
+<td align="left">表空间<br />数据库<br />数据库范围的配置参数设置(GUCs)<br />Resource group定义<br />Resource queue定义<br />角色<br />GRANT分配给数据库的角</td>
+</tr>
+</tbody>
+</table>
+
+<p>Note: 这些schemas不包含在备份中。</p>
+
+<ul>
+<li>gp_toolkit</li>
+<li>information_schema</li>
+<li>pg_aoseg</li>
+<li>pg_bitmapindex</li>
+<li>pg_catalog</li>
+<li>pg_toast*</li>
+<li>pg_temp*</li>
+</ul>
+
+<p>还原到已存在数据库时，gprestore假定在将对象还原到public schema时存在public schema。 还原到新数据库（使用&ndash;create-db选项）时，gprestore会在使用CREATE DATABASE命令创建数据库时自动创建public schema。 该命令使用包含public schema的template0数据库。</p>
+
+<h2 id="备份和恢复命令">备份和恢复命令</h2>
+
+<h3 id="备份数据">备份数据</h3>
+
+<p>要执行数据库的完整备份以及Greenplum数据库系统元数据，请使用以下命令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname &lt;database_name&gt;</pre></td></tr></table>
+</div>
+</div>
+<p>例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">$ gpbackup --dbname tutorial
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Starting backup of database tutorial
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Backup <span class="nv">Timestamp</span> <span class="o">=</span> <span class="m">20200925052339</span>
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Backup <span class="nv">Database</span> <span class="o">=</span> tutorial
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Gathering table state information
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Acquiring ACCESS SHARE locks on tables
+Locks acquired:  <span class="m">12</span> / <span class="m">12</span> <span class="o">[==============================================================]</span> <span class="m">100</span>.00% 0s
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Gathering additional table metadata
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Getting partition definitions
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Getting storage information
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Getting child partitions with altered schema
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Metadata will be written to /gpdata/master/gpseg-1/backups/20200925/20200925052339/gpbackup_20200925052339_metadata.sql
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Writing global database metadata
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Global database metadata backup <span class="nb">complete</span>
+<span class="m">20200925</span>:05:23:39 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Writing pre-data metadata
+<span class="m">20200925</span>:05:23:40 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Pre-data metadata metadata backup <span class="nb">complete</span>
+<span class="m">20200925</span>:05:23:40 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Writing post-data metadata
+<span class="m">20200925</span>:05:23:40 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Post-data metadata backup <span class="nb">complete</span>
+<span class="m">20200925</span>:05:23:40 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Writing data to file
+Tables backed up:  <span class="m">11</span> / <span class="m">11</span> <span class="o">[===========================================================]</span> <span class="m">100</span>.00% 10s
+<span class="m">20200925</span>:05:23:51 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Skipped data backup of <span class="m">1</span> external/foreign table<span class="o">(</span>s<span class="o">)</span>.
+<span class="m">20200925</span>:05:23:51 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-See /home/gpadmin/gpAdminLogs/gpbackup_20200925.log <span class="k">for</span> a <span class="nb">complete</span> list of skipped tables.
+<span class="m">20200925</span>:05:23:51 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Data backup <span class="nb">complete</span>
+<span class="m">20200925</span>:05:23:52 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Found neither /usr/local/greenplum-db/bin/gp_email_contacts.yaml nor /home/gpadmin/gp_email_contacts.yaml
+<span class="m">20200925</span>:05:23:52 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Email containing gpbackup report /gpdata/master/gpseg-1/backups/20200925/20200925052339/gpbackup_20200925052339_report will not be sent
+<span class="m">20200925</span>:05:23:52 gpbackup:gpadmin:dw-test-node001:015264-<span class="o">[</span>INFO<span class="o">]</span>:-Backup completed successfully</code></pre></td></tr></table>
+</div>
+</div>
+<p>上面的命令在Greenplum数据库master主机的默认目录中创建一个包含全局和数据库特定元数据的文件， $MASTER_DATA_DIRECTORY/backups/<YYYYMMDD>/<YYYYMMDDHHMMSS>/。 例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-bash" data-lang="bash">ls -l /gpdata/master/gpseg-1/backups/20200925/20200925052339
+-r--r--r-- <span class="m">1</span> gpadmin gpadmin   <span class="m">904</span> 9月  <span class="m">25</span> <span class="m">05</span>:23 gpbackup_20200925052339_config.yaml
+-r--r--r-- <span class="m">1</span> gpadmin gpadmin <span class="m">98054</span> 9月  <span class="m">25</span> <span class="m">05</span>:23 gpbackup_20200925052339_metadata.sql
+-r--r--r-- <span class="m">1</span> gpadmin gpadmin  <span class="m">1783</span> 9月  <span class="m">25</span> <span class="m">05</span>:23 gpbackup_20200925052339_report
+-r--r--r-- <span class="m">1</span> gpadmin gpadmin <span class="m">12533</span> 9月  <span class="m">25</span> <span class="m">05</span>:23 gpbackup_20200925052339_toc.yaml</code></pre></td></tr></table>
+</div>
+</div>
+<p>默认情况下，每个节点用一个独立的压缩CSV文件在<seg_dir>/backups/<YYYYMMDD>/<YYYYMMDDHHMMSS>/存储备份的每个表的数据：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">ls /gpdata/primary0/gpseg0/backups/20200925/20200925052339</pre></td></tr></table>
+</div>
+</div>
+<p>要将所有备份文件合并到一个目录中，请包含&ndash;backup-dir选项。 请注意，您必须使用此选项指定绝对路径：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname tutorial --backup-dir /home/gpadmin/backups
+
+$ find /home/gpadmin/backups/ -type f</pre></td></tr></table>
+</div>
+</div>
+<p>执行备份操作时，可以在多个文件的额外开销可能过高的情况下使用&ndash;single-data-file。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname tutorial --backup-dir /home/gpadmin/backups --single-data-file</pre></td></tr></table>
+</div>
+</div>
+<h3 id="恢复数据">恢复数据</h3>
+
+<p>使用gprestore从备份集合恢复，必须使用&ndash;timestamp选项指定准确的时间戳值(YYYYMMDDHHMMSS)。 包括&ndash;create-db选项，如果数据库未在集群中创建。 例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ dropdb tutorial
+$ gprestore --timestamp 20200925052339 --create-db</pre></td></tr></table>
+</div>
+</div>
+<p>如果指定自定义的&ndash;backup-dir来合并备份文件，使用gprestore时指定相同的&ndash;backup-dir选项来定位备份文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ dropdb tutorial
+$ gprestore --backup-dir /home/gpadmin/backups/ --timestamp 20200925052339 --create-db</pre></td></tr></table>
+</div>
+</div>
+<p>gprestore默认不会为Greenplum系统尝试恢复全局元数据。 如果这个是必须的，需要&ndash;with-globals参数。</p>
+
+<p>默认情况下，gprestore使用一个连接去恢复表数据和元数据。 如果备份集非常大，可以使用&ndash;jobs选项来提高并发连接数从而提升恢复性能。 例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gprestore --backup-dir /home/gpadmin/backups/ --timestamp 20200925052339 --create-db --jobs 8</pre></td></tr></table>
+</div>
+</div>
+<blockquote>
+<p>如果备份使用gpbackup的&ndash;single-data-file选项将表备份组合到每个节点的单个文件中，则无法使用gprestore执行并行还原操作。</p>
+</blockquote>
+
+<h3 id="报告文件">报告文件</h3>
+
+<p>当执行备份和恢复操作时，gpbackup和gprestore会生成一个报告文件。 当配置了邮件通知，发送的邮件内容会包含报告文件。</p>
+
+<p>报告文件在Greenplum数据库master的备份目录中。 报告文件名包含操作的时间戳。 这些是gpbackup和gprestore报告文件名的格式。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpbackup_&lt;backup_timestamp&gt;_report
+gprestore_&lt;backup_timestamp&gt;_&lt;restore_timesamp&gt;_report</pre></td></tr></table>
+</div>
+</div>
+<h3 id="历史文件">历史文件</h3>
+
+<p>执行备份操作时，gpbackup会将备份信息附加到Greenplum数据库master数据目录中的gpbackup历史文件gpbackup_history.yaml中。 该文件包含备份时间戳，有关备份选项的信息以及增量备份的备份集信息。 gpbackup不备份此文件。</p>
+
+<p>使用&ndash;incremental选项运行gpbackup时， gpbackup使用文件中的信息查找增量备份的匹配备份， 并且不指定&ndash;from-timesamp选项以指示要用作最新备份的备份在增量备份集中。</p>
+
+<h3 id="返回值">返回值</h3>
+
+<p>在 gpbackup 或 gprestore 完成时会返回下面的一个返回值。</p>
+
+<ul>
+<li><strong>0</strong> – 备份或恢复完成没有问题</li>
+<li><strong>1</strong> – 备份或恢复完成，但有非致命错误。查看日志文件获取更多信息。</li>
+<li><strong>2</strong> – 备份或恢复因为致命错误失败。查看日志文件获取更多信息。</li>
+</ul>
+
+<h2 id="过滤备份或恢复">过滤备份或恢复</h2>
+
+<p>gpbackup备份指定数据库中的所有schema和表，除非您使用schema级别或表级别过滤器选项排除或包含单个schema或表对象。</p>
+
+<p>schema级别选项是&ndash;include-schema或&ndash;exclude-schema命令行选项到gpbackup。 例如，如果“demo”数据库仅包含两个schema “wikipedia”和“twitter”，则以下两个命令仅备份“wikipedia” schema：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-schema wikipedia
+$ gpbackup --dbname demo --exclude-schema twitter</pre></td></tr></table>
+</div>
+</div>
+<p>你可以在gpbackup中包含多个&ndash;include-schema选项，或多个&ndash;exclude-schema选项。 例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-schema wikipedia --include-schema twitter</pre></td></tr></table>
+</div>
+</div>
+<p>要筛选包含在备份集中的表或从备份集中排除表，请使用&ndash;include-table选项或&ndash;exclude-table选项指定各个表。 该表必须是限定schema的，<code>&lt;schema-name&gt;.&lt;table-name&gt;</code>。 可以多次指定各个表过滤选项。 但是，&ndash;include-table和&ndash;exclude-table不能同时用于同一命令。</p>
+
+<p>您可以在文本文件中创建指定的表名称列表。 列出文件中的表时，文本文件中的每一行都必须使用格式<code>&lt;schema-name&gt;.&lt;table-name&gt;</code>定义单个表。 该文件不得包含尾随行。 例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">wikipedia.articles
+twitter.message</pre></td></tr></table>
+</div>
+</div>
+<p>如果表或schema名称使用小写字母，数字或下划线字符以外的任何字符，则必须在双引号中包含该名称。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">beer.&#34;IPA&#34;
+&#34;Wine&#34;.riesling
+&#34;Wine&#34;.&#34;sauvignon blanc&#34;
+water.tonic</pre></td></tr></table>
+</div>
+</div>
+<p>创建文件后，您可以使用gpbackup选项&ndash;include-table-file或&ndash;exclude-table-file来包含或排除表。例如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-table-file /home/gpadmin/table-list.txt</pre></td></tr></table>
+</div>
+</div>
+<p>您可以将-include schema与&ndash;exclude-table或&ndash;exclude-table-file结合使用以进行备份。 此示例使用&ndash;include-schema和&ndash;exclude-table来备份除单个表之外的schema。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-schema mydata --exclude-table mydata.addresses</pre></td></tr></table>
+</div>
+</div>
+<p>您不能将&ndash;include-schema与&ndash;include-table或&ndash;include-table-file结合使用， 并且不能将&ndash;exclude-schema与任何表过滤选项（如&ndash;exclude-table或&ndash;include-table）结合使用。</p>
+
+<p>使用&ndash;include-table或&ndash;include-table-file时，不会自动备份或还原依赖对象，您必须显式指定所需的依赖对象。 例如，如果备份或还原视图，则还必须指定视图使用的表。 如果备份或还原使用序列的表，则还必须指定序列。</p>
+
+<h3 id="根据叶子分区过滤">根据叶子分区过滤</h3>
+
+<p>默认情况下，gpbackup为节点上的每个表创建一个文件。 您可以指定&ndash;leaf-partition-data选项，以便为分区表的每个叶子分区创建一个数据文件，而不是单个文件。 您还可以通过在包含的文本文件中列出叶子分区名称来过滤备份特定叶子分区。 例如，考虑使用以下语句创建的表：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">demo=# CREATE TABLE sales (id int, date date, amt decimal(10,2))
+DISTRIBUTED BY (id)
+PARTITION BY RANGE (date)
+( PARTITION Jan17 START (date &#39;2017-01-01&#39;) INCLUSIVE ,
+PARTITION Feb17 START (date &#39;2017-02-01&#39;) INCLUSIVE ,
+PARTITION Mar17 START (date &#39;2017-03-01&#39;) INCLUSIVE ,
+PARTITION Apr17 START (date &#39;2017-04-01&#39;) INCLUSIVE ,
+PARTITION May17 START (date &#39;2017-05-01&#39;) INCLUSIVE ,
+PARTITION Jun17 START (date &#39;2017-06-01&#39;) INCLUSIVE ,
+PARTITION Jul17 START (date &#39;2017-07-01&#39;) INCLUSIVE ,
+PARTITION Aug17 START (date &#39;2017-08-01&#39;) INCLUSIVE ,
+PARTITION Sep17 START (date &#39;2017-09-01&#39;) INCLUSIVE ,
+PARTITION Oct17 START (date &#39;2017-10-01&#39;) INCLUSIVE ,
+PARTITION Nov17 START (date &#39;2017-11-01&#39;) INCLUSIVE ,
+PARTITION Dec17 START (date &#39;2017-12-01&#39;) INCLUSIVE
+END (date &#39;2018-01-01&#39;) EXCLUSIVE );</pre></td></tr></table>
+</div>
+</div>
+<p>要仅备份一年中最后一个季度的数据，首先要创建一个文本文件，列出那些叶子分区名称而不是完整的表名称：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">public.sales_1_prt_oct17
+public.sales_1_prt_nov17
+public.sales_1_prt_dec17 </pre></td></tr></table>
+</div>
+</div>
+<p>然后使用&ndash;include-table-file选项指定文件，以便为每个叶子分区生成一个数据文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-table-file last-quarter.txt --leaf-partition-data</pre></td></tr></table>
+</div>
+</div>
+<p>指定&ndash;leaf-partition-data时，gpbackup在备份分区表时为每个叶子分区生成一个数据文件。 例如，此命令为每个叶子分区生成一个数据文件：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">$ gpbackup --dbname demo --include-table public.sales --leaf-partition-data</pre></td></tr></table>
+</div>
+</div>
+<p>备份叶子分区时，将备份叶子分区数据以及整个分区表的元数据。</p>
+
+<blockquote>
+<p>您不能将&ndash;exclude-table-file选项与&ndash;leaf-partition-data一起使用。 虽然您可以在使用&ndash;exclude-table-file指定的文件中指定叶子分区名称，但gpbackup会忽略分区名称。</p>
+</blockquote>
+
+<h3 id="使用gprestore过滤">使用gprestore过滤</h3>
+
+<p>使用 gpbackup 创建备份集后， 可以使用 gprestore 的 &ndash;include-schema 和 &ndash;include-table-file 选项过滤要从备份集还原的schema和表。 这些选项的工作方式与其 gpbackup 对应方式相同，但具有以下限制：</p>
+
+<ul>
+<li>您尝试还原的表不能存在于数据库中。</li>
+<li>如果尝试还原备份集中不存在的schema或表，则gprestore不会执行。</li>
+<li>如果使用&ndash;include-schema选项，则gprestore无法还原对多个schema具有依赖性的对象。</li>
+<li>如果使用&ndash;include-table-file选项，则gprestore不会创建角色或设置表的所有者。 该工具恢复表索引和规则。 触发器也被恢复，但Greenplum数据库不支持。</li>
+<li>使用&ndash;include-table-file 指定的文件不能包含叶子分区名称，因为在使用 gpbackup指定此选项时可以使用该名称。 如果在备份集中指定了叶子分区，请指定分区表以还原叶子分区数据。</li>
+</ul>
+
+<p>还原包含来自分区表的某些叶子分区的数据的备份集时，将恢复分区表以及叶子分区的数据。 例如，使用gpbackup选项&ndash;include-table-file创建备份，文本文件列出分区表的一些叶子分区。 还原备份会创建分区表，并仅为文件中列出的叶分区还原数据。</p>
+
+<h2 id="配置邮件通知">配置邮件通知</h2>
+
+<p>gpbackup和gprestore可以在备份或还原完成后发送邮件通知。</p>
+
+<p>要让gpbackup或gprestore发送状态电子邮件通知， 您必须将名为gp_email_contacts.yaml的文件放在运行gpbackup或gprestore的用户的主目录中， 与工具（$GPHOME/bin）位于同一目录中。 如果工具无法在任一位置找到gp_email_contacts.yaml文件，则会发出消息。 如果两个位置都包含.yaml文件，则该工具将使用用户$HOME中的文件。</p>
+
+<p>电子邮件主题行包括工具名称，时间戳，状态和Greenplum数据库master的名称。 这是gpbackup电子邮件的示例主题行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt">1
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">gpbackup 20180202133601 on gp-master completed</pre></td></tr></table>
+</div>
+</div>
+<p>该电子邮件包含有关操作的摘要信息，包括选项，持续时间以及备份或还原的对象数。</p>
+
+<blockquote>
+<p>UNIX邮件实用程序必须在Greenplum数据库主机上运行，并且必须配置为允许Greenplum超级用户（gpadmin）发送电子邮件。 还要确保通过gpadmin用户的$PATH可以找到邮件程序可执行文件。</p>
+</blockquote>
+
+<p>这是gpbackup电子邮件通知的gp_email_contacts.yaml YAML文件的格式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">contacts:
+  gpbackup:
+  - address: user@domain
+    status:
+         success: [true | false]
+         success_with_errors: [true | false]
+         failure: [true | false]
+  gprestore:
+  - address: user@domain
+    status:
+         success: [true | false]
+         success_with_errors: [true | false]
+         failure: [true | false]</pre></td></tr></table>
+</div>
+</div>
+<p>此示例YAML文件指定根据操作的成功或失败向电子邮件地址发送电子邮件。 对于备份操作，根据备份操作的成功或失败，将电子邮件发送到不同的地址。 对于还原操作，仅当操作成功或带错完成时才会向 gpadmin@example.com发送电子邮件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></pre></td>
+<td class="lntd">
+<pre class="chroma">contacts:
+  gpbackup:
+  - address: gpadmin@example.com
+    status:
+      success: true
+  - address: my_dba@example.com
+    status:
+      success_with_errors: true
+      failure: true
+  gprestore:
+  - address: gpadmin@example.com
+    status:
+      success: true
+      success_with_errors: true</pre></td></tr></table>
+</div>
+</div>
+<h2 id="理解备份文件">理解备份文件</h2>
+
+<blockquote>
+<p>所有gpbackup元数据文件都是使用只读权限创建的。 切勿删除或修改gpbackup备份集的元数据文件。 这样做会使备份文件无法正常运行。</p>
+</blockquote>
+
+<p>gpbackup的完整备份集包括多个元数据文件，支持文件和CSV数据文件，每个文件都指定了创建备份的时间戳。</p>
+
+<p>默认情况下，元数据和支持文件存储在Greenplum数据库master主机上<code>$MASTER_DATA_DIRECTORY/backups/YYYYMMDD/YYYYMMDDHHMMSS/</code>目录中。 如果指定自定义备份目录，则会将此相同文件路径创建为备份目录的子目录。 下表描述了元数据和支持文件的名称和内容。</p>
+
+<ul>
+<li><code>gpbackup_&lt;YYYYMMDDHHMMSS&gt;_metadata.sql</code>：包含全局和数据库特定的元数据</li>
+<li><code>gpbackup_&lt;YYYYMMDDHHMMSS&gt;_toc.yaml</code>： 包含用于在<code>_predata.sql</code>和<code>_postdata.sql</code>文件中查找对象DDL的元数据。 此文件还包含用于在每个节点上创建的CSV数据文件中查找相应表数据的表名和OID。</li>
+<li><code>gpbackup_&lt;YYYYMMDDHHMMSS&gt;_report</code>： 包含有关用于填充备份完成后发送的电子邮件通知（如果已配置）的备份操作的信息。</li>
+<li><code>gpbackup_&lt;YYYYMMDDHHMMSS&gt;_config.yaml</code>：包含有关特定备份任务执行的元数据</li>
+<li><code>gpbackup_history.yaml</code>：包含有关使用 gpbackup创建备份时使用的选项的信息，以及有关增量备份的信息。存储在Greenplum数据库master数据目录中的Greenplum数据库主机上。这个文件不是通过gpbackup备份的</li>
+</ul>
+
+<p>默认情况下，每个节点为在节点上备份的每个表创建一个压缩CSV文件。 您可以选择指定<code>--single-data-file</code>选项，以在每个节点上创建单个数据文件。 文件存储在<code>&lt;seg_dir&gt;/backups/YYYYMMDD/YYYYMMDDHHMMSS/</code>。</p>
+
+<p>如果指定自定义备份目录，则节点数据文件将复制到与备份目录的子目录相同的文件路径中。 如果包含<code>--leaf-partition-data</code>选项，则gpbackup为分区表的每个叶子分区创建一个数据文件，而不是为表创建一个文件。</p>
+
+<p>每个数据文件使用文件格式 <code>gpbackup_&lt;content_id&gt;_&lt;YYYYMMDDHHMMSS&gt;_&lt;oid&gt;.gz</code>，其中：</p>
+
+<ul>
+<li><code>&lt;content_id&gt;</code>是节点的content ID。</li>
+<li><code>&lt;YYYYMMDDHHMMSS&gt;</code>是gpbackup操作的时间戳。</li>
+<li><code>&lt;oid&gt;</code>是表的object ID。 元数据文件<code>gpbackup_&lt;YYYYMMDDHHMMSS&gt;_toc.yaml</code>引用此<code>&lt;oid&gt;</code>以查找schema中特定的表的数据。</li>
+</ul>
+
+<p>您可以选择使用<code>--compression-level</code>选项指定gzip压缩级别（1-9），或使用&ndash;no-compression完全禁用压缩。 如果未指定压缩级别，则gpbackup默认使用压缩级别1。</p>
+
+<h2 id="增量备份">增量备份</h2>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">JavaChen</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2020-09-26
+        
+    </span>
+  </p>
+  
+  <p class="copyright-item">
+    <span class="item-title">许可协议</span>
+    <span class="item-content"><a rel="license noopener" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank">CC BY-NC-ND 4.0</a></span>
+  </p>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/wechat.jpg">
+        <span>微信打赏</span>
+      </label>
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/img/reward/alipay.jpg">
+        <span>支付宝打赏</span>
+      </label>
+  </div>
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/greenplum/">greenplum</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/2020/09/25/install-a-local-cluster-using-k3d-and-vagrant/">
+            <span class="next-text nav-default">使用K3d和Vagrant搭建Kubernetes集群</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+    <script src="https://utteranc.es/client.js"
+            repo="junetalk/junetalk.github.io"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://github.com/utterance">comments powered by utterances.</a></noscript>
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:junecloud@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="http://github.com/javachen" class="iconfont icon-github" title="github"></a>
+      <a href="http://weibo.com/chenzhijun" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://space.bilibili.com/287563020/" class="iconfont icon-bilibili" title="bilibili"></a>
+  <a href="https://blog.javachen.space/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2009 - 
+    2021
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">JavaChen</span>
+  </span>
+</div>
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="/dist/even.e1476869.min.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?7eaf37274cf8796df56903a88389e82f";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+<script id="baidu_push">
+  (function(){
+    if (window.location.hostname === 'localhost') return;
+    var bp = document.createElement('script'); bp.async = true;
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+      bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+      bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+  })();
+</script>
+
+
+
+
+</body>
+</html>
